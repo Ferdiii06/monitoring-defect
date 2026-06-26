@@ -1,36 +1,29 @@
 <?php
 
-namespace Database\Seeders;
+namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Defect;
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
+use Illuminate\Http\Request;
 
-class DatabaseSeeder extends Seeder
+class DashboardController extends Controller
 {
     /**
-     * Seed the application's database.
+     * Display the admin dashboard with static mock data.
      */
-    public function run(): void
+    public function index()
     {
-        // 1. Seed Admin User
-        // Check if admin already exists to prevent duplicate key
-        if (!User::where('name', 'Admin QA')->exists()) {
-            User::create([
-                'name' => 'Admin QA',
-                'email' => 'admin@example.com',
-                'password' => Hash::make('123456'), // 6-digit PIN as password
-            ]);
+        if (!session('logged_in')) {
+            return redirect('/');
         }
 
-        // 2. Seed Defect Records matching the screenshot exactly
-        Defect::truncate();
+        $totalDefect = 1250;
+        $defectToday = 72;
+        $activeUsers = 12;
+        $totalUsers = 45;
 
-        $defects = [
-            [
-                'waktu' => Carbon::create(2026, 6, 26, 18, 45, 21),
+        // Static recent defects logs (matching screenshot exactly)
+        $recentDefects = [
+            (object)[
+                'waktu' => '2026-06-26 18:45:21',
                 'user_name' => 'Budi Santoso',
                 'jenis_assy' => 'Final Assy',
                 'line_conveyor' => '1',
@@ -38,8 +31,8 @@ class DatabaseSeeder extends Seeder
                 'jenis_sub_defect' => 'CROSS CIRCUIT',
                 'quantity' => 1,
             ],
-            [
-                'waktu' => Carbon::create(2026, 6, 26, 16, 30, 10),
+            (object)[
+                'waktu' => '2026-06-26 16:30:10',
                 'user_name' => 'Siti Nurhaliza',
                 'jenis_assy' => 'Pre Assy',
                 'line_conveyor' => '2',
@@ -47,8 +40,8 @@ class DatabaseSeeder extends Seeder
                 'jenis_sub_defect' => 'FRAYING',
                 'quantity' => 1,
             ],
-            [
-                'waktu' => Carbon::create(2026, 6, 26, 16, 15, 32),
+            (object)[
+                'waktu' => '2026-06-26 16:15:32',
                 'user_name' => 'Ahmad Fauzi',
                 'jenis_assy' => 'Pre Assy',
                 'line_conveyor' => '3',
@@ -56,8 +49,8 @@ class DatabaseSeeder extends Seeder
                 'jenis_sub_defect' => 'TERGORES',
                 'quantity' => 1,
             ],
-            [
-                'waktu' => Carbon::create(2026, 6, 26, 16, 05, 11),
+            (object)[
+                'waktu' => '2026-06-26 16:05:11',
                 'user_name' => 'Dewi Lestari',
                 'jenis_assy' => 'Final Assy',
                 'line_conveyor' => '4',
@@ -67,8 +60,12 @@ class DatabaseSeeder extends Seeder
             ],
         ];
 
-        foreach ($defects as $defect) {
-            Defect::create($defect);
-        }
+        return view('dashboard', compact(
+            'totalDefect',
+            'defectToday',
+            'activeUsers',
+            'totalUsers',
+            'recentDefects'
+        ));
     }
 }
