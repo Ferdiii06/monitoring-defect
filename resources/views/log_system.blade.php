@@ -15,15 +15,30 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* Custom Scrollbar for premium aesthetic */
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 6px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 8px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 8px;
+        }
+        .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen flex">
+<body class="bg-gray-50 text-gray-800 h-screen overflow-hidden flex">
 
     <!-- Left Sidebar -->
     <aside class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between shrink-0">
         <div>
             <!-- Logo Section -->
-            <div class="p-6 border-b border-gray-100 flex items-center space-x-3">
+            <div class="p-4 border-b border-gray-100 flex items-center space-x-3">
                 <div class="w-9 h-9 rounded-lg bg-[#8b0000] flex items-center justify-center text-white shrink-0 shadow-sm">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -36,33 +51,33 @@
             </div>
 
             <!-- Navigation Links -->
-            <nav class="p-4 space-y-1">
-                <a href="{{ route('dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
+            <nav class="p-3 space-y-1">
+                <a href="{{ route('dashboard') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
                     <span>Dashboard</span>
                 </a>
-                <a href="{{ route('account.create') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
+                <a href="{{ route('account.create') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                     </svg>
                     <span>Add Account</span>
                 </a>
-                <a href="{{ route('final_assy.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
+                <a href="{{ route('final_assy.index') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
                     <span>Final Assy</span>
                 </a>
-                <a href="{{ route('pre_assy.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
+                <a href="{{ route('pre_assy.index') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
                     </svg>
                     <span>Pre Assy</span>
                 </a>
-                <a href="{{ route('log_system.index') }}" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-semibold bg-[#8b0000] text-white shadow-sm transition-all">
+                <a href="{{ route('log_system.index') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#8b0000] text-white shadow-sm transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
@@ -72,10 +87,10 @@
         </div>
 
         <!-- Logout Section -->
-        <div class="p-6 border-t border-gray-100">
+        <div class="p-3 border-t border-gray-100">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-semibold text-[#8b0000] hover:bg-red-50 hover:text-[#600000] transition-all text-left">
+                <button type="submit" class="w-full flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-[#8b0000] hover:bg-red-50 hover:text-[#600000] transition-all text-left">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
@@ -181,27 +196,30 @@
                 </form>
 
                 <!-- Responsive Table -->
-                <div class="overflow-x-auto min-h-[400px]">
-                    <table class="w-full text-left border-collapse">
+                <div class="overflow-x-auto min-h-[400px] pb-4">
+                    <table class="w-full min-w-[850px] text-left border-collapse">
                         <thead>
                             <tr class="border-b border-gray-200">
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 pl-2">Waktu</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3">User</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 text-center">Jenis Aksi</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 pl-4">Aktivitas</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 pl-4">IP Address</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2">Waktu</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">User</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Jenis Aksi</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Aktivitas</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">IP Address</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($records as $record)
                                 <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
-                                    <td class="py-4 text-sm text-gray-500 pl-2 font-medium min-w-[160px]">
-                                        {{ \Carbon\Carbon::parse($record->waktu)->translatedFormat('d F Y H:i:s') }}
+                                    <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium min-w-[140px]">
+                                        <div class="text-xs leading-normal">
+                                            <span class="block text-gray-900">{{ \Carbon\Carbon::parse($record->waktu)->translatedFormat('d F Y') }}</span>
+                                            <span class="block text-gray-400 mt-0.5 text-[11px]">{{ \Carbon\Carbon::parse($record->waktu)->format('H:i:s') }}</span>
+                                        </div>
                                     </td>
-                                    <td class="py-4 text-sm text-gray-900 font-bold">
+                                    <td class="py-4 text-sm text-gray-900 font-bold px-4">
                                         {{ $record->user_name }}
                                     </td>
-                                    <td class="py-4 text-xs font-bold text-center">
+                                    <td class="py-4 text-xs font-bold text-center px-4">
                                         @if($record->jenis_aksi === 'Create Report')
                                             <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 tracking-wider">
                                                 Create Report
@@ -220,10 +238,10 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="py-4 text-sm text-gray-600 font-medium pl-4">
+                                    <td class="py-4 text-sm text-gray-600 font-medium px-4">
                                         {{ $record->aktivitas }}
                                     </td>
-                                    <td class="py-4 text-sm text-gray-500 font-medium pl-4 font-mono">
+                                    <td class="py-4 text-sm text-gray-500 font-medium px-4 font-mono">
                                         {{ $record->ip_address }}
                                     </td>
                                 </tr>
