@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // 2. Seed Defect Records matching the screenshot exactly
+        // 2. Seed Defect Records matching the system style
         Defect::truncate();
 
         $defects = [
@@ -33,7 +33,8 @@ class DatabaseSeeder extends Seeder
                 'waktu' => Carbon::create(2026, 6, 26, 18, 45, 21),
                 'user_name' => 'Budi Santoso',
                 'jenis_assy' => 'Final Assy',
-                'line_conveyor' => '1',
+                'line_conveyor' => 'Toyota',
+                'konveyor' => '664W-C5',
                 'jenis_defect' => 'INSERT CIRCUIT',
                 'jenis_sub_defect' => 'CROSS CIRCUIT',
                 'quantity' => 1,
@@ -42,7 +43,8 @@ class DatabaseSeeder extends Seeder
                 'waktu' => Carbon::create(2026, 6, 26, 16, 30, 10),
                 'user_name' => 'Siti Nurhaliza',
                 'jenis_assy' => 'Pre Assy',
-                'line_conveyor' => '2',
+                'line_conveyor' => 'Toyota',
+                'konveyor' => '664W-C5',
                 'jenis_defect' => 'CORE',
                 'jenis_sub_defect' => 'FRAYING',
                 'quantity' => 1,
@@ -51,7 +53,8 @@ class DatabaseSeeder extends Seeder
                 'waktu' => Carbon::create(2026, 6, 26, 16, 15, 32),
                 'user_name' => 'Ahmad Fauzi',
                 'jenis_assy' => 'Pre Assy',
-                'line_conveyor' => '3',
+                'line_conveyor' => 'Nissan',
+                'konveyor' => 'P33A-B1.BAT',
                 'jenis_defect' => 'TERMINAL',
                 'jenis_sub_defect' => 'TERGORES',
                 'quantity' => 1,
@@ -60,7 +63,8 @@ class DatabaseSeeder extends Seeder
                 'waktu' => Carbon::create(2026, 6, 26, 16, 05, 11),
                 'user_name' => 'Dewi Lestari',
                 'jenis_assy' => 'Final Assy',
-                'line_conveyor' => '4',
+                'line_conveyor' => 'Nissan',
+                'konveyor' => 'P33A-B1.BAT',
                 'jenis_defect' => 'MISSING PART',
                 'jenis_sub_defect' => 'MISSING CLIP',
                 'quantity' => 1,
@@ -69,6 +73,47 @@ class DatabaseSeeder extends Seeder
 
         foreach ($defects as $defect) {
             Defect::create($defect);
+        }
+
+        // 3. Seed Activity Log Records
+        \App\Models\ActivityLog::truncate();
+        $logs = [
+            [
+                'waktu' => Carbon::create(2026, 6, 26, 16, 30, 10),
+                'user_name' => 'Siti Nurhaliza',
+                'jenis_aksi' => 'Create Report',
+                'aktivitas' => 'Melaporkan defect Pre Assy - Toyota - Jumlah 15',
+                'jenis_defect' => 'CORE',
+                'ip_address' => '192.168.1.10',
+            ],
+            [
+                'waktu' => Carbon::create(2026, 6, 26, 16, 30, 10),
+                'user_name' => 'Siti Nurhaliza',
+                'jenis_aksi' => 'Delete Report',
+                'aktivitas' => 'Menghapus report defect Final Assy - Nissan',
+                'jenis_defect' => 'INSERT CIRCUIT',
+                'ip_address' => '192.168.1.10',
+            ],
+            [
+                'waktu' => Carbon::create(2026, 6, 26, 16, 30, 10),
+                'user_name' => 'Siti Nurhaliza',
+                'jenis_aksi' => 'Update Report',
+                'aktivitas' => 'Mengubah jumlah defect menjadi 20',
+                'jenis_defect' => 'TERMINAL',
+                'ip_address' => '192.168.1.10',
+            ],
+            [
+                'waktu' => Carbon::create(2026, 6, 26, 16, 30, 10),
+                'user_name' => 'Siti Nurhaliza',
+                'jenis_aksi' => 'Create Account',
+                'aktivitas' => 'Membuat akun baru - User: Andi Saputra',
+                'jenis_defect' => 'none',
+                'ip_address' => '192.168.1.10',
+            ],
+        ];
+
+        foreach ($logs as $log) {
+            \App\Models\ActivityLog::create($log);
         }
     }
 }

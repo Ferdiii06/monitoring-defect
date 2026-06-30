@@ -187,7 +187,7 @@
                     </div>
 
                     <!-- Export Button -->
-                    <button type="button" onclick="exportCSV()" class="bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition duration-200 shadow-sm flex items-center space-x-2">
+                    <button type="button" onclick="exportExcel()" class="bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition duration-200 shadow-sm flex items-center space-x-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
@@ -323,38 +323,18 @@
             });
         });
 
-        // Client-side CSV exporter
-        function exportCSV() {
-            const data = @json($allFilteredRecords);
-            if (data.length === 0) {
-                alert('Tidak ada data logs untuk diexport.');
-                return;
-            }
+        // Excel exporter via URL redirect
+        function exportExcel() {
+            const dateRange = document.getElementById("date_range").value;
+            const action = document.querySelector('select[name="action"]').value;
+            const defect = document.querySelector('select[name="defect"]').value;
             
-            // Format column data
-            let csvContent = "\uFEFF"; // UTF-8 BOM to display Indonesian characters properly in Excel
-            csvContent += "Waktu,User,Jenis Aksi,Aktivitas,IP Address\n";
+            let url = "{{ route('log_system.export') }}?";
+            url += "date_range=" + encodeURIComponent(dateRange);
+            url += "&action=" + encodeURIComponent(action);
+            url += "&defect=" + encodeURIComponent(defect);
             
-            data.forEach(function (row) {
-                let csvRow = [
-                    `"${row.waktu}"`,
-                    `"${row.user_name.replace(/"/g, '""')}"`,
-                    `"${row.jenis_aksi}"`,
-                    `"${row.aktivitas.replace(/"/g, '""')}"`,
-                    `"${row.ip_address}"`
-                ].join(",");
-                csvContent += csvRow + "\n";
-            });
-            
-            // Download payload setup
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", "log_system_" + new Date().toISOString().slice(0,10) + ".csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            window.location.href = url;
         }
     </script>
 </body>

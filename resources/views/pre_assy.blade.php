@@ -199,7 +199,7 @@
                     </div>
 
                     <!-- Export Button -->
-                    <button type="button" onclick="exportCSV()" class="bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition duration-200 shadow-sm flex items-center space-x-2">
+                    <button type="button" onclick="exportExcel()" class="bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition duration-200 shadow-sm flex items-center space-x-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
@@ -403,41 +403,20 @@
             populateConveyors(mobilSelect.value, selectedConveyor);
         });
 
-        // Client-side CSV exporter
-        function exportCSV() {
-            const data = @json($allFilteredRecords);
-            if (data.length === 0) {
-                alert('Tidak ada data defect untuk diexport.');
-                return;
-            }
+        // Excel exporter via URL redirect
+        function exportExcel() {
+            const dateRange = document.getElementById("date_range").value;
+            const defect = document.querySelector('select[name="defect"]').value;
+            const line = document.getElementById("mobilSelect").value;
+            const conveyor = document.getElementById("conveyorSelect").value;
             
-            // Format column data
-            let csvContent = "\uFEFF"; // UTF-8 BOM to display Indonesian characters properly in Excel
-            csvContent += "Waktu,User,Jenis Assy,Data Mobil,Konveyor,Jenis Defect,Jenis Sub Defect,Quantity\n";
+            let url = "{{ route('pre_assy.export') }}?";
+            url += "date_range=" + encodeURIComponent(dateRange);
+            url += "&defect=" + encodeURIComponent(defect);
+            url += "&line=" + encodeURIComponent(line);
+            url += "&conveyor=" + encodeURIComponent(conveyor);
             
-            data.forEach(function (row) {
-                let csvRow = [
-                    `"${row.waktu}"`,
-                    `"${row.user_name.replace(/"/g, '""')}"`,
-                    `"${row.jenis_assy}"`,
-                    `"${row.line_conveyor}"`,
-                    `"${row.konveyor}"`,
-                    `"${row.jenis_defect.replace(/"/g, '""')}"`,
-                    `"${row.jenis_sub_defect.replace(/"/g, '""')}"`,
-                    `"${row.quantity}"`
-                ].join(",");
-                csvContent += csvRow + "\n";
-            });
-            
-            // Download payload setup
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", "report_pre_assy_" + new Date().toISOString().slice(0,10) + ".csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            window.location.href = url;
         }
     </script>
 </body>

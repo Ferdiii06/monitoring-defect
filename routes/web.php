@@ -25,9 +25,12 @@ Route::post('/add-account', [\App\Http\Controllers\AccountController::class, 'st
 
 // Final Assy Report route
 Route::get('/final-assy', [\App\Http\Controllers\ReportController::class, 'index'])->name('final_assy.index');
+Route::get('/final-assy/export', [\App\Http\Controllers\ReportController::class, 'exportFinalAssy'])->name('final_assy.export');
 
 // Pre Assy Report route
 Route::get('/pre-assy', [\App\Http\Controllers\ReportController::class, 'preAssy'])->name('pre_assy.index');
+Route::get('/pre-assy/export', [\App\Http\Controllers\ReportController::class, 'exportPreAssy'])->name('pre_assy.export');
 
 // Log System route
 Route::get('/log-system', [\App\Http\Controllers\ReportController::class, 'logSystem'])->name('log_system.index');
+Route::get('/log-system/export', [\App\Http\Controllers\ReportController::class, 'exportLogSystem'])->name('log_system.export');

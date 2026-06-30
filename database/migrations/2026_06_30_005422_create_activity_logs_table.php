@@ -11,16 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('defects', function (Blueprint $table) {
+        Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
             $table->dateTime('waktu');
             $table->string('user_name');
-            $table->string('jenis_assy'); // Final Assy, Pre Assy
-            $table->string('line_conveyor');
-            $table->string('konveyor');
-            $table->string('jenis_defect');
-            $table->string('jenis_sub_defect');
-            $table->integer('quantity');
+            $table->string('jenis_aksi'); // Create Report, Delete Report, Update Report, Create Account
+            $table->text('aktivitas');
+            $table->string('jenis_defect')->nullable();
+            $table->string('ip_address');
             $table->timestamps();
         });
     }
@@ -30,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('defects');
+        Schema::dropIfExists('activity_logs');
     }
 };

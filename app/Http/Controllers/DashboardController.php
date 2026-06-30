@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Defect;
+use App\Models\User;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     /**
-     * Display the admin dashboard with static mock data.
+     * Display the admin dashboard with database data.
      */
     public function index()
     {
@@ -15,54 +18,14 @@ class DashboardController extends Controller
             return redirect('/');
         }
 
-        $totalDefect = 1250;
-        $defectToday = 72;
-        $activeUsers = 12;
-        $totalUsers = 45;
+        // Hitung statistik dari database
+        $totalDefect = Defect::sum('quantity');
+        $defectToday = Defect::whereDate('waktu', Carbon::today())->sum('quantity');
+        $activeUsers = User::count();
+        $totalUsers = User::count();
 
-        // Static recent defects logs (matching screenshot exactly)
-        $recentDefects = [
-            (object)[
-                'waktu' => '2026-06-26 18:45:21',
-                'user_name' => 'Budi Santoso',
-                'jenis_assy' => 'Final Assy',
-                'line_conveyor' => 'Toyota',
-                'konveyor' => '664W-C5',
-                'jenis_defect' => 'INSERT CIRCUIT',
-                'jenis_sub_defect' => 'CROSS CIRCUIT',
-                'quantity' => 1,
-            ],
-            (object)[
-                'waktu' => '2026-06-26 16:30:10',
-                'user_name' => 'Siti Nurhaliza',
-                'jenis_assy' => 'Pre Assy',
-                'line_conveyor' => 'Toyota',
-                'konveyor' => '664W-C5',
-                'jenis_defect' => 'CORE',
-                'jenis_sub_defect' => 'FRAYING',
-                'quantity' => 1,
-            ],
-            (object)[
-                'waktu' => '2026-06-26 16:15:32',
-                'user_name' => 'Ahmad Fauzi',
-                'jenis_assy' => 'Pre Assy',
-                'line_conveyor' => 'Nissan',
-                'konveyor' => 'P33A-B1.BAT',
-                'jenis_defect' => 'TERMINAL',
-                'jenis_sub_defect' => 'TERGORES',
-                'quantity' => 1,
-            ],
-            (object)[
-                'waktu' => '2026-06-26 16:05:11',
-                'user_name' => 'Dewi Lestari',
-                'jenis_assy' => 'Final Assy',
-                'line_conveyor' => 'Nissan',
-                'konveyor' => 'P33A-B1.BAT',
-                'jenis_defect' => 'MISSING PART',
-                'jenis_sub_defect' => 'MISSING CLIP',
-                'quantity' => 1,
-            ],
-        ];
+        // Mengambil 4 data defect terbaru secara riil
+        $recentDefects = Defect::orderBy('waktu', 'desc')->take(4)->get();
 
         return view('dashboard', compact(
             'totalDefect',
