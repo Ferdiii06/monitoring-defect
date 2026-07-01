@@ -65,7 +65,7 @@ class ReportController extends Controller
 
         // Terapkan Filter Konveyor
         if ($selectedConveyor && $selectedConveyor !== 'all') {
-            $query->where('konveyor', $selectedConveyor);
+            $query->where('conveyor', $selectedConveyor);
         }
 
         // 4. Ambil opsi filter unik langsung dari DB
@@ -152,7 +152,7 @@ class ReportController extends Controller
 
         // Terapkan Filter Konveyor
         if ($selectedConveyor && $selectedConveyor !== 'all') {
-            $query->where('konveyor', $selectedConveyor);
+            $query->where('conveyor', $selectedConveyor);
         }
 
         // 4. Ambil opsi filter unik langsung dari DB

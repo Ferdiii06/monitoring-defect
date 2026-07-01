@@ -54,7 +54,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
         }
 
         if ($selectedConveyor && $selectedConveyor !== 'all') {
-            $query->where('konveyor', $selectedConveyor);
+            $query->where('conveyor', $selectedConveyor);
         }
 
         return $query->orderBy('waktu', 'desc');
@@ -83,7 +83,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             $row->user_name,
             $row->jenis_assy,
             $row->line_conveyor,
-            $row->konveyor,
+            $row->conveyor,
             $row->jenis_defect,
             $row->jenis_sub_defect,
             $row->quantity,

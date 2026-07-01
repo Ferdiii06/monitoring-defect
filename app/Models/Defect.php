@@ -17,7 +17,7 @@ class Defect extends Model
         'jenis_assy',
         'line_conveyor',
         'jenis_mobil',
-        'konveyor',
+        'conveyor',
         'jenis_defect',
         'jenis_sub_defect',
         'quantity',

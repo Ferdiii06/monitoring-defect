@@ -54,7 +54,7 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
         }
 
         if ($selectedConveyor && $selectedConveyor !== 'all') {
-            $query->where('konveyor', $selectedConveyor);
+            $query->where('conveyor', $selectedConveyor);
         }
 
         return $query->orderBy('waktu', 'desc');
@@ -83,7 +83,7 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
             $row->user_name,
             $row->jenis_assy,
             $row->line_conveyor,
-            $row->konveyor,
+            $row->conveyor,
             $row->jenis_defect,
             $row->jenis_sub_defect,
             $row->quantity,
