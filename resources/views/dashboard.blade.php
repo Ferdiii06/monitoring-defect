@@ -10,6 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Pusher & Laravel Echo for Real-time -->
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.4.0/dist/web/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.19.0/dist/echo.iife.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -114,6 +117,12 @@
                 <h1 class="text-2xl font-bold text-gray-900 leading-tight">Dashboard</h1>
                 <p class="text-sm text-gray-500 mt-1">Monitoring real-time data defect dan aktivitas sistem.</p>
             </div>
+
+            <!-- WebSocket Status Badge -->
+            <div id="ws-status" class="flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-400">
+                <span id="ws-dot" class="w-2 h-2 rounded-full bg-gray-400"></span>
+                <span id="ws-text">Menghubungkan...</span>
+            </div>
             
             <div class="flex items-center space-x-6">
                 <!-- Add Account Button -->
@@ -142,7 +151,7 @@
 
         <!-- Success Alert Banner -->
         @if (session('success'))
-            <div class="mb-6 bg-green-50 text-green-700 text-sm font-semibold p-4 rounded-xl border border-green-200 flex items-center space-x-2 shadow-sm">
+            <div class="mb-6 bg-green-50 text-green-700 text-sm font-semibold p-4 rounded-lg border border-green-200 flex items-center space-x-2 shadow-sm">
                 <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
@@ -153,7 +162,7 @@
         <!-- KPI Cards Grid -->
         <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Card 1: Total Defect -->
-            <div class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex items-center space-x-4">
+            <div class="bg-white border border-gray-100 rounded-lg p-5 shadow-sm flex items-center space-x-4">
                 <div class="w-12 h-12 rounded-lg bg-[#fff2f2] flex items-center justify-center text-[#8b0000] shrink-0">
                     <!-- List menu icon -->
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -168,7 +177,7 @@
             </div>
 
             <!-- Card 2: Defect Hari Ini -->
-            <div class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex items-center space-x-4">
+            <div class="bg-white border border-gray-100 rounded-lg p-5 shadow-sm flex items-center space-x-4">
                 <div class="w-12 h-12 rounded-lg bg-[#eff6ff] flex items-center justify-center text-blue-600 shrink-0">
                     <!-- Chart icon -->
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -183,7 +192,7 @@
             </div>
 
             <!-- Card 3: Active Users -->
-            <div class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex items-center space-x-4">
+            <div class="bg-white border border-gray-100 rounded-lg p-5 shadow-sm flex items-center space-x-4">
                 <div class="w-12 h-12 rounded-lg bg-[#f0fdf4] flex items-center justify-center text-green-600 shrink-0">
                     <!-- Lightning icon -->
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -198,7 +207,7 @@
             </div>
 
             <!-- Card 4: Total Users -->
-            <div class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm flex items-center space-x-4">
+            <div class="bg-white border border-gray-100 rounded-lg p-5 shadow-sm flex items-center space-x-4">
                 <div class="w-12 h-12 rounded-lg bg-[#faf5ff] flex items-center justify-center text-purple-600 shrink-0">
                     <!-- Users icon -->
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -214,7 +223,7 @@
         </section>
 
         <!-- Defect Trend Section -->
-        <section class="bg-white border border-gray-100 rounded-xl p-6 mb-8 shadow-sm">
+        <section class="bg-white border border-gray-100 rounded-lg p-6 mb-8 shadow-sm">
             <h2 class="text-base font-semibold text-gray-950 mb-4">Defect Trend</h2>
             
             <div class="border border-gray-100 rounded-lg p-6">
@@ -224,10 +233,10 @@
                     <div class="flex items-center space-x-4">
                         <!-- Dropdown Select -->
                         <div class="relative">
-                            <select class="appearance-none border border-gray-200 rounded-md text-xs font-semibold text-gray-600 px-3 pr-8 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer">
-                                <option>BULAN INI</option>
-                                <option>MINGGU INI</option>
-                                <option>HARI INI</option>
+                            <select id="periodSelect" class="appearance-none border border-gray-200 rounded-md text-xs font-semibold text-gray-600 px-3 pr-8 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer">
+                                <option value="month">BULAN INI</option>
+                                <option value="week">MINGGU INI</option>
+                                <option value="today">HARI INI</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -255,7 +264,7 @@
         </section>
 
         <!-- Recent Defect Section -->
-        <section class="bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
+        <section class="bg-white border border-gray-100 rounded-lg p-6 shadow-sm">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-base font-semibold text-gray-950">Recent Defect</h2>
                 <a href="#" class="text-xs font-bold text-[#8b0000] hover:text-[#600000] flex items-center space-x-1 hover:underline">
@@ -273,17 +282,19 @@
                         <tr class="border-b border-gray-200">
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2">Waktu</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">User</th>
+                            <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Shift</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Assy</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Data Mobil</th>
+                            <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Defect</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Sub Defect</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2">Quantity</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="recentDefectsBody">
                         @forelse($recentDefects as $defect)
-                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
+                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="{{ $defect->external_id ?? $defect->id }}">
                                 <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium">
                                     <div class="text-xs leading-normal">
                                         <span class="block text-gray-900">{{ \Carbon\Carbon::parse($defect->waktu)->translatedFormat('d F Y') }}</span>
@@ -292,6 +303,9 @@
                                 </td>
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4">
                                     {{ $defect->user_name }}
+                                </td>
+                                <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">
+                                    {{ $defect->shift ?? '-' }}
                                 </td>
                                 <td class="py-4 text-sm font-medium px-4">
                                     @if($defect->jenis_assy === 'Final Assy')
@@ -306,6 +320,9 @@
                                 </td>
                                 <td class="py-4 text-sm text-gray-950 font-bold px-4">
                                     {{ $defect->line_conveyor }}
+                                </td>
+                                <td class="py-4 text-sm text-gray-950 font-bold px-4">
+                                    {{ $defect->jenis_mobil ?? '-' }}
                                 </td>
                                 <td class="py-4 text-sm font-bold px-4">
                                     <span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
@@ -323,8 +340,8 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="8" class="py-6 text-center text-sm text-gray-500 font-medium">Tidak ada data defect terbaru.</td>
+                            <tr id="emptyRow">
+                                <td colspan="10" class="py-6 text-center text-sm text-gray-500 font-medium">Tidak ada data defect terbaru.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -343,39 +360,33 @@
             gradient.addColorStop(0, 'rgba(139, 0, 0, 0.25)');   // Deep red with opacity
             gradient.addColorStop(1, 'rgba(139, 0, 0, 0.00)');   // Completely transparent
 
-            const data = {
-                labels: ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'],
-                datasets: [{
-                    label: 'Defect Counts',
-                    data: [20, 32, 28, 42, 45, 60, 52, 30, 42, 48, 38, 50, 42, 38, 52, 58, 80, 88], // Match trend coordinates of screenshot
-                    // Extra elements added to map custom interpolation points between standard hour labels
-                    data: [20, 32, 28, 45, 60, 52, 28, 38, 48, 58, 54, 32, 28, 45, 50, 72, 84, 88],
-                    borderColor: '#8b0000',
-                    borderWidth: 2,
-                    fill: true,
-                    backgroundColor: gradient,
-                    tension: 0.4, // Smooth curve
-                    pointBackgroundColor: '#8b0000',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointHoverBorderWidth: 3,
-                }]
+            // Dynamic Chart Data from database
+            const chartData = {
+                today: {
+                    labels: [
+                        '00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', 
+                        '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', 
+                        '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
+                    ],
+                    data: @json($todayData)
+                },
+                week: {
+                    labels: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
+                    data: @json($weekData)
+                },
+                month: {
+                    labels: ['Tgl 1-5', 'Tgl 6-10', 'Tgl 11-15', 'Tgl 16-20', 'Tgl 21-25', 'Tgl 26+'],
+                    data: @json($monthData)
+                }
             };
-
-            // Interpolate labels to support multiple coordinate points
-            const interpolatedLabels = [
-                '08:00', '', '09:00', '', '10:00', '', '11:00', '', '12:00', '', '13:00', '', '14:00', '', '15:00', '', '16:00', '', '17:00'
-            ];
 
             const config = {
                 type: 'line',
                 data: {
-                    labels: interpolatedLabels.slice(0, 18),
+                    labels: chartData.month.labels,
                     datasets: [{
                         label: 'Defect Trend',
-                        data: [20, 32, 28, 38, 42, 60, 52, 28, 38, 48, 58, 54, 32, 28, 45, 50, 72, 88],
+                        data: chartData.month.data,
                         borderColor: '#8b0000',
                         borderWidth: 2,
                         fill: true,
@@ -417,10 +428,9 @@
                             }
                         },
                         y: {
-                            min: 0,
-                            max: 100,
+                            beginAtZero: true,
                             ticks: {
-                                stepSize: 20,
+                                precision: 0,
                                 color: '#9ca3af',
                                 font: {
                                     size: 10,
@@ -436,7 +446,166 @@
             };
 
             const defectChart = new Chart(ctx, config);
+
+            // Dynamic period switcher
+            const periodSelect = document.getElementById("periodSelect");
+            periodSelect.addEventListener("change", function () {
+                const selected = this.value;
+                const period = chartData[selected];
+                
+                defectChart.data.labels = period.labels;
+                defectChart.data.datasets[0].data = period.data;
+                defectChart.update();
+            });
         });
+    </script>
+
+    <!-- Real-time WebSocket Listener -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const wsStatus = document.getElementById('ws-status');
+        const wsDot = document.getElementById('ws-dot');
+        const wsText = document.getElementById('ws-text');
+
+        try {
+            const echo = new Echo({
+                broadcaster: 'pusher',
+                key: '{{ config("services.reverb.app_key") }}',
+                wsHost: '{{ config("services.reverb.host") }}',
+                wsPort: {{ config('services.reverb.port') }},
+                wssPort: {{ config('services.reverb.port') }},
+                forceTLS: false,
+                encrypted: false,
+                disableStats: true,
+                enabledTransports: ['ws', 'wss'],
+                cluster: 'mt1',
+            });
+
+            // Connection status tracking
+            echo.connector.pusher.connection.bind('connected', function() {
+                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-600';
+                wsDot.className = 'w-2 h-2 rounded-full bg-green-500 animate-pulse';
+                wsText.textContent = 'Terhubung';
+                console.log('[WebSocket] Connected to monitoring-channel');
+            });
+
+            echo.connector.pusher.connection.bind('disconnected', function() {
+                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-500';
+                wsDot.className = 'w-2 h-2 rounded-full bg-red-500';
+                wsText.textContent = 'Terputus';
+                console.log('[WebSocket] Disconnected');
+            });
+
+            echo.connector.pusher.connection.bind('error', function(err) {
+                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-500';
+                wsDot.className = 'w-2 h-2 rounded-full bg-red-500';
+                wsText.textContent = 'Error';
+                console.error('[WebSocket] Error:', err);
+            });
+
+            // Listen to monitoring channel
+            echo.channel('monitoring-channel')
+                .listen('.laporan.updated', function(e) {
+                    console.log('[WebSocket] Event received:', e);
+                    const action = e.action;
+                    const laporan = e.laporan;
+
+                    if (action === 'created') {
+                        addRowToTable(laporan);
+                        updateKPICards(laporan.jumlah || laporan.quantity || 1, 'add');
+                    } else if (action === 'updated') {
+                        updateRowInTable(laporan);
+                    } else if (action === 'deleted') {
+                        deleteRowFromTable(laporan.id);
+                        updateKPICards(laporan.jumlah || laporan.quantity || 1, 'subtract');
+                    }
+                });
+
+        } catch(err) {
+            console.warn('[WebSocket] Failed to initialize:', err);
+            wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-600';
+            wsDot.className = 'w-2 h-2 rounded-full bg-yellow-500';
+            wsText.textContent = 'Offline';
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+        }
+
+        function formatTime(dateStr) {
+            const d = new Date(dateStr);
+            return d.toTimeString().substring(0, 8);
+        }
+
+        function addRowToTable(item) {
+            const tbody = document.getElementById('recentDefectsBody');
+            if (!tbody) return;
+
+            // Remove empty row if present
+            const emptyRow = document.getElementById('emptyRow');
+            if (emptyRow) emptyRow.remove();
+
+            const waktu = item.created_at || item.tanggal || new Date().toISOString();
+            const jenisAssy = item.type || item.jenis_assy || 'Final Assy';
+            const assyBadge = jenisAssy === 'Final Assy'
+                ? '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#e8fbf2] text-[#0f5132]">Final Assy</span>'
+                : '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#fdf2f2] text-[#842029]">Pre Assy</span>';
+
+            const tr = document.createElement('tr');
+            tr.className = 'border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors';
+            tr.setAttribute('data-id', item.id);
+            tr.style.backgroundColor = '#fffbeb';
+            setTimeout(() => { tr.style.backgroundColor = ''; tr.style.transition = 'background-color 1s'; }, 2000);
+
+            tr.innerHTML = `
+                <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(waktu)}</span></div></td>
+                <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.nama_user || item.user_name || '-'}</td>
+                <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
+                <td class="py-4 text-sm font-medium px-4">${assyBadge}</td>
+                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.line || item.line_conveyor || '-'}</td>
+                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
+                <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || item.konveyor || '-'}</span></td>
+                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
+                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.sub_defect || item.jenis_sub_defect || '-'}</td>
+                <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">${item.jumlah || item.quantity || 0}</td>
+            `;
+
+            tbody.insertBefore(tr, tbody.firstChild);
+
+            // Keep only 4 recent rows
+            while (tbody.children.length > 4) {
+                tbody.removeChild(tbody.lastChild);
+            }
+        }
+
+        function updateRowInTable(item) {
+            const row = document.querySelector(`tr[data-id="${item.id}"]`);
+            if (row) {
+                row.remove();
+                addRowToTable(item);
+            }
+        }
+
+        function deleteRowFromTable(id) {
+            const row = document.querySelector(`tr[data-id="${id}"]`);
+            if (row) {
+                row.style.backgroundColor = '#fef2f2';
+                setTimeout(() => row.remove(), 500);
+            }
+        }
+
+        function updateKPICards(quantity, operation) {
+            // Update Total Defect card
+            const totalEl = document.querySelector('section.grid span.text-2xl');
+            if (totalEl) {
+                let current = parseInt(totalEl.textContent.replace(/\./g, '')) || 0;
+                current = operation === 'add' ? current + quantity : Math.max(0, current - quantity);
+                totalEl.textContent = current.toLocaleString('id-ID');
+            }
+        }
+    });
     </script>
 </body>
 </html>

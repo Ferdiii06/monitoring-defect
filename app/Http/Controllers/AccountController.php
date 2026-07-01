@@ -34,7 +34,7 @@ class AccountController extends Controller
             'name' => 'required|string|max:255',
             'pin' => 'required|string|size:6',
             'shift' => 'required|string',
-            'jabatan' => 'required|string',
+            'role' => 'required|string|in:Admin,User',
         ]);
 
         // Statically trigger success flash message (no database insertion)

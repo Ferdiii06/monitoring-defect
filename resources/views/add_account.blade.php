@@ -109,13 +109,13 @@
         </header>
 
         <!-- Form Card Container -->
-        <section class="max-w-4xl bg-white border border-gray-100 rounded-2xl p-8 shadow-sm">
+        <section class="max-w-4xl bg-white border border-gray-100 rounded-lg p-8 shadow-sm">
             <form action="{{ route('account.store') }}" method="POST" class="space-y-6">
                 @csrf
 
                 <!-- Validation Errors list -->
                 @if ($errors->any())
-                    <div class="bg-red-50 text-[#8b0000] text-xs font-semibold p-4 rounded-xl border border-red-200">
+                    <div class="bg-red-50 text-[#8b0000] text-xs font-semibold p-4 rounded-lg border border-red-200">
                         <ul class="list-disc pl-5 space-y-1">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
@@ -170,18 +170,15 @@
                         </div>
                     </div>
 
-                    <!-- Input 4: Jabatan Dropdown -->
+                    <!-- Input 4: Role Dropdown -->
                     <div>
-                        <label for="jabatan" class="block text-sm font-bold text-gray-700 mb-2">Jabatan</label>
+                        <label for="role" class="block text-sm font-bold text-gray-700 mb-2">Role</label>
                         <div class="relative">
-                            <select id="jabatan" name="jabatan" required
+                            <select id="role" name="role" required
                                 class="w-full appearance-none border border-gray-200 rounded-lg p-3 pr-10 text-sm bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer">
-                                <option value="" disabled selected>Pilih Jabatan</option>
-                                <option value="Operator" {{ old('jabatan') == 'Operator' ? 'selected' : '' }}>Operator</option>
-                                <option value="Leader" {{ old('jabatan') == 'Leader' ? 'selected' : '' }}>Leader</option>
-                                <option value="Foreman" {{ old('jabatan') == 'Foreman' ? 'selected' : '' }}>Foreman</option>
-                                <option value="Supervisor" {{ old('jabatan') == 'Supervisor' ? 'selected' : '' }}>Supervisor</option>
-                                <option value="Admin" {{ old('jabatan') == 'Admin' ? 'selected' : '' }}>Admin</option>
+                                <option value="" disabled selected>Pilih Role</option>
+                                <option value="Admin" {{ old('role') == 'Admin' ? 'selected' : '' }}>Admin</option>
+                                <option value="User" {{ old('role') == 'User' ? 'selected' : '' }}>User</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

@@ -11,6 +11,9 @@
     <!-- Flatpickr (Date Range Picker) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- Pusher & Laravel Echo for Real-time -->
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.4.0/dist/web/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.19.0/dist/echo.iife.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -29,6 +32,11 @@
         }
         .overflow-x-auto::-webkit-scrollbar-thumb:hover {
             background: #9ca3af;
+        }
+        /* Custom Select Option colors */
+        select option {
+            background-color: #ffffff;
+            color: #111827; /* text-gray-900 */
         }
     </style>
 </head>
@@ -109,6 +117,12 @@
                 <h1 class="text-2xl font-bold text-gray-900 leading-tight">Report Pre Assy</h1>
                 <p class="text-sm text-gray-500 mt-1">Riwayat aktivitas defect pre assy secara real-time.</p>
             </div>
+
+            <!-- WebSocket Status Badge -->
+            <div id="ws-status" class="flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-400">
+                <span id="ws-dot" class="w-2 h-2 rounded-full bg-gray-400"></span>
+                <span id="ws-text">Menghubungkan...</span>
+            </div>
             
             <div class="flex items-center space-x-6">
                 <!-- Admin Profile Card -->
@@ -127,7 +141,7 @@
         </header>
 
         <!-- Filters and Table Container -->
-        <section class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex-1 flex flex-col justify-between">
+        <section class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm flex-1 flex flex-col justify-between">
             
             <div>
                 <!-- Form Filter -->
@@ -137,23 +151,23 @@
                     <div class="flex flex-wrap items-center gap-3">
                         <!-- Date Range Picker -->
                         <div class="relative min-w-[240px]">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#8b0000]">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
                             </span>
-                            <input type="text" id="date_range" name="date_range" placeholder="Pilih Tanggal" value="{{ $dateRange }}" readonly class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-xs font-medium text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
+                            <input type="text" id="date_range" name="date_range" placeholder="Pilih Tanggal" value="{{ $dateRange }}" readonly class="w-full pl-10 pr-4 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
                         </div>
 
                         <!-- Defect Select -->
                         <div class="relative min-w-[150px]">
-                            <select name="defect" onchange="this.form.submit()" class="w-full appearance-none pl-4 pr-10 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
+                            <select name="defect" onchange="this.form.submit()" class="w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
                                 <option value="all">Semua Defect</option>
                                 @foreach($defectOptions as $option)
                                     <option value="{{ $option }}" {{ $selectedDefect === $option ? 'selected' : '' }}>{{ $option }}</option>
                                 @endforeach
                             </select>
-                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000]">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
@@ -162,13 +176,13 @@
 
                         <!-- Mobil Select -->
                         <div class="relative min-w-[130px]">
-                            <select id="mobilSelect" name="line" class="w-full appearance-none pl-4 pr-10 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
+                            <select id="mobilSelect" name="line" class="w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
                                 <option value="all">Semua Mobil</option>
                                 @foreach($lineOptions as $option)
                                     <option value="{{ $option }}" {{ (string)$selectedLine === (string)$option ? 'selected' : '' }}>{{ $option }}</option>
                                 @endforeach
                             </select>
-                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000]">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
@@ -177,10 +191,10 @@
 
                         <!-- Conveyor Select -->
                         <div class="relative min-w-[150px]">
-                            <select id="conveyorSelect" name="conveyor" onchange="this.form.submit()" class="w-full appearance-none pl-4 pr-10 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed">
+                            <select id="conveyorSelect" name="conveyor" onchange="this.form.submit()" class="peer w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer disabled:bg-gray-100 disabled:border-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
                                 <option value="all">Semua Konveyor</option>
                             </select>
-                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000] peer-disabled:text-gray-300">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
@@ -199,7 +213,7 @@
                     </div>
 
                     <!-- Export Button -->
-                    <button type="button" onclick="exportExcel()" class="bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition duration-200 shadow-sm flex items-center space-x-2">
+                    <button type="button" onclick="exportExcel()" class="bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold px-5 py-2.5 rounded-lg transition duration-200 shadow-sm flex items-center space-x-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
@@ -214,16 +228,18 @@
                             <tr class="border-b border-gray-200">
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2">Waktu</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">User</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Shift</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Data Mobil</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Sub Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2">Quantity</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="reportTableBody">
                             @forelse($records as $record)
-                                <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
+                                <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="{{ $record->external_id ?? $record->id }}">
                                     <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium">
                                         <div class="text-xs leading-normal">
                                             <span class="block text-gray-900">{{ \Carbon\Carbon::parse($record->waktu)->translatedFormat('d F Y') }}</span>
@@ -233,8 +249,14 @@
                                     <td class="py-4 text-sm text-gray-900 font-bold px-4">
                                         {{ $record->user_name }}
                                     </td>
+                                    <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">
+                                        {{ $record->shift ?? '-' }}
+                                    </td>
                                     <td class="py-4 text-sm text-gray-950 font-bold px-4">
                                         {{ $record->line_conveyor }}
+                                    </td>
+                                    <td class="py-4 text-sm text-gray-950 font-bold px-4">
+                                        {{ $record->jenis_mobil ?? '-' }}
                                     </td>
                                     <td class="py-4 text-sm font-bold px-4">
                                         <span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
@@ -253,7 +275,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
+                                    <td colspan="9" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -342,7 +364,113 @@
             ]
         };
 
+        function convertToCustomSelect(selectEl) {
+            // Hide original select
+            selectEl.classList.add('hidden');
+            
+            // Create wrapper
+            const wrapper = document.createElement('div');
+            wrapper.className = 'w-full relative';
+            selectEl.parentNode.insertBefore(wrapper, selectEl);
+            wrapper.appendChild(selectEl); // move select inside wrapper
+            
+            // Create trigger button
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = selectEl.className.replace('hidden', '') + ' text-left w-full';
+            
+            const labelSpan = document.createElement('span');
+            button.appendChild(labelSpan);
+            wrapper.appendChild(button);
+            
+            // Create dropdown list container
+            const listContainer = document.createElement('div');
+            listContainer.className = 'absolute z-50 left-0 right-0 mt-1 bg-white border border-[#8b0000] rounded-lg shadow-lg max-h-60 overflow-y-auto hidden custom-select-list';
+            wrapper.appendChild(listContainer);
+            
+            function renderOptions() {
+                listContainer.innerHTML = '';
+                const options = selectEl.options;
+                const selectedIndex = selectEl.selectedIndex;
+                
+                labelSpan.textContent = selectedIndex >= 0 ? options[selectedIndex].text : '';
+                
+                for (let i = 0; i < options.length; i++) {
+                    const opt = options[i];
+                    const item = document.createElement('div');
+                    
+                    if (i === selectedIndex) {
+                        item.className = 'px-4 py-2 text-xs font-semibold text-gray-900 hover:bg-[#8b0000] hover:text-white cursor-pointer transition-colors duration-75';
+                    } else {
+                        item.className = 'px-4 py-2 text-xs font-semibold text-gray-900 hover:bg-[#8b0000] hover:text-white cursor-pointer transition-colors duration-75';
+                    }
+                    
+                    if (opt.disabled) {
+                        item.className = 'px-4 py-2 text-xs font-semibold text-gray-400 bg-gray-50 cursor-not-allowed';
+                    }
+                    
+                    item.textContent = opt.text;
+                    
+                    if (!opt.disabled) {
+                        item.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            selectEl.selectedIndex = i;
+                            selectEl.dispatchEvent(new Event('change'));
+                            listContainer.classList.add('hidden');
+                        });
+                    }
+                    listContainer.appendChild(item);
+                }
+            }
+            
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (selectEl.disabled) return;
+                
+                document.querySelectorAll('.custom-select-list').forEach(list => {
+                    if (list !== listContainer) list.classList.add('hidden');
+                });
+                
+                listContainer.classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', () => {
+                listContainer.classList.add('hidden');
+            });
+            
+            renderOptions();
+            
+            const observer = new MutationObserver(() => {
+                renderOptions();
+            });
+            observer.observe(selectEl, { childList: true });
+            
+            const disabledObserver = new MutationObserver(() => {
+                if (selectEl.disabled) {
+                    button.setAttribute('disabled', 'disabled');
+                    button.classList.add('bg-gray-100', 'border-gray-200', 'text-gray-400', 'cursor-not-allowed');
+                    button.classList.remove('bg-white', 'border-[#8b0000]', 'text-gray-900', 'cursor-pointer');
+                } else {
+                    button.removeAttribute('disabled');
+                    button.classList.remove('bg-gray-100', 'border-gray-200', 'text-gray-400', 'cursor-not-allowed');
+                    button.classList.add('bg-white', 'border-[#8b0000]', 'text-gray-900', 'cursor-pointer');
+                }
+            });
+            disabledObserver.observe(selectEl, { attributes: true, attributeFilter: ['disabled'] });
+            
+            if (selectEl.disabled) {
+                button.setAttribute('disabled', 'disabled');
+                button.classList.add('bg-gray-100', 'border-gray-200', 'text-gray-400', 'cursor-not-allowed');
+                button.classList.remove('bg-white', 'border-[#8b0000]', 'text-gray-900', 'cursor-pointer');
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
+            // Convert native selects to custom selects
+            document.querySelectorAll('#filterForm select').forEach(select => {
+                convertToCustomSelect(select);
+            });
+
             // Flatpickr setup
             flatpickr("#date_range", {
                 mode: "range",
@@ -418,6 +546,66 @@
             
             window.location.href = url;
         }
+    </script>
+
+    <!-- Real-time WebSocket Listener -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const wsStatus = document.getElementById('ws-status');
+        const wsDot = document.getElementById('ws-dot');
+        const wsText = document.getElementById('ws-text');
+
+        try {
+            const echo = new Echo({
+                broadcaster: 'pusher',
+                key: '{{ config("services.reverb.app_key") }}',
+                wsHost: '{{ config("services.reverb.host") }}',
+                wsPort: {{ config('services.reverb.port') }},
+                wssPort: {{ config('services.reverb.port') }},
+                forceTLS: false,
+                encrypted: false,
+                disableStats: true,
+                enabledTransports: ['ws', 'wss'],
+                cluster: 'mt1',
+            });
+
+            echo.connector.pusher.connection.bind('connected', function() {
+                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-600';
+                wsDot.className = 'w-2 h-2 rounded-full bg-green-500 animate-pulse';
+                wsText.textContent = 'Terhubung';
+            });
+
+            echo.connector.pusher.connection.bind('disconnected', function() {
+                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-500';
+                wsDot.className = 'w-2 h-2 rounded-full bg-red-500';
+                wsText.textContent = 'Terputus';
+            });
+
+            echo.connector.pusher.connection.bind('error', function() {
+                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-500';
+                wsDot.className = 'w-2 h-2 rounded-full bg-red-500';
+                wsText.textContent = 'Error';
+            });
+
+            echo.channel('monitoring-channel')
+                .listen('.laporan.updated', function(e) {
+                    const laporan = e.laporan;
+                    if (e.action === 'created' && (laporan.type === 'Pre Assy' || laporan.jenis_assy === 'Pre Assy')) {
+                        location.reload();
+                    } else if (e.action === 'deleted') {
+                        const row = document.querySelector(`tr[data-id="${laporan.id}"]`);
+                        if (row) { row.style.backgroundColor = '#fef2f2'; setTimeout(() => row.remove(), 500); }
+                    } else if (e.action === 'updated') {
+                        location.reload();
+                    }
+                });
+
+        } catch(err) {
+            wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-600';
+            wsDot.className = 'w-2 h-2 rounded-full bg-yellow-500';
+            wsText.textContent = 'Offline';
+        }
+    });
     </script>
 </body>
 </html>

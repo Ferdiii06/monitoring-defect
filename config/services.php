@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'external_api' => [
+        'url' => env('EXTERNAL_API_URL', 'http://192.168.1.60:8000/api'),
+    ],
+
+    'reverb' => [
+        'app_key' => env('REVERB_APP_KEY', 'monitoring-key-2026'),
+        'host' => env('REVERB_HOST', '192.168.1.60'),
+        'port' => env('REVERB_PORT', 8080),
+        'scheme' => env('REVERB_SCHEME', 'http'),
+    ],
+
 ];

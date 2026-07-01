@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Defect;
 use App\Models\ActivityLog;
+use App\Services\ExternalApiService;
 use Carbon\Carbon;
 use App\Exports\FinalAssyExport;
 use App\Exports\PreAssyExport;
@@ -20,6 +21,13 @@ class ReportController extends Controller
     {
         if (!session('logged_in')) {
             return redirect('/');
+        }
+
+        // Sync data dari API eksternal ke database lokal
+        try {
+            ExternalApiService::syncFromApi();
+        } catch (\Exception $e) {
+            \Log::warning('FinalAssy: External API sync skipped - ' . $e->getMessage());
         }
 
         // 1. Buat Query awal
@@ -100,6 +108,13 @@ class ReportController extends Controller
     {
         if (!session('logged_in')) {
             return redirect('/');
+        }
+
+        // Sync data dari API eksternal ke database lokal
+        try {
+            ExternalApiService::syncFromApi();
+        } catch (\Exception $e) {
+            \Log::warning('PreAssy: External API sync skipped - ' . $e->getMessage());
         }
 
         // 1. Buat Query awal
