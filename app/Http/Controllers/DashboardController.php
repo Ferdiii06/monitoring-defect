@@ -29,8 +29,8 @@ class DashboardController extends Controller
         // Hitung statistik dari database
         $totalDefect = Defect::sum('quantity');
         $defectToday = Defect::whereDate('waktu', Carbon::today())->sum('quantity');
-        $activeUsers = User::count();
-        $totalUsers = User::count();
+        $activeUsers = Defect::whereDate('waktu', Carbon::today())->distinct('user_name')->count('user_name');
+        $totalUsers = Defect::distinct('user_name')->count('user_name');
 
         // Mengambil 4 data defect terbaru secara riil
         $recentDefects = Defect::orderBy('waktu', 'desc')->take(4)->get();

@@ -10,3 +10,5 @@ Route::get('/user', function (Request $request) {
 
 // Route API untuk menyimpan defect baru dari Flutter
 Route::post('/defects', [DefectApiController::class, 'store']);
+Route::post('/defects/delete-external', [DefectApiController::class, 'deleteExternal']);
+Route::get('/dashboard/stats', [DefectApiController::class, 'getStats']);

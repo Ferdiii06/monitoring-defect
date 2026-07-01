@@ -40,7 +40,7 @@ return [
     ],
 
     'reverb' => [
-        'app_key' => env('REVERB_APP_KEY', 'monitoring-key-2026'),
+        'app_key' => env('REVERB_APP_KEY', '1gi3yz9q2lygpvt3vvpu'),
         'host' => env('REVERB_HOST', '192.168.1.60'),
         'port' => env('REVERB_PORT', 8080),
         'scheme' => env('REVERB_SCHEME', 'http'),

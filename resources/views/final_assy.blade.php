@@ -286,7 +286,7 @@
             <!-- Footer Pagination Row -->
             <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-100 pt-6 mt-6 gap-4">
                 <span class="text-xs font-semibold text-gray-400">
-                    Menampilkan {{ count($records) }} dari {{ $totalItems }} entri
+                    Menampilkan <span id="visible-count">{{ count($records) }}</span> dari <span id="total-count">{{ $totalItems }}</span> entri
                 </span>
                 
                 <!-- Pagination Buttons -->
@@ -590,15 +590,95 @@
             echo.channel('monitoring-channel')
                 .listen('.laporan.updated', function(e) {
                     const laporan = e.laporan;
-                    if (e.action === 'created' && (laporan.type === 'Final Assy' || laporan.jenis_assy === 'Final Assy')) {
-                        location.reload();
+                    const isFinalAssy = laporan.type === 'Final Assy' || laporan.jenis_assy === 'Final Assy';
+                    
+                    if (e.action === 'created' && isFinalAssy) {
+                        addRowToTable(laporan);
                     } else if (e.action === 'deleted') {
                         const row = document.querySelector(`tr[data-id="${laporan.id}"]`);
-                        if (row) { row.style.backgroundColor = '#fef2f2'; setTimeout(() => row.remove(), 500); }
-                    } else if (e.action === 'updated') {
-                        location.reload();
+                        if (row) { 
+                            row.style.backgroundColor = '#fef2f2'; 
+                            setTimeout(() => {
+                                row.remove();
+                                const tbody = document.getElementById('reportTableBody');
+                                const visibleEl = document.getElementById('visible-count');
+                                if (visibleEl && tbody) visibleEl.innerText = tbody.children.length;
+
+                                const totalEl = document.getElementById('total-count');
+                                if (totalEl) {
+                                    let currentTotal = parseInt(totalEl.innerText) || 0;
+                                    totalEl.innerText = Math.max(0, currentTotal - 1);
+                                }
+                            }, 500); 
+                        }
+                        // Hapus dari database lokal juga via AJAX
+                        fetch('/api/defects/delete-external', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ id: laporan.id })
+                        }).catch(err => console.error('[API] Gagal hapus lokal:', err));
+                    } else if (e.action === 'updated' && isFinalAssy) {
+                        updateRowInTable(laporan);
                     }
                 });
+
+            function formatDate(dateStr) {
+                const d = new Date(dateStr);
+                const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+                return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+            }
+
+            function formatTime(dateStr) {
+                const d = new Date(dateStr);
+                return d.toTimeString().substring(0, 8);
+            }
+
+            function addRowToTable(item) {
+                const tbody = document.getElementById('reportTableBody');
+                if (!tbody) return;
+
+                const waktu = item.created_at || item.tanggal || new Date().toISOString();
+
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors';
+                tr.setAttribute('data-id', item.id);
+                tr.style.backgroundColor = '#fffbeb';
+                setTimeout(() => { tr.style.backgroundColor = ''; tr.style.transition = 'background-color 1s'; }, 2000);
+
+                tr.innerHTML = `
+                    <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(waktu)}</span></div></td>
+                    <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.nama_user || item.user_name || '-'}</td>
+                    <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
+                    <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.line || item.line_conveyor || '-'}</td>
+                    <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
+                    <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || item.konveyor || '-'}</span></td>
+                    <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
+                    <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.sub_defect || item.jenis_sub_defect || '-'}</td>
+                    <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">${item.jumlah || item.quantity || 0}</td>
+                `;
+
+                tbody.insertBefore(tr, tbody.firstChild);
+
+                const visibleEl = document.getElementById('visible-count');
+                if (visibleEl) visibleEl.innerText = tbody.children.length;
+
+                const totalEl = document.getElementById('total-count');
+                if (totalEl) {
+                    let currentTotal = parseInt(totalEl.innerText) || 0;
+                    totalEl.innerText = currentTotal + 1;
+                }
+            }
+
+            function updateRowInTable(item) {
+                const row = document.querySelector(`tr[data-id="${item.id}"]`);
+                if (row) {
+                    row.remove();
+                    addRowToTable(item);
+                }
+            }
 
         } catch(err) {
             wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-600';

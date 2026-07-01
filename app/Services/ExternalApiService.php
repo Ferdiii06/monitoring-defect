@@ -34,8 +34,15 @@ class ExternalApiService
                 return false;
             }
 
+            $receivedIds = [];
+
             foreach ($data['data'] as $item) {
-                Defect::updateOrCreate(
+                $receivedIds[] = $item['id'];
+                
+                // Cek apakah data ini baru pertama kali disinkronkan
+                $exists = Defect::where('external_id', $item['id'])->exists();
+                
+                $defect = Defect::updateOrCreate(
                     ['external_id' => $item['id']],
                     [
                         'waktu'             => self::parseDateTime($item),
@@ -44,12 +51,43 @@ class ExternalApiService
                         'jenis_assy'        => $item['type'] ?? 'Final Assy',
                         'line_conveyor'     => $item['line'] ?? '-',
                         'jenis_mobil'       => $item['jenis_mobil'] ?? null,
-                        'konveyor'          => $item['conveyor'] ?? '-',
+                        'conveyor'          => $item['conveyor'] ?? '-',
                         'jenis_defect'      => $item['jenis_defect'] ?? '-',
                         'jenis_sub_defect'  => $item['sub_defect'] ?? '-',
                         'quantity'          => $item['jumlah'] ?? 1,
                     ]
                 );
+
+                // Jika baru, catat log aktivitas
+                if (!$exists) {
+                    \App\Models\ActivityLog::create([
+                        'waktu' => $defect->waktu,
+                        'user_name' => $defect->user_name,
+                        'jenis_aksi' => 'Create Report',
+                        'aktivitas' => "Melaporkan defect {$defect->jenis_assy} - {$defect->line_conveyor} - Jumlah {$defect->quantity}",
+                        'jenis_defect' => $defect->jenis_defect,
+                        'ip_address' => request()->ip() ?? '127.0.0.1',
+                    ]);
+                }
+            }
+
+            // Hapus data yang sudah tidak ada di respon API eksternal
+            $toDelete = Defect::whereNotNull('external_id')
+                ->whereNotIn('external_id', $receivedIds)
+                ->get();
+
+            foreach ($toDelete as $deletedDefect) {
+                // Catat log aktivitas penghapusan
+                \App\Models\ActivityLog::create([
+                    'waktu' => now(),
+                    'user_name' => $deletedDefect->user_name,
+                    'jenis_aksi' => 'Delete Report',
+                    'aktivitas' => "Menghapus report defect {$deletedDefect->jenis_assy} - {$deletedDefect->line_conveyor}",
+                    'jenis_defect' => $deletedDefect->jenis_defect,
+                    'ip_address' => request()->ip() ?? '127.0.0.1',
+                ]);
+                
+                $deletedDefect->delete();
             }
 
             Log::info('External API sync completed. Records processed: ' . count($data['data']));
@@ -97,7 +135,7 @@ class ExternalApiService
                     'jenis_assy'        => $item['type'] ?? 'Final Assy',
                     'line_conveyor'     => $item['line'] ?? '-',
                     'jenis_mobil'       => $item['jenis_mobil'] ?? null,
-                    'konveyor'          => $item['conveyor'] ?? '-',
+                    'conveyor'          => $item['conveyor'] ?? '-',
                     'jenis_defect'      => $item['jenis_defect'] ?? '-',
                     'jenis_sub_defect'  => $item['sub_defect'] ?? '-',
                     'quantity'          => $item['jumlah'] ?? 1,
@@ -115,7 +153,20 @@ class ExternalApiService
     public static function deleteByExternalId(int $externalId): bool
     {
         try {
-            return Defect::where('external_id', $externalId)->delete() > 0;
+            $deletedDefect = Defect::where('external_id', $externalId)->first();
+            if ($deletedDefect) {
+                // Catat log aktivitas penghapusan
+                \App\Models\ActivityLog::create([
+                    'waktu' => now(),
+                    'user_name' => $deletedDefect->user_name,
+                    'jenis_aksi' => 'Delete Report',
+                    'aktivitas' => "Menghapus report defect {$deletedDefect->jenis_assy} - {$deletedDefect->line_conveyor}",
+                    'jenis_defect' => $deletedDefect->jenis_defect,
+                    'ip_address' => request()->ip() ?? '127.0.0.1',
+                ]);
+                return $deletedDefect->delete() > 0;
+            }
+            return false;
         } catch (\Exception $e) {
             Log::error('Failed to delete item by external_id: ' . $e->getMessage());
             return false;

@@ -171,7 +171,7 @@
                 </div>
                 <div>
                     <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Defect</span>
-                    <span class="block text-2xl font-bold text-gray-950 mt-0.5 leading-none">{{ number_format($totalDefect, 0, ',', '.') }}</span>
+                    <span id="stat-total-defect" class="block text-2xl font-bold text-gray-950 mt-0.5 leading-none">{{ number_format($totalDefect, 0, ',', '.') }}</span>
                     <span class="block text-[10px] font-semibold text-gray-400 mt-1">Semua Waktu</span>
                 </div>
             </div>
@@ -186,7 +186,7 @@
                 </div>
                 <div>
                     <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Defect Hari Ini</span>
-                    <span class="block text-2xl font-bold text-gray-950 mt-0.5 leading-none">{{ $defectToday }}</span>
+                    <span id="stat-defect-today" class="block text-2xl font-bold text-gray-950 mt-0.5 leading-none">{{ $defectToday }}</span>
                     <span class="block text-[10px] font-semibold text-gray-400 mt-1">Update real-time</span>
                 </div>
             </div>
@@ -201,7 +201,7 @@
                 </div>
                 <div>
                     <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Active Users</span>
-                    <span class="block text-2xl font-bold text-gray-950 mt-0.5 leading-none">{{ $activeUsers }}</span>
+                    <span id="stat-active-users" class="block text-2xl font-bold text-gray-950 mt-0.5 leading-none">{{ $activeUsers }}</span>
                     <span class="block text-[10px] font-semibold text-gray-400 mt-1">Sedang Aktif</span>
                 </div>
             </div>
@@ -210,13 +210,13 @@
             <div class="bg-white border border-gray-100 rounded-lg p-5 shadow-sm flex items-center space-x-4">
                 <div class="w-12 h-12 rounded-lg bg-[#faf5ff] flex items-center justify-center text-purple-600 shrink-0">
                     <!-- Users icon -->
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd"></path>
                     </svg>
                 </div>
                 <div>
                     <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Users</span>
-                    <span class="block text-2xl font-bold text-gray-950 mt-0.5 leading-none">{{ $totalUsers }}</span>
+                    <span id="stat-total-users" class="block text-2xl font-bold text-gray-950 mt-0.5 leading-none">{{ $totalUsers }}</span>
                     <span class="block text-[10px] font-semibold text-gray-400 mt-1">Semua User</span>
                 </div>
             </div>
@@ -512,12 +512,22 @@
 
                     if (action === 'created') {
                         addRowToTable(laporan);
-                        updateKPICards(laporan.jumlah || laporan.quantity || 1, 'add');
+                        fetchStats();
                     } else if (action === 'updated') {
                         updateRowInTable(laporan);
+                        fetchStats();
                     } else if (action === 'deleted') {
                         deleteRowFromTable(laporan.id);
-                        updateKPICards(laporan.jumlah || laporan.quantity || 1, 'subtract');
+                        fetchStats();
+                        // Hapus dari database lokal juga via AJAX
+                        fetch('/api/defects/delete-external', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ id: laporan.id })
+                        }).catch(err => console.error('[API] Gagal hapus lokal:', err));
                     }
                 });
 
@@ -596,14 +606,23 @@
             }
         }
 
-        function updateKPICards(quantity, operation) {
-            // Update Total Defect card
-            const totalEl = document.querySelector('section.grid span.text-2xl');
-            if (totalEl) {
-                let current = parseInt(totalEl.textContent.replace(/\./g, '')) || 0;
-                current = operation === 'add' ? current + quantity : Math.max(0, current - quantity);
-                totalEl.textContent = current.toLocaleString('id-ID');
-            }
+        function fetchStats() {
+            fetch('/api/dashboard/stats')
+                .then(r => r.json())
+                .then(stats => {
+                    const totalEl = document.getElementById('stat-total-defect');
+                    if (totalEl) totalEl.innerText = stats.totalDefect.toLocaleString('id-ID');
+                    
+                    const todayEl = document.getElementById('stat-defect-today');
+                    if (todayEl) todayEl.innerText = stats.defectToday;
+                    
+                    const activeEl = document.getElementById('stat-active-users');
+                    if (activeEl) activeEl.innerText = stats.activeUsers;
+                    
+                    const totalUsersEl = document.getElementById('stat-total-users');
+                    if (totalUsersEl) totalUsersEl.innerText = stats.totalUsers;
+                })
+                .catch(err => console.error('[API] Gagal fetch statistik:', err));
         }
     });
     </script>

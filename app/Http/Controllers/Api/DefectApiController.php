@@ -67,4 +67,41 @@ class DefectApiController extends Controller
             'data' => $defect
         ], 201);
     }
+
+    /**
+     * Delete an external defect by its external_id.
+     */
+    public function deleteExternal(Request $request)
+    {
+        $validated = $request->validate([
+            'id' => 'required|integer',
+        ]);
+
+        $success = \App\Services\ExternalApiService::deleteByExternalId($validated['id']);
+
+        if ($success) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Laporan defect berhasil dihapus lokal.'
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Laporan defect tidak ditemukan atau gagal dihapus.'
+        ], 404);
+    }
+
+    /**
+     * Get updated dashboard statistics.
+     */
+    public function getStats()
+    {
+        return response()->json([
+            'totalDefect' => (int) \App\Models\Defect::sum('quantity'),
+            'defectToday' => (int) \App\Models\Defect::whereDate('waktu', \Carbon\Carbon::today())->sum('quantity'),
+            'activeUsers' => (int) \App\Models\Defect::whereDate('waktu', \Carbon\Carbon::today())->distinct('user_name')->count('user_name'),
+            'totalUsers'  => (int) \App\Models\Defect::distinct('user_name')->count('user_name'),
+        ]);
+    }
 }
