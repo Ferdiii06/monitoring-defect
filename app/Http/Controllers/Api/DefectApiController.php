@@ -8,6 +8,8 @@ use App\Models\Defect;
 use App\Models\ActivityLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class DefectApiController extends Controller
 {
@@ -22,7 +24,7 @@ class DefectApiController extends Controller
             'user_name' => 'required|string|max:255',
             'jenis_assy' => 'required|string|in:Final Assy,Pre Assy',
             'line_conveyor' => 'required|string|max:255',
-            'conveyor' => 'required|string|max:255',
+            'konveyor' => 'required|string|max:255',
             'jenis_defect' => 'required|string|max:255',
             'jenis_sub_defect' => 'required|string|max:255',
             'quantity' => 'required|integer|min:1',
@@ -44,7 +46,7 @@ class DefectApiController extends Controller
             'user_name' => $validated['user_name'],
             'jenis_assy' => $validated['jenis_assy'],
             'line_conveyor' => $validated['line_conveyor'],
-            'conveyor' => $validated['conveyor'],
+            'konveyor' => $validated['konveyor'],
             'jenis_defect' => $validated['jenis_defect'],
             'jenis_sub_defect' => $validated['jenis_sub_defect'],
             'quantity' => $validated['quantity'],
@@ -96,12 +98,34 @@ class DefectApiController extends Controller
      * Get updated dashboard statistics.
      */
     public function getStats()
-    {
+{
+    $totalUsers = 0;
+    $activeUsers = 0;
+
+    try {
+        $response = Http::timeout(5)->get('http://192.168.1.60:8000/api/users');
+
+        if ($response->successful()) {
+            $users = $response->json('data');
+            $totalUsers = count($users);
+            $activeThreshold = Carbon::now('UTC')->subMinutes(15);
+            $activeUsers = collect($users)->filter(function ($user) use ($activeThreshold) {
+                if (empty($user['last_active_at'])) {
+                    return false;
+                }
+                $lastActive = Carbon::parse($user['last_active_at'], 'UTC');
+                return $lastActive->greaterThan($activeThreshold);
+            })->count();
+        }
+    } catch (\Exception $e) {
+        Log::warning('getStats: Error fetching active users - ' . $e->getMessage());
+    }
+
         return response()->json([
             'totalDefect' => (int) \App\Models\Defect::sum('quantity'),
             'defectToday' => (int) \App\Models\Defect::whereDate('waktu', \Carbon\Carbon::today())->sum('quantity'),
-            'activeUsers' => (int) \App\Models\Defect::whereDate('waktu', \Carbon\Carbon::today())->distinct('user_name')->count('user_name'),
-            'totalUsers'  => (int) \App\Models\Defect::distinct('user_name')->count('user_name'),
+            'activeUsers' => $activeUsers,
+            'totalUsers'  => $totalUsers,
         ]);
     }
 }

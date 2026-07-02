@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('user_name');
             $table->string('jenis_assy'); // Final Assy, Pre Assy
             $table->string('line_conveyor');
-            $table->string('konveyor');
+            $table->string('conveyor');
             $table->string('jenis_defect');
             $table->string('jenis_sub_defect');
             $table->integer('quantity');
