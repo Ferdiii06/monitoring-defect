@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use App\Models\ActivityLog;
 
 class AccountController extends Controller
 {
@@ -20,7 +23,7 @@ class AccountController extends Controller
     }
 
     /**
-     * Store a newly created account statically (session-only).
+     * Store a newly created account.
      */
     public function store(Request $request)
     {
@@ -33,13 +36,55 @@ class AccountController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'pin' => 'required|string|size:6',
-            'shift' => 'required|string',
+            'shift' => 'required|string|in:Shift 1,Shift 2',
             'role' => 'required|string|in:Admin,User',
         ]);
 
-        // Statically trigger success flash message (no database insertion)
-        session()->flash('success', 'Akun "' . $request->name . '" berhasil dibuat!');
+        try {
+            $apiUrl = config('services.external_api.url');
+            
+            $response = Http::timeout(5)->post($apiUrl . '/users', [
+                'nama' => $request->name,
+                'pin' => $request->pin,
+                'shift' => $request->shift === 'Shift 1' ? 1 : 2,
+            ]);
 
-        return redirect('/dashboard');
+            if ($response->successful()) {
+                // Log activity locally
+                ActivityLog::create([
+                    'waktu' => now(),
+                    'user_name' => session('user_name', 'Admin QA'),
+                    'jenis_aksi' => 'Create Account',
+                    'aktivitas' => 'Membuat akun baru - User: ' . $request->name,
+                    'jenis_defect' => 'none',
+                    'ip_address' => $request->ip() ?? '127.0.0.1',
+                ]);
+
+                session()->flash('success', 'Akun "' . $request->name . '" berhasil dibuat!');
+                return redirect('/dashboard');
+            } else {
+                Log::error('Add Account gagal - API response tidak sukses', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                // Extract error message from API if available
+                $errorData = $response->json();
+                $errorMessage = $errorData['message'] ?? 'Gagal membuat akun di server API eksternal.';
+                
+                // If there are validation errors from API, return them
+                if (isset($errorData['errors'])) {
+                    return back()->withErrors($errorData['errors'])->withInput();
+                }
+
+                return back()->withErrors(['apiError' => $errorMessage])->withInput();
+            }
+        } catch (\Exception $e) {
+            Log::error('Add Account gagal - Exception', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()->withErrors(['apiError' => 'Gagal terhubung ke server API eksternal: ' . $e->getMessage()])->withInput();
+        }
     }
 }
+

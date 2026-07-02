@@ -103,7 +103,8 @@ class DefectApiController extends Controller
     $activeUsers = 0;
 
     try {
-        $response = Http::timeout(5)->get('http://192.168.1.60:8000/api/users');
+        $apiUrl = config('services.external_api.url');
+        $response = Http::timeout(5)->get($apiUrl . '/users');
 
         if ($response->successful()) {
             $users = $response->json('data');
