@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Pre Assy - Sistem Monitoring Defect</title>
+    <title>Recent Defect - Sistem Monitoring Defect</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -18,7 +18,6 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom Scrollbar for premium aesthetic */
         .overflow-x-auto::-webkit-scrollbar {
             height: 6px;
         }
@@ -33,10 +32,9 @@
         .overflow-x-auto::-webkit-scrollbar-thumb:hover {
             background: #9ca3af;
         }
-        /* Custom Select Option colors */
         select option {
             background-color: #ffffff;
-            color: #111827; /* text-gray-900 */
+            color: #111827;
         }
     </style>
 </head>
@@ -78,14 +76,14 @@
                     </svg>
                     <span>Final Assy</span>
                 </a>
-                <a href="{{ route('pre_assy.index') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#8b0000] text-white shadow-sm transition-all">
+                <a href="{{ route('pre_assy.index') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
                     </svg>
                     <span>Pre Assy</span>
                 </a>
-                <a href="{{ route('recent_defects.index') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
+                <a href="{{ route('recent_defects.index') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#8b0000] text-white shadow-sm transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
                     </svg>
@@ -120,8 +118,8 @@
         <!-- Header Section -->
         <header class="flex justify-between items-center mb-8">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 leading-tight">Report Pre Assy</h1>
-                <p class="text-sm text-gray-500 mt-1">Riwayat aktivitas defect pre assy secara real-time.</p>
+                <h1 class="text-2xl font-bold text-gray-900 leading-tight">Recent Defect</h1>
+                <p class="text-sm text-gray-500 mt-1">Daftar semua riwayat defect Pre Assy & Final Assy secara real-time.</p>
             </div>
 
             <!-- WebSocket Status Badge -->
@@ -151,18 +149,32 @@
             
             <div>
                 <!-- Form Filter -->
-                <form id="filterForm" method="GET" action="{{ route('pre_assy.index') }}" class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <form id="filterForm" method="GET" action="{{ route('recent_defects.index') }}" class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                     <input type="hidden" name="page" value="1">
                     
                     <div class="flex flex-wrap items-center gap-3">
                         <!-- Date Range Picker -->
-                        <div class="relative min-w-[240px]">
+                        <div class="relative min-w-[200px]">
                             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#8b0000]">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
                             </span>
                             <input type="text" id="date_range" name="date_range" placeholder="Pilih Tanggal" value="{{ $dateRange }}" readonly class="w-full pl-10 pr-4 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
+                        </div>
+
+                        <!-- Jenis Assy Select -->
+                        <div class="relative min-w-[120px]">
+                            <select name="jenis_assy" onchange="this.form.submit()" class="w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
+                                <option value="all">Semua Assy</option>
+                                <option value="Final Assy" {{ $selectedAssy === 'Final Assy' ? 'selected' : '' }}>Final Assy</option>
+                                <option value="Pre Assy" {{ $selectedAssy === 'Pre Assy' ? 'selected' : '' }}>Pre Assy</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000]">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
                         </div>
 
                         <!-- Defect Select -->
@@ -207,9 +219,9 @@
                             </div>
                         </div>
 
-                        <!-- Reset Filter Button if filters active -->
-                        @if($dateRange || ($selectedDefect && $selectedDefect !== 'all') || ($selectedLine && $selectedLine !== 'all') || ($selectedConveyor && $selectedConveyor !== 'all'))
-                            <a href="{{ route('pre_assy.index') }}" class="text-xs text-gray-400 hover:text-[#8b0000] font-semibold transition-colors flex items-center space-x-1 pl-1">
+                        <!-- Reset Filter Button -->
+                        @if($dateRange || ($selectedAssy && $selectedAssy !== 'all') || ($selectedDefect && $selectedDefect !== 'all') || ($selectedLine && $selectedLine !== 'all') || ($selectedConveyor && $selectedConveyor !== 'all'))
+                            <a href="{{ route('recent_defects.index') }}" class="text-xs text-gray-400 hover:text-[#8b0000] font-semibold transition-colors flex items-center space-x-1 pl-1">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                 </svg>
@@ -219,7 +231,7 @@
                     </div>
 
                     <!-- Export Button -->
-                    <button type="button" onclick="exportExcel()" class="bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold px-5 py-2.5 rounded-lg transition duration-200 shadow-sm flex items-center space-x-2">
+                    <button type="button" onclick="exportExcel()" class="bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold px-5 py-2.5 rounded-lg transition duration-200 shadow-sm flex items-center space-x-2 shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
@@ -229,12 +241,13 @@
 
                 <!-- Responsive Table -->
                 <div class="overflow-x-auto min-h-[400px] pb-4">
-                    <table class="w-full min-w-[850px] text-left border-collapse">
+                    <table class="w-full min-w-[950px] text-left border-collapse">
                         <thead>
                             <tr class="border-b border-gray-200">
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2">Waktu</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">User</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Shift</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Shift</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Assy</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Defect</th>
@@ -257,6 +270,17 @@
                                     <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">
                                         {{ $record->shift ?? '-' }}
                                     </td>
+                                    <td class="py-4 text-xs font-bold px-4">
+                                        @if($record->jenis_assy === 'Final Assy')
+                                            <span class="inline-block px-2 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 tracking-wider">
+                                                Final Assy
+                                            </span>
+                                        @else
+                                            <span class="inline-block px-2 py-0.5 rounded border border-rose-200 bg-rose-50 text-rose-700 tracking-wider">
+                                                Pre Assy
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td class="py-4 text-sm text-gray-950 font-bold px-4">
                                         {{ $record->jenis_mobil ?? '-' }}
                                     </td>
@@ -277,7 +301,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
+                                    <td colspan="10" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -339,7 +363,6 @@
 
     <!-- Script Initializations -->
     <script>
-        // List konveyor per mobil
         const conveyorsByMobil = {
             'Toyota': [
                 '664W-C5', '664W-C5C', '664W-C5A', '664W-C5B', '664W-C5D',
@@ -367,16 +390,12 @@
         };
 
         function convertToCustomSelect(selectEl) {
-            // Hide original select
             selectEl.classList.add('hidden');
-            
-            // Create wrapper
             const wrapper = document.createElement('div');
             wrapper.className = 'w-full relative';
             selectEl.parentNode.insertBefore(wrapper, selectEl);
-            wrapper.appendChild(selectEl); // move select inside wrapper
+            wrapper.appendChild(selectEl);
             
-            // Create trigger button
             const button = document.createElement('button');
             button.type = 'button';
             button.className = selectEl.className.replace('hidden', '') + ' text-left w-full';
@@ -385,7 +404,6 @@
             button.appendChild(labelSpan);
             wrapper.appendChild(button);
             
-            // Create dropdown list container
             const listContainer = document.createElement('div');
             listContainer.className = 'absolute z-50 left-0 right-0 mt-1 bg-white border border-[#8b0000] rounded-lg shadow-lg max-h-60 overflow-y-auto hidden custom-select-list';
             wrapper.appendChild(listContainer);
@@ -400,12 +418,7 @@
                 for (let i = 0; i < options.length; i++) {
                     const opt = options[i];
                     const item = document.createElement('div');
-                    
-                    if (i === selectedIndex) {
-                        item.className = 'px-4 py-2 text-xs font-semibold text-gray-900 hover:bg-[#8b0000] hover:text-white cursor-pointer transition-colors duration-75';
-                    } else {
-                        item.className = 'px-4 py-2 text-xs font-semibold text-gray-900 hover:bg-[#8b0000] hover:text-white cursor-pointer transition-colors duration-75';
-                    }
+                    item.className = 'px-4 py-2 text-xs font-semibold text-gray-900 hover:bg-[#8b0000] hover:text-white cursor-pointer transition-colors duration-75';
                     
                     if (opt.disabled) {
                         item.className = 'px-4 py-2 text-xs font-semibold text-gray-400 bg-gray-50 cursor-not-allowed';
@@ -468,18 +481,15 @@
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            // Convert native selects to custom selects
             document.querySelectorAll('#filterForm select').forEach(select => {
                 convertToCustomSelect(select);
             });
 
-            // Flatpickr setup
             flatpickr("#date_range", {
                 mode: "range",
                 dateFormat: "Y-m-d",
                 onChange: function (selectedDates, dateStr, instance) {
                     if (selectedDates.length === 2 || selectedDates.length === 0) {
-                        // Submit filter form automatically on date selection
                         document.getElementById("filterForm").submit();
                     }
                 }
@@ -490,7 +500,6 @@
             const selectedConveyor = @json($selectedConveyor ?? 'all');
 
             function populateConveyors(mobil, selectedVal) {
-                // Clear and add base option
                 conveyorSelect.innerHTML = '';
                 
                 if (mobil && mobil !== 'all') {
@@ -523,25 +532,25 @@
                 }
             }
 
-            // Listen to mobil changes
             mobilSelect.addEventListener("change", function () {
                 populateConveyors(this.value, 'all');
                 this.form.submit();
             });
 
-            // Initialize on load
             populateConveyors(mobilSelect.value, selectedConveyor);
         });
 
         // Excel exporter via URL redirect
         function exportExcel() {
             const dateRange = document.getElementById("date_range").value;
+            const jenisAssy = document.querySelector('select[name="jenis_assy"]').value;
             const defect = document.querySelector('select[name="defect"]').value;
             const line = document.getElementById("mobilSelect").value;
             const conveyor = document.getElementById("conveyorSelect").value;
             
-            let url = "{{ route('pre_assy.export') }}?";
+            let url = "{{ route('recent_defects.export') }}?";
             url += "date_range=" + encodeURIComponent(dateRange);
+            url += "&jenis_assy=" + encodeURIComponent(jenisAssy);
             url += "&defect=" + encodeURIComponent(defect);
             url += "&line=" + encodeURIComponent(line);
             url += "&conveyor=" + encodeURIComponent(conveyor);
@@ -592,9 +601,8 @@
             echo.channel('monitoring-channel')
                 .listen('.laporan.updated', function(e) {
                     const laporan = e.laporan;
-                    const isPreAssy = laporan.type === 'Pre Assy' || laporan.jenis_assy === 'Pre Assy';
                     
-                    if (e.action === 'created' && isPreAssy) {
+                    if (e.action === 'created') {
                         addRowToTable(laporan);
                     } else if (e.action === 'deleted') {
                         const row = document.querySelector(`tr[data-id="${laporan.id}"]`);
@@ -613,7 +621,6 @@
                                 }
                             }, 500); 
                         }
-                        // Hapus dari database lokal juga via AJAX
                         fetch('/api/defects/delete-external', {
                             method: 'POST',
                             headers: {
@@ -622,7 +629,7 @@
                             },
                             body: JSON.stringify({ id: laporan.id })
                         }).catch(err => console.error('[API] Gagal hapus lokal:', err));
-                    } else if (e.action === 'updated' && isPreAssy) {
+                    } else if (e.action === 'updated') {
                         updateRowInTable(laporan);
                     }
                 });
@@ -633,6 +640,7 @@
                 return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
             }
 
+            // Ganti format jam jika ada
             function formatTime(dateStr) {
                 const d = new Date(dateStr);
                 return d.toTimeString().substring(0, 8);
@@ -643,6 +651,10 @@
                 if (!tbody) return;
 
                 const waktu = item.created_at || item.tanggal || new Date().toISOString();
+                const jenisAssy = item.type || item.jenis_assy || 'Final Assy';
+                const assyBadge = jenisAssy === 'Final Assy'
+                    ? '<span class="inline-block px-2 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 tracking-wider">Final Assy</span>'
+                    : '<span class="inline-block px-2 py-0.5 rounded border border-rose-200 bg-rose-50 text-rose-700 tracking-wider">Pre Assy</span>';
 
                 const tr = document.createElement('tr');
                 tr.className = 'border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors';
@@ -654,6 +666,7 @@
                     <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(waktu)}</span></div></td>
                     <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.nama_user || item.user_name || '-'}</td>
                     <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
+                    <td class="py-4 text-xs font-bold px-4">${assyBadge}</td>
                     <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
                     <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || item.konveyor || '-'}</span></td>
                     <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>

@@ -39,29 +39,80 @@ class ExternalApiService
             foreach ($data['data'] as $item) {
                 $receivedIds[] = $item['id'];
                 
-                // Cek apakah data ini baru pertama kali disinkronkan
-                $exists = Defect::where('external_id', $item['id'])->exists();
-                
-                $defect = Defect::updateOrCreate(
-                    ['external_id' => $item['id']],
-                    [
-                        'waktu'             => self::parseDateTime($item),
-                        'user_name'         => $item['nama_user'] ?? 'Unknown',
-                        'shift'             => $item['shift'] ?? null,
-                        'jenis_assy'        => $item['type'] ?? 'Final Assy',
-                        'line_conveyor'     => $item['line'] ?? '-',
-                        'jenis_mobil'       => $item['jenis_mobil'] ?? null,
-                        'conveyor'          => $item['conveyor'] ?? '-',
-                        'jenis_defect'      => $item['jenis_defect'] ?? '-',
-                        'jenis_sub_defect'  => $item['sub_defect'] ?? '-',
-                        'quantity'          => $item['jumlah'] ?? 1,
-                    ]
-                );
+                $parsedWaktu = self::parseDateTime($item);
+                $newUserName = $item['nama_user'] ?? 'Unknown';
+                $newShift = $item['shift'] ?? null;
+                $newJenisAssy = $item['type'] ?? 'Final Assy';
+                $newLineConveyor = $item['line'] ?? '-';
+                $newJenisMobil = $item['jenis_mobil'] ?? null;
+                $newConveyor = $item['conveyor'] ?? '-';
+                $newJenisDefect = $item['jenis_defect'] ?? '-';
+                $newJenisSubDefect = $item['sub_defect'] ?? '-';
+                $newQuantity = $item['jumlah'] ?? 1;
 
-                // Jika baru, catat log aktivitas
-                if (!$exists) {
+                // Cek apakah data ini sudah ada sebelumnya
+                $existingDefect = Defect::where('external_id', $item['id'])->first();
+
+                if ($existingDefect) {
+                    $hasChanges = false;
+                    
+                    // Bandingkan waktu menggunakan format standar Carbon agar tidak salah deteksi akibat perbedaan format
+                    $oldWaktuFormatted = Carbon::parse($existingDefect->waktu)->format('Y-m-d H:i:s');
+                    $newWaktuFormatted = Carbon::parse($parsedWaktu)->format('Y-m-d H:i:s');
+
+                    if ($oldWaktuFormatted !== $newWaktuFormatted ||
+                        $existingDefect->user_name !== $newUserName ||
+                        $existingDefect->shift !== $newShift ||
+                        $existingDefect->jenis_assy !== $newJenisAssy ||
+                        $existingDefect->line_conveyor !== $newLineConveyor ||
+                        $existingDefect->jenis_mobil !== $newJenisMobil ||
+                        $existingDefect->conveyor !== $newConveyor ||
+                        $existingDefect->jenis_defect !== $newJenisDefect ||
+                        $existingDefect->jenis_sub_defect !== $newJenisSubDefect ||
+                        (int)$existingDefect->quantity !== (int)$newQuantity) {
+                        $hasChanges = true;
+                    }
+
+                    if ($hasChanges) {
+                        $existingDefect->update([
+                            'waktu'             => $parsedWaktu,
+                            'user_name'         => $newUserName,
+                            'shift'             => $newShift,
+                            'jenis_assy'        => $newJenisAssy,
+                            'line_conveyor'     => $newLineConveyor,
+                            'jenis_mobil'       => $newJenisMobil,
+                            'conveyor'          => $newConveyor,
+                            'jenis_defect'      => $newJenisDefect,
+                            'jenis_sub_defect'  => $newJenisSubDefect,
+                            'quantity'          => $newQuantity,
+                        ]);
+
+                        \App\Models\ActivityLog::create([
+                            'waktu' => now(),
+                            'user_name' => $newUserName,
+                            'jenis_aksi' => 'Update Report',
+                            'aktivitas' => "Mengubah report defect {$newJenisAssy} - {$newLineConveyor} - Jumlah {$newQuantity}",
+                            'jenis_defect' => $newJenisDefect,
+                            'ip_address' => request()->ip() ?? '127.0.0.1',
+                        ]);
+                    }
+                } else {
+                    $defect = Defect::create([
+                        'external_id'       => $item['id'],
+                        'waktu'             => $parsedWaktu,
+                        'user_name'         => $newUserName,
+                        'shift'             => $newShift,
+                        'jenis_assy'        => $newJenisAssy,
+                        'line_conveyor'     => $newLineConveyor,
+                        'jenis_mobil'       => $newJenisMobil,
+                        'conveyor'          => $newConveyor,
+                        'jenis_defect'      => $newJenisDefect,
+                        'jenis_sub_defect'  => $newJenisSubDefect,
+                        'quantity'          => $newQuantity,
+                    ]);
+
                     \App\Models\ActivityLog::create([
-                        'waktu' => $defect->waktu,
+                        'waktu' => now(),
                         'user_name' => $defect->user_name,
                         'jenis_aksi' => 'Create Report',
                         'aktivitas' => "Melaporkan defect {$defect->jenis_assy} - {$defect->line_conveyor} - Jumlah {$defect->quantity}",

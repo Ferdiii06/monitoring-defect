@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Carbon\Carbon;
 
-class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
+class RecentDefectsExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
 {
     use Exportable;
 
@@ -23,12 +23,13 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
 
     public function query()
     {
-        $query = Defect::where('jenis_assy', 'Final Assy');
+        $query = Defect::query();
 
         $dateRange = $this->request->input('date_range');
         $selectedDefect = $this->request->input('defect');
         $selectedLine = $this->request->input('line');
         $selectedConveyor = $this->request->input('conveyor');
+        $selectedAssy = $this->request->input('jenis_assy');
 
         if ($dateRange) {
             $dates = explode(' to ', $dateRange);
@@ -43,6 +44,10 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
                     Carbon::parse($dates[0])->endOfDay()
                 ]);
             }
+        }
+
+        if ($selectedAssy && $selectedAssy !== 'all') {
+            $query->where('jenis_assy', $selectedAssy);
         }
 
         if ($selectedDefect && $selectedDefect !== 'all') {
@@ -66,9 +71,10 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             'ID',
             'Waktu',
             'User',
+            'Shift',
             'Jenis Assy',
-            'Data Mobil',
-            'conveyor',
+            'Jenis Mobil',
+            'Conveyor',
             'Jenis Defect',
             'Jenis Sub Defect',
             'Quantity',
@@ -81,8 +87,9 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             $row->id,
             Carbon::parse($row->waktu)->format('Y-m-d H:i:s'),
             $row->user_name,
+            $row->shift ?? '-',
             $row->jenis_assy,
-            $row->line_conveyor,
+            $row->jenis_mobil ?? '-',
             $row->conveyor,
             $row->jenis_defect,
             $row->jenis_sub_defect,

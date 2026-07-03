@@ -11,7 +11,77 @@
     <!-- Flatpickr (Date Range Picker) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <style>
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.4.0/dist/web/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.19.0/dist/echo.iife.js"></script>
+    <script>
+       document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔵 LOG SYSTEM SCRIPT STARTED');
+    let reloadTimeout = null;
+
+        function scheduleReload() {
+            // Debounce: kalau ada beberapa event nutul bareng, cuma reload sekali
+            if (reloadTimeout) clearTimeout(reloadTimeout);
+            reloadTimeout = setTimeout(() => {
+                window.location.reload();
+            }, 300);
+        }
+
+         try {
+        console.log('🟢 ABOUT TO CREATE ECHO INSTANCE');
+        const echo = window.echo = new Echo({
+                broadcaster: 'pusher',
+                key: '{{ config("services.reverb.app_key") }}',
+                wsHost: '{{ config("services.reverb.host") }}',
+                wsPort: {{ config('services.reverb.port') }},
+                wssPort: {{ config('services.reverb.port') }},
+                forceTLS: false,
+                encrypted: false,
+                disableStats: true,
+                enabledTransports: ['ws', 'wss'],
+                cluster: 'mt1',
+            });
+
+            echo.channel('monitoring-channel')
+                .listen('.laporan.updated', function(e) {
+                    console.log('[WebSocket][LogSystem] Event received:', e);
+                    const action = e.action;
+                    const laporan = e.laporan;
+
+                    if (action === 'deleted') {
+                        // Sinkron hapus record lokal dulu, baru reload
+                        fetch('/api/defects/delete-external', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ id: laporan.id })
+                        })
+                        .catch(err => console.error('[API] Gagal hapus lokal:', err))
+                        .finally(() => scheduleReload());
+                    } else if (action === 'created' || action === 'updated') {
+                        scheduleReload();
+                    }
+                });
+
+            echo.connector.pusher.connection.bind('error', function(err) {
+                console.error('[WebSocket][LogSystem] Error:', err);
+            });
+
+            echo.connector.pusher.connection.bind('state_change', function(states) {
+    console.log('🟡 STATE CHANGE:', states.previous, '->', states.current);
+});
+
+setTimeout(() => {
+    console.log('⏱️ STATUS SETELAH 3 DETIK:', echo.connector.pusher.connection.state);
+}, 3000);
+
+        } catch(err) {
+        console.error('🔴 ECHO INIT FAILED:', err.message, err);
+    }
+    });
+    </script>
+   <style>
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -81,6 +151,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
                     </svg>
                     <span>Pre Assy</span>
+                </a>
+                <a href="{{ route('recent_defects.index') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                    </svg>
+                    <span>Recent Defect</span>
                 </a>
                 <a href="{{ route('log_system.index') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#8b0000] text-white shadow-sm transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

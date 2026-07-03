@@ -84,6 +84,12 @@
                     </svg>
                     <span>Pre Assy</span>
                 </a>
+                <a href="{{ route('recent_defects.index') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                    </svg>
+                    <span>Recent Defect</span>
+                </a>
                 <a href="{{ route('log_system.index') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
                     <!-- Log system icon -->
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -267,7 +273,7 @@
         <section class="bg-white border border-gray-100 rounded-lg p-6 shadow-sm">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-base font-semibold text-gray-950">Recent Defect</h2>
-                <a href="#" class="text-xs font-bold text-[#8b0000] hover:text-[#600000] flex items-center space-x-1 hover:underline">
+                <a href="{{ route('recent_defects.index') }}" class="text-xs font-bold text-[#8b0000] hover:text-[#600000] flex items-center space-x-1 hover:underline">
                     <span>Lihat Semua</span>
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -284,7 +290,6 @@
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">User</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Shift</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Assy</th>
-                            <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Data Mobil</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Defect</th>
@@ -317,9 +322,6 @@
                                             Pre Assy
                                         </span>
                                     @endif
-                                </td>
-                                <td class="py-4 text-sm text-gray-950 font-bold px-4">
-                                    {{ $defect->line_conveyor }}
                                 </td>
                                 <td class="py-4 text-sm text-gray-950 font-bold px-4">
                                     {{ $defect->jenis_mobil ?? '-' }}
@@ -574,7 +576,6 @@
                 <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.nama_user || item.user_name || '-'}</td>
                 <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
                 <td class="py-4 text-sm font-medium px-4">${assyBadge}</td>
-                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.line || item.line_conveyor || '-'}</td>
                 <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
                 <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || item.konveyor || '-'}</span></td>
                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>

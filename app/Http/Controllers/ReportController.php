@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use App\Exports\FinalAssyExport;
 use App\Exports\PreAssyExport;
 use App\Exports\LogSystemExport;
+use App\Exports\RecentDefectsExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
@@ -197,6 +198,13 @@ class ReportController extends Controller
             return redirect('/');
         }
 
+        // Sync data dari API eksternal ke database lokal
+        try {
+            ExternalApiService::syncFromApi();
+        } catch (\Exception $e) {
+            \Log::warning('LogSystem: External API sync skipped - ' . $e->getMessage());
+        }
+
         // 1. Buat Query awal
         $query = ActivityLog::query();
 
@@ -282,5 +290,105 @@ class ReportController extends Controller
     public function exportLogSystem(Request $request)
     {
         return Excel::download(new LogSystemExport($request), 'log_system_' . now()->format('Y-m-d') . '.xlsx');
+    }
+
+    /**
+     * Display all recent defects (both Pre Assy and Final Assy) with filters and pagination.
+     */
+    public function recentDefects(Request $request)
+    {
+        if (!session('logged_in')) {
+            return redirect('/');
+        }
+
+        // Sync data dari API eksternal ke database lokal
+        try {
+            ExternalApiService::syncFromApi();
+        } catch (\Exception $e) {
+            \Log::warning('RecentDefects: External API sync skipped - ' . $e->getMessage());
+        }
+
+        // 1. Buat Query awal
+        $query = Defect::query();
+
+        // 2. Ambil parameter filter
+        $dateRange = $request->input('date_range');
+        $selectedDefect = $request->input('defect');
+        $selectedLine = $request->input('line');
+        $selectedConveyor = $request->input('conveyor');
+        $selectedAssy = $request->input('jenis_assy');
+
+        // 3. Terapkan Filter Tanggal
+        if ($dateRange) {
+            $dates = explode(' to ', $dateRange);
+            if (count($dates) === 2) {
+                $startDate = Carbon::parse($dates[0])->startOfDay();
+                $endDate = Carbon::parse($dates[1])->endOfDay();
+                $query->whereBetween('waktu', [$startDate, $endDate]);
+            } else if (count($dates) === 1) {
+                $startDate = Carbon::parse($dates[0])->startOfDay();
+                $endDate = Carbon::parse($dates[0])->endOfDay();
+                $query->whereBetween('waktu', [$startDate, $endDate]);
+            }
+        }
+
+        // Terapkan Filter Jenis Assy
+        if ($selectedAssy && $selectedAssy !== 'all') {
+            $query->where('jenis_assy', $selectedAssy);
+        }
+
+        // Terapkan Filter Jenis Defect
+        if ($selectedDefect && $selectedDefect !== 'all') {
+            $query->where('jenis_defect', $selectedDefect);
+        }
+
+        // Terapkan Filter Line (Mobil)
+        if ($selectedLine && $selectedLine !== 'all') {
+            $query->where('line_conveyor', $selectedLine);
+        }
+
+        // Terapkan Filter Konveyor
+        if ($selectedConveyor && $selectedConveyor !== 'all') {
+            $query->where('conveyor', $selectedConveyor);
+        }
+
+        // 4. Ambil opsi filter unik langsung dari DB
+        $defectOptions = Defect::distinct()
+            ->pluck('jenis_defect')
+            ->sort()
+            ->values()
+            ->toArray();
+
+        $lineOptions = Defect::distinct()
+            ->pluck('line_conveyor')
+            ->sort()
+            ->values()
+            ->toArray();
+
+        // 5. Paginate Data (10 baris per halaman)
+        $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
+
+        return view('recent_defects', [
+            'records' => $records,
+            'defectOptions' => $defectOptions,
+            'lineOptions' => $lineOptions,
+            'dateRange' => $dateRange,
+            'selectedDefect' => $selectedDefect,
+            'selectedLine' => $selectedLine,
+            'selectedConveyor' => $selectedConveyor,
+            'selectedAssy' => $selectedAssy,
+            'currentPage' => $records->currentPage(),
+            'totalPages' => $records->lastPage(),
+            'totalItems' => $records->total(),
+            'allFilteredRecords' => $query->orderBy('waktu', 'desc')->get()
+        ]);
+    }
+
+    /**
+     * Export Recent defects to Excel.
+     */
+    public function exportRecentDefects(Request $request)
+    {
+        return Excel::download(new RecentDefectsExport($request), 'report_recent_defects_' . now()->format('Y-m-d') . '.xlsx');
     }
 }
