@@ -61,7 +61,7 @@ class ReportController extends Controller
 
         // Terapkan Filter Line (Mobil)
         if ($selectedLine && $selectedLine !== 'all') {
-            $query->where('line_conveyor', $selectedLine);
+            $query->where('jenis_mobil', $selectedLine);
         }
 
         // Terapkan Filter Konveyor
@@ -70,19 +70,21 @@ class ReportController extends Controller
         }
 
         // 4. Ambil opsi filter unik langsung dari DB
-        $defectOptions = Defect::where('jenis_assy', 'Final Assy')
-            ->distinct()
-            ->pluck('jenis_defect')
-            ->sort()
-            ->values()
-            ->toArray();
+        $defectOptions = [
+            'INSER CIRCUIT',
+            'DAMAGE/DEFORM/BROKEN PART',
+            'MISSING PART',
+            'DIMENSON DEFECT',
+            'HALF LOCK / INCOMPLETE DOCKING',
+            'WRONG PART',
+            'TAPING DEFECT',
+            'WRONG ORIENTATION PART',
+            'CUTTING - CRIMPING PRE ASSY DEFECT',
+            'INJECTION GROMMET / SISUI DEFECT',
+            'OTHERS'
+        ];
 
-        $lineOptions = Defect::where('jenis_assy', 'Final Assy')
-            ->distinct()
-            ->pluck('line_conveyor')
-            ->sort()
-            ->values()
-            ->toArray();
+        $lineOptions = ['TOYOTA', 'NISSAN', 'MAZDA'];
 
         // 5. Paginate Data (10 baris per halaman)
         $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
@@ -148,7 +150,7 @@ class ReportController extends Controller
 
         // Terapkan Filter Line (Mobil)
         if ($selectedLine && $selectedLine !== 'all') {
-            $query->where('line_conveyor', $selectedLine);
+            $query->where('jenis_mobil', $selectedLine);
         }
 
         // Terapkan Filter Konveyor
@@ -157,19 +159,18 @@ class ReportController extends Controller
         }
 
         // 4. Ambil opsi filter unik langsung dari DB
-        $defectOptions = Defect::where('jenis_assy', 'Pre Assy')
-            ->distinct()
-            ->pluck('jenis_defect')
-            ->sort()
-            ->values()
-            ->toArray();
+        $defectOptions = [
+            'CORE',
+            'TERMINAL',
+            'FRONT CRIMPING',
+            'REAR  CRIMPING',
+            'INSULATION',
+            'SEAL SUMBER',
+            'CRIMPING',
+            'LAIN-LAIN'
+        ];
 
-        $lineOptions = Defect::where('jenis_assy', 'Pre Assy')
-            ->distinct()
-            ->pluck('line_conveyor')
-            ->sort()
-            ->values()
-            ->toArray();
+        $lineOptions = ['TOYOTA', 'NISSAN', 'MAZDA'];
 
         // 5. Paginate Data (10 baris per halaman)
         $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
@@ -344,7 +345,7 @@ class ReportController extends Controller
 
         // Terapkan Filter Line (Mobil)
         if ($selectedLine && $selectedLine !== 'all') {
-            $query->where('line_conveyor', $selectedLine);
+            $query->where('jenis_mobil', $selectedLine);
         }
 
         // Terapkan Filter Konveyor
@@ -353,17 +354,40 @@ class ReportController extends Controller
         }
 
         // 4. Ambil opsi filter unik langsung dari DB
-        $defectOptions = Defect::distinct()
-            ->pluck('jenis_defect')
-            ->sort()
-            ->values()
-            ->toArray();
+        $preAssyDefects = [
+            'CORE',
+            'TERMINAL',
+            'FRONT CRIMPING',
+            'REAR  CRIMPING',
+            'INSULATION',
+            'SEAL SUMBER',
+            'CRIMPING',
+            'LAIN-LAIN'
+        ];
 
-        $lineOptions = Defect::distinct()
-            ->pluck('line_conveyor')
-            ->sort()
-            ->values()
-            ->toArray();
+        $finalAssyDefects = [
+            'INSER CIRCUIT',
+            'DAMAGE/DEFORM/BROKEN PART',
+            'MISSING PART',
+            'DIMENSON DEFECT',
+            'HALF LOCK / INCOMPLETE DOCKING',
+            'WRONG PART',
+            'TAPING DEFECT',
+            'WRONG ORIENTATION PART',
+            'CUTTING - CRIMPING PRE ASSY DEFECT',
+            'INJECTION GROMMET / SISUI DEFECT',
+            'OTHERS'
+        ];
+
+        if ($selectedAssy === 'Pre Assy') {
+            $defectOptions = $preAssyDefects;
+        } elseif ($selectedAssy === 'Final Assy') {
+            $defectOptions = $finalAssyDefects;
+        } else {
+            $defectOptions = array_merge($finalAssyDefects, $preAssyDefects);
+        }
+
+        $lineOptions = ['TOYOTA', 'NISSAN', 'MAZDA'];
 
         // 5. Paginate Data (10 baris per halaman)
         $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();

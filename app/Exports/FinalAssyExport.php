@@ -50,7 +50,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
         }
 
         if ($selectedLine && $selectedLine !== 'all') {
-            $query->where('line_conveyor', $selectedLine);
+            $query->where('jenis_mobil', $selectedLine);
         }
 
         if ($selectedConveyor && $selectedConveyor !== 'all') {

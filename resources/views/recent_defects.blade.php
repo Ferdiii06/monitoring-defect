@@ -364,7 +364,7 @@
     <!-- Script Initializations -->
     <script>
         const conveyorsByMobil = {
-            'Toyota': [
+            'TOYOTA': [
                 '664W-C5', '664W-C5C', '664W-C5A', '664W-C5B', '664W-C5D',
                 '711W TNGA-C5', '711W TNGA-C5A', '737W TNGA-C5A', '737W TNGA-C5',
                 '738W-C5C', '858W-C5C', '810W-C5', '941W-C5', '023J-C5', '072Y-C5',
@@ -376,12 +376,12 @@
                 '910W-AT9.GAS LHD', '953W-C6.HEV RHD', '953W-C6.HEV LHD',
                 '953W ENG NO.3-C9', '898W-AB5.HEV', '898W-C4.CONV', '898W-C4.TNGA'
             ],
-            'Nissan': [
+            'NISSAN': [
                 'P33A-B1.BAT', 'P33A-B1.CELL', 'J32V-B2.LHD', 'J32V-B2.RHD',
                 'J42U-B3.EGI', 'J42U-B3.ENGINE', 'J42U-B2.DOOR RH', 'J42U-B2.DOOR LH',
                 'P33C-B1.BAT', 'P33C-B1.CELL'
             ],
-            'Mazda': [
+            'MAZDA': [
                 'J72A-12B.LHD', 'J72A-AB9.RHD', 'J72A-16C.LHD', 'J72K-16C.LHD',
                 'J30A-AB6.EXTEND LHD', 'J30A-AB1.INPANEL LHD', 'J30A-AB6.EXTEND RHD', 'J30A-AB1.INPANEL RHD',
                 'J69P-AB8.EXTEND LHD', 'J69P-AB8.INPANEL LHD', 'J69P-AB8.EXTEND RHD', 'J69P-AB8.INPANEL RHD',
