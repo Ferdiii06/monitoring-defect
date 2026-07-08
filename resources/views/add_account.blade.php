@@ -165,8 +165,10 @@
                             <select id="shift" name="shift" required
                                 class="w-full appearance-none border border-gray-200 rounded-lg p-3 pr-10 text-sm bg-white text-gray-600 focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer">
                                 <option value="" disabled selected>Pilih Shift</option>
-                                <option value="Shift 1" {{ old('shift') == 'Shift 1' ? 'selected' : '' }}>Shift 1</option>
-                                <option value="Shift 2" {{ old('shift') == 'Shift 2' ? 'selected' : '' }}>Shift 2</option>
+                                <option value="1A" {{ old('shift') == '1A' ? 'selected' : '' }}>Shift 1A</option>
+                                <option value="1B" {{ old('shift') == '1B' ? 'selected' : '' }}>Shift 1B</option>
+                                <option value="2A" {{ old('shift') == '2A' ? 'selected' : '' }}>Shift 2A</option>
+                                <option value="2B" {{ old('shift') == '2B' ? 'selected' : '' }}>Shift 2B</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

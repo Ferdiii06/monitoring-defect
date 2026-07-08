@@ -71,6 +71,8 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
             'Konveyor',
             'Jenis Defect',
             'Jenis Sub Defect',
+            'No Terminal',
+            'No Mesin',
             'Quantity',
         ];
     }
@@ -86,6 +88,8 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
             $row->conveyor,
             $row->jenis_defect,
             $row->jenis_sub_defect,
+            $row->no_terminal,
+            $row->no_mesin,
             $row->quantity,
         ];
     }

@@ -36,7 +36,7 @@ class AccountController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'pin' => 'required|string|size:6',
-            'shift' => 'required|string|in:Shift 1,Shift 2',
+            'shift' => 'required|string|in:1A,1B,2A,2B',
             'role' => 'required|string|in:Admin,User',
         ]);
 
@@ -46,7 +46,7 @@ class AccountController extends Controller
             $response = Http::timeout(5)->post($apiUrl . '/users', [
                 'nama' => $request->name,
                 'pin' => $request->pin,
-                'shift' => $request->shift === 'Shift 1' ? 1 : 2,
+                'shift' => $request->shift,
             ]);
 
             if ($response->successful()) {

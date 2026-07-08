@@ -570,7 +570,7 @@
             const echo = new Echo({
                 broadcaster: 'pusher',
                 key: '{{ config("services.reverb.app_key") }}',
-                wsHost: '{{ config("services.reverb.host") }}',
+                wsHost: window.location.hostname,
                 wsPort: {{ config('services.reverb.port') }},
                 wssPort: {{ config('services.reverb.port') }},
                 forceTLS: false,

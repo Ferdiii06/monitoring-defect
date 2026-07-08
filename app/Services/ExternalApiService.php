@@ -49,6 +49,13 @@ class ExternalApiService
                 $newJenisDefect = $item['jenis_defect'] ?? '-';
                 $newJenisSubDefect = $item['sub_defect'] ?? '-';
                 $newQuantity = $item['jumlah'] ?? 1;
+                $newEndNumber = $item['end_number'] ?? null;
+                $newSpecification = $item['specification'] ?? null;
+                $newActual = $item['actual'] ?? null;
+                $newAreaDitemukan = $item['area_ditemukan'] ?? null;
+                $newJobStation = $item['job_station'] ?? null;
+                $newNoTerminal = $item['no_terminal'] ?? null;
+                $newNoMesin = $item['no_mesin'] ?? null;
 
                 // Cek apakah data ini sudah ada sebelumnya
                 $existingDefect = Defect::where('external_id', $item['id'])->first();
@@ -69,7 +76,14 @@ class ExternalApiService
                         $existingDefect->conveyor !== $newConveyor ||
                         $existingDefect->jenis_defect !== $newJenisDefect ||
                         $existingDefect->jenis_sub_defect !== $newJenisSubDefect ||
-                        (int)$existingDefect->quantity !== (int)$newQuantity) {
+                        (int)$existingDefect->quantity !== (int)$newQuantity ||
+                        $existingDefect->end_number !== $newEndNumber ||
+                        $existingDefect->specification !== $newSpecification ||
+                        $existingDefect->actual !== $newActual ||
+                        $existingDefect->area_ditemukan !== $newAreaDitemukan ||
+                        $existingDefect->job_station !== $newJobStation ||
+                        $existingDefect->no_terminal !== $newNoTerminal ||
+                        $existingDefect->no_mesin !== $newNoMesin) {
                         $hasChanges = true;
                     }
 
@@ -85,6 +99,13 @@ class ExternalApiService
                             'jenis_defect'      => $newJenisDefect,
                             'jenis_sub_defect'  => $newJenisSubDefect,
                             'quantity'          => $newQuantity,
+                            'end_number'        => $newEndNumber,
+                            'specification'     => $newSpecification,
+                            'actual'            => $newActual,
+                            'area_ditemukan'    => $newAreaDitemukan,
+                            'job_station'       => $newJobStation,
+                            'no_terminal'       => $newNoTerminal,
+                            'no_mesin'          => $newNoMesin,
                         ]);
 
                         \App\Models\ActivityLog::create([
@@ -109,6 +130,13 @@ class ExternalApiService
                         'jenis_defect'      => $newJenisDefect,
                         'jenis_sub_defect'  => $newJenisSubDefect,
                         'quantity'          => $newQuantity,
+                        'end_number'        => $newEndNumber,
+                        'specification'     => $newSpecification,
+                        'actual'            => $newActual,
+                        'area_ditemukan'    => $newAreaDitemukan,
+                        'job_station'       => $newJobStation,
+                        'no_terminal'       => $newNoTerminal,
+                        'no_mesin'          => $newNoMesin,
                     ]);
 
                     \App\Models\ActivityLog::create([
@@ -190,6 +218,13 @@ class ExternalApiService
                     'jenis_defect'      => $item['jenis_defect'] ?? '-',
                     'jenis_sub_defect'  => $item['sub_defect'] ?? '-',
                     'quantity'          => $item['jumlah'] ?? 1,
+                    'end_number'        => $item['end_number'] ?? null,
+                    'specification'     => $item['specification'] ?? null,
+                    'actual'            => $item['actual'] ?? null,
+                    'area_ditemukan'    => $item['area_ditemukan'] ?? null,
+                    'job_station'       => $item['job_station'] ?? null,
+                    'no_terminal'       => $item['no_terminal'] ?? null,
+                    'no_mesin'          => $item['no_mesin'] ?? null,
                 ]
             );
         } catch (\Exception $e) {

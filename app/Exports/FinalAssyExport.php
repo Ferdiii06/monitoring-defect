@@ -71,6 +71,11 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             'conveyor',
             'Jenis Defect',
             'Jenis Sub Defect',
+            'END (#)',
+            'Specification',
+            'Actual',
+            'Area Ditemukan',
+            'Job Station',
             'Quantity',
         ];
     }
@@ -86,6 +91,11 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             $row->conveyor,
             $row->jenis_defect,
             $row->jenis_sub_defect,
+            $row->end_number,
+            $row->specification,
+            $row->actual,
+            $row->area_ditemukan,
+            $row->job_station,
             $row->quantity,
         ];
     }

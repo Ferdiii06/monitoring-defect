@@ -239,6 +239,8 @@
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Sub Defect</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">No Terminal</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">No Mesin</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2">Quantity</th>
                             </tr>
                         </thead>
@@ -270,6 +272,12 @@
                                     </td>
                                     <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
                                         {{ $record->jenis_sub_defect }}
+                                    </td>
+                                    <td class="py-4 text-sm text-gray-900 px-4 font-medium">
+                                        {{ $record->no_terminal ?? '-' }}
+                                    </td>
+                                    <td class="py-4 text-sm text-gray-900 px-4 font-medium">
+                                        {{ $record->no_mesin ?? '-' }}
                                     </td>
                                     <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">
                                         {{ $record->quantity }}
@@ -561,7 +569,7 @@
             const echo = new Echo({
                 broadcaster: 'pusher',
                 key: '{{ config("services.reverb.app_key") }}',
-                wsHost: '{{ config("services.reverb.host") }}',
+                wsHost: window.location.hostname,
                 wsPort: {{ config('services.reverb.port') }},
                 wssPort: {{ config('services.reverb.port') }},
                 forceTLS: false,
@@ -658,6 +666,8 @@
                     <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || item.konveyor || '-'}</span></td>
                     <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
                     <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.sub_defect || item.jenis_sub_defect || '-'}</td>
+                    <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.no_terminal || '-'}</td>
+                    <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.no_mesin || '-'}</td>
                     <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">${item.jumlah || item.quantity || 0}</td>
                 `;
 

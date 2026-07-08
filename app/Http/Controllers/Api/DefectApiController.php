@@ -109,7 +109,7 @@ class DefectApiController extends Controller
         if ($response->successful()) {
             $users = $response->json('data');
             $totalUsers = count($users);
-            $activeThreshold = Carbon::now('UTC')->subMinutes(15);
+            $activeThreshold = Carbon::now('UTC')->subMinutes(2);
             $activeUsers = collect($users)->filter(function ($user) use ($activeThreshold) {
                 if (empty($user['last_active_at'])) {
                     return false;

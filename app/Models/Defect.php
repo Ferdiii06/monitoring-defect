@@ -21,5 +21,12 @@ class Defect extends Model
         'jenis_defect',
         'jenis_sub_defect',
         'quantity',
+        'end_number',
+        'specification',
+        'actual',
+        'area_ditemukan',
+        'job_station',
+        'no_terminal',
+        'no_mesin',
     ];
 }

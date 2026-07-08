@@ -473,7 +473,7 @@
             const echo = new Echo({
                 broadcaster: 'pusher',
                 key: '{{ config("services.reverb.app_key") }}',
-                wsHost: '{{ config("services.reverb.host") }}',
+                wsHost: window.location.hostname,
                 wsPort: {{ config('services.reverb.port') }},
                 wssPort: {{ config('services.reverb.port') }},
                 forceTLS: false,
@@ -531,6 +531,10 @@
                             body: JSON.stringify({ id: laporan.id })
                         }).catch(err => console.error('[API] Gagal hapus lokal:', err));
                     }
+                })
+                .listen('.user.status.updated', function(e) {
+                    console.log('[WebSocket] User status updated:', e);
+                    fetchStats();
                 });
 
         } catch(err) {
@@ -625,6 +629,9 @@
                 })
                 .catch(err => console.error('[API] Gagal fetch statistik:', err));
         }
+
+        // Auto reload stats periodically (every 5 seconds)
+        setInterval(fetchStats, 5000);
     });
     </script>
 </body>
