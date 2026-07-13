@@ -20,11 +20,11 @@
     <div class="w-full max-w-md flex flex-col items-center">
 
         <!-- Logo Section -->
-        <div class="flex flex-col items-center mb-8">
-            <img class="h-10 w-auto" src="{{ asset('images/logo-yazaki.png') }}" alt="Yazaki Logo">
+        <div class="flex flex-col items-center mb-4">
+            <img class="w-64 h-64 -my-16 object-contain" src="{{ asset('images/logo-yazaki.jpg') }}" alt="Yazaki Logo">
             <!-- Quality Subtitle -->
-            <p class="text-[#a4262c]/70 text-xs font-semibold mt-14 tracking-wide text-center">
-                Quality in Every Connection
+            <p class="text-[#a4262c] text-sm font-bold mt-2 uppercase tracking-wider text-center">
+                Report Internal Defect
             </p>
         </div>
 
