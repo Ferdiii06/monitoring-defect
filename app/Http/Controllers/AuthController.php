@@ -27,7 +27,7 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
-            return redirect('/dashboard');
+            return redirect()->intended('/dashboard');
         }
 
         throw ValidationException::withMessages([
