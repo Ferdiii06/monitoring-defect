@@ -12,6 +12,14 @@ Route::get('/', function () {
     return view('login');
 })->name('login');
 
+// Handle GET /login to prevent 404 or method not allowed
+Route::get('/login', function () {
+    if (session('logged_in')) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
+});
+
 // Authenticate post request
 Route::post('/login', [AuthController::class, 'login']);
 
