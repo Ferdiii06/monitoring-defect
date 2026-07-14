@@ -29,7 +29,7 @@
         </div>
 
         <!-- Form Section -->
-        <form action="/login" method="POST" class="w-full max-w-xs space-y-4">
+        <form action="{{ route('login.post') }}" method="POST" class="w-full max-w-xs space-y-4">
             @csrf
 
             <!-- Validation Error Alert -->

@@ -21,7 +21,7 @@ Route::get('/login', function () {
 });
 
 // Authenticate post request
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
 // Protected routes wrapped in a login enforcement middleware group
 Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(function () {
