@@ -16,7 +16,7 @@ class EnsureUserIsLoggedIn
         if (!session('logged_in')) {
             // Store the intended URL so they can be redirected back after login
             session()->put('url.intended', $request->fullUrl());
-            return redirect('/');
+            return redirect()->route('login');
         }
 
         return $next($request);

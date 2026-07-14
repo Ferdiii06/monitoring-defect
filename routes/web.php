@@ -7,7 +7,7 @@ use App\Http\Controllers\DashboardController;
 // Login view (guest redirect checked inline)
 Route::get('/', function () {
     if (session('logged_in')) {
-        return redirect('/dashboard');
+        return redirect()->route('dashboard');
     }
     return view('login');
 })->name('login');

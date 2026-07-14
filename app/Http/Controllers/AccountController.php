@@ -16,7 +16,7 @@ class AccountController extends Controller
     {
         // Enforce session authentication check
         if (!session('logged_in')) {
-            return redirect('/');
+            return redirect()->route('login');
         }
 
         return view('add_account');
@@ -29,7 +29,7 @@ class AccountController extends Controller
     {
         // Enforce session authentication check
         if (!session('logged_in')) {
-            return redirect('/');
+            return redirect()->route('login');
         }
 
         // Validate form inputs
@@ -61,7 +61,7 @@ class AccountController extends Controller
                 ]);
 
                 session()->flash('success', 'Akun "' . $request->name . '" berhasil dibuat!');
-                return redirect('/dashboard');
+                return redirect()->route('dashboard');
             } else {
                 Log::error('Add Account gagal - API response tidak sukses', [
                     'status' => $response->status(),

@@ -15,7 +15,7 @@ class DashboardController extends Controller
     public function index()
     {
         if (!session('logged_in')) {
-            return redirect('/');
+            return redirect()->route('login');
         }
 
         try {

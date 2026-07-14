@@ -21,7 +21,7 @@ class ReportController extends Controller
     public function index(Request $request)
     {
         if (!session('logged_in')) {
-            return redirect('/');
+            return redirect()->route('login');
         }
 
         // Sync data dari API eksternal ke database lokal
@@ -110,7 +110,7 @@ class ReportController extends Controller
     public function preAssy(Request $request)
     {
         if (!session('logged_in')) {
-            return redirect('/');
+            return redirect()->route('login');
         }
 
         // Sync data dari API eksternal ke database lokal
@@ -196,7 +196,7 @@ class ReportController extends Controller
     public function logSystem(Request $request)
     {
         if (!session('logged_in')) {
-            return redirect('/');
+            return redirect()->route('login');
         }
 
         // Sync data dari API eksternal ke database lokal
@@ -299,7 +299,7 @@ class ReportController extends Controller
     public function recentDefects(Request $request)
     {
         if (!session('logged_in')) {
-            return redirect('/');
+            return redirect()->route('login');
         }
 
         // Sync data dari API eksternal ke database lokal

@@ -27,7 +27,7 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
-            return redirect()->intended('/dashboard');
+            return redirect()->intended(route('dashboard'));
         }
 
         throw ValidationException::withMessages([
@@ -45,6 +45,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect()->route('login');
     }
 }
