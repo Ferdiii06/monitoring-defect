@@ -468,7 +468,7 @@
             const echo = new Echo({
                 broadcaster: 'pusher',
                 key: '{{ config("services.reverb.app_key") }}',
-                wsHost: window.location.hostname,
+                wsHost: '{{ config("services.reverb.host") ?? "10.216.0.188" }}',
                 wsPort: {{ config('services.reverb.port') }},
                 wssPort: {{ config('services.reverb.port') }},
                 forceTLS: false,
@@ -499,7 +499,7 @@
                 wsText.textContent = 'Error';
                 console.error('[WebSocket] Error:', err);
             });
-
+            
             // Listen to monitoring channel
             echo.channel('monitoring-channel')
                 .listen('.laporan.updated', function(e) {
