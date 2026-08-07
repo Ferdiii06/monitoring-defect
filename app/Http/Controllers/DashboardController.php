@@ -40,7 +40,7 @@ class DashboardController extends Controller
                 $users = $response->json('data');
                 $totalUsers = count($users);
 
-                $activeThreshold = Carbon::now('UTC')->subMinutes(2);
+                $activeThreshold = Carbon::now('UTC')->subMinutes(5);
                 $activeUsers = collect($users)->filter(function ($user) use ($activeThreshold) {
                     if (empty($user['last_active_at'])) {
                         return false;
