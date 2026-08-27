@@ -84,7 +84,7 @@ class DatabaseSeeder extends Seeder
                 'jenis_aksi' => 'Create Report',
                 'aktivitas' => 'Melaporkan defect Pre Assy - Toyota - Jumlah 15',
                 'jenis_defect' => 'CORE',
-                'ip_address' => '192.168.1.10',
+                'ip_address' => '10.62.231.23',
             ],
             [
                 'waktu' => Carbon::create(2026, 6, 26, 16, 30, 10),
@@ -92,7 +92,7 @@ class DatabaseSeeder extends Seeder
                 'jenis_aksi' => 'Delete Report',
                 'aktivitas' => 'Menghapus report defect Final Assy - Nissan',
                 'jenis_defect' => 'INSERT CIRCUIT',
-                'ip_address' => '192.168.1.10',
+                'ip_address' => '10.62.231.23',
             ],
             [
                 'waktu' => Carbon::create(2026, 6, 26, 16, 30, 10),
@@ -100,7 +100,7 @@ class DatabaseSeeder extends Seeder
                 'jenis_aksi' => 'Update Report',
                 'aktivitas' => 'Mengubah jumlah defect menjadi 20',
                 'jenis_defect' => 'TERMINAL',
-                'ip_address' => '192.168.1.10',
+                'ip_address' => '10.62.231.23',
             ],
             [
                 'waktu' => Carbon::create(2026, 6, 26, 16, 30, 10),
@@ -108,7 +108,7 @@ class DatabaseSeeder extends Seeder
                 'jenis_aksi' => 'Create Account',
                 'aktivitas' => 'Membuat akun baru - User: Andi Saputra',
                 'jenis_defect' => 'none',
-                'ip_address' => '192.168.1.10',
+                'ip_address' => '10.62.231.23',
             ],
         ];
 

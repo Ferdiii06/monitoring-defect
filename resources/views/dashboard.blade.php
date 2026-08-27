@@ -103,7 +103,7 @@
 
     <!-- Main Content Area -->
     <main class="flex-1 overflow-y-auto px-10 py-8 flex flex-col justify-start">
-        
+
         <!-- Header Section -->
         <header class="flex justify-between items-center mb-8">
             <div>
@@ -116,7 +116,7 @@
                 <span id="ws-dot" class="w-2 h-2 rounded-full bg-gray-400"></span>
                 <span id="ws-text">Menghubungkan...</span>
             </div>
-            
+
             <div class="flex items-center space-x-6">
                 <!-- Add Account Button -->
                 <a href="{{ route('account.create') }}" class="bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-semibold py-2 px-4 rounded-md transition duration-200 shadow-sm flex items-center space-x-1.5 text-center">
@@ -218,11 +218,11 @@
         <!-- Defect Trend Section -->
         <section class="bg-white border border-gray-100 rounded-lg p-6 mb-8 shadow-sm">
             <h2 class="text-base font-semibold text-gray-950 mb-4">Defect Trend</h2>
-            
+
             <div class="border border-gray-100 rounded-lg p-6">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-sm font-bold text-gray-950">Grafik Defect (Real-time)</h3>
-                    
+
                     <div class="flex items-center space-x-4">
                         <!-- Dropdown Select -->
                         <div class="relative">
@@ -343,7 +343,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const ctx = document.getElementById('defectChart').getContext('2d');
-            
+
             // Create gradient
             const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
             gradient.addColorStop(0, 'rgba(139, 0, 0, 0.25)');   // Deep red with opacity
@@ -353,8 +353,8 @@
             const chartData = {
                 today: {
                     labels: [
-                        '00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', 
-                        '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', 
+                        '00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00',
+                        '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00',
                         '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
                     ],
                     data: @json($todayData)
@@ -441,7 +441,7 @@
             periodSelect.addEventListener("change", function () {
                 const selected = this.value;
                 const period = chartData[selected];
-                
+
                 defectChart.data.labels = period.labels;
                 defectChart.data.datasets[0].data = period.data;
                 defectChart.update();
@@ -460,7 +460,7 @@
             const echo = new Echo({
                 broadcaster: 'pusher',
                 key: '{{ config("services.reverb.app_key") }}',
-                wsHost: '{{ config("services.reverb.host") ?? "10.216.0.188" }}',
+                wsHost: '{{ config("services.reverb.host") ?? "10.62.231.23" }}',
                 wsPort: {{ config('services.reverb.port') }},
                 wssPort: {{ config('services.reverb.port') }},
                 forceTLS: false,
@@ -491,7 +491,7 @@
                 wsText.textContent = 'Error';
                 console.error('[WebSocket] Error:', err);
             });
-            
+
             // Listen to monitoring channel
             echo.channel('monitoring-channel')
                 .listen('.laporan.updated', function(e) {
@@ -604,13 +604,13 @@
                 .then(stats => {
                     const totalEl = document.getElementById('stat-total-defect');
                     if (totalEl) totalEl.innerText = stats.totalDefect.toLocaleString('id-ID');
-                    
+
                     const todayEl = document.getElementById('stat-defect-today');
                     if (todayEl) todayEl.innerText = stats.defectToday;
-                    
+
                     const activeEl = document.getElementById('stat-active-users');
                     if (activeEl) activeEl.innerText = stats.activeUsers;
-                    
+
                     const totalUsersEl = document.getElementById('stat-total-users');
                     if (totalUsersEl) totalUsersEl.innerText = stats.totalUsers;
                 })
