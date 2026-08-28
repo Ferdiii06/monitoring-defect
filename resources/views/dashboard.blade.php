@@ -509,7 +509,7 @@
                         deleteRowFromTable(laporan.id);
                         fetchStats();
                         // Hapus dari database lokal juga via AJAX
-                        fetch('/api/defects/delete-external', {
+                        fetch('{{ url("/api/defects/delete-external") }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -599,7 +599,7 @@
         }
 
         function fetchStats() {
-            fetch('/api/dashboard/stats')
+            fetch('{{ url("/api/dashboard/stats") }}')
                 .then(r => r.json())
                 .then(stats => {
                     const totalEl = document.getElementById('stat-total-defect');
