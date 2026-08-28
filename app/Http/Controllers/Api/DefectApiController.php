@@ -99,6 +99,12 @@ class DefectApiController extends Controller
      */
     public function getStats()
     {
+        return response()->json([
+            'totalDefect' => 999,
+            'defectToday' => 999,
+            'activeUsers' => 999,
+            'totalUsers'  => 999,
+        ]);
         try {
             $totalUsers = 0;
             $activeUsers = 0;
@@ -146,6 +152,7 @@ class DefectApiController extends Controller
             ]);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('getStats Fatal Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            @file_put_contents(public_path('error_debug.txt'), $e->getMessage() . "\n" . $e->getTraceAsString());
             return response()->json([
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
