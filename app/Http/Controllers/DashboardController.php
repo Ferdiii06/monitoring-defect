@@ -38,16 +38,26 @@ class DashboardController extends Controller
 
             if ($response->successful()) {
                 $users = $response->json('data');
-                $totalUsers = count($users);
-
-                $activeThreshold = Carbon::now('UTC')->subMinutes(5);
-                $activeUsers = collect($users)->filter(function ($user) use ($activeThreshold) {
-                    if (empty($user['last_active_at'])) {
-                        return false;
+                
+                if (!empty($users) && is_array($users)) {
+                    if (isset($users['message']) || (isset($users[0]) && !is_array($users[0]))) {
+                        $users = [];
                     }
-                    $lastActive = Carbon::parse($user['last_active_at'], 'UTC');
-                    return $lastActive->greaterThan($activeThreshold);
-                })->count();
+                    $totalUsers = count($users);
+
+                    $activeThreshold = Carbon::now('UTC')->subMinutes(5);
+                    $activeUsers = collect($users)->filter(function ($user) use ($activeThreshold) {
+                        if (!is_array($user) || empty($user['last_active_at'])) {
+                            return false;
+                        }
+                        try {
+                            $lastActive = Carbon::parse($user['last_active_at'], 'UTC');
+                            return $lastActive->greaterThan($activeThreshold);
+                        } catch (\Exception $e) {
+                            return false;
+                        }
+                    })->count();
+                }
             } else {
                 Log::warning('Dashboard: Failed to fetch users from qa-backend, status: ' . $response->status());
             }

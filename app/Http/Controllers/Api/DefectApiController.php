@@ -115,15 +115,23 @@ class DefectApiController extends Controller
                     return [];
                 });
 
-                if (!empty($users)) {
+                if (!empty($users) && is_array($users)) {
+                    // Check if it's actually a list of users and not an error response object
+                    if (isset($users['message']) || (isset($users[0]) && !is_array($users[0]))) {
+                        $users = [];
+                    }
                     $totalUsers = count($users);
                     $activeThreshold = Carbon::now('UTC')->subMinutes(5);
                     $activeUsers = collect($users)->filter(function ($user) use ($activeThreshold) {
-                        if (empty($user['last_active_at'])) {
+                        if (!is_array($user) || empty($user['last_active_at'])) {
                             return false;
                         }
-                        $lastActive = Carbon::parse($user['last_active_at'], 'UTC');
-                        return $lastActive->greaterThan($activeThreshold);
+                        try {
+                            $lastActive = Carbon::parse($user['last_active_at'], 'UTC');
+                            return $lastActive->greaterThan($activeThreshold);
+                        } catch (\Exception $e) {
+                            return false;
+                        }
                     })->count();
                 }
             } catch (\Exception $e) {
@@ -136,7 +144,8 @@ class DefectApiController extends Controller
                 'activeUsers' => $activeUsers,
                 'totalUsers'  => $totalUsers,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('getStats Fatal Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             return response()->json([
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
