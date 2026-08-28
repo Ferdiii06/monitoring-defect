@@ -98,35 +98,49 @@ class DefectApiController extends Controller
      * Get updated dashboard statistics.
      */
     public function getStats()
-{
-    $totalUsers = 0;
-    $activeUsers = 0;
+    {
+        try {
+            $totalUsers = 0;
+            $activeUsers = 0;
 
-    try {
-        $apiUrl = config('services.external_api.url');
-        $response = Http::timeout(5)->get($apiUrl . '/users');
+            try {
+                // Gunakan Cache untuk menghindari timeout berulang yang menghabiskan worker Apache
+                $users = \Illuminate\Support\Facades\Cache::remember('api_users_stats', 60, function () {
+                    $apiUrl = config('services.external_api.url');
+                    $response = Http::timeout(2)->get($apiUrl . '/users');
+                    
+                    if ($response->successful()) {
+                        return $response->json('data');
+                    }
+                    return [];
+                });
 
-        if ($response->successful()) {
-            $users = $response->json('data');
-            $totalUsers = count($users);
-            $activeThreshold = Carbon::now('UTC')->subMinutes(5);
-            $activeUsers = collect($users)->filter(function ($user) use ($activeThreshold) {
-                if (empty($user['last_active_at'])) {
-                    return false;
+                if (!empty($users)) {
+                    $totalUsers = count($users);
+                    $activeThreshold = Carbon::now('UTC')->subMinutes(5);
+                    $activeUsers = collect($users)->filter(function ($user) use ($activeThreshold) {
+                        if (empty($user['last_active_at'])) {
+                            return false;
+                        }
+                        $lastActive = Carbon::parse($user['last_active_at'], 'UTC');
+                        return $lastActive->greaterThan($activeThreshold);
+                    })->count();
                 }
-                $lastActive = Carbon::parse($user['last_active_at'], 'UTC');
-                return $lastActive->greaterThan($activeThreshold);
-            })->count();
-        }
-    } catch (\Exception $e) {
-        Log::warning('getStats: Error fetching active users - ' . $e->getMessage());
-    }
+            } catch (\Exception $e) {
+                Log::warning('getStats: Error fetching active users - ' . $e->getMessage());
+            }
 
-        return response()->json([
-            'totalDefect' => (int) \App\Models\Defect::sum('quantity'),
-            'defectToday' => (int) \App\Models\Defect::whereDate('waktu', \Carbon\Carbon::today())->sum('quantity'),
-            'activeUsers' => $activeUsers,
-            'totalUsers'  => $totalUsers,
-        ]);
+            return response()->json([
+                'totalDefect' => (int) \App\Models\Defect::sum('quantity'),
+                'defectToday' => (int) \App\Models\Defect::whereDate('waktu', \Carbon\Carbon::today())->sum('quantity'),
+                'activeUsers' => $activeUsers,
+                'totalUsers'  => $totalUsers,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
     }
 }
