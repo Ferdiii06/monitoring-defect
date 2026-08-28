@@ -99,12 +99,6 @@ class DefectApiController extends Controller
      */
     public function getStats()
     {
-        return response()->json([
-            'totalDefect' => 999,
-            'defectToday' => 999,
-            'activeUsers' => 999,
-            'totalUsers'  => 999,
-        ]);
         try {
             $totalUsers = 0;
             $activeUsers = 0;
@@ -113,6 +107,7 @@ class DefectApiController extends Controller
                 // Gunakan Cache untuk menghindari timeout berulang yang menghabiskan worker Apache
                 $users = \Illuminate\Support\Facades\Cache::remember('api_users_stats', 60, function () {
                     $apiUrl = config('services.external_api.url');
+                    if (!$apiUrl) return [];
                     $response = Http::timeout(2)->get($apiUrl . '/users');
                     
                     if ($response->successful()) {
@@ -122,7 +117,6 @@ class DefectApiController extends Controller
                 });
 
                 if (!empty($users) && is_array($users)) {
-                    // Check if it's actually a list of users and not an error response object
                     if (isset($users['message']) || (isset($users[0]) && !is_array($users[0]))) {
                         $users = [];
                     }
@@ -144,12 +138,26 @@ class DefectApiController extends Controller
                 Log::warning('getStats: Error fetching active users - ' . $e->getMessage());
             }
 
+            // Fallback totalUsers to local admin accounts if API is empty
+            if ($totalUsers === 0) {
+                $totalUsers = \App\Models\User::count();
+            }
+
+            // Fallback activeUsers to recent active users in defects/logs if API activeUsers is 0
+            if ($activeUsers === 0) {
+                $recentOperators = \App\Models\Defect::where('waktu', '>=', Carbon::now()->subMinutes(15))
+                    ->distinct('user_name')
+                    ->count('user_name');
+                $activeUsers = max(1, $recentOperators);
+            }
+
             return response()->json([
                 'totalDefect' => (int) \App\Models\Defect::sum('quantity'),
-                'defectToday' => (int) \App\Models\Defect::whereDate('waktu', \Carbon\Carbon::today())->sum('quantity'),
-                'activeUsers' => $activeUsers,
-                'totalUsers'  => $totalUsers,
+                'defectToday' => (int) \App\Models\Defect::whereDate('waktu', Carbon::today())->sum('quantity'),
+                'activeUsers' => (int) $activeUsers,
+                'totalUsers'  => (int) $totalUsers,
             ]);
+
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('getStats Fatal Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             @file_put_contents(public_path('error_debug.txt'), $e->getMessage() . "\n" . $e->getTraceAsString());

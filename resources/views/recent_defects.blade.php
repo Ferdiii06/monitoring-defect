@@ -109,11 +109,7 @@
                 <p class="text-sm text-gray-500 mt-1">Daftar semua riwayat defect Pre Assy & Final Assy secara real-time.</p>
             </div>
 
-            <!-- WebSocket Status Badge -->
-            <div id="ws-status" class="flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-400">
-                <span id="ws-dot" class="w-2 h-2 rounded-full bg-gray-400"></span>
-                <span id="ws-text">Menghubungkan...</span>
-            </div>
+
             
             <div class="flex items-center space-x-6">
                 <!-- Admin Profile Card -->
@@ -546,146 +542,79 @@
         }
     </script>
 
-    <!-- Real-time WebSocket Listener -->
+    <!-- AJAX Polling Script (8 Detik) -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const wsStatus = document.getElementById('ws-status');
-        const wsDot = document.getElementById('ws-dot');
-        const wsText = document.getElementById('ws-text');
+        let pollingTimer = null;
 
-        try {
-            const echo = new Echo({
-                broadcaster: 'pusher',
-                key: '{{ config("services.reverb.app_key") }}',
-                wsHost: window.location.hostname,
-                wsPort: {{ config('services.reverb.port') }},
-                wssPort: {{ config('services.reverb.port') }},
-                forceTLS: false,
-                encrypted: false,
-                disableStats: true,
-                enabledTransports: ['ws', 'wss'],
-                cluster: 'mt1',
-            });
-
-            echo.connector.pusher.connection.bind('connected', function() {
-                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-600';
-                wsDot.className = 'w-2 h-2 rounded-full bg-green-500 animate-pulse';
-                wsText.textContent = 'Terhubung';
-            });
-
-            echo.connector.pusher.connection.bind('disconnected', function() {
-                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-500';
-                wsDot.className = 'w-2 h-2 rounded-full bg-red-500';
-                wsText.textContent = 'Terputus';
-            });
-
-            echo.connector.pusher.connection.bind('error', function() {
-                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-500';
-                wsDot.className = 'w-2 h-2 rounded-full bg-red-500';
-                wsText.textContent = 'Error';
-            });
-
-            echo.channel('monitoring-channel')
-                .listen('.laporan.updated', function(e) {
-                    const laporan = e.laporan;
-                    
-                    if (e.action === 'created') {
-                        addRowToTable(laporan);
-                    } else if (e.action === 'deleted') {
-                        const row = document.querySelector(`tr[data-id="${laporan.id}"]`);
-                        if (row) { 
-                            row.style.backgroundColor = '#fef2f2'; 
-                            setTimeout(() => {
-                                row.remove();
-                                const tbody = document.getElementById('reportTableBody');
-                                const visibleEl = document.getElementById('visible-count');
-                                if (visibleEl && tbody) visibleEl.innerText = tbody.children.length;
-
-                                const totalEl = document.getElementById('total-count');
-                                if (totalEl) {
-                                    let currentTotal = parseInt(totalEl.innerText) || 0;
-                                    totalEl.innerText = Math.max(0, currentTotal - 1);
-                                }
-                            }, 500); 
-                        }
-                        fetch('/api/defects/delete-external', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({ id: laporan.id })
-                        }).catch(err => console.error('[API] Gagal hapus lokal:', err));
-                    } else if (e.action === 'updated') {
-                        updateRowInTable(laporan);
-                    }
-                });
-
-            function formatDate(dateStr) {
-                const d = new Date(dateStr);
-                const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-                return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
-            }
-
-            // Ganti format jam jika ada
-            function formatTime(dateStr) {
-                const d = new Date(dateStr);
-                return d.toTimeString().substring(0, 8);
-            }
-
-            function addRowToTable(item) {
-                const tbody = document.getElementById('reportTableBody');
-                if (!tbody) return;
-
-                const waktu = item.created_at || item.tanggal || new Date().toISOString();
-                const jenisAssy = item.type || item.jenis_assy || 'Final Assy';
-                const assyBadge = jenisAssy === 'Final Assy'
-                    ? '<span class="inline-block px-2 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 tracking-wider">Final Assy</span>'
-                    : '<span class="inline-block px-2 py-0.5 rounded border border-rose-200 bg-rose-50 text-rose-700 tracking-wider">Pre Assy</span>';
-
-                const tr = document.createElement('tr');
-                tr.className = 'border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors';
-                tr.setAttribute('data-id', item.id);
-                tr.style.backgroundColor = '#fffbeb';
-                setTimeout(() => { tr.style.backgroundColor = ''; tr.style.transition = 'background-color 1s'; }, 2000);
-
-                tr.innerHTML = `
-                    <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(waktu)}</span></div></td>
-                    <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.nama_user || item.user_name || '-'}</td>
-                    <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
-                    <td class="py-4 text-xs font-bold px-4">${assyBadge}</td>
-                    <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
-                    <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || item.konveyor || '-'}</span></td>
-                    <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
-                    <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.sub_defect || item.jenis_sub_defect || '-'}</td>
-                    <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">${item.jumlah || item.quantity || 0}</td>
-                `;
-
-                tbody.insertBefore(tr, tbody.firstChild);
-
-                const visibleEl = document.getElementById('visible-count');
-                if (visibleEl) visibleEl.innerText = tbody.children.length;
-
-                const totalEl = document.getElementById('total-count');
-                if (totalEl) {
-                    let currentTotal = parseInt(totalEl.innerText) || 0;
-                    totalEl.innerText = currentTotal + 1;
-                }
-            }
-
-            function updateRowInTable(item) {
-                const row = document.querySelector(`tr[data-id="${item.id}"]`);
-                if (row) {
-                    row.remove();
-                    addRowToTable(item);
-                }
-            }
-
-        } catch(err) {
-            wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-600';
-            wsDot.className = 'w-2 h-2 rounded-full bg-yellow-500';
-            wsText.textContent = 'Offline';
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
         }
+
+        function formatTime(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return '';
+            return d.toTimeString().substring(0, 8);
+        }
+
+        function fetchLiveRecentDefects() {
+            const currentQuery = window.location.search;
+            fetch('{{ url("/api/recent-defects/live") }}' + currentQuery)
+                .then(r => r.json())
+                .then(res => {
+                    if (!res.success || !Array.isArray(res.data)) return;
+                    const tbody = document.getElementById('reportTableBody');
+                    if (!tbody) return;
+
+                    if (res.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
+                        return;
+                    }
+
+                    let html = '';
+                    res.data.forEach(item => {
+                        const jenisAssy = item.jenis_assy || 'Final Assy';
+                        const assyBadge = jenisAssy === 'Final Assy'
+                            ? '<span class="inline-block px-2 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 tracking-wider">Final Assy</span>'
+                            : '<span class="inline-block px-2 py-0.5 rounded border border-rose-200 bg-rose-50 text-rose-700 tracking-wider">Pre Assy</span>';
+
+                        html += `
+                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${item.id}">
+                                <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(item.waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(item.waktu)}</span></div></td>
+                                <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.user_name || '-'}</td>
+                                <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
+                                <td class="py-4 text-xs font-bold px-4">${assyBadge}</td>
+                                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
+                                <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || '-'}</span></td>
+                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
+                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_sub_defect || '-'}</td>
+                                <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">${item.quantity || 0}</td>
+                            </tr>
+                        `;
+                    });
+
+                    tbody.innerHTML = html;
+
+                    const visibleEl = document.getElementById('visible-count');
+                    if (visibleEl) visibleEl.innerText = res.data.length;
+
+                    const totalEl = document.getElementById('total-count');
+                    if (totalEl && res.total !== undefined) totalEl.innerText = res.total;
+                })
+                .catch(err => console.error('[Polling] Gagal fetch recent defects live:', err));
+        }
+
+        // Init polling timer
+        pollingTimer = setInterval(fetchLiveRecentDefects, 8000);
+
+        window.addEventListener('beforeunload', function() {
+            if (pollingTimer) clearInterval(pollingTimer);
+        });
     });
     </script>
 </body>

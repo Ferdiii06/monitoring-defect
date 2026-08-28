@@ -415,4 +415,387 @@ class ReportController extends Controller
     {
         return Excel::download(new RecentDefectsExport($request), 'report_recent_defects_' . now()->format('Y-m-d') . '.xlsx');
     }
+
+    /**
+     * Show form to create a new defect report.
+     */
+    public function createInputDefect(Request $request)
+    {
+        if (!session('logged_in')) {
+            return redirect()->route('login');
+        }
+
+        $type = $request->input('type', 'Final Assy');
+        return view('input_defect', ['type' => $type]);
+    }
+
+    /**
+     * Store a newly created defect report in database.
+     */
+    public function storeInputDefect(Request $request)
+    {
+        if (!session('logged_in')) {
+            return redirect()->route('login');
+        }
+
+        $validated = $request->validate([
+            'type'             => 'required|string|in:Final Assy,Pre Assy',
+            'jenis_mobil'      => 'required|string|max:255',
+            'conveyor'         => 'required|string|max:255',
+            'line'             => 'required|string|max:255',
+            'tanggal'          => 'required|date',
+            'jenis_defect'     => 'required|string|max:255',
+            'sub_defect'       => 'required|string|max:255',
+            'jumlah'           => 'required|integer|min:1',
+            'end_number'       => 'nullable|string|max:255',
+            'specification'    => 'nullable|string|max:255',
+            'actual'           => 'nullable|string|max:255',
+            'area_ditemukan'   => 'nullable|string|max:255',
+            'job_station'      => 'nullable|string|max:255',
+            'no_terminal'      => 'nullable|string|max:255',
+            'no_mesin'         => 'nullable|string|max:255',
+        ]);
+
+        $userName = session('user_name', 'Operator');
+        $shift = session('current_shift', '1A');
+
+        $defect = Defect::create([
+            'waktu'            => Carbon::parse($validated['tanggal']),
+            'user_name'        => $userName,
+            'shift'            => $shift,
+            'jenis_assy'       => $validated['type'],
+            'line_conveyor'    => $validated['line'],
+            'jenis_mobil'      => $validated['jenis_mobil'],
+            'conveyor'         => $validated['conveyor'],
+            'jenis_defect'     => $validated['jenis_defect'],
+            'jenis_sub_defect' => $validated['sub_defect'],
+            'quantity'         => $validated['jumlah'],
+            'end_number'       => $validated['end_number'] ?? null,
+            'specification'    => $validated['specification'] ?? null,
+            'actual'           => $validated['actual'] ?? null,
+            'area_ditemukan'   => $validated['area_ditemukan'] ?? null,
+            'job_station'      => $validated['job_station'] ?? null,
+            'no_terminal'      => $validated['no_terminal'] ?? null,
+            'no_mesin'         => $validated['no_mesin'] ?? null,
+        ]);
+
+        ActivityLog::create([
+            'waktu'        => now(),
+            'user_name'    => $userName,
+            'jenis_aksi'   => 'Create Report',
+            'aktivitas'    => "Melaporkan defect {$validated['type']} - {$validated['line']} ({$validated['conveyor']}) - Jumlah {$validated['jumlah']}",
+            'jenis_defect' => $validated['jenis_defect'],
+            'ip_address'   => $request->ip() ?? '127.0.0.1',
+        ]);
+
+        return redirect()->route('operator.home')->with('success', 'Laporan defect berhasil disimpan!');
+    }
+
+    /**
+     * Display Operator Home dashboard with their own submitted defects.
+     */
+    public function operatorHome(Request $request)
+    {
+        if (!session('logged_in')) {
+            return redirect()->route('login');
+        }
+
+        $myDefects = Defect::where('user_name', session('user_name'))
+            ->orderBy('waktu', 'desc')
+            ->take(10)
+            ->get();
+
+        return view('operator_home', compact('myDefects'));
+    }
+
+    /**
+     * Show form to edit an existing defect report.
+     */
+    public function editInputDefect($id)
+    {
+        if (!session('logged_in')) {
+            return redirect()->route('login');
+        }
+
+        $defect = Defect::findOrFail($id);
+
+        if ($defect->user_name !== session('user_name')) {
+            abort(403, 'Anda tidak memiliki akses untuk mengedit laporan ini.');
+        }
+
+        return view('input_defect', [
+            'type'   => $defect->jenis_assy,
+            'defect' => $defect
+        ]);
+    }
+
+    /**
+     * Update an existing defect report in database.
+     */
+    public function updateInputDefect(Request $request, $id)
+    {
+        if (!session('logged_in')) {
+            return redirect()->route('login');
+        }
+
+        $defect = Defect::findOrFail($id);
+
+        if ($defect->user_name !== session('user_name')) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah laporan ini.');
+        }
+
+        $validated = $request->validate([
+            'type'             => 'required|string|in:Final Assy,Pre Assy',
+            'jenis_mobil'      => 'required|string|max:255',
+            'conveyor'         => 'required|string|max:255',
+            'line'             => 'required|string|max:255',
+            'tanggal'          => 'required|date',
+            'jenis_defect'     => 'required|string|max:255',
+            'sub_defect'       => 'required|string|max:255',
+            'jumlah'           => 'required|integer|min:1',
+            'end_number'       => 'nullable|string|max:255',
+            'specification'    => 'nullable|string|max:255',
+            'actual'           => 'nullable|string|max:255',
+            'area_ditemukan'   => 'nullable|string|max:255',
+            'job_station'      => 'nullable|string|max:255',
+            'no_terminal'      => 'nullable|string|max:255',
+            'no_mesin'         => 'nullable|string|max:255',
+        ]);
+
+        $defect->update([
+            'waktu'            => Carbon::parse($validated['tanggal']),
+            'jenis_assy'       => $validated['type'],
+            'line_conveyor'    => $validated['line'],
+            'jenis_mobil'      => $validated['jenis_mobil'],
+            'conveyor'         => $validated['conveyor'],
+            'jenis_defect'     => $validated['jenis_defect'],
+            'jenis_sub_defect' => $validated['sub_defect'],
+            'quantity'         => $validated['jumlah'],
+            'end_number'       => $validated['end_number'] ?? null,
+            'specification'    => $validated['specification'] ?? null,
+            'actual'           => $validated['actual'] ?? null,
+            'area_ditemukan'   => $validated['area_ditemukan'] ?? null,
+            'job_station'      => $validated['job_station'] ?? null,
+            'no_terminal'      => $validated['no_terminal'] ?? null,
+            'no_mesin'         => $validated['no_mesin'] ?? null,
+        ]);
+
+        ActivityLog::create([
+            'waktu'        => now(),
+            'user_name'    => session('user_name', 'Operator'),
+            'jenis_aksi'   => 'Update Report',
+            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$validated['line']} ({$validated['conveyor']}) - Jumlah {$validated['jumlah']}",
+            'jenis_defect' => $validated['jenis_defect'],
+            'ip_address'   => $request->ip() ?? '127.0.0.1',
+        ]);
+
+        return redirect()->route('operator.home')->with('success', 'Laporan defect berhasil diperbarui!');
+    }
+
+    /**
+     * Delete an existing defect report from database.
+     */
+    public function destroyInputDefect($id)
+    {
+        if (!session('logged_in')) {
+            return redirect()->route('login');
+        }
+
+        $defect = Defect::findOrFail($id);
+
+        if ($defect->user_name !== session('user_name')) {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus laporan ini.');
+        }
+
+        $type = $defect->jenis_assy;
+        $line = $defect->line_conveyor;
+
+        $defect->delete();
+
+        ActivityLog::create([
+            'waktu'        => now(),
+            'user_name'    => session('user_name', 'Operator'),
+            'jenis_aksi'   => 'Delete Report',
+            'aktivitas'    => "Menghapus laporan defect {$type} - {$line}",
+            'jenis_defect' => $defect->jenis_defect,
+            'ip_address'   => request()->ip() ?? '127.0.0.1',
+        ]);
+
+        return redirect()->route('operator.home')->with('success', 'Laporan defect berhasil dihapus!');
+    }
+
+    /**
+     * API Live Polling: Dashboard Recent Defects (4 items)
+     */
+    public function dashboardRecentDefects(Request $request)
+    {
+        $defects = Defect::orderBy('waktu', 'desc')->take(4)->get();
+        return response()->json([
+            'success' => true,
+            'data'    => $defects
+        ]);
+    }
+
+    /**
+     * API Live Polling: Final Assy Defects with active filters
+     */
+    public function finalAssyLive(Request $request)
+    {
+        $query = Defect::where('jenis_assy', 'Final Assy');
+
+        $dateRange        = $request->input('date_range');
+        $selectedDefect   = $request->input('defect');
+        $selectedLine     = $request->input('line');
+        $selectedConveyor = $request->input('conveyor');
+
+        if ($dateRange) {
+            $dates = explode(' to ', $dateRange);
+            if (count($dates) === 2) {
+                $query->whereBetween('waktu', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[1])->endOfDay()]);
+            } else if (count($dates) === 1) {
+                $query->whereBetween('waktu', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[0])->endOfDay()]);
+            }
+        }
+
+        if ($selectedDefect && $selectedDefect !== 'all') {
+            $query->where('jenis_defect', $selectedDefect);
+        }
+        if ($selectedLine && $selectedLine !== 'all') {
+            $query->where('jenis_mobil', $selectedLine);
+        }
+        if ($selectedConveyor && $selectedConveyor !== 'all') {
+            $query->where('conveyor', $selectedConveyor);
+        }
+
+        $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $records->items(),
+            'total'   => $records->total()
+        ]);
+    }
+
+    /**
+     * API Live Polling: Pre Assy Defects with active filters
+     */
+    public function preAssyLive(Request $request)
+    {
+        $query = Defect::where('jenis_assy', 'Pre Assy');
+
+        $dateRange        = $request->input('date_range');
+        $selectedDefect   = $request->input('defect');
+        $selectedLine     = $request->input('line');
+        $selectedConveyor = $request->input('conveyor');
+
+        if ($dateRange) {
+            $dates = explode(' to ', $dateRange);
+            if (count($dates) === 2) {
+                $query->whereBetween('waktu', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[1])->endOfDay()]);
+            } else if (count($dates) === 1) {
+                $query->whereBetween('waktu', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[0])->endOfDay()]);
+            }
+        }
+
+        if ($selectedDefect && $selectedDefect !== 'all') {
+            $query->where('jenis_defect', $selectedDefect);
+        }
+        if ($selectedLine && $selectedLine !== 'all') {
+            $query->where('jenis_mobil', $selectedLine);
+        }
+        if ($selectedConveyor && $selectedConveyor !== 'all') {
+            $query->where('conveyor', $selectedConveyor);
+        }
+
+        $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $records->items(),
+            'total'   => $records->total()
+        ]);
+    }
+
+    /**
+     * API Live Polling: Recent Defects with active filters
+     */
+    public function recentDefectsLive(Request $request)
+    {
+        $query = Defect::query();
+
+        $dateRange        = $request->input('date_range');
+        $selectedDefect   = $request->input('defect');
+        $selectedLine     = $request->input('line');
+        $selectedConveyor = $request->input('conveyor');
+        $selectedAssy     = $request->input('jenis_assy');
+
+        if ($dateRange) {
+            $dates = explode(' to ', $dateRange);
+            if (count($dates) === 2) {
+                $query->whereBetween('waktu', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[1])->endOfDay()]);
+            } else if (count($dates) === 1) {
+                $query->whereBetween('waktu', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[0])->endOfDay()]);
+            }
+        }
+
+        if ($selectedAssy && $selectedAssy !== 'all') {
+            $query->where('jenis_assy', $selectedAssy);
+        }
+        if ($selectedDefect && $selectedDefect !== 'all') {
+            $query->where('jenis_defect', $selectedDefect);
+        }
+        if ($selectedLine && $selectedLine !== 'all') {
+            $query->where('jenis_mobil', $selectedLine);
+        }
+        if ($selectedConveyor && $selectedConveyor !== 'all') {
+            $query->where('conveyor', $selectedConveyor);
+        }
+
+        $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $records->items(),
+            'total'   => $records->total()
+        ]);
+    }
+
+    /**
+     * API Live Polling: System Log with active filters (ActivityLog)
+     */
+    public function logSystemLive(Request $request)
+    {
+        $query = ActivityLog::query();
+
+        $dateRange      = $request->input('date_range');
+        $selectedAction = $request->input('action');
+        $selectedDefect = $request->input('defect');
+
+        if ($dateRange) {
+            $dates = explode(' to ', $dateRange);
+            if (count($dates) === 2) {
+                $query->whereBetween('waktu', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[1])->endOfDay()]);
+            } else if (count($dates) === 1) {
+                $query->whereBetween('waktu', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[0])->endOfDay()]);
+            }
+        }
+
+        if ($selectedAction && $selectedAction !== 'all') {
+            $query->where('jenis_aksi', $selectedAction);
+        }
+        if ($selectedDefect && $selectedDefect !== 'all') {
+            $query->where('jenis_defect', $selectedDefect);
+        }
+
+        $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $records->items(),
+            'total'   => $records->total()
+        ]);
+    }
 }
+
+
+

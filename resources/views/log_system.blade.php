@@ -3,78 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log System - Sistem Monitoring Defect</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script>
-       document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔵 LOG SYSTEM SCRIPT STARTED');
-    let reloadTimeout = null;
-
-        function scheduleReload() {
-            // Debounce: kalau ada beberapa event nutul bareng, cuma reload sekali
-            if (reloadTimeout) clearTimeout(reloadTimeout);
-            reloadTimeout = setTimeout(() => {
-                window.location.reload();
-            }, 300);
-        }
-
-         try {
-        console.log('🟢 ABOUT TO CREATE ECHO INSTANCE');
-        const echo = window.echo = new Echo({
-                broadcaster: 'pusher',
-                key: '{{ config("services.reverb.app_key") }}',
-                wsHost: '{{ config("services.reverb.host") }}',
-                wsPort: {{ config('services.reverb.port') }},
-                wssPort: {{ config('services.reverb.port') }},
-                forceTLS: false,
-                encrypted: false,
-                disableStats: true,
-                enabledTransports: ['ws', 'wss'],
-                cluster: 'mt1',
-            });
-
-            echo.channel('monitoring-channel')
-                .listen('.laporan.updated', function(e) {
-                    console.log('[WebSocket][LogSystem] Event received:', e);
-                    const action = e.action;
-                    const laporan = e.laporan;
-
-                    if (action === 'deleted') {
-                        // Sinkron hapus record lokal dulu, baru reload
-                        fetch('/api/defects/delete-external', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({ id: laporan.id })
-                        })
-                        .catch(err => console.error('[API] Gagal hapus lokal:', err))
-                        .finally(() => scheduleReload());
-                    } else if (action === 'created' || action === 'updated') {
-                        scheduleReload();
-                    }
-                });
-
-            echo.connector.pusher.connection.bind('error', function(err) {
-                console.error('[WebSocket][LogSystem] Error:', err);
-            });
-
-            echo.connector.pusher.connection.bind('state_change', function(states) {
-    console.log('🟡 STATE CHANGE:', states.previous, '->', states.current);
-});
-
-setTimeout(() => {
-    console.log('⏱️ STATUS SETELAH 3 DETIK:', echo.connector.pusher.connection.state);
-}, 3000);
-
-        } catch(err) {
-        console.error('🔴 ECHO INIT FAILED:', err.message, err);
-    }
-    });
-    </script>
-   <style>
-        body {
+    <style>
             font-family: 'Inter', sans-serif;
         }
         /* Custom Scrollbar for premium aesthetic */
@@ -276,7 +206,7 @@ setTimeout(() => {
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">IP Address</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="logTableBody">
                             @forelse($records as $record)
                                 <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
                                     <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium min-w-[140px]">
@@ -512,5 +442,84 @@ setTimeout(() => {
             window.location.href = url;
         }
     </script>
+
+    <!-- AJAX Polling Script (8 Detik) -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let pollingTimer = null;
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+            return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+        }
+
+        function formatTime(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return '';
+            return d.toTimeString().substring(0, 8);
+        }
+
+        function getActionBadge(jenisAksi) {
+            if (jenisAksi === 'Create Report') {
+                return '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 tracking-wider">Create Report</span>';
+            } else if (jenisAksi === 'Delete Report') {
+                return '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 tracking-wider">Delete Report</span>';
+            } else if (jenisAksi === 'Update Report') {
+                return '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">Update Report</span>';
+            } else {
+                return '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 tracking-wider">Create Account</span>';
+            }
+        }
+
+        function fetchLiveLogs() {
+            const currentQuery = window.location.search;
+            fetch('{{ url("/api/log-system/live") }}' + currentQuery)
+                .then(r => r.json())
+                .then(res => {
+                    if (!res.success || !Array.isArray(res.data)) return;
+                    const tbody = document.getElementById('logTableBody');
+                    if (!tbody) return;
+
+                    if (res.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada logs aktivitas untuk filter terpilih.</td></tr>';
+                        return;
+                    }
+
+                    let html = '';
+                    res.data.forEach(item => {
+                        html += `
+                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
+                                <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium min-w-[140px]">
+                                    <div class="text-xs leading-normal">
+                                        <span class="block text-gray-900">${formatDate(item.waktu)}</span>
+                                        <span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(item.waktu)}</span>
+                                    </div>
+                                </td>
+                                <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.user_name || '-'}</td>
+                                <td class="py-4 text-xs font-bold text-center px-4">${getActionBadge(item.jenis_aksi)}</td>
+                                <td class="py-4 text-sm text-gray-600 font-medium px-4">${item.aktivitas || '-'}</td>
+                                <td class="py-4 text-sm text-gray-500 font-medium px-4 font-mono">${item.ip_address || '-'}</td>
+                            </tr>
+                        `;
+                    });
+
+                    tbody.innerHTML = html;
+                })
+                .catch(err => console.error('[Polling] Gagal fetch log system live:', err));
+        }
+
+        // Init polling timer
+        pollingTimer = setInterval(fetchLiveLogs, 8000);
+
+        window.addEventListener('beforeunload', function() {
+            if (pollingTimer) clearInterval(pollingTimer);
+        });
+    });
+    </script>
+
 </body>
 </html>

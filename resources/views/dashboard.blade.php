@@ -49,7 +49,9 @@
                     </svg>
                     <span>Dashboard</span>
                 </a>
+
                 <a href="{{ route('account.create') }}" class="flex items-center space-x-3 px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">
+
                     <!-- Add account icon -->
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
@@ -111,11 +113,7 @@
                 <p class="text-sm text-gray-500 mt-1">Monitoring real-time data defect dan aktivitas sistem.</p>
             </div>
 
-            <!-- WebSocket Status Badge -->
-            <div id="ws-status" class="flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-400">
-                <span id="ws-dot" class="w-2 h-2 rounded-full bg-gray-400"></span>
-                <span id="ws-text">Menghubungkan...</span>
-            </div>
+
 
             <div class="flex items-center space-x-6">
                 <!-- Add Account Button -->
@@ -449,153 +447,24 @@
         });
     </script>
 
-    <!-- Real-time WebSocket Listener -->
+    <!-- AJAX Polling Script (8 Detik) -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const wsStatus = document.getElementById('ws-status');
-        const wsDot = document.getElementById('ws-dot');
-        const wsText = document.getElementById('ws-text');
-
-        try {
-            const echo = new Echo({
-                broadcaster: 'pusher',
-                key: '{{ config("services.reverb.app_key") }}',
-                wsHost: '{{ config("services.reverb.host") ?? "10.62.231.23" }}',
-                wsPort: {{ config('services.reverb.port') }},
-                wssPort: {{ config('services.reverb.port') }},
-                forceTLS: false,
-                encrypted: false,
-                disableStats: true,
-                enabledTransports: ['ws', 'wss'],
-                cluster: 'mt1',
-            });
-
-            // Connection status tracking
-            echo.connector.pusher.connection.bind('connected', function() {
-                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-600';
-                wsDot.className = 'w-2 h-2 rounded-full bg-green-500 animate-pulse';
-                wsText.textContent = 'Terhubung';
-                console.log('[WebSocket] Connected to monitoring-channel');
-            });
-
-            echo.connector.pusher.connection.bind('disconnected', function() {
-                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-500';
-                wsDot.className = 'w-2 h-2 rounded-full bg-red-500';
-                wsText.textContent = 'Terputus';
-                console.log('[WebSocket] Disconnected');
-            });
-
-            echo.connector.pusher.connection.bind('error', function(err) {
-                wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-500';
-                wsDot.className = 'w-2 h-2 rounded-full bg-red-500';
-                wsText.textContent = 'Error';
-                console.error('[WebSocket] Error:', err);
-            });
-
-            // Listen to monitoring channel
-            echo.channel('monitoring-channel')
-                .listen('.laporan.updated', function(e) {
-                    console.log('[WebSocket] Event received:', e);
-                    const action = e.action;
-                    const laporan = e.laporan;
-
-                    if (action === 'created') {
-                        addRowToTable(laporan);
-                        fetchStats();
-                    } else if (action === 'updated') {
-                        updateRowInTable(laporan);
-                        fetchStats();
-                    } else if (action === 'deleted') {
-                        deleteRowFromTable(laporan.id);
-                        fetchStats();
-                        // Hapus dari database lokal juga via AJAX
-                        fetch('{{ url("/api/defects/delete-external") }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({ id: laporan.id })
-                        }).catch(err => console.error('[API] Gagal hapus lokal:', err));
-                    }
-                })
-                .listen('.user.status.updated', function(e) {
-                    console.log('[WebSocket] User status updated:', e);
-                    fetchStats();
-                });
-
-        } catch(err) {
-            console.warn('[WebSocket] Failed to initialize:', err);
-            wsStatus.className = 'flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-50 text-yellow-600';
-            wsDot.className = 'w-2 h-2 rounded-full bg-yellow-500';
-            wsText.textContent = 'Offline';
-        }
+        let pollingTimer = null;
 
         function formatDate(dateStr) {
+            if (!dateStr) return '-';
             const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
             const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
             return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
         }
 
         function formatTime(dateStr) {
+            if (!dateStr) return '';
             const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return '';
             return d.toTimeString().substring(0, 8);
-        }
-
-        function addRowToTable(item) {
-            const tbody = document.getElementById('recentDefectsBody');
-            if (!tbody) return;
-
-            // Remove empty row if present
-            const emptyRow = document.getElementById('emptyRow');
-            if (emptyRow) emptyRow.remove();
-
-            const waktu = item.created_at || item.tanggal || new Date().toISOString();
-            const jenisAssy = item.type || item.jenis_assy || 'Final Assy';
-            const assyBadge = jenisAssy === 'Final Assy'
-                ? '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#e8fbf2] text-[#0f5132]">Final Assy</span>'
-                : '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#fdf2f2] text-[#842029]">Pre Assy</span>';
-
-            const tr = document.createElement('tr');
-            tr.className = 'border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors';
-            tr.setAttribute('data-id', item.id);
-            tr.style.backgroundColor = '#fffbeb';
-            setTimeout(() => { tr.style.backgroundColor = ''; tr.style.transition = 'background-color 1s'; }, 2000);
-
-            tr.innerHTML = `
-                <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(waktu)}</span></div></td>
-                <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.nama_user || item.user_name || '-'}</td>
-                <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
-                <td class="py-4 text-sm font-medium px-4">${assyBadge}</td>
-                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
-                <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || item.konveyor || '-'}</span></td>
-                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
-                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.sub_defect || item.jenis_sub_defect || '-'}</td>
-                <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">${item.jumlah || item.quantity || 0}</td>
-            `;
-
-            tbody.insertBefore(tr, tbody.firstChild);
-
-            // Keep only 4 recent rows
-            while (tbody.children.length > 4) {
-                tbody.removeChild(tbody.lastChild);
-            }
-        }
-
-        function updateRowInTable(item) {
-            const row = document.querySelector(`tr[data-id="${item.id}"]`);
-            if (row) {
-                row.remove();
-                addRowToTable(item);
-            }
-        }
-
-        function deleteRowFromTable(id) {
-            const row = document.querySelector(`tr[data-id="${id}"]`);
-            if (row) {
-                row.style.backgroundColor = '#fef2f2';
-                setTimeout(() => row.remove(), 500);
-            }
         }
 
         function fetchStats() {
@@ -603,23 +472,74 @@
                 .then(r => r.json())
                 .then(stats => {
                     const totalEl = document.getElementById('stat-total-defect');
-                    if (totalEl) totalEl.innerText = stats.totalDefect.toLocaleString('id-ID');
+                    if (totalEl && stats.totalDefect !== undefined) totalEl.innerText = stats.totalDefect.toLocaleString('id-ID');
 
                     const todayEl = document.getElementById('stat-defect-today');
-                    if (todayEl) todayEl.innerText = stats.defectToday;
+                    if (todayEl && stats.defectToday !== undefined) todayEl.innerText = stats.defectToday;
 
                     const activeEl = document.getElementById('stat-active-users');
-                    if (activeEl) activeEl.innerText = stats.activeUsers;
+                    if (activeEl && stats.activeUsers !== undefined) activeEl.innerText = stats.activeUsers;
 
                     const totalUsersEl = document.getElementById('stat-total-users');
-                    if (totalUsersEl) totalUsersEl.innerText = stats.totalUsers;
+                    if (totalUsersEl && stats.totalUsers !== undefined) totalUsersEl.innerText = stats.totalUsers;
                 })
-                .catch(err => console.error('[API] Gagal fetch statistik:', err));
+                .catch(err => console.error('[Polling] Gagal fetch stats:', err));
         }
 
-        // Auto reload stats periodically (every 5 seconds)
-        setInterval(fetchStats, 5000);
+        function fetchRecentDefects() {
+            fetch('{{ url("/api/dashboard/recent-defects") }}')
+                .then(r => r.json())
+                .then(res => {
+                    if (!res.success || !Array.isArray(res.data)) return;
+                    const tbody = document.getElementById('recentDefectsBody');
+                    if (!tbody) return;
+
+                    if (res.data.length === 0) {
+                        tbody.innerHTML = '<tr id="emptyRow"><td colspan="9" class="py-8 text-center text-xs text-gray-400 font-semibold">Belum ada data defect.</td></tr>';
+                        return;
+                    }
+
+                    let rowsHtml = '';
+                    res.data.forEach(item => {
+                        const waktu = item.waktu || item.created_at;
+                        const jenisAssy = item.jenis_assy || 'Final Assy';
+                        const assyBadge = jenisAssy === 'Final Assy'
+                            ? '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#e8fbf2] text-[#0f5132]">Final Assy</span>'
+                            : '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#fdf2f2] text-[#842029]">Pre Assy</span>';
+
+                        rowsHtml += `
+                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${item.id}">
+                                <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(waktu)}</span></div></td>
+                                <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.user_name || '-'}</td>
+                                <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
+                                <td class="py-4 text-sm font-medium px-4">${assyBadge}</td>
+                                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
+                                <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || '-'}</span></td>
+                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
+                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_sub_defect || '-'}</td>
+                                <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">${item.quantity || 0}</td>
+                            </tr>
+                        `;
+                    });
+
+                    tbody.innerHTML = rowsHtml;
+                })
+                .catch(err => console.error('[Polling] Gagal fetch recent defects:', err));
+        }
+
+        // Run initial fetch and set 8-second polling
+        fetchStats();
+        fetchRecentDefects();
+        pollingTimer = setInterval(() => {
+            fetchStats();
+            fetchRecentDefects();
+        }, 8000);
+
+        window.addEventListener('beforeunload', function() {
+            if (pollingTimer) clearInterval(pollingTimer);
+        });
     });
     </script>
+
 </body>
 </html>
