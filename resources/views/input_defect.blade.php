@@ -158,6 +158,10 @@
                                 <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">JOB STATION</label>
                                 <input type="text" name="job_station" x-model="form.job_station" placeholder="Masukkan Job Station..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
                             </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">KETERANGAN (OPSIONAL)</label>
+                                <textarea name="keterangan" x-model="form.keterangan" rows="3" placeholder="Catatan tambahan (opsional)..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]"></textarea>
+                            </div>
                         </div>
                     </template>
 
@@ -249,6 +253,7 @@
                                 <div x-show="form.actual"><span class="text-gray-400">Actual:</span> <span class="font-bold text-gray-900" x-text="form.actual"></span></div>
                                 <div x-show="form.area_ditemukan"><span class="text-gray-400">Area Ditemukan:</span> <span class="font-bold text-gray-900" x-text="form.area_ditemukan"></span></div>
                                 <div x-show="form.job_station"><span class="text-gray-400">Job Station:</span> <span class="font-bold text-gray-900" x-text="form.job_station"></span></div>
+                                <div x-show="form.keterangan"><span class="text-gray-400">Keterangan:</span> <span class="font-bold text-gray-900" x-text="form.keterangan"></span></div>
                             </div>
                         </template>
 
@@ -347,6 +352,7 @@
                     actual: '{{ old("actual", $defect->actual ?? "") }}',
                     area_ditemukan: '{{ old("area_ditemukan", $defect->area_ditemukan ?? "") }}',
                     job_station: '{{ old("job_station", $defect->job_station ?? "") }}',
+                    keterangan: '{{ old("keterangan", $defect->keterangan ?? "") }}',
                     
                     no_terminal: '{{ old("no_terminal", $defect->no_terminal ?? "") }}',
                     no_mesin: '{{ old("no_mesin", $defect->no_mesin ?? "") }}'

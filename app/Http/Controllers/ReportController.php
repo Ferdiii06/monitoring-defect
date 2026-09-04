@@ -452,6 +452,7 @@ class ReportController extends Controller
             'actual'           => 'nullable|string|max:255',
             'area_ditemukan'   => 'nullable|string|max:255',
             'job_station'      => 'nullable|string|max:255',
+            'keterangan'       => 'nullable|string',
             'no_terminal'      => 'nullable|string|max:255',
             'no_mesin'         => 'nullable|string|max:255',
         ]);
@@ -475,6 +476,7 @@ class ReportController extends Controller
             'actual'           => $validated['actual'] ?? null,
             'area_ditemukan'   => $validated['area_ditemukan'] ?? null,
             'job_station'      => $validated['job_station'] ?? null,
+            'keterangan'       => $validated['keterangan'] ?? null,
             'no_terminal'      => $validated['no_terminal'] ?? null,
             'no_mesin'         => $validated['no_mesin'] ?? null,
         ]);
@@ -558,6 +560,7 @@ class ReportController extends Controller
             'actual'           => 'nullable|string|max:255',
             'area_ditemukan'   => 'nullable|string|max:255',
             'job_station'      => 'nullable|string|max:255',
+            'keterangan'       => 'nullable|string',
             'no_terminal'      => 'nullable|string|max:255',
             'no_mesin'         => 'nullable|string|max:255',
         ]);
@@ -576,6 +579,7 @@ class ReportController extends Controller
             'actual'           => $validated['actual'] ?? null,
             'area_ditemukan'   => $validated['area_ditemukan'] ?? null,
             'job_station'      => $validated['job_station'] ?? null,
+            'keterangan'       => $validated['keterangan'] ?? null,
             'no_terminal'      => $validated['no_terminal'] ?? null,
             'no_mesin'         => $validated['no_mesin'] ?? null,
         ]);

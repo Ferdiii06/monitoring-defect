@@ -26,6 +26,7 @@ class Defect extends Model
         'actual',
         'area_ditemukan',
         'job_station',
+        'keterangan',
         'no_terminal',
         'no_mesin',
     ];
