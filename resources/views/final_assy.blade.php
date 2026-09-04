@@ -227,7 +227,8 @@
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Actual</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Area Ditemukan</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Job Station</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2">Quantity</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Quantity</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="reportTableBody">
@@ -274,13 +275,19 @@
                                     <td class="py-4 text-sm text-gray-900 px-4 font-medium">
                                         {{ $record->job_station ?? '-' }}
                                     </td>
-                                    <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">
+                                    <td class="py-4 text-sm text-gray-900 font-bold text-center px-4">
                                         {{ $record->quantity }}
+                                    </td>
+                                    <td class="py-4 text-center px-4 pr-2">
+                                        <a href="{{ route('admin.report.edit', $record->id) }}" 
+                                           class="inline-flex items-center px-3 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">
+                                            Edit
+                                        </a>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
+                                    <td colspan="14" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -583,7 +590,7 @@
                     if (!tbody) return;
 
                     if (res.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="13" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="14" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
                         return;
                     }
 
@@ -603,7 +610,8 @@
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.actual || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.area_ditemukan || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.job_station || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">${item.quantity || 0}</td>
+                                <td class="py-4 text-sm text-gray-900 font-bold text-center px-4">${item.quantity || 0}</td>
+                                <td class="py-4 text-center px-4 pr-2"><a href="/report/${item.id}/edit" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">Edit</a></td>
                             </tr>
                         `;
                     });
