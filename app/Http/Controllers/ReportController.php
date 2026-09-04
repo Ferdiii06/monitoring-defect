@@ -629,6 +629,77 @@ class ReportController extends Controller
     }
 
     /**
+     * Show form for admin to edit any defect report.
+     */
+    public function adminEditReport($id)
+    {
+        $defect = Defect::findOrFail($id);
+
+        return view('input_defect', [
+            'type'      => $defect->jenis_assy,
+            'defect'    => $defect,
+            'backRoute' => route('recent_defects.index'),
+        ]);
+    }
+
+    /**
+     * Update defect report by admin.
+     */
+    public function adminUpdateReport(Request $request, $id)
+    {
+        $defect = Defect::findOrFail($id);
+
+        $validated = $request->validate([
+            'type'             => 'required|string|in:Final Assy,Pre Assy',
+            'jenis_mobil'      => 'required|string|max:255',
+            'conveyor'         => 'required|string|max:255',
+            'line'             => 'required|string|max:255',
+            'tanggal'          => 'required|date',
+            'jenis_defect'     => 'required|string|max:255',
+            'sub_defect'       => 'required|string|max:255',
+            'jumlah'           => 'required|integer|min:1',
+            'end_number'       => 'nullable|string|max:255',
+            'specification'    => 'nullable|string|max:255',
+            'actual'           => 'nullable|string|max:255',
+            'area_ditemukan'   => 'nullable|string|max:255',
+            'job_station'      => 'nullable|string|max:255',
+            'keterangan'       => 'nullable|string',
+            'no_terminal'      => 'nullable|string|max:255',
+            'no_mesin'         => 'nullable|string|max:255',
+        ]);
+
+        $defect->update([
+            'waktu'            => Carbon::parse($validated['tanggal']),
+            'jenis_assy'       => $validated['type'],
+            'line_conveyor'    => $validated['line'],
+            'jenis_mobil'      => $validated['jenis_mobil'],
+            'conveyor'         => $validated['conveyor'],
+            'jenis_defect'     => $validated['jenis_defect'],
+            'jenis_sub_defect' => $validated['sub_defect'],
+            'quantity'         => $validated['jumlah'],
+            'end_number'       => $validated['end_number'] ?? null,
+            'specification'    => $validated['specification'] ?? null,
+            'actual'           => $validated['actual'] ?? null,
+            'area_ditemukan'   => $validated['area_ditemukan'] ?? null,
+            'job_station'      => $validated['job_station'] ?? null,
+            'keterangan'       => $validated['keterangan'] ?? null,
+            'no_terminal'      => $validated['no_terminal'] ?? null,
+            'no_mesin'         => $validated['no_mesin'] ?? null,
+        ]);
+
+        ActivityLog::create([
+            'waktu'        => now(),
+            'user_name'    => session('user_name'),
+            'jenis_aksi'   => 'Update Report (Admin)',
+            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$validated['line']} ({$validated['conveyor']}) - Jumlah {$validated['jumlah']}",
+            'jenis_defect' => $validated['jenis_defect'],
+            'ip_address'   => $request->ip() ?? '127.0.0.1',
+        ]);
+
+        return redirect()->route('recent_defects.index')->with('success', 'Laporan defect berhasil diperbarui oleh Admin!');
+    }
+
+    /**
      * API Live Polling: Dashboard Recent Defects (4 items)
      */
     public function dashboardRecentDefects(Request $request)

@@ -18,7 +18,7 @@
 
         <!-- Header: Back Button + Title -->
         <div class="p-6 pb-2 flex items-center space-x-3">
-            <a href="{{ route('operator.home') }}" class="text-[#8b0000] hover:text-red-900 transition-colors">
+            <a href="{{ $backRoute ?? route('operator.home') }}" class="text-[#8b0000] hover:text-red-900 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -56,7 +56,7 @@
                 </div>
             @endif
 
-            <form action="{{ isset($defect) ? route('input_defect.update', $defect->id) : route('input_defect.store') }}" method="POST" id="defectForm">
+            <form action="{{ isset($defect) && isset($backRoute) ? route('admin.report.update', $defect->id) : (isset($defect) ? route('input_defect.update', $defect->id) : route('input_defect.store')) }}" method="POST" id="defectForm">
                 @csrf
                 @if(isset($defect))
                     @method('PUT')
