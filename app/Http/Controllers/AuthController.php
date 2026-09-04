@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-
 
 class AuthController extends Controller
 {
@@ -24,9 +22,19 @@ class AuthController extends Controller
                 'pin'   => 'required|string|size:6',
             ]);
 
+            $user = User::where('role', 'User')
+                ->whereRaw('LOWER(name) = ?', [strtolower(trim($credentials['name']))])
+                ->first();
+
+            if (!$user || $user->pin !== $credentials['pin']) {
+                throw ValidationException::withMessages([
+                    'name' => 'Nama atau PIN salah.',
+                ]);
+            }
+
             session([
                 'logged_in'     => true,
-                'user_name'     => $credentials['name'],
+                'user_name'     => $user->name,
                 'current_shift' => $credentials['shift'],
                 'user_role'     => 'User',
             ]);
@@ -38,59 +46,23 @@ class AuthController extends Controller
         } else {
             $credentials = $request->validate([
                 'name' => 'required|string',
-                'pin'  => 'required|string|size:6',
+                'pin'  => 'required|string|min:4',
             ]);
 
-            // Static validation: Name matches "Admin QA" and PIN matches "123456"
-            if ($credentials['name'] === 'Admin QA' && $credentials['pin'] === '123456') {
-                session([
-                    'logged_in' => true,
-                    'user_name' => $credentials['name'],
-                    'user_role' => 'Administrator'
+            $user = User::where('role', 'Administrator')
+                ->whereRaw('LOWER(name) = ?', [strtolower(trim($credentials['name']))])
+                ->first();
+
+            if (!$user || $user->pin !== $credentials['pin']) {
+                throw ValidationException::withMessages([
+                    'name' => 'Nama atau PIN salah.',
                 ]);
-
-                $request->session()->regenerate();
-
-                return redirect()->intended(route('dashboard'));
             }
 
-            // Check external API for registered Admin users
-            try {
-                $apiUrl = config('services.external_api.url');
-                $response = Http::timeout(5)->get($apiUrl . '/users');
-
-                if ($response->successful()) {
-                    $users = $response->json('data') ?? [];
-
-                    $matchedUser = collect($users)->first(function ($user) use ($credentials) {
-                        $userName = $user['nama'] ?? $user['name'] ?? '';
-                        $userPin = (string)($user['pin'] ?? '');
-                        return strcasecmp(trim($userName), trim($credentials['name'])) === 0 && $userPin === trim($credentials['pin']);
-                    });
-
-                    if ($matchedUser) {
-                        session([
-                            'logged_in' => true,
-                            'user_name' => $matchedUser['nama'] ?? $matchedUser['name'] ?? $credentials['name'],
-                            'user_role' => 'Administrator'
-                        ]);
-
-                        $request->session()->regenerate();
-
-                        return redirect()->intended(route('dashboard'));
-                    }
-                }
-            } catch (ValidationException $ve) {
-                throw $ve;
-            } catch (\Exception $e) {
-                Log::warning('Login: External API check failed - ' . $e->getMessage());
-            }
-
-            // Allow fallback login for any admin input if required or show error
             session([
                 'logged_in' => true,
-                'user_name' => $credentials['name'],
-                'user_role' => 'Administrator'
+                'user_name' => $user->name,
+                'user_role' => 'Administrator',
             ]);
 
             $request->session()->regenerate();
@@ -98,7 +70,6 @@ class AuthController extends Controller
             return redirect()->intended(route('dashboard'));
         }
     }
-
 
     /**
      * Log the user out of the application using session forget.
