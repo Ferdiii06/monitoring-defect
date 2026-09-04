@@ -147,6 +147,7 @@
             const adminInput = document.getElementById('admin_name');
             const submitLabel = document.getElementById('btn-submit-label');
             const toggleLabel = document.getElementById('btn-toggle-label');
+            const pinInput = document.getElementById('pin');
 
             loginTypeInput.value = currentRole;
 
@@ -161,6 +162,8 @@
                 adminInput.disabled = true;
                 adminInput.required = false;
 
+                pinInput.maxLength = 6;
+
                 submitLabel.textContent = 'Masuk sebagai Operator';
                 toggleLabel.textContent = 'Masuk sebagai Admin';
             } else {
@@ -173,6 +176,8 @@
                 operatorInput.required = false;
                 adminInput.disabled = false;
                 adminInput.required = true;
+
+                pinInput.maxLength = 20;
 
                 submitLabel.textContent = 'Masuk sebagai Admin';
                 toggleLabel.textContent = 'Masuk sebagai Operator';
