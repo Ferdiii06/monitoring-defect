@@ -461,7 +461,7 @@ class ReportController extends Controller
         $shift = session('current_shift', '1A');
 
         $defect = Defect::create([
-            'waktu'            => Carbon::parse($validated['tanggal']),
+            'waktu'            => Carbon::parse($validated['tanggal'])->setTimeFrom(now()),
             'user_name'        => $userName,
             'shift'            => $shift,
             'jenis_assy'       => $validated['type'],
@@ -566,7 +566,7 @@ class ReportController extends Controller
         ]);
 
         $defect->update([
-            'waktu'            => Carbon::parse($validated['tanggal']),
+            'waktu'            => Carbon::parse($validated['tanggal'])->setTimeFrom($defect->waktu),
             'jenis_assy'       => $validated['type'],
             'line_conveyor'    => $validated['line'],
             'jenis_mobil'      => $validated['jenis_mobil'],
@@ -669,7 +669,7 @@ class ReportController extends Controller
         ]);
 
         $defect->update([
-            'waktu'            => Carbon::parse($validated['tanggal']),
+            'waktu'            => Carbon::parse($validated['tanggal'])->setTimeFrom($defect->waktu),
             'jenis_assy'       => $validated['type'],
             'line_conveyor'    => $validated['line'],
             'jenis_mobil'      => $validated['jenis_mobil'],
