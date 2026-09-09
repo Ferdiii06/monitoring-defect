@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Manual Book: Dashboard Monitoring Defect QA</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; margin: 40px auto; max-width: 800px; color: #333; }
+        h1 { color: #2c3e50; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 30px; }
+        h2 { color: #34495e; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 40px; }
+        h3 { color: #2980b9; margin-top: 25px; }
+        p { margin-bottom: 15px; }
+        ul, ol { margin-bottom: 15px; }
+        li { margin-bottom: 8px; }
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; }
+        .alert-tip { background-color: #d9edf7; border-color: #bce8f1; color: #31708f; }
+        .alert-warning { background-color: #fcf8e3; border-color: #faebcc; color: #8a6d3b; }
+        .footer { margin-top: 60px; font-style: italic; text-align: center; color: #7f8c8d; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h1>📖 Manual Book:<br>Dashboard Monitoring Defect QA</h1>
+    <p>Dokumen ini merupakan panduan lengkap penggunaan aplikasi <strong>Dashboard Monitoring Defect QA</strong> PT JAI. Aplikasi ini dirancang untuk memantau, mendata, dan mengelola pelaporan kecacatan produk (<em>defect</em>) di area produksi (Pre Assy & Final Assy) secara <em>real-time</em>.</p>
+
+    <h2>1. Pendahuluan</h2>
+    <p>Aplikasi ini memiliki 2 platform yang saling terhubung:</p>
+    <ol>
+        <li><strong>Aplikasi Mobile (Android/Flutter):</strong> Digunakan oleh Quality Inspector di lapangan untuk memindai/melaporkan defect secara cepat.</li>
+        <li><strong>Dashboard Web:</strong> Digunakan oleh Administrator (SPV/Manager) untuk melihat rekapitulasi data, mengekspor laporan, serta oleh Operator untuk melakukan input/edit laporan secara manual jika diperlukan.</li>
+    </ol>
+    <p>Terdapat 2 tingkat hak akses (<em>role</em>) pada versi Web:</p>
+    <ul>
+        <li><strong>Administrator:</strong> Memiliki akses penuh ke semua laporan, statistik <em>live</em>, dan manajemen akun.</li>
+        <li><strong>Operator (User):</strong> Memiliki akses untuk menginput defect baru secara manual dan melihat riwayat laporannya sendiri.</li>
+    </ul>
+
+    <h2>2. Cara Akses & Login</h2>
+    <ol>
+        <li>Buka <em>browser</em> (Google Chrome, Mozilla Firefox, dll).</li>
+        <li>Masukkan alamat URL (atau IP Address) dari server aplikasi.</li>
+        <li>Anda akan diarahkan ke halaman <strong>Login</strong>.</li>
+        <li><strong>Login sebagai Administrator:</strong>
+            <ul>
+                <li>Pilih tab atau masukkan kredensial Admin (Username & Password).</li>
+                <li>Klik tombol <strong>Login</strong>. Anda akan otomatis masuk ke halaman <em>Dashboard</em>.</li>
+            </ul>
+        </li>
+        <li><strong>Login sebagai Operator:</strong>
+            <ul>
+                <li>Masukkan <strong>Nama</strong> yang sudah terdaftar.</li>
+                <li>Masukkan <strong>PIN</strong>.</li>
+                <li>Pilih <strong>Shift</strong> yang sedang berjalan (Shift A / Shift B).</li>
+                <li>Klik <strong>Login</strong>. Anda akan masuk ke halaman <em>Operator Home</em>.</li>
+            </ul>
+        </li>
+    </ol>
+
+    <h2>3. Panduan Administrator</h2>
+    <p>Sebagai Administrator, Anda memiliki kendali penuh terhadap monitoring data. Navigasi terletak di menu <em>sidebar</em> atau <em>header</em>.</p>
+
+    <h3>A. Dashboard Utama</h3>
+    <p>Halaman pertama setelah login. Fitur yang tersedia:</p>
+    <ul>
+        <li><strong>Statistik Cepat:</strong> Menampilkan total defect keseluruhan, jumlah defect hari ini, dan jumlah <em>Active Users</em> (pengguna aplikasi mobile/web yang sedang aktif).</li>
+        <li><strong>Grafik/Ringkasan:</strong> Visualisasi data untuk melihat tren defect secara garis besar.</li>
+    </ul>
+
+    <h3>B. Laporan Area Produksi</h3>
+    <ol>
+        <li><strong>Laporan Final Assy:</strong> Menampilkan tabel rincian seluruh pelaporan defect dari jalur (line) Final Assy.</li>
+        <li><strong>Laporan Pre Assy:</strong> Menampilkan tabel rincian pelaporan defect dari jalur Pre Assy.</li>
+        <li><strong>Recent Defects:</strong> Menampilkan tabel semua laporan defect terbaru dari seluruh area, sangat berguna untuk pemantauan <em>real-time</em>.</li>
+    </ol>
+    
+    <div class="alert alert-tip">
+        <strong>TIP - Live Update:</strong> Halaman-halaman laporan di atas sudah dilengkapi fitur <em>live polling</em>. Jika ada laporan masuk dari aplikasi mobile, tabel akan otomatis diperbarui tanpa Anda perlu me-<em>refresh</em> (F5) halaman.
+    </div>
+
+    <h3>C. Ekspor Laporan (Download Excel)</h3>
+    <p>Pada setiap halaman laporan (Final Assy, Pre Assy, Recent Defects), terdapat tombol <strong>Export</strong>.</p>
+    <ul>
+        <li>Klik tombol tersebut untuk mengunduh tabel yang sedang Anda lihat ke format file <strong>Excel (.xlsx)</strong>. Sangat berguna untuk diolah kembali atau untuk pelaporan rapat.</li>
+    </ul>
+
+    <h3>D. Edit Data Laporan (Admin)</h3>
+    <p>Jika ada kesalahan <em>input</em> dari operator, Admin dapat mengubah data:</p>
+    <ol>
+        <li>Buka tabel laporan terkait (misalnya Recent Defects).</li>
+        <li>Temukan data yang salah, klik tombol <strong>Edit</strong> (ikon pensil/edit).</li>
+        <li>Ubah rincian (misal: jumlah defect, area, dsb), lalu klik <strong>Simpan</strong>.</li>
+    </ol>
+
+    <h3>E. Manajemen Akun (Add Account)</h3>
+    <p>Untuk mendaftarkan pegawai baru ke dalam sistem:</p>
+    <ol>
+        <li>Buka menu <strong>Add Account</strong>.</li>
+        <li>Masukkan rincian akun baru:
+            <ul>
+                <li><strong>Nama / Username</strong></li>
+                <li><strong>Role:</strong> Pilih apakah sebagai <code>Administrator</code> atau <code>User</code> (Operator).</li>
+                <li><strong>Password / PIN:</strong> Masukkan PIN untuk login operator.</li>
+            </ul>
+        </li>
+        <li>Klik <strong>Simpan</strong>. Akun langsung bisa digunakan.</li>
+    </ol>
+
+    <h3>F. Log System (Audit Trail)</h3>
+    <p>Setiap kali ada laporan baru, atau data yang diedit/dihapus, sistem akan mencatatnya.</p>
+    <ol>
+        <li>Buka menu <strong>Log System</strong>.</li>
+        <li>Anda dapat melihat riwayat seperti: "Budi melaporkan defect Final Assy - Line 1 - Jumlah 2", beserta waktu dan alamat IP-nya.</li>
+    </ol>
+
+    <h2>4. Panduan Operator (User)</h2>
+    <p>Operator difokuskan pada pengisian dan pemeliharaan data <em>defect</em> mereka sendiri.</p>
+
+    <h3>A. Halaman Utama (Operator Home)</h3>
+    <p>Setelah login dengan Nama, PIN, dan Shift, Anda akan melihat halaman selamat datang.</p>
+    <ul>
+        <li>Terdapat daftar <em>history</em> laporan (Recent Defects) yang pernah Anda buat pada sesi/shift tersebut.</li>
+    </ul>
+
+    <h3>B. Input Defect Manual</h3>
+    <p>Jika pelaporan melalui HP/Mobile sedang terkendala, laporan bisa dilakukan lewat web:</p>
+    <ol>
+        <li>Klik menu <strong>Input Defect</strong>.</li>
+        <li>Isi formulir secara teliti:
+            <ul>
+                <li><strong>Waktu:</strong> Otomatis terisi (atau sesuaikan).</li>
+                <li><strong>Jenis Assy:</strong> Pilih Final Assy atau Pre Assy.</li>
+                <li><strong>Line / Conveyor:</strong> Pilih lokasi terjadinya defect.</li>
+                <li><strong>Jenis Defect & Sub Defect:</strong> Pilih klasifikasi cacat yang ditemukan.</li>
+                <li><strong>Quantity (Jumlah):</strong> Masukkan angka.</li>
+                <li><strong>Keterangan Tambahan / Area Ditemukan:</strong> Isi rinciannya bila perlu.</li>
+            </ul>
+        </li>
+        <li>Klik <strong>Simpan / Submit</strong>. Laporan Anda akan langsung masuk ke Dashboard Administrator.</li>
+    </ol>
+
+    <h3>C. Edit / Hapus Defect (Koreksi)</h3>
+    <p>Jika baru saja melakukan <em>submit</em> dan ternyata salah ketik:</p>
+    <ol>
+        <li>Dari halaman <em>History</em> di Operator Home.</li>
+        <li>Cari data tersebut, klik tombol <strong>Edit</strong> untuk mengubah isian.</li>
+        <li>Atau klik tombol <strong>Delete (Hapus)</strong> untuk membatalkan laporan (catatan penghapusan tetap akan terekam di sistem <em>Log</em> Admin).</li>
+    </ol>
+
+    <h2>5. Penyelesaian Masalah (Troubleshooting)</h2>
+    
+    <div class="alert alert-warning">
+        <strong>WARNING - Tidak Bisa Login?</strong><br>
+        Pastikan kapitalisasi huruf pada Nama benar, dan pastikan PIN akurat. Jika lupa PIN, segera hubungi Administrator untuk di-<em>reset</em>.
+    </div>
+
+    <div class="alert alert-warning">
+        <strong>NOTE - Data di Dashboard Tidak Update (Live)?</strong><br>
+        Pastikan koneksi jaringan stabil. Jika menggunakan Wi-Fi internal, pastikan perangkat Anda berada di jaringan intranet yang sama.
+    </div>
+
+    <p class="footer">Dokumen ini dibuat untuk panduan operasional proyek PT JAI.</p>
+
+</body>
+</html>
