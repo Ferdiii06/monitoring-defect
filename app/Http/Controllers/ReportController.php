@@ -12,6 +12,9 @@ use App\Exports\PreAssyExport;
 use App\Exports\LogSystemExport;
 use App\Exports\RecentDefectsExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\CarType;
+use App\Models\DefectType;
+use App\Models\InspectProcessType;
 
 class ReportController extends Controller
 {
@@ -426,7 +429,14 @@ class ReportController extends Controller
         }
 
         $type = $request->input('type', 'Final Assy');
-        return view('input_defect', ['type' => $type]);
+
+        return view('input_defect', [
+            'type'               => $type,
+            'carTypes'           => CarType::with('carlines')->orderBy('name')->get(),
+            'defectTypesFinal'   => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
+            'defectTypesPre'     => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
+            'inspectProcessTypes' => InspectProcessType::orderBy('name')->get(),
+        ]);
     }
 
     /**
@@ -439,54 +449,71 @@ class ReportController extends Controller
         }
 
         $validated = $request->validate([
-            'type'             => 'required|string|in:Final Assy,Pre Assy',
-            'jenis_mobil'      => 'required|string|max:255',
-            'conveyor'         => 'required|string|max:255',
-            'line'             => 'required|string|max:255',
-            'tanggal'          => 'required|date',
-            'jenis_defect'     => 'required|string|max:255',
-            'sub_defect'       => 'required|string|max:255',
-            'jumlah'           => 'required|integer|min:1',
-            'end_number'       => 'nullable|string|max:255',
-            'specification'    => 'nullable|string|max:255',
-            'actual'           => 'nullable|string|max:255',
-            'area_ditemukan'   => 'nullable|string|max:255',
-            'job_station'      => 'nullable|string|max:255',
-            'keterangan'       => 'nullable|string',
-            'no_terminal'      => 'nullable|string|max:255',
-            'no_mesin'         => 'nullable|string|max:255',
+            'type'                     => 'required|string|in:Final Assy,Pre Assy',
+            'jenis_mobil'              => 'required|string|max:255',
+            'conveyor'                 => 'nullable|string|max:255',
+            'line'                     => 'nullable|string|max:255',
+            'waktu_input'              => 'required|date',
+            'jenis_defect'             => 'nullable|string|max:255',
+            'sub_defect'               => 'nullable|string|max:255',
+            'jumlah'                   => 'required|integer|min:1',
+            'inspect_quantity'         => 'nullable|integer|min:0',
+            'end_number'               => 'nullable|string|max:255',
+            'specification'            => 'nullable|string|max:255',
+            'actual'                   => 'nullable|string|max:255',
+            'area_ditemukan'           => 'nullable|string|max:255',
+            'job_station'              => 'nullable|string|max:255',
+            'keterangan'               => 'nullable|string',
+            'no_terminal'              => 'nullable|string|max:255',
+            'no_mesin'                 => 'nullable|string|max:255',
+            // Kolom baru master data
+            'carline_id'               => 'nullable|exists:carlines,id',
+            'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
+            'defect_type_id'           => 'nullable|exists:defect_types,id',
+            'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
+            'ditemukan_oleh'           => 'nullable|in:Inspektor,Operator',
+            'pattern'                  => 'nullable|string|max:255',
         ]);
 
         $userName = session('user_name', 'Operator');
         $shift = session('current_shift', '1A');
 
         $defect = Defect::create([
-            'waktu'            => Carbon::parse($validated['tanggal'])->setTimeFrom(now()),
-            'user_name'        => $userName,
-            'shift'            => $shift,
-            'jenis_assy'       => $validated['type'],
-            'line_conveyor'    => $validated['line'],
-            'jenis_mobil'      => $validated['jenis_mobil'],
-            'conveyor'         => $validated['conveyor'],
-            'jenis_defect'     => $validated['jenis_defect'],
-            'jenis_sub_defect' => $validated['sub_defect'],
-            'quantity'         => $validated['jumlah'],
-            'end_number'       => $validated['end_number'] ?? null,
-            'specification'    => $validated['specification'] ?? null,
-            'actual'           => $validated['actual'] ?? null,
-            'area_ditemukan'   => $validated['area_ditemukan'] ?? null,
-            'job_station'      => $validated['job_station'] ?? null,
-            'keterangan'       => $validated['keterangan'] ?? null,
-            'no_terminal'      => $validated['no_terminal'] ?? null,
-            'no_mesin'         => $validated['no_mesin'] ?? null,
+            'waktu'                    => Carbon::parse($validated['waktu_input']),
+            'user_name'                => $userName,
+            'shift'                    => $shift,
+            'jenis_assy'               => $validated['type'],
+            'line_conveyor'            => $validated['line'] ?? null,
+            'jenis_mobil'              => $validated['jenis_mobil'],
+            'conveyor'                 => $validated['conveyor'] ?? null,
+            'jenis_defect'             => $validated['jenis_defect'] ?? null,
+            'jenis_sub_defect'         => $validated['sub_defect'] ?? null,
+            'quantity'                 => $validated['jumlah'],
+            'inspect_quantity'         => $validated['inspect_quantity'] ?? null,
+            'end_number'               => $validated['end_number'] ?? null,
+            'specification'            => $validated['specification'] ?? null,
+            'actual'                   => $validated['actual'] ?? null,
+            'area_ditemukan'           => $validated['area_ditemukan'] ?? null,
+            'job_station'              => $validated['job_station'] ?? null,
+            'keterangan'               => $validated['keterangan'] ?? null,
+            'no_terminal'              => $validated['no_terminal'] ?? null,
+            'no_mesin'                 => $validated['no_mesin'] ?? null,
+            // Kolom baru master data
+            'carline_id'               => $validated['carline_id'] ?? null,
+            'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
+            'defect_type_id'           => $validated['defect_type_id'] ?? null,
+            'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
+            'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,
+            'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
+        $conveyor = $validated['conveyor'] ?? ($defect->carline->name ?? '-');
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => $userName,
             'jenis_aksi'   => 'Create Report',
-            'aktivitas'    => "Melaporkan defect {$validated['type']} - {$validated['line']} ({$validated['conveyor']}) - Jumlah {$validated['jumlah']}",
-            'jenis_defect' => $validated['jenis_defect'],
+            'aktivitas'    => "Melaporkan defect {$validated['type']} - {$validated['jenis_mobil']} ({$conveyor}) - Jumlah {$validated['jumlah']}",
+            'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
 
@@ -526,8 +553,12 @@ class ReportController extends Controller
         }
 
         return view('input_defect', [
-            'type'   => $defect->jenis_assy,
-            'defect' => $defect
+            'type'               => $defect->jenis_assy,
+            'defect'             => $defect,
+            'carTypes'           => CarType::with('carlines')->orderBy('name')->get(),
+            'defectTypesFinal'   => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
+            'defectTypesPre'     => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
+            'inspectProcessTypes' => InspectProcessType::orderBy('name')->get(),
         ]);
     }
 
@@ -547,49 +578,64 @@ class ReportController extends Controller
         }
 
         $validated = $request->validate([
-            'type'             => 'required|string|in:Final Assy,Pre Assy',
-            'jenis_mobil'      => 'required|string|max:255',
-            'conveyor'         => 'required|string|max:255',
-            'line'             => 'required|string|max:255',
-            'tanggal'          => 'required|date',
-            'jenis_defect'     => 'required|string|max:255',
-            'sub_defect'       => 'required|string|max:255',
-            'jumlah'           => 'required|integer|min:1',
-            'end_number'       => 'nullable|string|max:255',
-            'specification'    => 'nullable|string|max:255',
-            'actual'           => 'nullable|string|max:255',
-            'area_ditemukan'   => 'nullable|string|max:255',
-            'job_station'      => 'nullable|string|max:255',
-            'keterangan'       => 'nullable|string',
-            'no_terminal'      => 'nullable|string|max:255',
-            'no_mesin'         => 'nullable|string|max:255',
+            'type'                     => 'required|string|in:Final Assy,Pre Assy',
+            'jenis_mobil'              => 'required|string|max:255',
+            'conveyor'                 => 'nullable|string|max:255',
+            'line'                     => 'nullable|string|max:255',
+            'waktu_input'              => 'required|date',
+            'jenis_defect'             => 'nullable|string|max:255',
+            'sub_defect'               => 'nullable|string|max:255',
+            'jumlah'                   => 'required|integer|min:1',
+            'inspect_quantity'         => 'nullable|integer|min:0',
+            'end_number'               => 'nullable|string|max:255',
+            'specification'            => 'nullable|string|max:255',
+            'actual'                   => 'nullable|string|max:255',
+            'area_ditemukan'           => 'nullable|string|max:255',
+            'job_station'              => 'nullable|string|max:255',
+            'keterangan'               => 'nullable|string',
+            'no_terminal'              => 'nullable|string|max:255',
+            'no_mesin'                 => 'nullable|string|max:255',
+            'carline_id'               => 'nullable|exists:carlines,id',
+            'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
+            'defect_type_id'           => 'nullable|exists:defect_types,id',
+            'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
+            'ditemukan_oleh'           => 'nullable|in:Inspektor,Operator',
+            'pattern'                  => 'nullable|string|max:255',
         ]);
 
         $defect->update([
-            'waktu'            => Carbon::parse($validated['tanggal'])->setTimeFrom($defect->waktu),
-            'jenis_assy'       => $validated['type'],
-            'line_conveyor'    => $validated['line'],
-            'jenis_mobil'      => $validated['jenis_mobil'],
-            'conveyor'         => $validated['conveyor'],
-            'jenis_defect'     => $validated['jenis_defect'],
-            'jenis_sub_defect' => $validated['sub_defect'],
-            'quantity'         => $validated['jumlah'],
-            'end_number'       => $validated['end_number'] ?? null,
-            'specification'    => $validated['specification'] ?? null,
-            'actual'           => $validated['actual'] ?? null,
-            'area_ditemukan'   => $validated['area_ditemukan'] ?? null,
-            'job_station'      => $validated['job_station'] ?? null,
-            'keterangan'       => $validated['keterangan'] ?? null,
-            'no_terminal'      => $validated['no_terminal'] ?? null,
-            'no_mesin'         => $validated['no_mesin'] ?? null,
+            'waktu'                    => Carbon::parse($validated['waktu_input']),
+            'jenis_assy'               => $validated['type'],
+            'line_conveyor'            => $validated['line'] ?? null,
+            'jenis_mobil'              => $validated['jenis_mobil'],
+            'conveyor'                 => $validated['conveyor'] ?? null,
+            'jenis_defect'             => $validated['jenis_defect'] ?? null,
+            'jenis_sub_defect'         => $validated['sub_defect'] ?? null,
+            'quantity'                 => $validated['jumlah'],
+            'inspect_quantity'         => $validated['inspect_quantity'] ?? null,
+            'end_number'               => $validated['end_number'] ?? null,
+            'specification'            => $validated['specification'] ?? null,
+            'actual'                   => $validated['actual'] ?? null,
+            'area_ditemukan'           => $validated['area_ditemukan'] ?? null,
+            'job_station'              => $validated['job_station'] ?? null,
+            'keterangan'               => $validated['keterangan'] ?? null,
+            'no_terminal'              => $validated['no_terminal'] ?? null,
+            'no_mesin'                 => $validated['no_mesin'] ?? null,
+            'carline_id'               => $validated['carline_id'] ?? null,
+            'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
+            'defect_type_id'           => $validated['defect_type_id'] ?? null,
+            'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
+            'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,
+            'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
+        $conveyor = $validated['conveyor'] ?? ($defect->carline->name ?? '-');
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => session('user_name', 'Operator'),
             'jenis_aksi'   => 'Update Report',
-            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$validated['line']} ({$validated['conveyor']}) - Jumlah {$validated['jumlah']}",
-            'jenis_defect' => $validated['jenis_defect'],
+            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$validated['jenis_mobil']} ({$conveyor}) - Jumlah {$validated['jumlah']}",
+            'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
 
@@ -636,9 +682,13 @@ class ReportController extends Controller
         $defect = Defect::findOrFail($id);
 
         return view('input_defect', [
-            'type'      => $defect->jenis_assy,
-            'defect'    => $defect,
-            'backRoute' => route('recent_defects.index'),
+            'type'               => $defect->jenis_assy,
+            'defect'             => $defect,
+            'backRoute'          => route('recent_defects.index'),
+            'carTypes'           => CarType::with('carlines')->orderBy('name')->get(),
+            'defectTypesFinal'   => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
+            'defectTypesPre'     => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
+            'inspectProcessTypes' => InspectProcessType::orderBy('name')->get(),
         ]);
     }
 
@@ -650,53 +700,93 @@ class ReportController extends Controller
         $defect = Defect::findOrFail($id);
 
         $validated = $request->validate([
-            'type'             => 'required|string|in:Final Assy,Pre Assy',
-            'jenis_mobil'      => 'required|string|max:255',
-            'conveyor'         => 'required|string|max:255',
-            'line'             => 'required|string|max:255',
-            'tanggal'          => 'required|date',
-            'jenis_defect'     => 'required|string|max:255',
-            'sub_defect'       => 'required|string|max:255',
-            'jumlah'           => 'required|integer|min:1',
-            'end_number'       => 'nullable|string|max:255',
-            'specification'    => 'nullable|string|max:255',
-            'actual'           => 'nullable|string|max:255',
-            'area_ditemukan'   => 'nullable|string|max:255',
-            'job_station'      => 'nullable|string|max:255',
-            'keterangan'       => 'nullable|string',
-            'no_terminal'      => 'nullable|string|max:255',
-            'no_mesin'         => 'nullable|string|max:255',
+            'type'                     => 'required|string|in:Final Assy,Pre Assy',
+            'jenis_mobil'              => 'required|string|max:255',
+            'conveyor'                 => 'nullable|string|max:255',
+            'line'                     => 'nullable|string|max:255',
+            'waktu_input'              => 'required|date',
+            'jenis_defect'             => 'nullable|string|max:255',
+            'sub_defect'               => 'nullable|string|max:255',
+            'jumlah'                   => 'required|integer|min:1',
+            'inspect_quantity'         => 'nullable|integer|min:0',
+            'end_number'               => 'nullable|string|max:255',
+            'specification'            => 'nullable|string|max:255',
+            'actual'                   => 'nullable|string|max:255',
+            'area_ditemukan'           => 'nullable|string|max:255',
+            'job_station'              => 'nullable|string|max:255',
+            'keterangan'               => 'nullable|string',
+            'no_terminal'              => 'nullable|string|max:255',
+            'no_mesin'                 => 'nullable|string|max:255',
+            'carline_id'               => 'nullable|exists:carlines,id',
+            'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
+            'defect_type_id'           => 'nullable|exists:defect_types,id',
+            'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
+            'ditemukan_oleh'           => 'nullable|in:Inspektor,Operator',
+            'pattern'                  => 'nullable|string|max:255',
         ]);
 
         $defect->update([
-            'waktu'            => Carbon::parse($validated['tanggal'])->setTimeFrom($defect->waktu),
-            'jenis_assy'       => $validated['type'],
-            'line_conveyor'    => $validated['line'],
-            'jenis_mobil'      => $validated['jenis_mobil'],
-            'conveyor'         => $validated['conveyor'],
-            'jenis_defect'     => $validated['jenis_defect'],
-            'jenis_sub_defect' => $validated['sub_defect'],
-            'quantity'         => $validated['jumlah'],
-            'end_number'       => $validated['end_number'] ?? null,
-            'specification'    => $validated['specification'] ?? null,
-            'actual'           => $validated['actual'] ?? null,
-            'area_ditemukan'   => $validated['area_ditemukan'] ?? null,
-            'job_station'      => $validated['job_station'] ?? null,
-            'keterangan'       => $validated['keterangan'] ?? null,
-            'no_terminal'      => $validated['no_terminal'] ?? null,
-            'no_mesin'         => $validated['no_mesin'] ?? null,
+            'waktu'                    => Carbon::parse($validated['waktu_input']),
+            'jenis_assy'               => $validated['type'],
+            'line_conveyor'            => $validated['line'] ?? null,
+            'jenis_mobil'              => $validated['jenis_mobil'],
+            'conveyor'                 => $validated['conveyor'] ?? null,
+            'jenis_defect'             => $validated['jenis_defect'] ?? null,
+            'jenis_sub_defect'         => $validated['sub_defect'] ?? null,
+            'quantity'                 => $validated['jumlah'],
+            'inspect_quantity'         => $validated['inspect_quantity'] ?? null,
+            'end_number'               => $validated['end_number'] ?? null,
+            'specification'            => $validated['specification'] ?? null,
+            'actual'                   => $validated['actual'] ?? null,
+            'area_ditemukan'           => $validated['area_ditemukan'] ?? null,
+            'job_station'              => $validated['job_station'] ?? null,
+            'keterangan'               => $validated['keterangan'] ?? null,
+            'no_terminal'              => $validated['no_terminal'] ?? null,
+            'no_mesin'                 => $validated['no_mesin'] ?? null,
+            'carline_id'               => $validated['carline_id'] ?? null,
+            'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
+            'defect_type_id'           => $validated['defect_type_id'] ?? null,
+            'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
+            'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,
+            'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
+        $conveyor = $validated['conveyor'] ?? ($defect->carline->name ?? '-');
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => session('user_name'),
             'jenis_aksi'   => 'Update Report (Admin)',
-            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$validated['line']} ({$validated['conveyor']}) - Jumlah {$validated['jumlah']}",
-            'jenis_defect' => $validated['jenis_defect'],
+            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$validated['jenis_mobil']} ({$conveyor}) - Jumlah {$validated['jumlah']}",
+            'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
 
         return redirect()->route('recent_defects.index')->with('success', 'Laporan defect berhasil diperbarui oleh Admin!');
+    }
+
+    /**
+     * Delete defect report by admin.
+     */
+    public function adminDestroyReport(Request $request, $id)
+    {
+        $defect = Defect::findOrFail($id);
+
+        $type = $defect->jenis_assy;
+        $line = $defect->line_conveyor;
+        $defectType = $defect->jenis_defect;
+
+        $defect->delete();
+
+        ActivityLog::create([
+            'waktu'        => now(),
+            'user_name'    => session('user_name', 'Admin'),
+            'jenis_aksi'   => 'Delete Report (Admin)',
+            'aktivitas'    => "Menghapus laporan defect {$type} - {$line}",
+            'jenis_defect' => $defectType,
+            'ip_address'   => $request->ip() ?? '127.0.0.1',
+        ]);
+
+        return redirect()->back()->with('success', 'Laporan defect berhasil dihapus oleh Admin!');
     }
 
     /**

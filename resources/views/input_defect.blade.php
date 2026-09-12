@@ -14,7 +14,7 @@
 <body class="bg-gray-100 min-h-screen py-6 px-4 flex justify-center items-start">
 
     <!-- Mobile-First Standalone Card Container -->
-    <main class="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 flex flex-col" x-data="defectForm()">
+    <main class="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 flex flex-col" x-data="defectForm()" x-init="initData()">
 
         <!-- Header: Back Button + Title -->
         <div class="p-6 pb-2 flex items-center space-x-3">
@@ -63,7 +63,7 @@
                 @endif
 
                 <input type="hidden" name="type" x-model="form.type">
-                <input type="hidden" name="jenis_defect" x-model="form.jenis_defect">
+                <input type="hidden" name="jenis_defect" :value="form.jenis_defect">
                 <input type="hidden" name="sub_defect" :value="form.sub_defect === 'LAIN-LAIN' ? form.custom_sub_defect : form.sub_defect">
 
                 <!-- STEP 1: INPUT FIELDS -->
@@ -371,6 +371,32 @@
                     const list = [...(this.currentDefectMap[this.form.jenis_defect] || [])];
                     if (!list.includes('LAIN-LAIN')) list.push('LAIN-LAIN');
                     return list;
+                },
+
+                initData() {
+                    const initialConveyor = '{{ old("conveyor", $defect->conveyor ?? "") }}';
+                    const initialDefect = '{{ old("jenis_defect", $defect->jenis_defect ?? "") }}';
+                    const initialSubDefect = '{{ old("sub_defect", $defect->jenis_sub_defect ?? "") }}';
+
+                    this.$nextTick(() => {
+                        if (initialConveyor) {
+                            this.form.conveyor = initialConveyor;
+                        }
+                        if (initialDefect) {
+                            this.form.jenis_defect = initialDefect;
+                        }
+                        this.$nextTick(() => {
+                            if (initialSubDefect) {
+                                const subs = this.currentSubDefects;
+                                if (subs.includes(initialSubDefect)) {
+                                    this.form.sub_defect = initialSubDefect;
+                                } else if (initialSubDefect) {
+                                    this.form.sub_defect = 'LAIN-LAIN';
+                                    this.form.custom_sub_defect = initialSubDefect;
+                                }
+                            }
+                        });
+                    });
                 },
 
                 goToConfirm() {

@@ -29,5 +29,44 @@ class Defect extends Model
         'keterangan',
         'no_terminal',
         'no_mesin',
+        // Kolom baru (Tahap C)
+        'inspect_quantity',
+        'ditemukan_oleh',
+        'pattern',
+        'carline_id',
+        'inspect_process_type_id',
+        'defect_type_id',
+        'sub_defect_type_id',
     ];
+
+    // --- Relasi ke master data baru ---
+
+    public function carline()
+    {
+        return $this->belongsTo(Carline::class);
+    }
+
+    public function inspectProcessType()
+    {
+        return $this->belongsTo(InspectProcessType::class);
+    }
+
+    public function defectType()
+    {
+        return $this->belongsTo(DefectType::class);
+    }
+
+    public function subDefectType()
+    {
+        return $this->belongsTo(SubDefectType::class);
+    }
+
+    /**
+     * Akses jenis mobil via relasi carline->carType
+     * (tidak disimpan langsung, ambil dari relasi)
+     */
+    public function getCarTypeNameAttribute(): ?string
+    {
+        return $this->carline?->carType?->name;
+    }
 }

@@ -69,5 +69,35 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
 
         Route::get('/report/{id}/edit', [\App\Http\Controllers\ReportController::class, 'adminEditReport'])->name('admin.report.edit');
         Route::put('/report/{id}', [\App\Http\Controllers\ReportController::class, 'adminUpdateReport'])->name('admin.report.update');
+        Route::delete('/report/{id}', [\App\Http\Controllers\ReportController::class, 'adminDestroyReport'])->name('admin.report.destroy');
+
+        // Master Data routes
+        Route::prefix('master')->name('admin.master.')->group(function () {
+            // Car Types (Jenis Mobil)
+            Route::get('/car-types', [\App\Http\Controllers\CarTypeController::class, 'index'])->name('car_types.index');
+            Route::post('/car-types', [\App\Http\Controllers\CarTypeController::class, 'store'])->name('car_types.store');
+            Route::put('/car-types/{id}', [\App\Http\Controllers\CarTypeController::class, 'update'])->name('car_types.update');
+            Route::delete('/car-types/{id}', [\App\Http\Controllers\CarTypeController::class, 'destroy'])->name('car_types.destroy');
+
+            // Carlines (Carline / Konveyor)
+            Route::get('/carlines', [\App\Http\Controllers\CarlineController::class, 'index'])->name('carlines.index');
+            Route::post('/carlines', [\App\Http\Controllers\CarlineController::class, 'store'])->name('carlines.store');
+            Route::put('/carlines/{id}', [\App\Http\Controllers\CarlineController::class, 'update'])->name('carlines.update');
+            Route::delete('/carlines/{id}', [\App\Http\Controllers\CarlineController::class, 'destroy'])->name('carlines.destroy');
+
+            // Defect Types & Sub Defect Types
+            Route::get('/defect-types', [\App\Http\Controllers\DefectTypeController::class, 'index'])->name('defect_types.index');
+            Route::post('/defect-types', [\App\Http\Controllers\DefectTypeController::class, 'store'])->name('defect_types.store');
+            Route::put('/defect-types/{id}', [\App\Http\Controllers\DefectTypeController::class, 'update'])->name('defect_types.update');
+            Route::delete('/defect-types/{id}', [\App\Http\Controllers\DefectTypeController::class, 'destroy'])->name('defect_types.destroy');
+            Route::post('/defect-types/{defectTypeId}/sub', [\App\Http\Controllers\DefectTypeController::class, 'storeSub'])->name('defect_types.sub.store');
+            Route::delete('/defect-types/sub/{id}', [\App\Http\Controllers\DefectTypeController::class, 'destroySub'])->name('defect_types.sub.destroy');
+
+            // Inspect Process Types
+            Route::get('/inspect-process-types', [\App\Http\Controllers\InspectProcessTypeController::class, 'index'])->name('inspect_process_types.index');
+            Route::post('/inspect-process-types', [\App\Http\Controllers\InspectProcessTypeController::class, 'store'])->name('inspect_process_types.store');
+            Route::put('/inspect-process-types/{id}', [\App\Http\Controllers\InspectProcessTypeController::class, 'update'])->name('inspect_process_types.update');
+            Route::delete('/inspect-process-types/{id}', [\App\Http\Controllers\InspectProcessTypeController::class, 'destroy'])->name('inspect_process_types.destroy');
+        });
     });
 });

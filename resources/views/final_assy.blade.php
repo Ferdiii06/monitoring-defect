@@ -279,10 +279,19 @@
                                         {{ $record->quantity }}
                                     </td>
                                     <td class="py-4 text-center px-4 pr-2">
-                                        <a href="{{ route('admin.report.edit', $record->id) }}" 
-                                           class="inline-flex items-center px-3 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">
-                                            Edit
-                                        </a>
+                                        <div class="inline-flex items-center space-x-1.5">
+                                            <a href="{{ route('admin.report.edit', $record->id) }}" 
+                                               class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">
+                                                Edit
+                                            </a>
+                                            <form action="{{ route('admin.report.destroy', $record->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data defect ini?');" class="inline-block">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold transition-colors">
+                                                    Hapus
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
