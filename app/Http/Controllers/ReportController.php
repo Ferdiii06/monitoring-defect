@@ -453,7 +453,8 @@ class ReportController extends Controller
             'jenis_mobil'              => 'required|string|max:255',
             'conveyor'                 => 'nullable|string|max:255',
             'line'                     => 'nullable|string|max:255',
-            'waktu_input'              => 'required|date',
+            'tanggal'                  => 'required|date',
+            'jam'                      => 'required|date_format:H:i',
             'jenis_defect'             => 'nullable|string|max:255',
             'sub_defect'               => 'nullable|string|max:255',
             'jumlah'                   => 'required|integer|min:1',
@@ -479,7 +480,7 @@ class ReportController extends Controller
         $shift = session('current_shift', '1A');
 
         $defect = Defect::create([
-            'waktu'                    => Carbon::parse($validated['waktu_input']),
+            'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'user_name'                => $userName,
             'shift'                    => $shift,
             'jenis_assy'               => $validated['type'],
@@ -507,7 +508,7 @@ class ReportController extends Controller
             'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
-        $conveyor = $validated['conveyor'] ?? ($defect->carline->name ?? '-');
+        $conveyor = $validated['conveyor'] ?? ($defect->carline?->name ?? '-');
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => $userName,
@@ -582,7 +583,8 @@ class ReportController extends Controller
             'jenis_mobil'              => 'required|string|max:255',
             'conveyor'                 => 'nullable|string|max:255',
             'line'                     => 'nullable|string|max:255',
-            'waktu_input'              => 'required|date',
+            'tanggal'                  => 'required|date',
+            'jam'                      => 'required|date_format:H:i',
             'jenis_defect'             => 'nullable|string|max:255',
             'sub_defect'               => 'nullable|string|max:255',
             'jumlah'                   => 'required|integer|min:1',
@@ -604,7 +606,7 @@ class ReportController extends Controller
         ]);
 
         $defect->update([
-            'waktu'                    => Carbon::parse($validated['waktu_input']),
+            'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $validated['type'],
             'line_conveyor'            => $validated['line'] ?? null,
             'jenis_mobil'              => $validated['jenis_mobil'],
@@ -629,7 +631,7 @@ class ReportController extends Controller
             'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
-        $conveyor = $validated['conveyor'] ?? ($defect->carline->name ?? '-');
+        $conveyor = $validated['conveyor'] ?? ($defect->carline?->name ?? '-');
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => session('user_name', 'Operator'),
@@ -704,7 +706,8 @@ class ReportController extends Controller
             'jenis_mobil'              => 'required|string|max:255',
             'conveyor'                 => 'nullable|string|max:255',
             'line'                     => 'nullable|string|max:255',
-            'waktu_input'              => 'required|date',
+            'tanggal'                  => 'required|date',
+            'jam'                      => 'required|date_format:H:i',
             'jenis_defect'             => 'nullable|string|max:255',
             'sub_defect'               => 'nullable|string|max:255',
             'jumlah'                   => 'required|integer|min:1',
@@ -726,7 +729,7 @@ class ReportController extends Controller
         ]);
 
         $defect->update([
-            'waktu'                    => Carbon::parse($validated['waktu_input']),
+            'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $validated['type'],
             'line_conveyor'            => $validated['line'] ?? null,
             'jenis_mobil'              => $validated['jenis_mobil'],
@@ -751,7 +754,7 @@ class ReportController extends Controller
             'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
-        $conveyor = $validated['conveyor'] ?? ($defect->carline->name ?? '-');
+        $conveyor = $validated['conveyor'] ?? ($defect->carline?->name ?? '-');
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => session('user_name'),

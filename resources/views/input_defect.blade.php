@@ -97,6 +97,12 @@
                         <input type="date" name="tanggal" x-model="form.tanggal" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]" required>
                     </div>
 
+                    <!-- JAM TEMUAN -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">JAM TEMUAN <span class="text-red-500">*</span></label>
+                        <input type="time" name="jam" x-model="form.jam" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]" required>
+                    </div>
+
                     <!-- LINE -->
                     <div>
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">LINE <span class="text-red-500">*</span></label>
@@ -133,6 +139,28 @@
                     <div>
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">JUMLAH (QUANTITY) <span class="text-red-500">*</span></label>
                         <input type="number" name="jumlah" x-model="form.jumlah" min="1" placeholder="1" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]" required>
+                    </div>
+
+                    <!-- INSPECT QUANTITY -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">INSPECT QUANTITY</label>
+                        <input type="number" name="inspect_quantity" x-model="form.inspect_quantity" min="0" placeholder="0" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
+                    </div>
+
+                    <!-- DITEMUKAN OLEH -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">DITEMUKAN OLEH</label>
+                        <select name="ditemukan_oleh" x-model="form.ditemukan_oleh" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer">
+                            <option value="">Pilih Ditemukan Oleh...</option>
+                            <option value="Inspektor">Inspektor</option>
+                            <option value="Operator">Operator</option>
+                        </select>
+                    </div>
+
+                    <!-- PATTERN -->
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">PATTERN</label>
+                        <input type="text" name="pattern" x-model="form.pattern" placeholder="Masukkan Pattern..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
                     </div>
 
                     <!-- DYNAMIC FIELDS SECTION -->
@@ -212,20 +240,28 @@
                                 <span class="block font-bold text-gray-900 mt-0.5" x-text="form.tanggal"></span>
                             </div>
                             <div>
-                                <span class="block text-gray-400 font-medium">Line</span>
-                                <span class="block font-bold text-gray-900 mt-0.5" x-text="form.line"></span>
+                                <span class="block text-gray-400 font-medium">Jam</span>
+                                <span class="block font-bold text-gray-900 mt-0.5" x-text="form.jam"></span>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-2">
                             <div>
+                                <span class="block text-gray-400 font-medium">Line</span>
+                                <span class="block font-bold text-gray-900 mt-0.5" x-text="form.line"></span>
+                            </div>
+                            <div>
                                 <span class="block text-gray-400 font-medium">Jenis Mobil</span>
                                 <span class="block font-bold text-gray-900 mt-0.5" x-text="form.jenis_mobil"></span>
                             </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <span class="block text-gray-400 font-medium">Conveyor</span>
                                 <span class="block font-bold text-gray-900 mt-0.5" x-text="form.conveyor"></span>
                             </div>
+                            <div></div>
                         </div>
 
                         <hr class="border-gray-200">
@@ -243,6 +279,21 @@
                         <div>
                             <span class="block text-gray-400 font-medium">Jumlah (Quantity)</span>
                             <span class="block text-base font-extrabold text-[#8b0000] mt-0.5" x-text="form.jumlah + ' Unit'"></span>
+                        </div>
+
+                        <div x-show="form.inspect_quantity">
+                            <span class="block text-gray-400 font-medium">Inspect Quantity</span>
+                            <span class="block font-bold text-gray-900 mt-0.5" x-text="form.inspect_quantity"></span>
+                        </div>
+
+                        <div x-show="form.ditemukan_oleh">
+                            <span class="block text-gray-400 font-medium">Ditemukan Oleh</span>
+                            <span class="block font-bold text-gray-900 mt-0.5" x-text="form.ditemukan_oleh"></span>
+                        </div>
+
+                        <div x-show="form.pattern">
+                            <span class="block text-gray-400 font-medium">Pattern</span>
+                            <span class="block font-bold text-gray-900 mt-0.5" x-text="form.pattern"></span>
                         </div>
 
                         <!-- Dynamic Fields Confirmation Summary -->
@@ -293,17 +344,7 @@
     </main>
 
     <script>
-        const conveyorMap = {
-          "TOYOTA": [
-            "664W-C5", "664W-C5C", "664W-C5A", "664W-C5B", "664W-C5D", "711W TNGA-C5", "711W TNGA-C5A", "737W TNGA-C5A", "737W TNGA-C5",
-            "738W-C5C", "858W-C5C", "810W-C5", "941W-C5", "023J-C5", "072Y-C5", "718W-AB5.HEV", "718W-C4.CONV", "718W-C4.TNGA", "891W/892W-C1.GAS LHD",
-            "853W-AT2.HEV LHD", "853W-AT6.GAS LHD", "853W-AT16.GAS LHD", "852W-AT19.HEV PHV LHD", "852W-AT2.HEV PHV LHD", "852W-AT19.HEV PHV RHD",
-            "852W-AT6.GAS LHD", "909W-AT7.GAS LHD", "909W-AT11.HEV LHD", "909W-AT9.GAS LHD", "910W-AT7.GAS LHD", "910W-AT11.HEV LHD",
-            "910W-AT9.GAS LHD", "953W-C6.HEV RHD", "953W-C6.HEV LHD", "953W ENG NO.3-C9", "898W-AB5.HEV", "898W-C4.CONV", "898W-C4.TNGA"
-          ],
-          "NISSAN": ["P33A-B1.BAT", "P33A-B1.CELL", "J32V-B2.LHD", "J32V-B2.RHD", "J42U-B3.EGI", "J42U-B3.ENGINE", "J42U-B2.DOOR RH", "J42U-B2.DOOR LH", "P33C-B1.BAT", "P33C-B1.CELL"],
-          "MAZDA": ["J72A-12B.LHD", "J72A-AB9.RHD", "J72A-16C.LHD", "J72K-16C.LHD", "J30A-AB6.EXTEND LHD", "J30A-AB1.INPANEL LHD", "J30A-AB6.EXTEND RHD", "J30A-AB1.INPANEL RHD", "J69P-AB8.EXTEND LHD", "J69P-AB8.INPANEL LHD", "J69P-AB8.EXTEND RHD", "J69P-AB8.INPANEL RHD", "J69P-AB9.EXTEND LHD", "J69P-AB3.INPANEL LHD"]
-        };
+        const conveyorMap = @json($carTypes->mapWithKeys(fn($ct) => [$ct->name => $ct->carlines->pluck('name')]));
 
         const finalAssyDefects = {
             'INSER CIRCUIT': ['1.A - CROSS CIRCUIT', '1.B - CIRCUIT NOT INSERT', '1.C - WRONG INSERT CIRCUIT', '1.D - WRONG CAVITY', '1.E - MISSING CIRCUIT', '1.F - TPO'],
@@ -341,11 +382,15 @@
                     jenis_mobil: '{{ old("jenis_mobil", $defect->jenis_mobil ?? "") }}',
                     conveyor: '{{ old("conveyor", $defect->conveyor ?? "") }}',
                     tanggal: '{{ old("tanggal", isset($defect) ? \Carbon\Carbon::parse($defect->waktu)->format("Y-m-d") : now()->format("Y-m-d")) }}',
+                    jam: '{{ old("jam", isset($defect) ? \Carbon\Carbon::parse($defect->waktu)->format("H:i") : now()->format("H:i")) }}',
                     line: '{{ old("line", $defect->line_conveyor ?? "") }}',
                     jenis_defect: '{{ old("jenis_defect", $defect->jenis_defect ?? "") }}',
                     sub_defect: '{{ old("sub_defect", $defect->jenis_sub_defect ?? "") }}',
                     custom_sub_defect: '',
                     jumlah: {{ old("jumlah", $defect->quantity ?? 1) }},
+                    inspect_quantity: '{{ old("inspect_quantity", $defect->inspect_quantity ?? "") }}',
+                    ditemukan_oleh: '{{ old("ditemukan_oleh", $defect->ditemukan_oleh ?? "") }}',
+                    pattern: '{{ old("pattern", $defect->pattern ?? "") }}',
                     
                     end_number: '{{ old("end_number", $defect->end_number ?? "") }}',
                     specification: '{{ old("specification", $defect->specification ?? "") }}',
@@ -401,8 +446,8 @@
 
                 goToConfirm() {
                     this.errorMessage = '';
-                    if (!this.form.jenis_mobil || !this.form.conveyor || !this.form.line || !this.form.jenis_defect || !this.form.sub_defect || !this.form.jumlah) {
-                        this.errorMessage = 'Mohon lengkapi seluruh field wajib (Jenis Mobil, Konveyor, Line, Defect, Sub-defect, Jumlah).';
+                    if (!this.form.jenis_mobil || !this.form.conveyor || !this.form.tanggal || !this.form.jam || !this.form.line || !this.form.jenis_defect || !this.form.sub_defect || !this.form.jumlah) {
+                        this.errorMessage = 'Mohon lengkapi seluruh field wajib (Jenis Mobil, Konveyor, Tanggal, Jam, Line, Defect, Sub-defect, Jumlah).';
                         return;
                     }
                     if (this.form.sub_defect === 'LAIN-LAIN' && !this.form.custom_sub_defect.trim()) {

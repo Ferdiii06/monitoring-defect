@@ -70,7 +70,7 @@
                             <div class="flex justify-between items-start">
                                 <div>
                                     <span class="block text-[11px] font-bold tracking-wider text-gray-400 uppercase">
-                                        {{ \Carbon\Carbon::parse($defect->waktu)->format('d F Y') }}
+                                        {{ \Carbon\Carbon::parse($defect->waktu)->format('d F Y, H:i') }}
                                     </span>
                                     <h3 class="text-base font-bold text-gray-900 mt-0.5">{{ $defect->jenis_assy }}</h3>
                                 </div>

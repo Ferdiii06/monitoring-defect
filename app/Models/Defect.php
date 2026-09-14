@@ -39,6 +39,16 @@ class Defect extends Model
         'sub_defect_type_id',
     ];
 
+    protected $casts = [
+        'waktu'                    => 'datetime',
+        'quantity'                 => 'integer',
+        'inspect_quantity'         => 'integer',
+        'carline_id'               => 'integer',
+        'inspect_process_type_id'  => 'integer',
+        'defect_type_id'           => 'integer',
+        'sub_defect_type_id'       => 'integer',
+    ];
+
     // --- Relasi ke master data baru ---
 
     public function carline()

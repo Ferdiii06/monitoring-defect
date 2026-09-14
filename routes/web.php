@@ -48,8 +48,10 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         // Add Account routes
-        Route::get('/add-account', [\App\Http\Controllers\AccountController::class, 'create'])->name('account.create');
+        Route::get('/add-account', [\App\Http\Controllers\AccountController::class, 'index'])->name('account.create');
         Route::post('/add-account', [\App\Http\Controllers\AccountController::class, 'store'])->name('account.store');
+        Route::put('/add-account/{id}', [\App\Http\Controllers\AccountController::class, 'update'])->name('account.update');
+        Route::delete('/add-account/{id}', [\App\Http\Controllers\AccountController::class, 'destroy'])->name('account.destroy');
 
         // Final Assy Report route
         Route::get('/final-assy', [\App\Http\Controllers\ReportController::class, 'index'])->name('final_assy.index');
