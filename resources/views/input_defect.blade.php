@@ -72,7 +72,7 @@
                     <!-- JENIS MOBIL -->
                     <div>
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">JENIS MOBIL <span class="text-red-500">*</span></label>
-                        <select name="jenis_mobil" x-model="form.jenis_mobil" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer" required>
+                        <select name="jenis_mobil" x-model="form.jenis_mobil" @change="if(form.jenis_mobil !== 'MAZDA' || form.type !== 'Final Assy') form.pattern = ''" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer" required>
                             <option value="" disabled selected>Pilih Jenis Mobil...</option>
                             <template x-for="mobil in Object.keys(conveyorMap)" :key="mobil">
                                 <option :value="mobil" x-text="mobil"></option>
@@ -91,6 +91,23 @@
                         </select>
                     </div>
 
+                    <!-- PATTERN (KHUSUS FINAL ASSY & MAZDA) -->
+                    <div x-show="form.type === 'Final Assy' && form.jenis_mobil === 'MAZDA'" x-transition class="space-y-1.5">
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">PATTERN <span class="text-red-500">*</span></label>
+                        <select name="pattern" x-model="form.pattern" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer" :required="form.type === 'Final Assy' && form.jenis_mobil === 'MAZDA'">
+                            <option value="" disabled selected>Pilih Pattern...</option>
+                            <optgroup label="AB6. Extend LHD / RHD">
+                                <option value="67120 (AB6. Extend LHD / RHD)">67120 (AB6. Extend LHD / RHD)</option>
+                                <option value="67240 (AB6. Extend LHD / RHD)">67240 (AB6. Extend LHD / RHD)</option>
+                                <option value="67550 (AB6. Extend LHD / RHD)">67550 (AB6. Extend LHD / RHD)</option>
+                            </optgroup>
+                            <optgroup label="AB9. EXTEND LHD">
+                                <option value="67120 (AB9. EXTEND LHD)">67120 (AB9. EXTEND LHD)</option>
+                                <option value="67240 (AB9. EXTEND LHD)">67240 (AB9. EXTEND LHD)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
                     <!-- TANGGAL TEMUAN -->
                     <div>
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">TANGGAL TEMUAN <span class="text-red-500">*</span></label>
@@ -103,10 +120,10 @@
                         <input type="time" name="jam" x-model="form.jam" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]" required>
                     </div>
 
-                    <!-- LINE -->
-                    <div>
+                    <!-- LINE (Hanya untuk Pre Assy) -->
+                    <div x-show="form.type === 'Pre Assy'">
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">LINE <span class="text-red-500">*</span></label>
-                        <input type="text" name="line" x-model="form.line" placeholder="Masukkan Line..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]" required>
+                        <input type="text" name="line" x-model="form.line" placeholder="Masukkan Line..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]" :required="form.type === 'Pre Assy'">
                     </div>
 
                     <!-- JENIS DEFECT -->
@@ -157,11 +174,7 @@
                         </select>
                     </div>
 
-                    <!-- PATTERN -->
-                    <div>
-                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">PATTERN</label>
-                        <input type="text" name="pattern" x-model="form.pattern" placeholder="Masukkan Pattern..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
-                    </div>
+
 
                     <!-- DYNAMIC FIELDS SECTION -->
                     <template x-if="form.type === 'Final Assy'">
@@ -247,21 +260,20 @@
 
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <span class="block text-gray-400 font-medium">Line</span>
-                                <span class="block font-bold text-gray-900 mt-0.5" x-text="form.line"></span>
-                            </div>
-                            <div>
                                 <span class="block text-gray-400 font-medium">Jenis Mobil</span>
                                 <span class="block font-bold text-gray-900 mt-0.5" x-text="form.jenis_mobil"></span>
                             </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <span class="block text-gray-400 font-medium">Conveyor</span>
                                 <span class="block font-bold text-gray-900 mt-0.5" x-text="form.conveyor"></span>
                             </div>
-                            <div></div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2" x-show="form.type === 'Pre Assy' && form.line">
+                            <div>
+                                <span class="block text-gray-400 font-medium">Line</span>
+                                <span class="block font-bold text-gray-900 mt-0.5" x-text="form.line"></span>
+                            </div>
                         </div>
 
                         <hr class="border-gray-200">
@@ -291,7 +303,7 @@
                             <span class="block font-bold text-gray-900 mt-0.5" x-text="form.ditemukan_oleh"></span>
                         </div>
 
-                        <div x-show="form.pattern">
+                        <div x-show="form.type === 'Final Assy' && form.jenis_mobil === 'MAZDA' && form.pattern">
                             <span class="block text-gray-400 font-medium">Pattern</span>
                             <span class="block font-bold text-gray-900 mt-0.5" x-text="form.pattern"></span>
                         </div>
@@ -423,6 +435,10 @@
                     const initialDefect = '{{ old("jenis_defect", $defect->jenis_defect ?? "") }}';
                     const initialSubDefect = '{{ old("sub_defect", $defect->jenis_sub_defect ?? "") }}';
 
+                    if (this.form.type === 'Final Assy') {
+                        this.form.line = '';
+                    }
+
                     this.$nextTick(() => {
                         if (initialConveyor) {
                             this.form.conveyor = initialConveyor;
@@ -446,9 +462,23 @@
 
                 goToConfirm() {
                     this.errorMessage = '';
-                    if (!this.form.jenis_mobil || !this.form.conveyor || !this.form.tanggal || !this.form.jam || !this.form.line || !this.form.jenis_defect || !this.form.sub_defect || !this.form.jumlah) {
-                        this.errorMessage = 'Mohon lengkapi seluruh field wajib (Jenis Mobil, Konveyor, Tanggal, Jam, Line, Defect, Sub-defect, Jumlah).';
+                    if (!this.form.jenis_mobil || !this.form.conveyor || !this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !this.form.jumlah) {
+                        this.errorMessage = 'Mohon lengkapi seluruh field wajib (Jenis Mobil, Konveyor, Tanggal, Jam, Defect, Sub-defect, Jumlah).';
                         return;
+                    }
+                    if (this.form.type === 'Pre Assy' && !this.form.line) {
+                        this.errorMessage = 'Mohon masukkan Line untuk Pre Assy.';
+                        return;
+                    }
+                    if (this.form.type === 'Final Assy') {
+                        this.form.line = '';
+                    }
+                    if (this.form.type === 'Final Assy' && this.form.jenis_mobil === 'MAZDA' && !this.form.pattern) {
+                        this.errorMessage = 'Mohon pilih Pattern untuk mobil MAZDA.';
+                        return;
+                    }
+                    if (this.form.type !== 'Final Assy' || this.form.jenis_mobil !== 'MAZDA') {
+                        this.form.pattern = '';
                     }
                     if (this.form.sub_defect === 'LAIN-LAIN' && !this.form.custom_sub_defect.trim()) {
                         this.errorMessage = 'Mohon ketikkan rincian sub-defect pada kolom LAIN-LAIN.';

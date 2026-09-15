@@ -125,8 +125,29 @@
                             </div>
                         </div>
 
+                        <!-- Pattern Select (Khusus Mobil MAZDA) -->
+                        <div id="patternFilterWrapper" class="relative min-w-[170px]" style="{{ (string)$selectedLine === 'MAZDA' ? '' : 'display: none;' }}">
+                            <select id="patternSelect" name="pattern" onchange="this.form.submit()" class="w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
+                                <option value="all">Semua Pattern</option>
+                                <optgroup label="AB6. Extend LHD / RHD">
+                                    <option value="67120 (AB6. Extend LHD / RHD)" {{ ($selectedPattern ?? '') === '67120 (AB6. Extend LHD / RHD)' ? 'selected' : '' }}>67120 (AB6. Extend LHD / RHD)</option>
+                                    <option value="67240 (AB6. Extend LHD / RHD)" {{ ($selectedPattern ?? '') === '67240 (AB6. Extend LHD / RHD)' ? 'selected' : '' }}>67240 (AB6. Extend LHD / RHD)</option>
+                                    <option value="67550 (AB6. Extend LHD / RHD)" {{ ($selectedPattern ?? '') === '67550 (AB6. Extend LHD / RHD)' ? 'selected' : '' }}>67550 (AB6. Extend LHD / RHD)</option>
+                                </optgroup>
+                                <optgroup label="AB9. EXTEND LHD">
+                                    <option value="67120 (AB9. EXTEND LHD)" {{ ($selectedPattern ?? '') === '67120 (AB9. EXTEND LHD)' ? 'selected' : '' }}>67120 (AB9. EXTEND LHD)</option>
+                                    <option value="67240 (AB9. EXTEND LHD)" {{ ($selectedPattern ?? '') === '67240 (AB9. EXTEND LHD)' ? 'selected' : '' }}>67240 (AB9. EXTEND LHD)</option>
+                                </optgroup>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000]">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+
                         <!-- Reset Filter Button if filters active -->
-                        @if($dateRange || ($selectedDefect && $selectedDefect !== 'all') || ($selectedLine && $selectedLine !== 'all') || ($selectedConveyor && $selectedConveyor !== 'all'))
+                        @if($dateRange || ($selectedDefect && $selectedDefect !== 'all') || ($selectedLine && $selectedLine !== 'all') || ($selectedConveyor && $selectedConveyor !== 'all') || ($selectedPattern && $selectedPattern !== 'all'))
                             <a href="{{ route('final_assy.index') }}" class="text-xs text-gray-400 hover:text-[#8b0000] font-semibold transition-colors flex items-center space-x-1 pl-1">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -155,6 +176,7 @@
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Shift</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Pattern</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Sub Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">END (#)</th>
@@ -188,6 +210,15 @@
                                         <span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
                                             {{ $record->conveyor }}
                                         </span>
+                                    </td>
+                                    <td class="py-4 text-sm font-semibold px-4">
+                                        @if($record->pattern)
+                                            <span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
+                                                {{ $record->pattern }}
+                                            </span>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
                                     </td>
                                     <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
                                         {{ $record->jenis_defect }}
@@ -231,7 +262,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="14" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
+                                    <td colspan="15" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -479,6 +510,14 @@
 
             // Listen to mobil changes
             mobilSelect.addEventListener("change", function () {
+                const patternWrapper = document.getElementById("patternFilterWrapper");
+                const patternSelect = document.getElementById("patternSelect");
+                if (this.value === 'MAZDA') {
+                    if (patternWrapper) patternWrapper.style.display = '';
+                } else {
+                    if (patternWrapper) patternWrapper.style.display = 'none';
+                    if (patternSelect) patternSelect.value = 'all';
+                }
                 populateConveyors(this.value, 'all');
                 this.form.submit();
             });
@@ -493,12 +532,15 @@
             const defect = document.querySelector('select[name="defect"]').value;
             const line = document.getElementById("mobilSelect").value;
             const conveyor = document.getElementById("conveyorSelect").value;
+            const patternEl = document.getElementById("patternSelect");
+            const pattern = patternEl ? patternEl.value : 'all';
             
             let url = "{{ route('final_assy.export') }}?";
             url += "date_range=" + encodeURIComponent(dateRange);
             url += "&defect=" + encodeURIComponent(defect);
             url += "&line=" + encodeURIComponent(line);
             url += "&conveyor=" + encodeURIComponent(conveyor);
+            url += "&pattern=" + encodeURIComponent(pattern);
             
             window.location.href = url;
         }
@@ -534,12 +576,16 @@
                     if (!tbody) return;
 
                     if (res.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="14" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="15" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
                         return;
                     }
 
                     let html = '';
                     res.data.forEach(item => {
+                        const patternBadge = item.pattern
+                            ? `<span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.pattern}</span>`
+                            : '<span class="text-gray-400">-</span>';
+
                         html += `
                             <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${item.id}">
                                 <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(item.waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(item.waktu)}</span></div></td>
@@ -547,6 +593,7 @@
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
                                 <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
                                 <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || '-'}</span></td>
+                                <td class="py-4 text-sm font-semibold px-4">${patternBadge}</td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_sub_defect || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.end_number || '-'}</td>

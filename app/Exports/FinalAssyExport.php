@@ -29,6 +29,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
         $selectedDefect = $this->request->input('defect');
         $selectedLine = $this->request->input('line');
         $selectedConveyor = $this->request->input('conveyor');
+        $selectedPattern = $this->request->input('pattern');
 
         if ($dateRange) {
             $dates = explode(' to ', $dateRange);
@@ -57,6 +58,10 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             $query->where('conveyor', $selectedConveyor);
         }
 
+        if ($selectedPattern && $selectedPattern !== 'all') {
+            $query->where('pattern', $selectedPattern);
+        }
+
         return $query->orderBy('waktu', 'desc');
     }
 
@@ -70,6 +75,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             'Jenis Assy',
             'Data Mobil',
             'conveyor',
+            'Pattern',
             'Jenis Defect',
             'Jenis Sub Defect',
             'END (#)',
@@ -91,6 +97,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             $row->jenis_assy,
             $row->line_conveyor,
             $row->conveyor,
+            $row->pattern ?? '-',
             $row->jenis_defect,
             $row->jenis_sub_defect,
             $row->end_number,

@@ -141,45 +141,143 @@
             </div>
         </section>
 
-        <!-- Defect Trend Section -->
-        <section class="bg-white border border-gray-100 rounded-lg p-6 mb-8 shadow-sm">
-            <h2 class="text-base font-semibold text-gray-950 mb-4">Defect Trend</h2>
-
-            <div class="border border-gray-100 rounded-lg p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-sm font-bold text-gray-950">Grafik Defect (Real-time)</h3>
-
-                    <div class="flex items-center space-x-4">
-                        <!-- Dropdown Select -->
-                        <div class="relative">
-                            <select id="periodSelect" class="appearance-none border border-gray-200 rounded-md text-xs font-semibold text-gray-600 px-3 pr-8 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer">
-                                <option value="month">BULAN INI</option>
-                                <option value="week">MINGGU INI</option>
-                                <option value="today">HARI INI</option>
-                            </select>
-                            <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
+        <!-- Defect & Inspect Trend Section (Final Assy & Pre Assy Dipisah) -->
+        <section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+            
+            <!-- Card 1: Final Assy Trend -->
+            <div class="bg-white border border-gray-100 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-md bg-emerald-500 inline-block"></span>
+                                <h2 class="text-base font-bold text-gray-950">Grafik Final Assy</h2>
                             </div>
+                            <p class="text-xs text-gray-500 mt-0.5">Monitoring perbandingan Quantity Inspect & Defect</p>
                         </div>
 
-                        <!-- Live Status Badge -->
-                        <span class="flex items-center space-x-1.5 text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full font-bold">
-                            <span class="relative flex h-2 w-2">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        <div class="flex items-center space-x-3">
+                            <!-- Period Switcher Final Assy -->
+                            <div class="relative">
+                                <select id="periodFinalAssy" class="appearance-none border border-gray-200 rounded-lg text-xs font-bold text-gray-700 px-3 pr-8 py-1.5 bg-gray-50 hover:bg-white focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer transition">
+                                    <option value="month">BULAN INI</option>
+                                    <option value="week">MINGGU INI</option>
+                                    <option value="today">HARI INI</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+
+                            <!-- Live Badge -->
+                            <span class="flex items-center space-x-1.5 text-xs text-green-600 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full font-bold">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                </span>
+                                <span>Live</span>
                             </span>
-                            <span>Live</span>
-                        </span>
+                        </div>
+                    </div>
+
+                    <!-- Mini Summary Cards Final Assy -->
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-teal-50/70 border border-teal-100 rounded-xl p-3">
+                            <div class="flex items-center space-x-1.5 mb-1">
+                                <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+                                <span class="text-[10px] font-bold text-teal-800 uppercase tracking-wider">Total Inspect</span>
+                            </div>
+                            <span class="text-xl font-extrabold text-teal-900 leading-none">
+                                {{ number_format($finalAssyChart['total_inspect'], 0, ',', '.') }}
+                            </span>
+                            <span id="final-today-inspect" class="block text-[10px] font-semibold text-teal-600 mt-1">Hari ini: {{ number_format($finalAssyChart['today_inspect'], 0, ',', '.') }}</span>
+                        </div>
+                        <div class="bg-red-50/70 border border-red-100 rounded-xl p-3">
+                            <div class="flex items-center space-x-1.5 mb-1">
+                                <span class="w-2 h-2 rounded-full bg-[#8b0000]"></span>
+                                <span class="text-[10px] font-bold text-[#8b0000] uppercase tracking-wider">Total Defect</span>
+                            </div>
+                            <span id="final-summary-defect" class="text-xl font-extrabold text-[#8b0000] leading-none">
+                                {{ number_format($finalAssyChart['total_defect'], 0, ',', '.') }}
+                            </span>
+                            <span id="final-today-defect" class="block text-[10px] font-semibold text-red-600 mt-1">Hari ini: {{ number_format($finalAssyChart['today_defect'], 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Canvas for Chart.js Final Assy -->
+                    <div class="relative h-64 w-full">
+                        <canvas id="finalAssyChart"></canvas>
                     </div>
                 </div>
+            </div>
 
-                <!-- Canvas for Chart.js -->
-                <div class="relative h-64 w-full">
-                    <canvas id="defectChart"></canvas>
+            <!-- Card 2: Pre Assy Trend -->
+            <div class="bg-white border border-gray-100 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-md bg-rose-500 inline-block"></span>
+                                <h2 class="text-base font-bold text-gray-950">Grafik Pre Assy</h2>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-0.5">Monitoring perbandingan Quantity Inspect & Defect</p>
+                        </div>
+
+                        <div class="flex items-center space-x-3">
+                            <!-- Period Switcher Pre Assy -->
+                            <div class="relative">
+                                <select id="periodPreAssy" class="appearance-none border border-gray-200 rounded-lg text-xs font-bold text-gray-700 px-3 pr-8 py-1.5 bg-gray-50 hover:bg-white focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer transition">
+                                    <option value="month">BULAN INI</option>
+                                    <option value="week">MINGGU INI</option>
+                                    <option value="today">HARI INI</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+
+                            <!-- Live Badge -->
+                            <span class="flex items-center space-x-1.5 text-xs text-green-600 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full font-bold">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                </span>
+                                <span>Live</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Mini Summary Cards Pre Assy -->
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="bg-teal-50/70 border border-teal-100 rounded-xl p-3">
+                            <div class="flex items-center space-x-1.5 mb-1">
+                                <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+                                <span class="text-[10px] font-bold text-teal-800 uppercase tracking-wider">Total Inspect</span>
+                            </div>
+                            <span class="text-xl font-extrabold text-teal-900 leading-none">
+                                {{ number_format($preAssyChart['total_inspect'], 0, ',', '.') }}
+                            </span>
+                            <span id="pre-today-inspect" class="block text-[10px] font-semibold text-teal-600 mt-1">Hari ini: {{ number_format($preAssyChart['today_inspect'], 0, ',', '.') }}</span>
+                        </div>
+                        <div class="bg-red-50/70 border border-red-100 rounded-xl p-3">
+                            <div class="flex items-center space-x-1.5 mb-1">
+                                <span class="w-2 h-2 rounded-full bg-[#8b0000]"></span>
+                                <span class="text-[10px] font-bold text-[#8b0000] uppercase tracking-wider">Total Defect</span>
+                            </div>
+                            <span id="pre-summary-defect" class="text-xl font-extrabold text-[#8b0000] leading-none">
+                                {{ number_format($preAssyChart['total_defect'], 0, ',', '.') }}
+                            </span>
+                            <span id="pre-today-defect" class="block text-[10px] font-semibold text-red-600 mt-1">Hari ini: {{ number_format($preAssyChart['today_defect'], 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Canvas for Chart.js Pre Assy -->
+                    <div class="relative h-64 w-full">
+                        <canvas id="preAssyChart"></canvas>
+                    </div>
                 </div>
             </div>
+
         </section>
 
         <!-- Recent Defect Section -->
@@ -205,6 +303,7 @@
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Assy</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
+                            <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Pattern</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Defect</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Sub Defect</th>
                             <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2">Quantity</th>
@@ -244,6 +343,15 @@
                                         {{ $defect->conveyor }}
                                     </span>
                                 </td>
+                                <td class="py-4 text-sm font-semibold px-4">
+                                    @if($defect->pattern)
+                                        <span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
+                                            {{ $defect->pattern }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
+                                </td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
                                     {{ $defect->jenis_defect }}
                                 </td>
@@ -265,117 +373,162 @@
         </section>
     </main>
 
-    <!-- ChartJS Initialization Script -->
+    <!-- ChartJS Initialization Script (Final Assy & Pre Assy Dual Metrics) -->
     <script>
+        let finalChartInstance = null;
+        let preChartInstance = null;
+        let currentFinalAssy = @json($finalAssyChart);
+        let currentPreAssy = @json($preAssyChart);
+
+        const labelsToday = [
+            '00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00',
+            '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00',
+            '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
+        ];
+        const labelsWeek = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+        const labelsMonth = ['Tgl 1-5', 'Tgl 6-10', 'Tgl 11-15', 'Tgl 16-20', 'Tgl 21-25', 'Tgl 26+'];
+
         document.addEventListener("DOMContentLoaded", function () {
-            const ctx = document.getElementById('defectChart').getContext('2d');
+            function createAssyChart(canvasId, assyData, periodSelectId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return null;
+                const ctx = canvas.getContext('2d');
 
-            // Create gradient
-            const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
-            gradient.addColorStop(0, 'rgba(139, 0, 0, 0.25)');   // Deep red with opacity
-            gradient.addColorStop(1, 'rgba(139, 0, 0, 0.00)');   // Completely transparent
+                const gradInspect = ctx.createLinearGradient(0, 0, 0, canvas.height || 260);
+                gradInspect.addColorStop(0, 'rgba(13, 148, 136, 0.25)');
+                gradInspect.addColorStop(1, 'rgba(13, 148, 136, 0.00)');
 
-            // Dynamic Chart Data from database
-            const chartData = {
-                today: {
-                    labels: [
-                        '00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00',
-                        '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00',
-                        '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
-                    ],
-                    data: @json($todayData)
-                },
-                week: {
-                    labels: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
-                    data: @json($weekData)
-                },
-                month: {
-                    labels: ['Tgl 1-5', 'Tgl 6-10', 'Tgl 11-15', 'Tgl 16-20', 'Tgl 21-25', 'Tgl 26+'],
-                    data: @json($monthData)
-                }
-            };
+                const gradDefect = ctx.createLinearGradient(0, 0, 0, canvas.height || 260);
+                gradDefect.addColorStop(0, 'rgba(139, 0, 0, 0.25)');
+                gradDefect.addColorStop(1, 'rgba(139, 0, 0, 0.00)');
 
-            const config = {
-                type: 'line',
-                data: {
-                    labels: chartData.month.labels,
-                    datasets: [{
-                        label: 'Defect Trend',
-                        data: chartData.month.data,
-                        borderColor: '#8b0000',
-                        borderWidth: 2,
-                        fill: true,
-                        backgroundColor: gradient,
-                        tension: 0.4, // Curve interpolation
-                        pointBackgroundColor: '#8b0000',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false // Hide legend
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Defect: ${context.parsed.y}`;
-                                }
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labelsMonth,
+                        datasets: [
+                            {
+                                label: 'Qty Inspect',
+                                data: assyData.month.inspect,
+                                borderColor: '#0d9488',
+                                backgroundColor: gradInspect,
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.35,
+                                pointBackgroundColor: '#0d9488',
+                                pointBorderColor: '#ffffff',
+                                pointBorderWidth: 2,
+                                pointRadius: 3.5,
+                                pointHoverRadius: 5.5,
+                            },
+                            {
+                                label: 'Qty Defect',
+                                data: assyData.month.defect,
+                                borderColor: '#8b0000',
+                                backgroundColor: gradDefect,
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.35,
+                                pointBackgroundColor: '#8b0000',
+                                pointBorderColor: '#ffffff',
+                                pointBorderWidth: 2,
+                                pointRadius: 3.5,
+                                pointHoverRadius: 5.5,
                             }
-                        }
+                        ]
                     },
-                    scales: {
-                        x: {
-                            grid: {
-                                display: false // Hide x-axis grid lines
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                align: 'end',
+                                labels: {
+                                    boxWidth: 10,
+                                    boxHeight: 10,
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    padding: 15,
+                                    font: {
+                                        size: 11,
+                                        weight: '600'
+                                    }
+                                }
                             },
-                            ticks: {
-                                color: '#9ca3af',
-                                font: {
-                                    size: 10,
-                                    weight: 'bold'
+                            tooltip: {
+                                backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                                titleFont: { size: 11, weight: 'bold' },
+                                bodyFont: { size: 11 },
+                                padding: 10,
+                                cornerRadius: 8,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.dataset.label || '';
+                                        const value = context.parsed.y || 0;
+                                        return ` ${label}: ${value.toLocaleString('id-ID')} unit`;
+                                    }
                                 }
                             }
                         },
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0,
-                                color: '#9ca3af',
-                                font: {
-                                    size: 10,
-                                    weight: 'bold'
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: '#9ca3af',
+                                    font: { size: 10, weight: '600' }
                                 }
                             },
-                            grid: {
-                                color: '#f3f4f6'
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0,
+                                    color: '#9ca3af',
+                                    font: { size: 10, weight: '600' }
+                                },
+                                grid: { color: '#f3f4f6' }
                             }
                         }
                     }
+                });
+
+                const selectEl = document.getElementById(periodSelectId);
+                if (selectEl) {
+                    selectEl.addEventListener('change', function () {
+                        const val = this.value;
+                        const dataObj = (canvasId === 'finalAssyChart') ? currentFinalAssy : currentPreAssy;
+                        if (val === 'today') {
+                            chart.data.labels = labelsToday;
+                            chart.data.datasets[0].data = dataObj.today.inspect;
+                            chart.data.datasets[1].data = dataObj.today.defect;
+                        } else if (val === 'week') {
+                            chart.data.labels = labelsWeek;
+                            chart.data.datasets[0].data = dataObj.week.inspect;
+                            chart.data.datasets[1].data = dataObj.week.defect;
+                        } else {
+                            chart.data.labels = labelsMonth;
+                            chart.data.datasets[0].data = dataObj.month.inspect;
+                            chart.data.datasets[1].data = dataObj.month.defect;
+                        }
+                        chart.update();
+                    });
                 }
-            };
 
-            const defectChart = new Chart(ctx, config);
+                return chart;
+            }
 
-            // Dynamic period switcher
-            const periodSelect = document.getElementById("periodSelect");
-            periodSelect.addEventListener("change", function () {
-                const selected = this.value;
-                const period = chartData[selected];
-
-                defectChart.data.labels = period.labels;
-                defectChart.data.datasets[0].data = period.data;
-                defectChart.update();
-            });
+            finalChartInstance = createAssyChart('finalAssyChart', currentFinalAssy, 'periodFinalAssy');
+            preChartInstance = createAssyChart('preAssyChart', currentPreAssy, 'periodPreAssy');
         });
     </script>
 
-    <!-- AJAX Polling Script (8 Detik) -->
+    <!-- AJAX Polling Script (8 Detik) Real-time -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         let pollingTimer = null;
@@ -403,7 +556,7 @@
                     if (totalEl && stats.totalDefect !== undefined) totalEl.innerText = stats.totalDefect.toLocaleString('id-ID');
 
                     const todayEl = document.getElementById('stat-defect-today');
-                    if (todayEl && stats.defectToday !== undefined) todayEl.innerText = stats.defectToday;
+                    if (todayEl && stats.defectToday !== undefined) todayEl.innerText = stats.defectToday.toLocaleString('id-ID');
 
                     const activeEl = document.getElementById('stat-active-users');
                     if (activeEl && stats.activeUsers !== undefined) activeEl.innerText = stats.activeUsers;
@@ -412,6 +565,57 @@
                     if (totalUsersEl && stats.totalUsers !== undefined) totalUsersEl.innerText = stats.totalUsers;
                 })
                 .catch(err => console.error('[Polling] Gagal fetch stats:', err));
+        }
+
+        function fetchChartsData() {
+            fetch('{{ url("/api/dashboard/charts") }}')
+                .then(r => r.json())
+                .then(res => {
+                    if (!res.success) return;
+
+                    currentFinalAssy = res.finalAssy;
+                    currentPreAssy = res.preAssy;
+
+                    // Update Final Assy Chart
+                    const finalPeriod = document.getElementById('periodFinalAssy') ? document.getElementById('periodFinalAssy').value : 'month';
+                    if (finalChartInstance && currentFinalAssy && currentFinalAssy[finalPeriod]) {
+                        finalChartInstance.data.datasets[0].data = currentFinalAssy[finalPeriod].inspect;
+                        finalChartInstance.data.datasets[1].data = currentFinalAssy[finalPeriod].defect;
+                        finalChartInstance.update('none');
+                    }
+
+                    // Update Pre Assy Chart
+                    const prePeriod = document.getElementById('periodPreAssy') ? document.getElementById('periodPreAssy').value : 'month';
+                    if (preChartInstance && currentPreAssy && currentPreAssy[prePeriod]) {
+                        preChartInstance.data.datasets[0].data = currentPreAssy[prePeriod].inspect;
+                        preChartInstance.data.datasets[1].data = currentPreAssy[prePeriod].defect;
+                        preChartInstance.update('none');
+                    }
+
+                    // Update Mini Summaries
+                    if (currentFinalAssy) {
+                        const elFI = document.getElementById('final-summary-inspect');
+                        if (elFI) elFI.innerText = currentFinalAssy.total_inspect.toLocaleString('id-ID');
+                        const elFD = document.getElementById('final-summary-defect');
+                        if (elFD) elFD.innerText = currentFinalAssy.total_defect.toLocaleString('id-ID');
+                        const elFTI = document.getElementById('final-today-inspect');
+                        if (elFTI) elFTI.innerText = `Hari ini: ${currentFinalAssy.today_inspect.toLocaleString('id-ID')}`;
+                        const elFTD = document.getElementById('final-today-defect');
+                        if (elFTD) elFTD.innerText = `Hari ini: ${currentFinalAssy.today_defect.toLocaleString('id-ID')}`;
+                    }
+
+                    if (currentPreAssy) {
+                        const elPI = document.getElementById('pre-summary-inspect');
+                        if (elPI) elPI.innerText = currentPreAssy.total_inspect.toLocaleString('id-ID');
+                        const elPD = document.getElementById('pre-summary-defect');
+                        if (elPD) elPD.innerText = currentPreAssy.total_defect.toLocaleString('id-ID');
+                        const elPTI = document.getElementById('pre-today-inspect');
+                        if (elPTI) elPTI.innerText = `Hari ini: ${currentPreAssy.today_inspect.toLocaleString('id-ID')}`;
+                        const elPTD = document.getElementById('pre-today-defect');
+                        if (elPTD) elPTD.innerText = `Hari ini: ${currentPreAssy.today_defect.toLocaleString('id-ID')}`;
+                    }
+                })
+                .catch(err => console.error('[Polling] Gagal fetch charts data:', err));
         }
 
         function fetchRecentDefects() {
@@ -423,7 +627,7 @@
                     if (!tbody) return;
 
                     if (res.data.length === 0) {
-                        tbody.innerHTML = '<tr id="emptyRow"><td colspan="9" class="py-8 text-center text-xs text-gray-400 font-semibold">Belum ada data defect.</td></tr>';
+                        tbody.innerHTML = '<tr id="emptyRow"><td colspan="10" class="py-8 text-center text-xs text-gray-400 font-semibold">Belum ada data defect.</td></tr>';
                         return;
                     }
 
@@ -434,6 +638,9 @@
                         const assyBadge = jenisAssy === 'Final Assy'
                             ? '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#e8fbf2] text-[#0f5132]">Final Assy</span>'
                             : '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#fdf2f2] text-[#842029]">Pre Assy</span>';
+                        const patternBadge = item.pattern
+                            ? `<span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.pattern}</span>`
+                            : '<span class="text-gray-400">-</span>';
 
                         rowsHtml += `
                             <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${item.id}">
@@ -443,6 +650,7 @@
                                 <td class="py-4 text-sm font-medium px-4">${assyBadge}</td>
                                 <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
                                 <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || '-'}</span></td>
+                                <td class="py-4 text-sm font-semibold px-4">${patternBadge}</td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_sub_defect || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">${item.quantity || 0}</td>
@@ -455,11 +663,15 @@
                 .catch(err => console.error('[Polling] Gagal fetch recent defects:', err));
         }
 
-        // Run initial fetch and set 8-second polling
+        // Initial fetch
         fetchStats();
+        fetchChartsData();
         fetchRecentDefects();
+
+        // 8-second polling timer
         pollingTimer = setInterval(() => {
             fetchStats();
+            fetchChartsData();
             fetchRecentDefects();
         }, 8000);
 

@@ -15,6 +15,7 @@ Route::get('/dashboard/stats', [DefectApiController::class, 'getStats']);
 
 // Route API Live Polling (AJAX)
 Route::get('/dashboard/recent-defects', [\App\Http\Controllers\ReportController::class, 'dashboardRecentDefects']);
+Route::get('/dashboard/charts', [\App\Http\Controllers\DashboardController::class, 'apiCharts']);
 Route::get('/final-assy/live', [\App\Http\Controllers\ReportController::class, 'finalAssyLive']);
 Route::get('/pre-assy/live', [\App\Http\Controllers\ReportController::class, 'preAssyLive']);
 Route::get('/recent-defects/live', [\App\Http\Controllers\ReportController::class, 'recentDefectsLive']);

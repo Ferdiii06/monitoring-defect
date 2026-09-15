@@ -42,6 +42,7 @@ class ReportController extends Controller
         $selectedDefect = $request->input('defect');
         $selectedLine = $request->input('line');
         $selectedConveyor = $request->input('conveyor');
+        $selectedPattern = $request->input('pattern');
 
         // 3. Terapkan Filter Tanggal
         if ($dateRange) {
@@ -72,6 +73,11 @@ class ReportController extends Controller
             $query->where('conveyor', $selectedConveyor);
         }
 
+        // Terapkan Filter Pattern
+        if ($selectedPattern && $selectedPattern !== 'all') {
+            $query->where('pattern', $selectedPattern);
+        }
+
         // 4. Ambil opsi filter unik langsung dari DB
         $defectOptions = [
             'INSER CIRCUIT',
@@ -100,6 +106,7 @@ class ReportController extends Controller
             'selectedDefect' => $selectedDefect,
             'selectedLine' => $selectedLine,
             'selectedConveyor' => $selectedConveyor,
+            'selectedPattern' => $selectedPattern,
             'currentPage' => $records->currentPage(),
             'totalPages' => $records->lastPage(),
             'totalItems' => $records->total(),
@@ -484,7 +491,7 @@ class ReportController extends Controller
             'user_name'                => $userName,
             'shift'                    => $shift,
             'jenis_assy'               => $validated['type'],
-            'line_conveyor'            => $validated['line'] ?? null,
+            'line_conveyor'            => $validated['type'] === 'Final Assy' ? null : ($validated['line'] ?? null),
             'jenis_mobil'              => $validated['jenis_mobil'],
             'conveyor'                 => $validated['conveyor'] ?? null,
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
@@ -608,7 +615,7 @@ class ReportController extends Controller
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $validated['type'],
-            'line_conveyor'            => $validated['line'] ?? null,
+            'line_conveyor'            => $validated['type'] === 'Final Assy' ? null : ($validated['line'] ?? null),
             'jenis_mobil'              => $validated['jenis_mobil'],
             'conveyor'                 => $validated['conveyor'] ?? null,
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
@@ -731,7 +738,7 @@ class ReportController extends Controller
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $validated['type'],
-            'line_conveyor'            => $validated['line'] ?? null,
+            'line_conveyor'            => $validated['type'] === 'Final Assy' ? null : ($validated['line'] ?? null),
             'jenis_mobil'              => $validated['jenis_mobil'],
             'conveyor'                 => $validated['conveyor'] ?? null,
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
@@ -815,6 +822,7 @@ class ReportController extends Controller
         $selectedDefect   = $request->input('defect');
         $selectedLine     = $request->input('line');
         $selectedConveyor = $request->input('conveyor');
+        $selectedPattern  = $request->input('pattern');
 
         if ($dateRange) {
             $dates = explode(' to ', $dateRange);
@@ -833,6 +841,9 @@ class ReportController extends Controller
         }
         if ($selectedConveyor && $selectedConveyor !== 'all') {
             $query->where('conveyor', $selectedConveyor);
+        }
+        if ($selectedPattern && $selectedPattern !== 'all') {
+            $query->where('pattern', $selectedPattern);
         }
 
         $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
