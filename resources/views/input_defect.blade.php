@@ -439,8 +439,8 @@
         'LAIN-LAIN': ['H.1 - LANCE RUSAK', 'H.2 - STABILIZER RUSAK', 'H.3 - BELLMOUTH TIDAK STANDART', 'H.4 - KONDISI CORE BAG.A', 'H.5 - RESIN MASUK BAG.A', 'H.6 - RESIN BAREL BAG.B TERBUKA', 'H.7 - CORE TERLIHAT ATAS SISI C', 'H.8 - CORE TERLIHAT SAMPING SISI C', 'H.9 - SISI PUNGGUNG', 'H.10 - ABNORMAL RESIN', 'H.11 - PANJANG WELDING N-OK', 'H.12 - CIRCUIT TIDAK TERBONDER', 'H.13 - BONDER RETAK', 'H.14 - STRIPPING KEPANJANGAN'],
     };
 
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('defectForm', () => ({
+    function defectForm() {
+        return {
             step: 1,
             errorMessage: '',
             conveyorMap: conveyorMap,
@@ -569,7 +569,7 @@
                 this.step = 2;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
-        }));
-    });
+        };
+    }
 </script>
 @endsection
