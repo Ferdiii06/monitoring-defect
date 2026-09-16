@@ -553,7 +553,8 @@ class ReportController extends Controller
             return redirect()->route('login');
         }
 
-        $myDefects = Defect::where('user_name', session('user_name'))
+        $myDefects = Defect::with(['finalInspectType', 'carline', 'inspectProcessType'])
+            ->where('user_name', session('user_name'))
             ->orderBy('waktu', 'desc')
             ->take(10)
             ->get();
@@ -624,6 +625,7 @@ class ReportController extends Controller
             'no_mesin'                 => 'nullable|string|max:255',
             'carline_id'               => 'required_if:type,Pre Assy|nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
+            'final_inspect_type_id'    => 'required_if:jenis_mobil,MAZDA|nullable|exists:final_assy_inspect_types,id',
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
             'ditemukan_oleh'           => 'nullable|in:Inspektor,Operator',
@@ -652,6 +654,7 @@ class ReportController extends Controller
             'no_mesin'                 => $validated['no_mesin'] ?? null,
             'carline_id'               => $validated['carline_id'] ?? null,
             'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
+            'final_inspect_type_id'    => $validated['final_inspect_type_id'] ?? null,
             'defect_type_id'           => $validated['defect_type_id'] ?? null,
             'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
             'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,
@@ -751,6 +754,7 @@ class ReportController extends Controller
             'no_mesin'                 => 'nullable|string|max:255',
             'carline_id'               => 'required_if:type,Pre Assy|nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
+            'final_inspect_type_id'    => 'required_if:jenis_mobil,MAZDA|nullable|exists:final_assy_inspect_types,id',
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
             'ditemukan_oleh'           => 'nullable|in:Inspektor,Operator',
@@ -779,6 +783,7 @@ class ReportController extends Controller
             'no_mesin'                 => $validated['no_mesin'] ?? null,
             'carline_id'               => $validated['carline_id'] ?? null,
             'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
+            'final_inspect_type_id'    => $validated['final_inspect_type_id'] ?? null,
             'defect_type_id'           => $validated['defect_type_id'] ?? null,
             'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
             'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,

@@ -8,9 +8,11 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Carbon\Carbon;
 
-class RecentDefectsExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
+class RecentDefectsExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
 {
     use Exportable;
 
@@ -19,6 +21,13 @@ class RecentDefectsExport implements FromQuery, WithHeadings, WithMapping, Shoul
     public function __construct($request)
     {
         $this->request = $request;
+    }
+
+    public function styles(Worksheet $sheet)
+    {
+        return [
+            1 => ['font' => ['bold' => true]],
+        ];
     }
 
     public function query()

@@ -1,62 +1,28 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Final Assy - Sistem Monitoring Defect</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        [x-cloak] { display: none !important; }
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* Custom Scrollbar for premium aesthetic */
-        .overflow-x-auto::-webkit-scrollbar {
-            height: 6px;
-        }
-        .overflow-x-auto::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 8px;
-        }
-        .overflow-x-auto::-webkit-scrollbar-thumb {
-            background: #d1d5db;
-            border-radius: 8px;
-        }
-        .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-            background: #9ca3af;
-        }
-        /* Custom Select Option colors */
-        select option {
-            background-color: #ffffff;
-            color: #111827; /* text-gray-900 */
-        }
-    </style>
-</head>
-<body class="bg-gray-50 text-gray-800 h-screen overflow-hidden flex">
+@extends('layouts.app')
 
-    <!-- Left Sidebar -->
-    @include('partials.sidebar')
+@section('title', 'Report Final Assy')
 
-    <!-- Main Content Area -->
-    <main class="flex-1 overflow-y-auto px-10 py-8 flex flex-col justify-start">
-        
+@section('content')
         <!-- Header Section -->
         <header class="flex justify-between items-center mb-8">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 leading-tight">Report Final Assy</h1>
-                <p class="text-sm text-gray-500 mt-1">Riwayat aktivitas defect final assy secara real-time.</p>
+                <h1 class="text-2xl font-black text-gray-900 tracking-tight leading-tight">Report Final Assy</h1>
+                <p class="text-xs font-semibold text-gray-500 mt-1">Riwayat aktivitas defect final assy secara real-time.</p>
             </div>
 
-
-            
             <div class="flex items-center space-x-6">
                 <!-- Admin Profile Card -->
                 <div class="flex items-center space-x-3">
                     <div class="text-right">
-                        <span class="block text-sm font-bold text-gray-900">{{ session('user_name', 'Admin QA') }}</span>
-                        <span class="block text-xs font-semibold text-gray-400">{{ session('user_role', 'Administrator') }}</span>
+                        <span class="block text-xs font-extrabold text-gray-900">{{ session('user_name', 'Admin QA') }}</span>
+                        <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ session('user_role', 'Administrator') }}</span>
                     </div>
+                    <div class="w-9 h-9 rounded-xl bg-red-50 text-brand flex items-center justify-center border border-red-100 font-black text-xs">
+                        {{ strtoupper(substr(session('user_name', 'A'), 0, 1)) }}
+                    </div>
+                </div>
+            </div>
+        </header>
                     <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 border border-gray-200">
                         <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                             <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
@@ -172,28 +138,28 @@
                 <div class="overflow-x-auto min-h-[400px] pb-4">
                     <table class="w-full min-w-[850px] text-left border-collapse">
                         <thead>
-                            <tr class="border-b border-gray-200">
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2">Waktu</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">User</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Shift</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Quantity Inspect Type</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Defect</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Sub Defect</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">END (#)</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Specification</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Actual</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Area Ditemukan</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Job Station</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Inspect Qty</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Defect Qty</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2">Aksi</th>
+                            <tr class="border-b border-border bg-gray-50/70 sticky top-0 z-10">
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3">Waktu</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">User</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Shift</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Mobil</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Konveyor</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Quantity Inspect Type</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Defect</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Sub Defect</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">END (#)</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Specification</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Actual</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Area Ditemukan</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Job Station</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Inspect Qty</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Defect Qty</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center pr-3">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="reportTableBody">
                             @forelse($records as $record)
-                                <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="{{ $record->external_id ?? $record->id }}">
+                                <tr class="border-b border-gray-100 last:border-b-0 hover:bg-red-50/20 transition-colors odd:bg-white even:bg-gray-50/40" data-id="{{ $record->external_id ?? $record->id }}">
                                     <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium">
                                         <div class="text-xs leading-normal">
                                             <span class="block text-gray-900">{{ \Carbon\Carbon::parse($record->waktu)->translatedFormat('d F Y') }}</span>
@@ -217,10 +183,10 @@
                                     <td class="py-4 text-sm text-gray-700 font-semibold px-4">
                                         {{ $record->finalInspectType?->name ?? '-' }}
                                     </td>
-                                    <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
+                                    <td class="py-4 text-xs text-brand font-bold tracking-wider uppercase font-mono px-4">
                                         {{ $record->jenis_defect }}
                                     </td>
-                                    <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
+                                    <td class="py-4 text-xs text-brand font-bold tracking-wider uppercase font-mono px-4">
                                         {{ $record->jenis_sub_defect }}
                                     </td>
                                     <td class="py-4 text-sm text-gray-900 px-4 font-medium">
@@ -238,22 +204,22 @@
                                     <td class="py-4 text-sm text-gray-900 px-4 font-medium">
                                         {{ $record->job_station ?? '-' }}
                                     </td>
-                                    <td class="py-4 text-sm text-teal-700 font-bold text-center px-4">
+                                    <td class="py-4 text-sm text-final-assy font-black font-mono tabular-nums text-center px-4">
                                         {{ $record->inspect_quantity ?? 0 }}
                                     </td>
-                                    <td class="py-4 text-sm text-gray-900 font-bold text-center px-4">
+                                    <td class="py-4 text-sm text-brand font-black font-mono tabular-nums text-center px-4">
                                         {{ $record->quantity }}
                                     </td>
                                     <td class="py-4 text-center px-4 pr-2">
                                         <div class="inline-flex items-center space-x-1.5">
                                             <a href="{{ route('admin.report.edit', $record->id) }}" 
-                                               class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">
+                                               class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-brand hover:bg-brand-active text-white text-xs font-bold transition-all shadow-xs active:scale-95">
                                                 Edit
                                             </a>
                                             <form action="{{ route('admin.report.destroy', $record->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data defect ini?');" class="inline-block">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold transition-colors">
+                                                <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-brand text-xs font-bold transition-colors">
                                                     Hapus
                                                 </button>
                                             </form>
@@ -627,5 +593,4 @@
         });
     });
     </script>
-</body>
-</html>
+@endsection

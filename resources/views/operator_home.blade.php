@@ -1,82 +1,89 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Operator Home - Report Internal Defect</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        [x-cloak] { display: none !important; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    </style>
-</head>
-<body class="bg-gray-100 min-h-screen py-6 px-4 flex justify-center items-start" x-data="{ logoutModal: false }">
+@extends('layouts.operator')
+
+@section('title', 'Operator Home')
+
+@section('content')
+<div x-data="{ logoutModal: false }" class="w-full">
 
     <!-- Mobile-First Container Card -->
-    <main class="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 flex flex-col">
+    <main class="w-full bg-surface rounded-3xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] overflow-hidden border border-border flex flex-col">
 
         <!-- Header Row -->
-        <header class="p-6 pb-4 flex justify-between items-center border-b border-gray-100">
-            <h1 class="text-xl font-bold text-[#8b0000]">{{ session('user_name', 'Operator QA') }}</h1>
+        <header class="p-5 sm:p-6 pb-4 flex justify-between items-center border-b border-border bg-white">
+            <div>
+                <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Operator Workspace</span>
+                <h1 class="text-xl font-black text-brand tracking-tight mt-1">{{ session('user_name', 'Operator QA') }}</h1>
+            </div>
             
-            <button type="button" @click="logoutModal = true" title="Logout" class="text-gray-600 hover:text-[#8b0000] p-1 transition-colors">
+            <button type="button" @click="logoutModal = true" title="Logout" class="text-gray-500 hover:text-brand p-2 rounded-xl hover:bg-red-50 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                 </svg>
             </button>
         </header>
 
-        <div class="p-6 space-y-6">
+        <div class="p-5 sm:p-6 space-y-6">
 
             <!-- Success Alert Banner -->
             @if(session('success'))
-                <div class="bg-green-50 text-green-700 border border-green-200 rounded-2xl p-4 text-sm font-medium">
-                    {{ session('success') }}
+                <div class="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl p-4 text-xs font-bold flex items-center space-x-2">
+                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>{{ session('success') }}</span>
                 </div>
             @endif
 
             <!-- Active Shift Pill -->
-            <div>
-                <span class="inline-block bg-red-50 text-[#8b0000] text-xs font-semibold px-3.5 py-1.5 rounded-lg">
-                    Shift {{ session('current_shift', '1A') }} aktif
+            <div class="flex items-center justify-between">
+                <span class="inline-flex items-center space-x-1.5 bg-red-50 text-brand border border-red-100 text-xs font-bold px-3 py-1.5 rounded-xl">
+                    <span class="w-2 h-2 rounded-full bg-brand animate-pulse"></span>
+                    <span>Shift {{ session('current_shift', '1A') }} aktif</span>
                 </span>
+                <span class="text-[11px] font-mono text-gray-400 font-semibold">{{ now()->format('d M Y') }}</span>
             </div>
 
-            <!-- 2 Equal Red Shortcut Buttons -->
+            <!-- 2 Equal Red Shortcut Buttons (Tap target min 48px) -->
             <div class="grid grid-cols-2 gap-3">
-                <a href="{{ route('input_defect.create', ['type' => 'Final Assy']) }}" class="bg-[#8b0000] hover:bg-red-900 text-white rounded-xl px-3.5 py-3 text-xs font-bold flex items-center justify-between space-x-1 shadow-md transition-all">
-                    <span class="leading-tight">Input Report<br>Final Assy</span>
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                <a href="{{ route('input_defect.create', ['type' => 'Final Assy']) }}" class="min-h-[52px] bg-brand hover:bg-brand-active text-white rounded-2xl p-3.5 text-xs font-bold flex items-center justify-between space-x-1 shadow-sm shadow-brand/20 active:scale-95 transition-all">
+                    <span class="leading-tight text-left">Input Report<br><span class="text-[10px] text-red-200 font-semibold uppercase tracking-wider">Final Assy</span></span>
+                    <svg class="w-4 h-4 shrink-0 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
                 </a>
 
-                <a href="{{ route('input_defect.create', ['type' => 'Pre Assy']) }}" class="bg-[#8b0000] hover:bg-red-900 text-white rounded-xl px-3.5 py-3 text-xs font-bold flex items-center justify-between space-x-1 shadow-md transition-all">
-                    <span class="leading-tight">Input Report<br>Pre Assy</span>
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                <a href="{{ route('input_defect.create', ['type' => 'Pre Assy']) }}" class="min-h-[52px] bg-brand hover:bg-brand-active text-white rounded-2xl p-3.5 text-xs font-bold flex items-center justify-between space-x-1 shadow-sm shadow-brand/20 active:scale-95 transition-all">
+                    <span class="leading-tight text-left">Input Report<br><span class="text-[10px] text-red-200 font-semibold uppercase tracking-wider">Pre Assy</span></span>
+                    <svg class="w-4 h-4 shrink-0 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
                 </a>
             </div>
-
 
             <!-- Section: Riwayat Report -->
-            <section class="space-y-4">
-                <h2 class="text-lg font-extrabold text-gray-900">Riwayat Report</h2>
+            <section class="space-y-3.5">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base font-extrabold text-gray-900 tracking-tight">Riwayat Report</h2>
+                    <span class="text-[11px] font-mono text-gray-400 font-bold">10 Terakhir</span>
+                </div>
 
-                <div class="space-y-4">
+                <div class="space-y-3.5">
                     @forelse($myDefects as $defect)
-                        <div class="border border-gray-200 rounded-2xl p-5 bg-white space-y-3 relative shadow-sm">
+                        <div class="border border-border rounded-2xl p-4 sm:p-5 bg-surface space-y-3 relative shadow-[0_2px_12px_-2px_rgba(0,0,0,0.03)] hover:border-gray-300 transition-colors">
                             
-                            <!-- Card Header: Date, Type & Edit/Delete Icons -->
+                            <!-- Card Header: Date, Status Badge & Edit/Delete Icons -->
                             <div class="flex justify-between items-start">
-                                <div>
-                                    <span class="block text-[11px] font-bold tracking-wider text-gray-400 uppercase">
+                                <div class="space-y-1">
+                                    <span class="block text-[10px] font-bold font-mono tracking-wider text-gray-400 uppercase">
                                         {{ \Carbon\Carbon::parse($defect->waktu)->format('d F Y, H:i') }}
                                     </span>
-                                    <h3 class="text-base font-bold text-gray-900 mt-0.5">{{ $defect->jenis_assy }}</h3>
+                                    <div class="flex items-center space-x-2">
+                                        <x-status-badge :type="$defect->jenis_assy === 'Final Assy' ? 'final-assy' : 'pre-assy'">
+                                            {{ $defect->jenis_assy }}
+                                        </x-status-badge>
+                                        @if($defect->jenis_mobil)
+                                            <span class="text-[11px] font-bold text-gray-900 tracking-wide">{{ $defect->jenis_mobil }}</span>
+                                        @endif
+                                    </div>
                                 </div>
 
-                                <div class="flex items-center space-x-2 text-[#8b0000]">
+                                <div class="flex items-center space-x-1.5 text-brand">
                                     <!-- Edit Link -->
-                                    <a href="{{ route('input_defect.edit', $defect->id) }}" title="Edit" class="hover:text-red-900 transition-colors p-1">
+                                    <a href="{{ route('input_defect.edit', $defect->id) }}" title="Edit" class="hover:text-brand-active p-1.5 rounded-lg hover:bg-red-50 transition-colors">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                                         </svg>
@@ -86,7 +93,7 @@
                                     <form action="{{ route('input_defect.destroy', $defect->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus laporan defect ini?');" class="inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" title="Hapus" class="hover:text-red-900 transition-colors p-1">
+                                        <button type="submit" title="Hapus" class="hover:text-brand-active p-1.5 rounded-lg hover:bg-red-50 transition-colors">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                             </svg>
@@ -95,59 +102,61 @@
                                 </div>
                             </div>
 
-                            <hr class="border-gray-100">
+                            <div class="h-px bg-gray-100"></div>
 
                             <!-- Field Stack Details -->
-                            <div class="space-y-3">
+                            <div class="space-y-2.5 text-xs">
                                 <!-- Row 1: Defect & Quantity -->
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <span class="block text-[11px] font-medium text-gray-400">Defect</span>
-                                        <span class="block text-sm font-extrabold text-gray-900 uppercase mt-0.5">{{ $defect->jenis_defect }}</span>
+                                        <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Defect</span>
+                                        <span class="block text-xs font-black text-gray-900 uppercase font-mono mt-0.5">{{ $defect->jenis_defect }}</span>
                                     </div>
                                     <div class="text-right">
-                                        <span class="block text-[11px] font-medium text-gray-400">Jumlah</span>
-                                        <span class="block text-sm font-extrabold text-gray-900 mt-0.5">{{ $defect->quantity }} Unit</span>
+                                        <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Jumlah</span>
+                                        <span class="block text-sm font-black text-brand font-mono tabular-nums mt-0.5">{{ $defect->quantity }} Unit</span>
                                     </div>
                                 </div>
 
-                                <!-- Row 2: Jenis Mobil -->
+                                <!-- Row 2: Sub-Defect -->
                                 <div>
-                                    <span class="block text-[11px] font-medium text-gray-400">Jenis Mobil</span>
-                                    <span class="block text-sm font-extrabold text-gray-900 uppercase mt-0.5">{{ $defect->jenis_mobil }}</span>
+                                    <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sub-Defect</span>
+                                    <span class="block text-xs font-semibold text-gray-800 mt-0.5">{{ $defect->jenis_sub_defect }}</span>
                                 </div>
 
-                                <!-- Row 3: Conveyor -->
-                                <div>
-                                    <span class="block text-[11px] font-medium text-gray-400">Conveyor</span>
-                                    <span class="block text-sm font-extrabold text-gray-900 uppercase mt-0.5">{{ $defect->conveyor }}</span>
-                                </div>
-
-                                <!-- Row 4: Sub-Defect -->
-                                <div>
-                                    <span class="block text-[11px] font-medium text-gray-400">Sub-Defect</span>
-                                    <span class="block text-sm font-extrabold text-gray-900 uppercase mt-0.5">{{ $defect->jenis_sub_defect }}</span>
-                                </div>
-
-                                <!-- Additional fields if available (END # / Line) -->
-                                @if($defect->end_number)
+                                <!-- Row 3: Conveyor / Line -->
+                                <div class="grid grid-cols-2 gap-2 pt-1 border-t border-gray-50">
                                     <div>
-                                        <span class="block text-[11px] font-medium text-gray-400">END (#)</span>
-                                        <span class="block text-sm font-extrabold text-gray-900 mt-0.5">{{ $defect->end_number }}</span>
+                                        <span class="block text-[10px] font-medium text-gray-400 uppercase">Conveyor/Carline</span>
+                                        <span class="block text-xs font-bold text-gray-900 mt-0.5">{{ $defect->carline?->name ?? $defect->conveyor ?? '-' }}</span>
                                     </div>
-                                @endif
+                                    @if($defect->jenis_mobil === 'MAZDA' && $defect->final_inspect_type_id && $defect->finalInspectType?->name)
+                                        <div>
+                                            <span class="block text-[10px] font-medium text-gray-400 uppercase">Inspect Type</span>
+                                            <span class="block text-xs font-bold text-final-assy mt-0.5">{{ $defect->finalInspectType->name }}</span>
+                                        </div>
+                                    @endif
+                                </div>
 
-                                @if($defect->no_terminal)
-                                    <div>
-                                        <span class="block text-[11px] font-medium text-gray-400">NO TERMINAL</span>
-                                        <span class="block text-sm font-extrabold text-gray-900 mt-0.5">{{ $defect->no_terminal }}</span>
+                                <!-- Additional info tags if exists -->
+                                @if($defect->end_number || $defect->no_terminal || $defect->no_mesin)
+                                    <div class="flex flex-wrap gap-2 pt-1 text-[11px]">
+                                        @if($defect->end_number)
+                                            <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono font-semibold">END: {{ $defect->end_number }}</span>
+                                        @endif
+                                        @if($defect->no_terminal)
+                                            <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono font-semibold">Term: {{ $defect->no_terminal }}</span>
+                                        @endif
+                                        @if($defect->no_mesin)
+                                            <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded font-mono font-semibold">Mesin: {{ $defect->no_mesin }}</span>
+                                        @endif
                                     </div>
                                 @endif
                             </div>
 
                         </div>
                     @empty
-                        <div class="text-center py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                        <div class="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-border">
                             <p class="text-xs font-semibold text-gray-400">Belum ada riwayat report defect.</p>
                         </div>
                     @endforelse
@@ -158,35 +167,15 @@
     </main>
 
     <!-- Modal Konfirmasi Logout -->
-    <div x-show="logoutModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100" @click.away="logoutModal = false">
-            <div class="flex items-center space-x-3 pb-3 border-b border-gray-100 mb-4">
-                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-[#8b0000] shrink-0">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-base font-bold text-gray-900">Konfirmasi Logout</h3>
-                    <p class="text-xs text-gray-500">Sesi Anda akan diakhiri.</p>
-                </div>
-            </div>
+    <x-confirm-modal 
+        name="logoutModal"
+        title="Konfirmasi Logout"
+        message="Apakah Anda yakin ingin keluar dari sistem pelaporan defect?"
+        confirmText="Ya, Logout"
+        cancelText="Batal"
+        :confirmAction="route('logout')"
+        method="POST"
+    />
 
-            <p class="text-xs text-gray-600 mb-6">Apakah Anda yakin ingin keluar dari sistem?</p>
-
-            <div class="flex justify-end space-x-2">
-                <button type="button" @click="logoutModal = false" class="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                    Batal
-                </button>
-                <form method="POST" action="{{ route('logout') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-[#8b0000] hover:bg-red-900 rounded-lg transition-colors shadow-sm">
-                        Ya, Logout
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-</body>
-</html>
+</div>
+@endsection

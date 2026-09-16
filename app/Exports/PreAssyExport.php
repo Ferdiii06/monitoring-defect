@@ -8,9 +8,11 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Carbon\Carbon;
 
-class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize
+class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
 {
     use Exportable;
 
@@ -19,6 +21,13 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
     public function __construct($request)
     {
         $this->request = $request;
+    }
+
+    public function styles(Worksheet $sheet)
+    {
+        return [
+            1 => ['font' => ['bold' => true]],
+        ];
     }
 
     public function query()
