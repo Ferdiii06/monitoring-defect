@@ -186,7 +186,7 @@
         </button>
     </div>
 
-    <!-- Modal Konfirmasi Logout Menggunakan Reusable Component <x-confirm-modal> -->
+    <!-- Modal Konfirmasi Logout Menggunakan Reusable Component confirm-modal -->
     <x-confirm-modal 
         name="logoutModal"
         title="Konfirmasi Keluar Sesi"

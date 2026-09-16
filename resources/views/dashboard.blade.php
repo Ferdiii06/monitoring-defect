@@ -42,7 +42,7 @@
         </div>
     @endif
 
-    <!-- KPI Cards Grid (Using Reusable <x-metric-card>) -->
+    <!-- KPI Cards Grid (Using Reusable metric-card) -->
     <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
         <!-- Card 1: Total Defect -->
         <x-metric-card 
@@ -362,7 +362,6 @@
             </div>
         </section>
 
-@endsection
     <!-- ChartJS Initialization Script (Final Assy & Pre Assy Dual Metrics) -->
     <script>
         let finalChartInstance = null;
