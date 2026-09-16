@@ -63,16 +63,19 @@
                 @endif
 
                 <input type="hidden" name="type" x-model="form.type">
+                <input type="hidden" name="carline_id" :value="form.type === 'Pre Assy' ? form.carline_id : ''">
+                <input type="hidden" name="inspect_process_type_id" :value="form.type === 'Pre Assy' ? form.inspect_process_type_id : ''">
+                <input type="hidden" name="final_inspect_type_id" :value="(form.type === 'Final Assy' && form.jenis_mobil === 'MAZDA') ? form.final_inspect_type_id : ''">
                 <input type="hidden" name="jenis_defect" :value="form.jenis_defect">
                 <input type="hidden" name="sub_defect" :value="form.sub_defect === 'LAIN-LAIN' ? form.custom_sub_defect : form.sub_defect">
 
                 <!-- STEP 1: INPUT FIELDS -->
                 <div x-show="step === 1" class="space-y-4">
 
-                    <!-- JENIS MOBIL -->
-                    <div>
+                    <!-- JENIS MOBIL (Khusus Final Assy) -->
+                    <div x-show="form.type === 'Final Assy'">
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">JENIS MOBIL <span class="text-red-500">*</span></label>
-                        <select name="jenis_mobil" x-model="form.jenis_mobil" @change="if(form.jenis_mobil !== 'MAZDA' || form.type !== 'Final Assy') form.pattern = ''" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer" required>
+                        <select :name="form.type === 'Final Assy' ? 'jenis_mobil' : ''" x-model="form.jenis_mobil" @change="if(form.jenis_mobil !== 'MAZDA' || form.type !== 'Final Assy') { form.final_inspect_type_id = ''; }" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer" :required="form.type === 'Final Assy'">
                             <option value="" disabled selected>Pilih Jenis Mobil...</option>
                             <template x-for="mobil in Object.keys(conveyorMap)" :key="mobil">
                                 <option :value="mobil" x-text="mobil"></option>
@@ -80,10 +83,10 @@
                         </select>
                     </div>
 
-                    <!-- KONVEYOR -->
-                    <div>
+                    <!-- KONVEYOR (Khusus Final Assy) -->
+                    <div x-show="form.type === 'Final Assy'">
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">KONVEYOR <span class="text-red-500">*</span></label>
-                        <select name="conveyor" x-model="form.conveyor" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer" :disabled="!form.jenis_mobil" required>
+                        <select :name="form.type === 'Final Assy' ? 'conveyor' : ''" x-model="form.conveyor" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer" :disabled="!form.jenis_mobil" :required="form.type === 'Final Assy'">
                             <option value="" disabled selected>Pilih Konveyor...</option>
                             <template x-for="conv in currentConveyors" :key="conv">
                                 <option :value="conv" x-text="conv"></option>
@@ -91,20 +94,38 @@
                         </select>
                     </div>
 
-                    <!-- PATTERN (KHUSUS FINAL ASSY & MAZDA) -->
+                    <!-- CARLINE (Khusus Pre Assy) -->
+                    <div x-show="form.type === 'Pre Assy'">
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">CARLINE <span class="text-red-500">*</span></label>
+                        <select x-model="form.carline_id" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer" :required="form.type === 'Pre Assy'">
+                            <option value="" disabled selected>Pilih Carline...</option>
+                            <template x-for="cl in preAssyCarlines" :key="cl.id">
+                                <option :value="cl.id" x-text="cl.name"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <!-- QUANTITY INSPECT TYPE (Khusus Pre Assy) -->
+                    <div x-show="form.type === 'Pre Assy'">
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">QUANTITY INSPECT TYPE</label>
+                        <select x-model="form.inspect_process_type_id" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer">
+                            <option value="">Pilih Quantity Inspect Type (Opsional)...</option>
+                            @foreach($inspectProcessTypes as $process)
+                                <option value="{{ $process->id }}">{{ $process->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- QUANTITY INSPECT TYPE (Khusus Final Assy & MAZDA) -->
                     <div x-show="form.type === 'Final Assy' && form.jenis_mobil === 'MAZDA'" x-transition class="space-y-1.5">
-                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">PATTERN <span class="text-red-500">*</span></label>
-                        <select name="pattern" x-model="form.pattern" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer" :required="form.type === 'Final Assy' && form.jenis_mobil === 'MAZDA'">
-                            <option value="" disabled selected>Pilih Pattern...</option>
-                            <optgroup label="AB6. Extend LHD / RHD">
-                                <option value="67120 (AB6. Extend LHD / RHD)">67120 (AB6. Extend LHD / RHD)</option>
-                                <option value="67240 (AB6. Extend LHD / RHD)">67240 (AB6. Extend LHD / RHD)</option>
-                                <option value="67550 (AB6. Extend LHD / RHD)">67550 (AB6. Extend LHD / RHD)</option>
-                            </optgroup>
-                            <optgroup label="AB9. EXTEND LHD">
-                                <option value="67120 (AB9. EXTEND LHD)">67120 (AB9. EXTEND LHD)</option>
-                                <option value="67240 (AB9. EXTEND LHD)">67240 (AB9. EXTEND LHD)</option>
-                            </optgroup>
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">QUANTITY INSPECT TYPE <span class="text-red-500">*</span></label>
+                        <select x-model="form.final_inspect_type_id" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] cursor-pointer" :required="form.type === 'Final Assy' && form.jenis_mobil === 'MAZDA'">
+                            <option value="" disabled selected>Pilih Quantity Inspect Type...</option>
+                            @if(isset($finalAssyInspectTypes))
+                                @foreach($finalAssyInspectTypes as $inspectType)
+                                    <option value="{{ $inspectType->id }}">{{ $inspectType->name }}</option>
+                                @endforeach
+                            @endif
                         </select>
                     </div>
 
@@ -258,7 +279,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-2 gap-2" x-show="form.type === 'Final Assy'">
                             <div>
                                 <span class="block text-gray-400 font-medium">Jenis Mobil</span>
                                 <span class="block font-bold text-gray-900 mt-0.5" x-text="form.jenis_mobil"></span>
@@ -266,6 +287,17 @@
                             <div>
                                 <span class="block text-gray-400 font-medium">Conveyor</span>
                                 <span class="block font-bold text-gray-900 mt-0.5" x-text="form.conveyor"></span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2" x-show="form.type === 'Pre Assy'">
+                            <div>
+                                <span class="block text-gray-400 font-medium">Carline</span>
+                                <span class="block font-bold text-gray-900 mt-0.5" x-text="selectedCarlineName"></span>
+                            </div>
+                            <div x-show="form.inspect_process_type_id">
+                                <span class="block text-gray-400 font-medium">Inspect Process</span>
+                                <span class="block font-bold text-gray-900 mt-0.5" x-text="selectedInspectProcessName"></span>
                             </div>
                         </div>
 
@@ -303,9 +335,9 @@
                             <span class="block font-bold text-gray-900 mt-0.5" x-text="form.ditemukan_oleh"></span>
                         </div>
 
-                        <div x-show="form.type === 'Final Assy' && form.jenis_mobil === 'MAZDA' && form.pattern">
-                            <span class="block text-gray-400 font-medium">Pattern</span>
-                            <span class="block font-bold text-gray-900 mt-0.5" x-text="form.pattern"></span>
+                        <div x-show="form.type === 'Final Assy' && form.jenis_mobil === 'MAZDA' && form.final_inspect_type_id">
+                            <span class="block text-gray-400 font-medium">Quantity Inspect Type</span>
+                            <span class="block font-bold text-gray-900 mt-0.5" x-text="selectedFinalInspectTypeName"></span>
                         </div>
 
                         <!-- Dynamic Fields Confirmation Summary -->
@@ -357,6 +389,9 @@
 
     <script>
         const conveyorMap = @json($carTypes->mapWithKeys(fn($ct) => [$ct->name => $ct->carlines->pluck('name')]));
+        const preAssyCarlines = @json($preAssyCarlines ?? []);
+        const inspectProcessTypesList = @json($inspectProcessTypes ?? []);
+        const finalAssyInspectTypesList = @json($finalAssyInspectTypes ?? []);
 
         const finalAssyDefects = {
             'INSER CIRCUIT': ['1.A - CROSS CIRCUIT', '1.B - CIRCUIT NOT INSERT', '1.C - WRONG INSERT CIRCUIT', '1.D - WRONG CAVITY', '1.E - MISSING CIRCUIT', '1.F - TPO'],
@@ -388,11 +423,17 @@
                 step: 1,
                 errorMessage: '',
                 conveyorMap: conveyorMap,
+                preAssyCarlines: preAssyCarlines,
+                inspectProcessTypesList: inspectProcessTypesList,
+                finalAssyInspectTypesList: finalAssyInspectTypesList,
                 
                 form: {
                     type: '{{ old("type", $defect->jenis_assy ?? ($type ?? "Final Assy")) }}',
                     jenis_mobil: '{{ old("jenis_mobil", $defect->jenis_mobil ?? "") }}',
                     conveyor: '{{ old("conveyor", $defect->conveyor ?? "") }}',
+                    carline_id: '{{ old("carline_id", $defect->carline_id ?? "") }}',
+                    inspect_process_type_id: '{{ old("inspect_process_type_id", $defect->inspect_process_type_id ?? "") }}',
+                    final_inspect_type_id: '{{ old("final_inspect_type_id", $defect->final_inspect_type_id ?? "") }}',
                     tanggal: '{{ old("tanggal", isset($defect) ? \Carbon\Carbon::parse($defect->waktu)->format("Y-m-d") : now()->format("Y-m-d")) }}',
                     jam: '{{ old("jam", isset($defect) ? \Carbon\Carbon::parse($defect->waktu)->format("H:i") : now()->format("H:i")) }}',
                     line: '{{ old("line", $defect->line_conveyor ?? "") }}',
@@ -402,7 +443,6 @@
                     jumlah: {{ old("jumlah", $defect->quantity ?? 1) }},
                     inspect_quantity: '{{ old("inspect_quantity", $defect->inspect_quantity ?? "") }}',
                     ditemukan_oleh: '{{ old("ditemukan_oleh", $defect->ditemukan_oleh ?? "") }}',
-                    pattern: '{{ old("pattern", $defect->pattern ?? "") }}',
                     
                     end_number: '{{ old("end_number", $defect->end_number ?? "") }}',
                     specification: '{{ old("specification", $defect->specification ?? "") }}',
@@ -413,6 +453,24 @@
                     
                     no_terminal: '{{ old("no_terminal", $defect->no_terminal ?? "") }}',
                     no_mesin: '{{ old("no_mesin", $defect->no_mesin ?? "") }}'
+                },
+
+                get selectedCarlineName() {
+                    if (!this.form.carline_id) return '-';
+                    const c = this.preAssyCarlines.find(item => String(item.id) === String(this.form.carline_id));
+                    return c ? c.name : '-';
+                },
+
+                get selectedInspectProcessName() {
+                    if (!this.form.inspect_process_type_id) return '-';
+                    const p = this.inspectProcessTypesList.find(item => String(item.id) === String(this.form.inspect_process_type_id));
+                    return p ? p.name : '-';
+                },
+
+                get selectedFinalInspectTypeName() {
+                    if (!this.form.final_inspect_type_id) return '-';
+                    const p = this.finalAssyInspectTypesList.find(item => String(item.id) === String(this.form.final_inspect_type_id));
+                    return p ? p.name : '-';
                 },
 
                 get currentConveyors() {
@@ -462,24 +520,27 @@
 
                 goToConfirm() {
                     this.errorMessage = '';
-                    if (!this.form.jenis_mobil || !this.form.conveyor || !this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !this.form.jumlah) {
-                        this.errorMessage = 'Mohon lengkapi seluruh field wajib (Jenis Mobil, Konveyor, Tanggal, Jam, Defect, Sub-defect, Jumlah).';
-                        return;
-                    }
-                    if (this.form.type === 'Pre Assy' && !this.form.line) {
-                        this.errorMessage = 'Mohon masukkan Line untuk Pre Assy.';
-                        return;
-                    }
                     if (this.form.type === 'Final Assy') {
+                        if (!this.form.jenis_mobil || !this.form.conveyor || !this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !this.form.jumlah) {
+                            this.errorMessage = 'Mohon lengkapi seluruh field wajib (Jenis Mobil, Konveyor, Tanggal, Jam, Defect, Sub-defect, Jumlah).';
+                            return;
+                        }
                         this.form.line = '';
+                        this.form.carline_id = '';
+                        if (this.form.jenis_mobil === 'MAZDA' && !this.form.final_inspect_type_id) {
+                            this.errorMessage = 'Mohon pilih Quantity Inspect Type untuk mobil MAZDA.';
+                            return;
+                        }
+                    } else if (this.form.type === 'Pre Assy') {
+                        if (!this.form.carline_id || !this.form.line || !this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !this.form.jumlah) {
+                            this.errorMessage = 'Mohon lengkapi seluruh field wajib (Carline, Line, Tanggal, Jam, Defect, Sub-defect, Jumlah).';
+                            return;
+                        }
+                        this.form.jenis_mobil = '';
+                        this.form.conveyor = '';
+                        this.form.final_inspect_type_id = '';
                     }
-                    if (this.form.type === 'Final Assy' && this.form.jenis_mobil === 'MAZDA' && !this.form.pattern) {
-                        this.errorMessage = 'Mohon pilih Pattern untuk mobil MAZDA.';
-                        return;
-                    }
-                    if (this.form.type !== 'Final Assy' || this.form.jenis_mobil !== 'MAZDA') {
-                        this.form.pattern = '';
-                    }
+
                     if (this.form.sub_defect === 'LAIN-LAIN' && !this.form.custom_sub_defect.trim()) {
                         this.errorMessage = 'Mohon ketikkan rincian sub-defect pada kolom LAIN-LAIN.';
                         return;

@@ -23,7 +23,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
 
     public function query()
     {
-        $query = Defect::where('jenis_assy', 'Final Assy');
+        $query = Defect::with('finalInspectType')->where('jenis_assy', 'Final Assy');
 
         $dateRange = $this->request->input('date_range');
         $selectedDefect = $this->request->input('defect');
@@ -75,7 +75,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             'Jenis Assy',
             'Data Mobil',
             'conveyor',
-            'Pattern',
+            'Quantity Inspect Type',
             'Jenis Defect',
             'Jenis Sub Defect',
             'END (#)',
@@ -83,7 +83,8 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             'Actual',
             'Area Ditemukan',
             'Job Station',
-            'Quantity',
+            'Inspect Quantity',
+            'Defect Quantity',
         ];
     }
 
@@ -97,7 +98,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             $row->jenis_assy,
             $row->line_conveyor,
             $row->conveyor,
-            $row->pattern ?? '-',
+            $row->finalInspectType?->name ?? '-',
             $row->jenis_defect,
             $row->jenis_sub_defect,
             $row->end_number,
@@ -105,6 +106,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             $row->actual,
             $row->area_ditemukan,
             $row->job_station,
+            $row->inspect_quantity ?? 0,
             $row->quantity,
         ];
     }

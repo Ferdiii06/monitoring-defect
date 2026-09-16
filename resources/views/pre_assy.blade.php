@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Pre Assy - Sistem Monitoring Defect</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
+        [x-cloak] { display: none !important; }
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -98,12 +100,12 @@
                             </div>
                         </div>
 
-                        <!-- Mobil Select -->
-                        <div class="relative min-w-[130px]">
-                            <select id="mobilSelect" name="line" class="w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
-                                <option value="all">Semua Mobil</option>
-                                @foreach($lineOptions as $option)
-                                    <option value="{{ $option }}" {{ (string)$selectedLine === (string)$option ? 'selected' : '' }}>{{ $option }}</option>
+                        <!-- Carline Select -->
+                        <div class="relative min-w-[170px]">
+                            <select id="carlineSelect" name="carline" onchange="this.form.submit()" class="peer w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
+                                <option value="all">Semua Carline</option>
+                                @foreach($carlineOptions as $carline)
+                                    <option value="{{ $carline->id }}" {{ (string)$selectedCarline === (string)$carline->id ? 'selected' : '' }}>{{ $carline->name }}</option>
                                 @endforeach
                             </select>
                             <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000]">
@@ -113,20 +115,8 @@
                             </div>
                         </div>
 
-                        <!-- Conveyor Select -->
-                        <div class="relative min-w-[150px]">
-                            <select id="conveyorSelect" name="conveyor" onchange="this.form.submit()" class="peer w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer disabled:bg-gray-100 disabled:border-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
-                                <option value="all">Semua Konveyor</option>
-                            </select>
-                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000] peer-disabled:text-gray-300">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </div>
-                        </div>
-
                         <!-- Reset Filter Button if filters active -->
-                        @if($dateRange || ($selectedDefect && $selectedDefect !== 'all') || ($selectedLine && $selectedLine !== 'all') || ($selectedConveyor && $selectedConveyor !== 'all'))
+                        @if($dateRange || ($selectedDefect && $selectedDefect !== 'all') || ($selectedLine && $selectedLine !== 'all') || ($selectedCarline && $selectedCarline !== 'all'))
                             <a href="{{ route('pre_assy.index') }}" class="text-xs text-gray-400 hover:text-[#8b0000] font-semibold transition-colors flex items-center space-x-1 pl-1">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -153,13 +143,15 @@
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2">Waktu</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">User</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Shift</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Line</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Carline</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Inspect Process</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Sub Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">No Terminal</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">No Mesin</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Quantity</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Inspect Qty</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Defect Qty</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2">Aksi</th>
                             </tr>
                         </thead>
@@ -179,12 +171,15 @@
                                         {{ $record->shift ?? '-' }}
                                     </td>
                                     <td class="py-4 text-sm text-gray-950 font-bold px-4">
-                                        {{ $record->jenis_mobil ?? '-' }}
+                                        {{ $record->line_conveyor ?? '-' }}
                                     </td>
                                     <td class="py-4 text-sm font-bold px-4">
                                         <span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
-                                            {{ $record->conveyor }}
+                                            {{ $record->carline?->name ?? $record->conveyor ?? '-' }}
                                         </span>
+                                    </td>
+                                    <td class="py-4 text-sm text-gray-700 font-semibold px-4">
+                                        {{ $record->inspectProcessType?->name ?? '-' }}
                                     </td>
                                     <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
                                         {{ $record->jenis_defect }}
@@ -197,6 +192,9 @@
                                     </td>
                                     <td class="py-4 text-sm text-gray-900 px-4 font-medium">
                                         {{ $record->no_mesin ?? '-' }}
+                                    </td>
+                                    <td class="py-4 text-sm text-teal-700 font-bold text-center px-4">
+                                        {{ $record->inspect_quantity ?? 0 }}
                                     </td>
                                     <td class="py-4 text-sm text-gray-900 font-bold text-center px-4">
                                         {{ $record->quantity }}
@@ -219,7 +217,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
+                                    <td colspan="13" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -479,14 +477,12 @@
         function exportExcel() {
             const dateRange = document.getElementById("date_range").value;
             const defect = document.querySelector('select[name="defect"]').value;
-            const line = document.getElementById("mobilSelect").value;
-            const conveyor = document.getElementById("conveyorSelect").value;
+            const carline = document.getElementById("carlineSelect").value;
             
             let url = "{{ route('pre_assy.export') }}?";
             url += "date_range=" + encodeURIComponent(dateRange);
             url += "&defect=" + encodeURIComponent(defect);
-            url += "&line=" + encodeURIComponent(line);
-            url += "&conveyor=" + encodeURIComponent(conveyor);
+            url += "&carline=" + encodeURIComponent(carline);
             
             window.location.href = url;
         }
@@ -522,7 +518,7 @@
                     if (!tbody) return;
 
                     if (res.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="11" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="13" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
                         return;
                     }
 
@@ -533,12 +529,14 @@
                                 <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(item.waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(item.waktu)}</span></div></td>
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.user_name || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
-                                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
-                                <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || '-'}</span></td>
+                                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.line_conveyor || '-'}</td>
+                                <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.carline_name || item.conveyor || '-'}</span></td>
+                                <td class="py-4 text-sm text-gray-700 font-semibold px-4">${item.inspect_process_type_name || '-'}</td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_sub_defect || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.no_terminal || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.no_mesin || '-'}</td>
+                                <td class="py-4 text-sm text-teal-700 font-bold text-center px-4">${item.inspect_quantity ?? 0}</td>
                                 <td class="py-4 text-sm text-gray-900 font-bold text-center px-4">${item.quantity || 0}</td>
                                 <td class="py-4 text-center px-4 pr-2"><a href="/report/${item.id}/edit" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">Edit</a></td>
                             </tr>

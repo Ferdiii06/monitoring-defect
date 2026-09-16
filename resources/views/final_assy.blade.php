@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Final Assy - Sistem Monitoring Defect</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
+        [x-cloak] { display: none !important; }
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -176,7 +178,7 @@
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Shift</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Pattern</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Quantity Inspect Type</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Sub Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">END (#)</th>
@@ -184,7 +186,8 @@
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Actual</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Area Ditemukan</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Job Station</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Quantity</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Inspect Qty</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Defect Qty</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2">Aksi</th>
                             </tr>
                         </thead>
@@ -211,14 +214,8 @@
                                             {{ $record->conveyor }}
                                         </span>
                                     </td>
-                                    <td class="py-4 text-sm font-semibold px-4">
-                                        @if($record->pattern)
-                                            <span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
-                                                {{ $record->pattern }}
-                                            </span>
-                                        @else
-                                            <span class="text-gray-400">-</span>
-                                        @endif
+                                    <td class="py-4 text-sm text-gray-700 font-semibold px-4">
+                                        {{ $record->finalInspectType?->name ?? '-' }}
                                     </td>
                                     <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
                                         {{ $record->jenis_defect }}
@@ -241,6 +238,9 @@
                                     <td class="py-4 text-sm text-gray-900 px-4 font-medium">
                                         {{ $record->job_station ?? '-' }}
                                     </td>
+                                    <td class="py-4 text-sm text-teal-700 font-bold text-center px-4">
+                                        {{ $record->inspect_quantity ?? 0 }}
+                                    </td>
                                     <td class="py-4 text-sm text-gray-900 font-bold text-center px-4">
                                         {{ $record->quantity }}
                                     </td>
@@ -262,7 +262,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="15" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
+                                    <td colspan="16" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -576,15 +576,15 @@
                     if (!tbody) return;
 
                     if (res.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="15" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="16" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
                         return;
                     }
 
                     let html = '';
                     res.data.forEach(item => {
-                        const patternBadge = item.pattern
-                            ? `<span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.pattern}</span>`
-                            : '<span class="text-gray-400">-</span>';
+                        const finalInspectTypeName = (item.final_inspect_type && item.final_inspect_type.name)
+                            ? item.final_inspect_type.name
+                            : '-';
 
                         html += `
                             <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${item.id}">
@@ -593,7 +593,7 @@
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
                                 <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
                                 <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || '-'}</span></td>
-                                <td class="py-4 text-sm font-semibold px-4">${patternBadge}</td>
+                                <td class="py-4 text-sm text-gray-700 font-semibold px-4">${finalInspectTypeName}</td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_sub_defect || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.end_number || '-'}</td>
@@ -601,6 +601,7 @@
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.actual || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.area_ditemukan || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.job_station || '-'}</td>
+                                <td class="py-4 text-sm text-teal-700 font-bold text-center px-4">${item.inspect_quantity ?? 0}</td>
                                 <td class="py-4 text-sm text-gray-900 font-bold text-center px-4">${item.quantity || 0}</td>
                                 <td class="py-4 text-center px-4 pr-2"><a href="/report/${item.id}/edit" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">Edit</a></td>
                             </tr>

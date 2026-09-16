@@ -8,6 +8,7 @@ use App\Models\Carline;
 use App\Models\DefectType;
 use App\Models\SubDefectType;
 use App\Models\InspectProcessType;
+use App\Models\FinalAssyInspectType;
 
 class MasterDataSeeder extends Seeder
 {
@@ -16,7 +17,7 @@ class MasterDataSeeder extends Seeder
         // 1. Inspect Process Types
         $inspectProcesses = [
             'Cutting', 'Manual Crimping', 'Joint Crimping', 'Bonder', 
-            'Heatshrink', 'Reychern', 'Solder', 'La Tern WP', 'A/B', 
+            'Heatshrink', 'Reychern', 'Solder', 'La Term. WP', 'A/B', 
             'Jam Twist', 'WP', 'MN20', 'EJ30', 'MN10', 'TP25', 'EJ35'
         ];
         foreach ($inspectProcesses as $proc) {
@@ -101,6 +102,22 @@ class MasterDataSeeder extends Seeder
                     'name' => $subName,
                 ]);
             }
+        }
+
+        // 5. Final Assy Inspect Types
+        $finalAssyInspectTypes = [
+            '67120 - AB6 EXTEND LHD',
+            '67240 - AB6 EXTEND LHD',
+            '67550 - AB6 EXTEND LHD',
+            '67120 - AB6 EXTEND RHD',
+            '67240 - AB6 EXTEND RHD',
+            '67550 - AB6 EXTEND RHD',
+            '67120 - AB9 EXTEND LHD',
+            '67240 - AB9 EXTEND LHD',
+        ];
+
+        foreach ($finalAssyInspectTypes as $name) {
+            FinalAssyInspectType::firstOrCreate(['name' => $name]);
         }
     }
 }

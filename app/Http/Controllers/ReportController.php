@@ -13,8 +13,10 @@ use App\Exports\LogSystemExport;
 use App\Exports\RecentDefectsExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\CarType;
+use App\Models\Carline;
 use App\Models\DefectType;
 use App\Models\InspectProcessType;
+use App\Models\FinalAssyInspectType;
 
 class ReportController extends Controller
 {
@@ -35,7 +37,7 @@ class ReportController extends Controller
         }
 
         // 1. Buat Query awal
-        $query = Defect::where('jenis_assy', 'Final Assy');
+        $query = Defect::with('finalInspectType')->where('jenis_assy', 'Final Assy');
 
         // 2. Ambil parameter filter
         $dateRange = $request->input('date_range');
@@ -131,13 +133,13 @@ class ReportController extends Controller
         }
 
         // 1. Buat Query awal
-        $query = Defect::where('jenis_assy', 'Pre Assy');
+        $query = Defect::with(['carline', 'inspectProcessType'])->where('jenis_assy', 'Pre Assy');
 
         // 2. Ambil parameter filter
         $dateRange = $request->input('date_range');
         $selectedDefect = $request->input('defect');
         $selectedLine = $request->input('line');
-        $selectedConveyor = $request->input('conveyor');
+        $selectedCarline = $request->input('carline');
 
         // 3. Terapkan Filter Tanggal
         if ($dateRange) {
@@ -158,14 +160,22 @@ class ReportController extends Controller
             $query->where('jenis_defect', $selectedDefect);
         }
 
-        // Terapkan Filter Line (Mobil)
+        // Terapkan Filter Line (Mobil - untuk backward compatibility jika ada data lama)
         if ($selectedLine && $selectedLine !== 'all') {
             $query->where('jenis_mobil', $selectedLine);
         }
 
-        // Terapkan Filter Konveyor
-        if ($selectedConveyor && $selectedConveyor !== 'all') {
-            $query->where('conveyor', $selectedConveyor);
+        // Terapkan Filter Carline (dukung carline_id atau nama carline / conveyor lama)
+        if ($selectedCarline && $selectedCarline !== 'all') {
+            $query->where(function ($q) use ($selectedCarline) {
+                if (is_numeric($selectedCarline)) {
+                    $q->where('carline_id', $selectedCarline);
+                } else {
+                    $q->whereHas('carline', function ($sub) use ($selectedCarline) {
+                        $sub->where('name', $selectedCarline);
+                    })->orWhere('conveyor', $selectedCarline);
+                }
+            });
         }
 
         // 4. Ambil opsi filter unik langsung dari DB
@@ -181,6 +191,7 @@ class ReportController extends Controller
         ];
 
         $lineOptions = ['TOYOTA', 'NISSAN', 'MAZDA'];
+        $carlineOptions = Carline::whereNull('car_type_id')->orderBy('name')->get();
 
         // 5. Paginate Data (10 baris per halaman)
         $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
@@ -189,10 +200,11 @@ class ReportController extends Controller
             'records' => $records,
             'defectOptions' => $defectOptions,
             'lineOptions' => $lineOptions,
+            'carlineOptions' => $carlineOptions,
             'dateRange' => $dateRange,
             'selectedDefect' => $selectedDefect,
             'selectedLine' => $selectedLine,
-            'selectedConveyor' => $selectedConveyor,
+            'selectedCarline' => $selectedCarline,
             'currentPage' => $records->currentPage(),
             'totalPages' => $records->lastPage(),
             'totalItems' => $records->total(),
@@ -438,11 +450,13 @@ class ReportController extends Controller
         $type = $request->input('type', 'Final Assy');
 
         return view('input_defect', [
-            'type'               => $type,
-            'carTypes'           => CarType::with('carlines')->orderBy('name')->get(),
-            'defectTypesFinal'   => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
-            'defectTypesPre'     => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
-            'inspectProcessTypes' => InspectProcessType::orderBy('name')->get(),
+            'type'                  => $type,
+            'carTypes'              => CarType::with('carlines')->orderBy('name')->get(),
+            'preAssyCarlines'       => Carline::whereNull('car_type_id')->orderBy('name')->get(),
+            'defectTypesFinal'      => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
+            'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
+            'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
+            'finalAssyInspectTypes' => FinalAssyInspectType::orderBy('name')->get(),
         ]);
     }
 
@@ -457,7 +471,7 @@ class ReportController extends Controller
 
         $validated = $request->validate([
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
-            'jenis_mobil'              => 'required|string|max:255',
+            'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
             'conveyor'                 => 'nullable|string|max:255',
             'line'                     => 'nullable|string|max:255',
             'tanggal'                  => 'required|date',
@@ -475,16 +489,18 @@ class ReportController extends Controller
             'no_terminal'              => 'nullable|string|max:255',
             'no_mesin'                 => 'nullable|string|max:255',
             // Kolom baru master data
-            'carline_id'               => 'nullable|exists:carlines,id',
+            'carline_id'               => 'required_if:type,Pre Assy|nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
+            'final_inspect_type_id'    => 'required_if:jenis_mobil,MAZDA|nullable|exists:final_assy_inspect_types,id',
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
             'ditemukan_oleh'           => 'nullable|in:Inspektor,Operator',
-            'pattern'                  => 'nullable|string|max:255',
         ]);
 
         $userName = session('user_name', 'Operator');
         $shift = session('current_shift', '1A');
+
+        $isPreAssy = $validated['type'] === 'Pre Assy';
 
         $defect = Defect::create([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
@@ -492,8 +508,8 @@ class ReportController extends Controller
             'shift'                    => $shift,
             'jenis_assy'               => $validated['type'],
             'line_conveyor'            => $validated['type'] === 'Final Assy' ? null : ($validated['line'] ?? null),
-            'jenis_mobil'              => $validated['jenis_mobil'],
-            'conveyor'                 => $validated['conveyor'] ?? null,
+            'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
+            'conveyor'                 => $isPreAssy ? null : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
             'jenis_sub_defect'         => $validated['sub_defect'] ?? null,
             'quantity'                 => $validated['jumlah'],
@@ -509,18 +525,18 @@ class ReportController extends Controller
             // Kolom baru master data
             'carline_id'               => $validated['carline_id'] ?? null,
             'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
+            'final_inspect_type_id'    => $validated['final_inspect_type_id'] ?? null,
             'defect_type_id'           => $validated['defect_type_id'] ?? null,
             'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
             'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,
-            'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
-        $conveyor = $validated['conveyor'] ?? ($defect->carline?->name ?? '-');
+        $lineOrCarline = $isPreAssy ? ($defect->carline?->name ?? '-') : ($validated['jenis_mobil'] . ' (' . ($validated['conveyor'] ?? '-') . ')');
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => $userName,
             'jenis_aksi'   => 'Create Report',
-            'aktivitas'    => "Melaporkan defect {$validated['type']} - {$validated['jenis_mobil']} ({$conveyor}) - Jumlah {$validated['jumlah']}",
+            'aktivitas'    => "Melaporkan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$validated['jumlah']}",
             'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
@@ -561,12 +577,14 @@ class ReportController extends Controller
         }
 
         return view('input_defect', [
-            'type'               => $defect->jenis_assy,
-            'defect'             => $defect,
-            'carTypes'           => CarType::with('carlines')->orderBy('name')->get(),
-            'defectTypesFinal'   => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
-            'defectTypesPre'     => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
-            'inspectProcessTypes' => InspectProcessType::orderBy('name')->get(),
+            'type'                  => $defect->jenis_assy,
+            'defect'                => $defect,
+            'carTypes'              => CarType::with('carlines')->orderBy('name')->get(),
+            'preAssyCarlines'       => Carline::whereNull('car_type_id')->orderBy('name')->get(),
+            'defectTypesFinal'      => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
+            'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
+            'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
+            'finalAssyInspectTypes' => FinalAssyInspectType::orderBy('name')->get(),
         ]);
     }
 
@@ -587,7 +605,7 @@ class ReportController extends Controller
 
         $validated = $request->validate([
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
-            'jenis_mobil'              => 'required|string|max:255',
+            'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
             'conveyor'                 => 'nullable|string|max:255',
             'line'                     => 'nullable|string|max:255',
             'tanggal'                  => 'required|date',
@@ -604,7 +622,7 @@ class ReportController extends Controller
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
             'no_mesin'                 => 'nullable|string|max:255',
-            'carline_id'               => 'nullable|exists:carlines,id',
+            'carline_id'               => 'required_if:type,Pre Assy|nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
@@ -612,12 +630,14 @@ class ReportController extends Controller
             'pattern'                  => 'nullable|string|max:255',
         ]);
 
+        $isPreAssy = $validated['type'] === 'Pre Assy';
+
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $validated['type'],
             'line_conveyor'            => $validated['type'] === 'Final Assy' ? null : ($validated['line'] ?? null),
-            'jenis_mobil'              => $validated['jenis_mobil'],
-            'conveyor'                 => $validated['conveyor'] ?? null,
+            'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
+            'conveyor'                 => $isPreAssy ? null : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
             'jenis_sub_defect'         => $validated['sub_defect'] ?? null,
             'quantity'                 => $validated['jumlah'],
@@ -638,12 +658,12 @@ class ReportController extends Controller
             'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
-        $conveyor = $validated['conveyor'] ?? ($defect->carline?->name ?? '-');
+        $lineOrCarline = $isPreAssy ? ($defect->carline?->name ?? '-') : ($validated['jenis_mobil'] . ' (' . ($validated['conveyor'] ?? '-') . ')');
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => session('user_name', 'Operator'),
             'jenis_aksi'   => 'Update Report',
-            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$validated['jenis_mobil']} ({$conveyor}) - Jumlah {$validated['jumlah']}",
+            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$validated['jumlah']}",
             'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
@@ -691,13 +711,15 @@ class ReportController extends Controller
         $defect = Defect::findOrFail($id);
 
         return view('input_defect', [
-            'type'               => $defect->jenis_assy,
-            'defect'             => $defect,
-            'backRoute'          => route('recent_defects.index'),
-            'carTypes'           => CarType::with('carlines')->orderBy('name')->get(),
-            'defectTypesFinal'   => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
-            'defectTypesPre'     => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
-            'inspectProcessTypes' => InspectProcessType::orderBy('name')->get(),
+            'type'                  => $defect->jenis_assy,
+            'defect'                => $defect,
+            'backRoute'             => route('recent_defects.index'),
+            'carTypes'              => CarType::with('carlines')->orderBy('name')->get(),
+            'preAssyCarlines'       => Carline::whereNull('car_type_id')->orderBy('name')->get(),
+            'defectTypesFinal'      => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
+            'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
+            'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
+            'finalAssyInspectTypes' => FinalAssyInspectType::orderBy('name')->get(),
         ]);
     }
 
@@ -710,7 +732,7 @@ class ReportController extends Controller
 
         $validated = $request->validate([
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
-            'jenis_mobil'              => 'required|string|max:255',
+            'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
             'conveyor'                 => 'nullable|string|max:255',
             'line'                     => 'nullable|string|max:255',
             'tanggal'                  => 'required|date',
@@ -727,7 +749,7 @@ class ReportController extends Controller
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
             'no_mesin'                 => 'nullable|string|max:255',
-            'carline_id'               => 'nullable|exists:carlines,id',
+            'carline_id'               => 'required_if:type,Pre Assy|nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
@@ -735,12 +757,14 @@ class ReportController extends Controller
             'pattern'                  => 'nullable|string|max:255',
         ]);
 
+        $isPreAssy = $validated['type'] === 'Pre Assy';
+
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $validated['type'],
             'line_conveyor'            => $validated['type'] === 'Final Assy' ? null : ($validated['line'] ?? null),
-            'jenis_mobil'              => $validated['jenis_mobil'],
-            'conveyor'                 => $validated['conveyor'] ?? null,
+            'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
+            'conveyor'                 => $isPreAssy ? null : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
             'jenis_sub_defect'         => $validated['sub_defect'] ?? null,
             'quantity'                 => $validated['jumlah'],
@@ -761,12 +785,12 @@ class ReportController extends Controller
             'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
-        $conveyor = $validated['conveyor'] ?? ($defect->carline?->name ?? '-');
+        $lineOrCarline = $isPreAssy ? ($defect->carline?->name ?? '-') : ($validated['jenis_mobil'] . ' (' . ($validated['conveyor'] ?? '-') . ')');
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => session('user_name'),
             'jenis_aksi'   => 'Update Report (Admin)',
-            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$validated['jenis_mobil']} ({$conveyor}) - Jumlah {$validated['jumlah']}",
+            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$validated['jumlah']}",
             'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
@@ -816,7 +840,7 @@ class ReportController extends Controller
      */
     public function finalAssyLive(Request $request)
     {
-        $query = Defect::where('jenis_assy', 'Final Assy');
+        $query = Defect::with('finalInspectType')->where('jenis_assy', 'Final Assy');
 
         $dateRange        = $request->input('date_range');
         $selectedDefect   = $request->input('defect');
@@ -860,12 +884,12 @@ class ReportController extends Controller
      */
     public function preAssyLive(Request $request)
     {
-        $query = Defect::where('jenis_assy', 'Pre Assy');
+        $query = Defect::with(['carline', 'inspectProcessType'])->where('jenis_assy', 'Pre Assy');
 
         $dateRange        = $request->input('date_range');
         $selectedDefect   = $request->input('defect');
         $selectedLine     = $request->input('line');
-        $selectedConveyor = $request->input('conveyor');
+        $selectedCarline  = $request->input('carline') ?? $request->input('conveyor');
 
         if ($dateRange) {
             $dates = explode(' to ', $dateRange);
@@ -882,15 +906,30 @@ class ReportController extends Controller
         if ($selectedLine && $selectedLine !== 'all') {
             $query->where('jenis_mobil', $selectedLine);
         }
-        if ($selectedConveyor && $selectedConveyor !== 'all') {
-            $query->where('conveyor', $selectedConveyor);
+        if ($selectedCarline && $selectedCarline !== 'all') {
+            $query->where(function ($q) use ($selectedCarline) {
+                if (is_numeric($selectedCarline)) {
+                    $q->where('carline_id', $selectedCarline);
+                } else {
+                    $q->whereHas('carline', function ($sub) use ($selectedCarline) {
+                        $sub->where('name', $selectedCarline);
+                    })->orWhere('conveyor', $selectedCarline);
+                }
+            });
         }
 
         $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
 
+        $items = collect($records->items())->map(function ($item) {
+            $array = $item->toArray();
+            $array['carline_name'] = $item->carline?->name ?? $item->conveyor ?? '-';
+            $array['inspect_process_type_name'] = $item->inspectProcessType?->name ?? '-';
+            return $array;
+        });
+
         return response()->json([
             'success' => true,
-            'data'    => $records->items(),
+            'data'    => $items,
             'total'   => $records->total()
         ]);
     }

@@ -35,6 +35,7 @@ class Defect extends Model
         'pattern',
         'carline_id',
         'inspect_process_type_id',
+        'final_inspect_type_id',
         'defect_type_id',
         'sub_defect_type_id',
     ];
@@ -45,6 +46,7 @@ class Defect extends Model
         'inspect_quantity'         => 'integer',
         'carline_id'               => 'integer',
         'inspect_process_type_id'  => 'integer',
+        'final_inspect_type_id'    => 'integer',
         'defect_type_id'           => 'integer',
         'sub_defect_type_id'       => 'integer',
     ];
@@ -59,6 +61,11 @@ class Defect extends Model
     public function inspectProcessType()
     {
         return $this->belongsTo(InspectProcessType::class);
+    }
+
+    public function finalInspectType()
+    {
+        return $this->belongsTo(FinalAssyInspectType::class, 'final_inspect_type_id');
     }
 
     public function defectType()

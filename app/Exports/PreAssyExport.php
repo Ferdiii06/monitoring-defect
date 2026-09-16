@@ -23,12 +23,12 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
 
     public function query()
     {
-        $query = Defect::where('jenis_assy', 'Pre Assy');
+        $query = Defect::with(['carline', 'inspectProcessType'])->where('jenis_assy', 'Pre Assy');
 
         $dateRange = $this->request->input('date_range');
         $selectedDefect = $this->request->input('defect');
         $selectedLine = $this->request->input('line');
-        $selectedConveyor = $this->request->input('conveyor');
+        $selectedCarline = $this->request->input('carline') ?? $this->request->input('conveyor');
 
         if ($dateRange) {
             $dates = explode(' to ', $dateRange);
@@ -53,8 +53,16 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
             $query->where('jenis_mobil', $selectedLine);
         }
 
-        if ($selectedConveyor && $selectedConveyor !== 'all') {
-            $query->where('conveyor', $selectedConveyor);
+        if ($selectedCarline && $selectedCarline !== 'all') {
+            $query->where(function ($q) use ($selectedCarline) {
+                if (is_numeric($selectedCarline)) {
+                    $q->where('carline_id', $selectedCarline);
+                } else {
+                    $q->whereHas('carline', function ($sub) use ($selectedCarline) {
+                        $sub->where('name', $selectedCarline);
+                    })->orWhere('conveyor', $selectedCarline);
+                }
+            });
         }
 
         return $query->orderBy('waktu', 'desc');
@@ -68,13 +76,15 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
             'User',
             'Shift',
             'Jenis Assy',
-            'Data Mobil',
-            'Konveyor',
+            'Line',
+            'Carline',
+            'Inspect Process Type',
             'Jenis Defect',
             'Jenis Sub Defect',
             'No Terminal',
             'No Mesin',
-            'Quantity',
+            'Inspect Quantity',
+            'Defect Quantity',
         ];
     }
 
@@ -87,11 +97,13 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
             $row->shift ?? '-',
             $row->jenis_assy,
             $row->line_conveyor,
-            $row->conveyor,
+            $row->carline?->name ?? $row->conveyor ?? '-',
+            $row->inspectProcessType?->name ?? '-',
             $row->jenis_defect,
             $row->jenis_sub_defect,
             $row->no_terminal,
             $row->no_mesin,
+            $row->inspect_quantity ?? 0,
             $row->quantity,
         ];
     }
