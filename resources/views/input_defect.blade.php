@@ -7,7 +7,7 @@
 
     <!-- Header: Back Button + Title -->
     <div class="p-5 sm:p-6 pb-3 flex items-center space-x-3 border-b border-border bg-white">
-        <a href="{{ $backRoute ?? route('operator.home') }}" class="text-brand hover:text-brand-active p-1.5 -ml-1.5 rounded-xl hover:bg-red-50 transition-colors">
+        <a href="{{ $backRoute ?? route('operator.home') }}" class="text-brand hover:text-brand-active p-2 -ml-2 rounded-xl hover:bg-red-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
             </svg>
@@ -57,27 +57,43 @@
             <input type="hidden" name="carline_id" :value="form.type === 'Pre Assy' ? form.carline_id : ''">
             <input type="hidden" name="inspect_process_type_id" :value="form.type === 'Pre Assy' ? form.inspect_process_type_id : ''">
             <input type="hidden" name="final_inspect_type_id" :value="(form.type === 'Final Assy' && form.jenis_mobil === 'MAZDA') ? form.final_inspect_type_id : ''">
+            <input type="hidden" name="pattern" :value="form.pattern">
             <input type="hidden" name="jenis_defect" :value="form.jenis_defect">
             <input type="hidden" name="sub_defect" :value="form.sub_defect === 'LAIN-LAIN' ? form.custom_sub_defect : form.sub_defect">
 
             <!-- STEP 1: INPUT FIELDS -->
-            <div x-show="step === 1" class="space-y-4 pb-20">
+            <div x-show="step === 1" class="space-y-4 pb-20 sm:pb-2">
 
-                <!-- AREA / TYPE PICKER (Card Segmented Selector) -->
-                @if(!isset($defect))
+                <!-- AREA / TYPE PICKER (Locked Badge or Card Segmented Selector) -->
+                @if(isset($defect) || request()->filled('type'))
+                    <div class="p-3.5 bg-gray-50/80 border border-border rounded-2xl flex items-center justify-between">
+                        <div>
+                            <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Area Assy</span>
+                            <span class="block text-xs font-extrabold text-gray-700 mt-1">Laporan Terkunci</span>
+                        </div>
+                        <div>
+                            <template x-if="form.type === 'Final Assy'">
+                                <x-status-badge type="final-assy">Final Assy</x-status-badge>
+                            </template>
+                            <template x-if="form.type === 'Pre Assy'">
+                                <x-status-badge type="pre-assy">Pre Assy</x-status-badge>
+                            </template>
+                        </div>
+                    </div>
+                @else
                     <div class="space-y-1.5">
                         <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA ASSY <span class="text-brand">*</span></label>
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button" 
                                     @click="form.type = 'Final Assy'; form.line = ''; form.carline_id = '';"
-                                    class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-extrabold border transition-all text-center flex items-center justify-center space-x-1.5"
+                                    class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-extrabold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
                                     :class="form.type === 'Final Assy' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
                                 <span class="w-2 h-2 rounded-full" :class="form.type === 'Final Assy' ? 'bg-brand' : 'bg-gray-300'"></span>
                                 <span>Final Assy</span>
                             </button>
                             <button type="button" 
                                     @click="form.type = 'Pre Assy'; form.jenis_mobil = ''; form.conveyor = ''; form.final_inspect_type_id = '';"
-                                    class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-extrabold border transition-all text-center flex items-center justify-center space-x-1.5"
+                                    class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-extrabold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
                                     :class="form.type === 'Pre Assy' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
                                 <span class="w-2 h-2 rounded-full" :class="form.type === 'Pre Assy' ? 'bg-brand' : 'bg-gray-300'"></span>
                                 <span>Pre Assy</span>
@@ -234,14 +250,14 @@
                     <div class="grid grid-cols-2 gap-2">
                         <button type="button" 
                                 @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Inspektor' ? '' : 'Inspektor'"
-                                class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5"
+                                class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
                                 :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
                             <span class="w-2 h-2 rounded-full" :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-brand' : 'bg-gray-300'"></span>
                             <span>Inspektor</span>
                         </button>
                         <button type="button" 
                                 @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Operator' ? '' : 'Operator'"
-                                class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5"
+                                class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
                                 :class="form.ditemukan_oleh === 'Operator' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
                             <span class="w-2 h-2 rounded-full" :class="form.ditemukan_oleh === 'Operator' ? 'bg-brand' : 'bg-gray-300'"></span>
                             <span>Operator</span>
@@ -280,21 +296,26 @@
 
             <!-- STEP 1: STICKY BOTTOM ACTION BAR -->
             <div x-show="step === 1" class="fixed sm:sticky bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-border z-20 max-w-md mx-auto">
-                <button type="button" @click="goToConfirm" class="w-full min-h-[48px] bg-brand hover:bg-brand-active text-white font-black py-3 px-4 rounded-xl shadow-md shadow-brand/20 active:scale-95 transition-all flex items-center justify-center space-x-2 text-sm tracking-wide">
+                <x-button-primary type="button" @click="goToConfirm" class="w-full min-h-[48px] py-3 text-sm tracking-wide space-x-2">
                     <span>LANJUT KE KONFIRMASI</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                </button>
+                </x-button-primary>
             </div>
 
             <!-- STEP 2: CONFIRMATION SUMMARY -->
-            <div x-show="step === 2" x-cloak class="space-y-4 pb-24">
+            <div x-show="step === 2" x-cloak class="space-y-4 pb-20 sm:pb-2">
                 
-                <div class="bg-gray-50/80 rounded-2xl p-4 sm:p-5 border border-border space-y-3.5 text-xs">
+                <div class="bg-gray-50/80 rounded-2xl p-4 sm:p-5 border border-border space-y-3.5 text-xs break-words [overflow-wrap:anywhere]">
                     <div class="flex justify-between items-center pb-2.5 border-b border-border">
                         <span class="font-bold text-gray-500 uppercase tracking-wider text-[11px]">Jenis Laporan</span>
-                        <x-status-badge :type="form.type === 'Final Assy' ? 'final-assy' : 'pre-assy'">
-                            <span x-text="form.type"></span>
-                        </x-status-badge>
+                        <div>
+                            <template x-if="form.type === 'Final Assy'">
+                                <x-status-badge type="final-assy">Final Assy</x-status-badge>
+                            </template>
+                            <template x-if="form.type === 'Pre Assy'">
+                                <x-status-badge type="pre-assy">Pre Assy</x-status-badge>
+                            </template>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -333,7 +354,7 @@
                     <div class="grid grid-cols-2 gap-3" x-show="form.type === 'Pre Assy' && form.line">
                         <div>
                             <span class="block text-gray-400 font-medium text-[10px] uppercase">Line</span>
-                            <span class="block font-extrabold text-gray-900 mt-0.5" x-text="form.line"></span>
+                            <span class="block font-extrabold text-gray-900 mt-0.5 break-words [overflow-wrap:anywhere]" x-text="form.line"></span>
                         </div>
                     </div>
 
@@ -346,7 +367,7 @@
 
                     <div>
                         <span class="block text-gray-400 font-medium text-[10px] uppercase">Sub-Defect</span>
-                        <span class="block font-bold text-gray-800 mt-0.5" x-text="form.sub_defect === 'LAIN-LAIN' ? form.custom_sub_defect : form.sub_defect"></span>
+                        <span class="block font-bold text-gray-800 mt-0.5 break-words [overflow-wrap:anywhere]" x-text="form.sub_defect === 'LAIN-LAIN' ? form.custom_sub_defect : form.sub_defect"></span>
                     </div>
 
                     <div class="p-3 bg-red-50/70 border border-red-100 rounded-xl flex items-center justify-between">
@@ -369,22 +390,27 @@
                         <span class="font-bold text-teal-800" x-text="selectedFinalInspectTypeName"></span>
                     </div>
 
+                    <div x-show="form.pattern" class="flex justify-between items-center">
+                        <span class="text-gray-500 font-medium text-[11px]">Pattern:</span>
+                        <span class="font-bold text-gray-900 font-mono break-words [overflow-wrap:anywhere]" x-text="form.pattern"></span>
+                    </div>
+
                     <!-- Dynamic Fields Confirmation Summary -->
                     <template x-if="form.type === 'Final Assy'">
-                        <div class="pt-2 border-t border-gray-200 space-y-1.5 text-[11px]">
-                            <div x-show="form.end_number"><span class="text-gray-400">END (#):</span> <span class="font-bold text-gray-900 font-mono" x-text="form.end_number"></span></div>
-                            <div x-show="form.specification"><span class="text-gray-400">Specification:</span> <span class="font-bold text-gray-900" x-text="form.specification"></span></div>
-                            <div x-show="form.actual"><span class="text-gray-400">Actual:</span> <span class="font-bold text-gray-900" x-text="form.actual"></span></div>
-                            <div x-show="form.area_ditemukan"><span class="text-gray-400">Area Ditemukan:</span> <span class="font-bold text-gray-900" x-text="form.area_ditemukan"></span></div>
-                            <div x-show="form.job_station"><span class="text-gray-400">Job Station:</span> <span class="font-bold text-gray-900" x-text="form.job_station"></span></div>
-                            <div x-show="form.keterangan"><span class="text-gray-400">Keterangan:</span> <span class="font-bold text-gray-900" x-text="form.keterangan"></span></div>
+                        <div class="pt-2 border-t border-gray-200 space-y-1.5 text-[11px] break-words [overflow-wrap:anywhere]">
+                            <div x-show="form.end_number"><span class="text-gray-400">END (#):</span> <span class="font-bold text-gray-900 font-mono break-words [overflow-wrap:anywhere]" x-text="form.end_number"></span></div>
+                            <div x-show="form.specification"><span class="text-gray-400">Specification:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.specification"></span></div>
+                            <div x-show="form.actual"><span class="text-gray-400">Actual:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.actual"></span></div>
+                            <div x-show="form.area_ditemukan"><span class="text-gray-400">Area Ditemukan:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.area_ditemukan"></span></div>
+                            <div x-show="form.job_station"><span class="text-gray-400">Job Station:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.job_station"></span></div>
+                            <div x-show="form.keterangan"><span class="text-gray-400">Keterangan:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.keterangan"></span></div>
                         </div>
                     </template>
 
                     <template x-if="form.type === 'Pre Assy'">
-                        <div class="pt-2 border-t border-gray-200 space-y-1.5 text-[11px]">
-                            <div x-show="form.no_terminal"><span class="text-gray-400">No Terminal:</span> <span class="font-bold text-gray-900 font-mono" x-text="form.no_terminal"></span></div>
-                            <div x-show="form.no_mesin"><span class="text-gray-400">No Mesin:</span> <span class="font-bold text-gray-900 font-mono" x-text="form.no_mesin"></span></div>
+                        <div class="pt-2 border-t border-gray-200 space-y-1.5 text-[11px] break-words [overflow-wrap:anywhere]">
+                            <div x-show="form.no_terminal"><span class="text-gray-400">No Terminal:</span> <span class="font-bold text-gray-900 font-mono break-words [overflow-wrap:anywhere]" x-text="form.no_terminal"></span></div>
+                            <div x-show="form.no_mesin"><span class="text-gray-400">No Mesin:</span> <span class="font-bold text-gray-900 font-mono break-words [overflow-wrap:anywhere]" x-text="form.no_mesin"></span></div>
                         </div>
                     </template>
                 </div>
@@ -393,14 +419,14 @@
 
             <!-- STEP 2: STICKY BOTTOM ACTION BAR -->
             <div x-show="step === 2" x-cloak class="fixed sm:sticky bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-border z-20 max-w-md mx-auto space-y-2">
-                <button type="submit" class="w-full min-h-[48px] bg-brand hover:bg-brand-active text-white font-black py-3 px-4 rounded-xl shadow-md shadow-brand/20 active:scale-95 transition-all flex items-center justify-center space-x-2 text-sm tracking-wide">
+                <x-button-primary type="submit" class="w-full min-h-[48px] py-3 text-sm tracking-wide space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                     <span>KIRIM LAPORAN</span>
-                </button>
+                </x-button-primary>
 
-                <button type="button" @click="step = 1" class="w-full min-h-[44px] border border-border text-gray-700 font-bold py-2.5 px-4 rounded-xl hover:bg-gray-50 active:scale-95 transition-all text-xs">
+                <x-button-secondary type="button" @click="step = 1" class="w-full min-h-[48px] text-xs">
                     Kembali ke Input
-                </button>
+                </x-button-secondary>
             </div>
 
         </form>
@@ -464,6 +490,7 @@
                 jumlah: {{ old("jumlah", $defect->quantity ?? 1) }},
                 inspect_quantity: '{{ old("inspect_quantity", $defect->inspect_quantity ?? "") }}',
                 ditemukan_oleh: '{{ old("ditemukan_oleh", $defect->ditemukan_oleh ?? "") }}',
+                pattern: '{{ old("pattern", $defect->pattern ?? "") }}',
                 
                 end_number: '{{ old("end_number", $defect->end_number ?? "") }}',
                 specification: '{{ old("specification", $defect->specification ?? "") }}',

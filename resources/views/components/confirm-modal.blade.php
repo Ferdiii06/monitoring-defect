@@ -59,11 +59,9 @@
         @endif
 
         <div class="mt-6 pt-4 border-t border-border flex items-center justify-end space-x-3">
-            <button type="button" 
-                    @click="{{ $name }} = false" 
-                    class="px-4 py-2.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-border rounded-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-gray-300 active:scale-95">
+            <x-button-secondary type="button" @click="{{ $name }} = false">
                 {{ $cancelText }}
-            </button>
+            </x-button-secondary>
 
             @if($confirmAction)
                 <form method="POST" action="{{ $confirmAction }}" class="inline">
@@ -71,17 +69,14 @@
                     @if(in_array(strtoupper($method), ['PUT', 'PATCH', 'DELETE']))
                         @method($method)
                     @endif
-                    <button type="submit" 
-                            class="px-4 py-2.5 text-xs font-bold text-white bg-brand hover:bg-brand-active rounded-xl transition-all duration-150 shadow-sm shadow-brand/20 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 active:scale-95">
+                    <x-button-primary type="submit">
                         {{ $confirmText }}
-                    </button>
+                    </x-button-primary>
                 </form>
             @else
-                <button type="button" 
-                        @click="$dispatch('confirmed-{{ $name }}'); {{ $name }} = false"
-                        class="px-4 py-2.5 text-xs font-bold text-white bg-brand hover:bg-brand-active rounded-xl transition-all duration-150 shadow-sm shadow-brand/20 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 active:scale-95">
+                <x-button-primary type="button" @click="$dispatch('confirmed-{{ $name }}'); {{ $name }} = false">
                     {{ $confirmText }}
-                </button>
+                </x-button-primary>
             @endif
         </div>
     </div>

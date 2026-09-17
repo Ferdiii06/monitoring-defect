@@ -18,7 +18,7 @@
     <input 
         {{ $disabled ? 'disabled' : '' }} 
         {{ $attributes->merge([
-            'class' => 'w-full bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-150'
+            'class' => 'w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-150'
         ]) }}
     >
 

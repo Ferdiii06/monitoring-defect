@@ -472,7 +472,7 @@ class ReportController extends Controller
         $validated = $request->validate([
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
             'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
-            'conveyor'                 => 'nullable|string|max:255',
+            'conveyor'                 => 'required_if:type,Final Assy|nullable|string|max:255',
             'line'                     => 'nullable|string|max:255',
             'tanggal'                  => 'required|date',
             'jam'                      => 'required|date_format:H:i',
@@ -607,7 +607,7 @@ class ReportController extends Controller
         $validated = $request->validate([
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
             'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
-            'conveyor'                 => 'nullable|string|max:255',
+            'conveyor'                 => 'required_if:type,Final Assy|nullable|string|max:255',
             'line'                     => 'nullable|string|max:255',
             'tanggal'                  => 'required|date',
             'jam'                      => 'required|date_format:H:i',
@@ -736,7 +736,7 @@ class ReportController extends Controller
         $validated = $request->validate([
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
             'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
-            'conveyor'                 => 'nullable|string|max:255',
+            'conveyor'                 => 'required_if:type,Final Assy|nullable|string|max:255',
             'line'                     => 'nullable|string|max:255',
             'tanggal'                  => 'required|date',
             'jam'                      => 'required|date_format:H:i',
