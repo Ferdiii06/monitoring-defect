@@ -14,14 +14,27 @@ $response = $middleware->handle($request, function ($req) use ($app) {
         'user_name' => 'Admin QA',
         'user_role' => 'Administrator'
     ]);
-    return $app->make(App\Http\Controllers\DashboardController::class)->index();
+    $view = $app->make(App\Http\Controllers\DashboardController::class)->index();
+    return response($view->render());
 });
 
-echo "Type: " . get_class($response) . "\n";
-if ($response instanceof \Illuminate\View\View) {
-    $rendered = $response->render();
-    echo "SUCCESS: Dashboard rendered successfully without error!\n";
-    echo "Output length: " . strlen($rendered) . " bytes\n";
-} else {
-    echo "Response: " . var_export($response, true) . "\n";
-}
+echo "Status: " . $response->getStatusCode() . "\n";
+echo "SUCCESS: Dashboard rendered successfully without error!\n";
+echo "Output length: " . strlen($response->getContent()) . " bytes\n";
+
+// Also verify FinalAssyInspectTypeController index view
+$masterRequest = Illuminate\Http\Request::create('/master/final-assy-inspect-types', 'GET');
+$masterResponse = $middleware->handle($masterRequest, function ($req) use ($app) {
+    session([
+        'logged_in' => true,
+        'user_id' => 1,
+        'user_name' => 'Admin QA',
+        'user_role' => 'Administrator'
+    ]);
+    $view = $app->make(App\Http\Controllers\FinalAssyInspectTypeController::class)->index();
+    return response($view->render());
+});
+
+echo "Master Final Assy Inspect Type Status: " . $masterResponse->getStatusCode() . "\n";
+echo "SUCCESS: Master Final Assy Inspect Type rendered successfully!\n";
+echo "Master output length: " . strlen($masterResponse->getContent()) . " bytes\n";

@@ -33,7 +33,7 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
          x-transition:leave-end="opacity-0 scale-95 translate-y-2"
-         class="relative bg-surface rounded-2xl max-w-sm sm:max-w-md w-full p-6 sm:p-7 shadow-2xl border border-border z-10 transform" 
+         class="relative bg-surface rounded-2xl max-w-sm sm:max-w-md w-full p-6 sm:p-7 shadow-2xl border border-border z-10 transform select-text" 
          @click.away="{{ $name }} = false">
         
         <div class="flex items-start space-x-4">

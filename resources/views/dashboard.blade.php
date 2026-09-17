@@ -174,20 +174,20 @@
                                 <span class="w-2 h-2 rounded-full bg-teal-600"></span>
                                 <span class="text-[10px] font-bold text-teal-800 uppercase tracking-wider">Total Inspect</span>
                             </div>
-                            <span class="text-xl font-extrabold text-teal-950 leading-none">
+                            <span id="final-summary-inspect" class="text-xl font-extrabold text-teal-950 font-mono tabular-nums leading-none">
                                 {{ number_format($finalAssyChart['total_inspect'], 0, ',', '.') }}
                             </span>
-                            <span id="final-today-inspect" class="block text-[10px] font-semibold text-teal-700 mt-1">Hari ini: {{ number_format($finalAssyChart['today_inspect'], 0, ',', '.') }}</span>
+                            <span id="final-today-inspect" class="block text-[10px] font-semibold font-mono tabular-nums text-teal-700 mt-1">Hari ini: {{ number_format($finalAssyChart['today_inspect'], 0, ',', '.') }}</span>
                         </div>
                         <div class="bg-red-50/60 border border-red-100 rounded-xl p-3.5">
                             <div class="flex items-center space-x-1.5 mb-1">
                                 <span class="w-2 h-2 rounded-full bg-[#8b0000]"></span>
                                 <span class="text-[10px] font-bold text-[#8b0000] uppercase tracking-wider">Total Defect</span>
                             </div>
-                            <span id="final-summary-defect" class="text-xl font-extrabold text-[#8b0000] leading-none">
+                            <span id="final-summary-defect" class="text-xl font-extrabold text-[#8b0000] font-mono tabular-nums leading-none">
                                 {{ number_format($finalAssyChart['total_defect'], 0, ',', '.') }}
                             </span>
-                            <span id="final-today-defect" class="block text-[10px] font-semibold text-red-700 mt-1">Hari ini: {{ number_format($finalAssyChart['today_defect'], 0, ',', '.') }}</span>
+                            <span id="final-today-defect" class="block text-[10px] font-semibold font-mono tabular-nums text-red-700 mt-1">Hari ini: {{ number_format($finalAssyChart['today_defect'], 0, ',', '.') }}</span>
                         </div>
                     </div>
 
@@ -241,20 +241,20 @@
                                 <span class="w-2 h-2 rounded-full bg-teal-600"></span>
                                 <span class="text-[10px] font-bold text-teal-800 uppercase tracking-wider">Total Inspect</span>
                             </div>
-                            <span class="text-xl font-extrabold text-teal-950 leading-none">
+                            <span id="pre-summary-inspect" class="text-xl font-extrabold text-teal-950 font-mono tabular-nums leading-none">
                                 {{ number_format($preAssyChart['total_inspect'], 0, ',', '.') }}
                             </span>
-                            <span id="pre-today-inspect" class="block text-[10px] font-semibold text-teal-700 mt-1">Hari ini: {{ number_format($preAssyChart['today_inspect'], 0, ',', '.') }}</span>
+                            <span id="pre-today-inspect" class="block text-[10px] font-semibold font-mono tabular-nums text-teal-700 mt-1">Hari ini: {{ number_format($preAssyChart['today_inspect'], 0, ',', '.') }}</span>
                         </div>
                         <div class="bg-red-50/60 border border-red-100 rounded-xl p-3.5">
                             <div class="flex items-center space-x-1.5 mb-1">
                                 <span class="w-2 h-2 rounded-full bg-[#8b0000]"></span>
                                 <span class="text-[10px] font-bold text-[#8b0000] uppercase tracking-wider">Total Defect</span>
                             </div>
-                            <span id="pre-summary-defect" class="text-xl font-extrabold text-[#8b0000] leading-none">
+                            <span id="pre-summary-defect" class="text-xl font-extrabold text-[#8b0000] font-mono tabular-nums leading-none">
                                 {{ number_format($preAssyChart['total_defect'], 0, ',', '.') }}
                             </span>
-                            <span id="pre-today-defect" class="block text-[10px] font-semibold text-red-700 mt-1">Hari ini: {{ number_format($preAssyChart['today_defect'], 0, ',', '.') }}</span>
+                            <span id="pre-today-defect" class="block text-[10px] font-semibold font-mono tabular-nums text-red-700 mt-1">Hari ini: {{ number_format($preAssyChart['today_defect'], 0, ',', '.') }}</span>
                         </div>
                     </div>
 
@@ -316,13 +316,9 @@
                                 </td>
                                 <td class="py-4 text-sm font-medium px-4">
                                     @if($defect->jenis_assy === 'Final Assy')
-                                        <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#e8fbf2] text-[#0f5132]">
-                                            Final Assy
-                                        </span>
+                                        <x-status-badge type="final-assy">Final Assy</x-status-badge>
                                     @else
-                                        <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#fdf2f2] text-[#842029]">
-                                            Pre Assy
-                                        </span>
+                                        <x-status-badge type="pre-assy">Pre Assy</x-status-badge>
                                     @endif
                                 </td>
                                 <td class="py-4 text-sm text-gray-950 font-bold px-4">
@@ -348,7 +344,7 @@
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
                                     {{ $defect->jenis_sub_defect }}
                                 </td>
-                                <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">
+                                <td class="py-4 text-sm text-gray-900 font-bold font-mono tabular-nums text-center px-4 pr-2">
                                     {{ $defect->quantity }}
                                 </td>
                             </tr>
@@ -676,8 +672,8 @@
                         const waktu = item.waktu || item.created_at;
                         const jenisAssy = item.jenis_assy || 'Final Assy';
                         const assyBadge = jenisAssy === 'Final Assy'
-                            ? '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#e8fbf2] text-[#0f5132]">Final Assy</span>'
-                            : '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-[#fdf2f2] text-[#842029]">Pre Assy</span>';
+                            ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider uppercase font-mono bg-teal-50 text-final-assy border border-teal-200/80">Final Assy</span>'
+                            : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider uppercase font-mono bg-slate-100 text-pre-assy border border-slate-300/80">Pre Assy</span>';
                         const patternBadge = item.pattern
                             ? `<span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.pattern}</span>`
                             : '<span class="text-gray-400">-</span>';
@@ -693,7 +689,7 @@
                                 <td class="py-4 text-sm font-semibold px-4">${patternBadge}</td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_sub_defect || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 font-bold text-center px-4 pr-2">${item.quantity || 0}</td>
+                                <td class="py-4 text-sm text-gray-900 font-bold font-mono tabular-nums text-center px-4 pr-2">${item.quantity || 0}</td>
                             </tr>
                         `;
                     });

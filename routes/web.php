@@ -100,6 +100,12 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
             Route::post('/inspect-process-types', [\App\Http\Controllers\InspectProcessTypeController::class, 'store'])->name('inspect_process_types.store');
             Route::put('/inspect-process-types/{id}', [\App\Http\Controllers\InspectProcessTypeController::class, 'update'])->name('inspect_process_types.update');
             Route::delete('/inspect-process-types/{id}', [\App\Http\Controllers\InspectProcessTypeController::class, 'destroy'])->name('inspect_process_types.destroy');
+
+            // Final Assy Inspect Types
+            Route::get('/final-assy-inspect-types', [\App\Http\Controllers\FinalAssyInspectTypeController::class, 'index'])->name('final_assy_inspect_types.index');
+            Route::post('/final-assy-inspect-types', [\App\Http\Controllers\FinalAssyInspectTypeController::class, 'store'])->name('final_assy_inspect_types.store');
+            Route::put('/final-assy-inspect-types/{id}', [\App\Http\Controllers\FinalAssyInspectTypeController::class, 'update'])->name('final_assy_inspect_types.update');
+            Route::delete('/final-assy-inspect-types/{id}', [\App\Http\Controllers\FinalAssyInspectTypeController::class, 'destroy'])->name('final_assy_inspect_types.destroy');
         });
     });
 });
