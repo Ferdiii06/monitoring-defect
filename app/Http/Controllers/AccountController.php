@@ -36,17 +36,15 @@ class AccountController extends Controller
             : 'required|string|size:6';
 
         $request->validate([
-            'name'  => 'required|string|max:255|unique:users,name',
-            'pin'   => $pinRule,
-            'role'  => 'required|string|in:Administrator,User',
-            'shift' => 'required_if:role,User|nullable|string|in:1A,1B,2A,2B',
+            'name' => 'required|string|max:255|unique:users,name',
+            'pin'  => $pinRule,
+            'role' => 'required|string|in:Administrator,User',
         ]);
 
         User::forceCreate([
-            'name'  => $request->name,
-            'pin'   => $request->pin,
-            'role'  => $request->role,
-            'shift' => $request->role === 'User' ? $request->shift : null,
+            'name' => $request->name,
+            'pin'  => $request->pin,
+            'role' => $request->role,
         ]);
 
         ActivityLog::create([
@@ -77,16 +75,14 @@ class AccountController extends Controller
             : 'nullable|string|size:6';
 
         $request->validate([
-            'name'  => 'required|string|max:255|unique:users,name,' . $id,
-            'pin'   => $pinRule,
-            'role'  => 'required|string|in:Administrator,User',
-            'shift' => 'required_if:role,User|nullable|string|in:1A,1B,2A,2B',
+            'name' => 'required|string|max:255|unique:users,name,' . $id,
+            'pin'  => $pinRule,
+            'role' => 'required|string|in:Administrator,User',
         ]);
 
         $updateData = [
-            'name'  => $request->name,
-            'role'  => $request->role,
-            'shift' => $request->role === 'User' ? $request->shift : null,
+            'name' => $request->name,
+            'role' => $request->role,
         ];
 
         if ($request->filled('pin')) {

@@ -15,7 +15,6 @@
     editId: null, 
     editName: '', 
     editRole: 'User', 
-    editShift: '', 
     editPin: '',
     createRole: '{{ old('role', 'User') }}'
 }">
@@ -95,18 +94,6 @@
                         </select>
                     </div>
 
-                    <div x-show="createRole === 'User'">
-                        <label for="shift" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Shift <span class="text-red-500">*</span></label>
-                        <select id="shift" name="shift" :required="createRole === 'User'"
-                            class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
-                            <option value="" disabled {{ old('shift') ? '' : 'selected' }}>Pilih Shift</option>
-                            <option value="1A" {{ old('shift') == '1A' ? 'selected' : '' }}>Shift 1A</option>
-                            <option value="1B" {{ old('shift') == '1B' ? 'selected' : '' }}>Shift 1B</option>
-                            <option value="2A" {{ old('shift') == '2A' ? 'selected' : '' }}>Shift 2A</option>
-                            <option value="2B" {{ old('shift') == '2B' ? 'selected' : '' }}>Shift 2B</option>
-                        </select>
-                    </div>
-
                     <div>
                         <label for="pin" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">PIN <span class="text-red-500">*</span></label>
                         <div class="relative">
@@ -140,7 +127,6 @@
                                     <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2 w-12">No</th>
                                     <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Nama</th>
                                     <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Role</th>
-                                    <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Shift</th>
                                     <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2 w-32">Aksi</th>
                                 </tr>
                             </thead>
@@ -162,20 +148,11 @@
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="py-3.5 text-xs text-gray-700 px-4 text-center font-semibold">
-                                            @if($user->shift)
-                                                <span class="inline-block bg-gray-100 text-gray-800 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider">
-                                                    Shift {{ $user->shift }}
-                                                </span>
-                                            @else
-                                                <span class="text-xs text-gray-400 font-medium">-</span>
-                                            @endif
-                                        </td>
                                         <td class="py-3.5 text-center px-4 pr-2">
                                             <div class="inline-flex items-center space-x-1.5">
                                                 <!-- Tombol Edit -->
                                                 <button type="button" 
-                                                    @click="editModal = true; editId = {{ $user->id }}; editName = '{{ addslashes($user->name) }}'; editRole = '{{ addslashes($user->role) }}'; editShift = '{{ addslashes($user->shift ?? '') }}'; editPin = '';"
+                                                    @click="editModal = true; editId = {{ $user->id }}; editName = '{{ addslashes($user->name) }}'; editRole = '{{ addslashes($user->role) }}'; editPin = '';"
                                                     class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">
                                                     Edit
                                                 </button>
@@ -192,7 +169,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="py-10 text-center text-xs text-gray-400 font-medium">Belum ada data akun.</td>
+                                        <td colspan="4" class="py-10 text-center text-xs text-gray-400 font-medium">Belum ada data akun.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -231,18 +208,6 @@
                         class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700">
                         <option value="Administrator">Administrator</option>
                         <option value="User">User</option>
-                    </select>
-                </div>
-
-                <div x-show="editRole === 'User'">
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Shift <span class="text-red-500">*</span></label>
-                    <select name="shift" x-model="editShift" :required="editRole === 'User'"
-                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700">
-                        <option value="">Pilih Shift</option>
-                        <option value="1A">Shift 1A</option>
-                        <option value="1B">Shift 1B</option>
-                        <option value="2A">Shift 2A</option>
-                        <option value="2B">Shift 2B</option>
                     </select>
                 </div>
 

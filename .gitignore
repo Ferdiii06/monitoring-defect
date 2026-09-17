@@ -18,7 +18,26 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/framework/*.php
 /vendor
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Scratch & Debug Scripts
+verify_*.php
+scratch_*.php
+check_*.php
+test_*.php
+fetch_*.php
+query_*.php
+print_*.php
+last_*.php
+drop_*.php
+repair_*.php
+error.html
+
+# HTML files (except docs)
+*.html
+!docs/**/*.html
+
