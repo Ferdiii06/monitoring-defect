@@ -43,7 +43,6 @@ class ExternalApiService
                 $newUserName = $item['nama_user'] ?? 'Unknown';
                 $newShift = $item['shift'] ?? null;
                 $newJenisAssy = $item['type'] ?? 'Final Assy';
-                $newLineConveyor = $item['line'] ?? '-';
                 $newJenisMobil = $item['jenis_mobil'] ?? null;
                 $newConveyor = $item['conveyor'] ?? '-';
                 $newJenisDefect = $item['jenis_defect'] ?? '-';
@@ -71,7 +70,6 @@ class ExternalApiService
                         $existingDefect->user_name !== $newUserName ||
                         $existingDefect->shift !== $newShift ||
                         $existingDefect->jenis_assy !== $newJenisAssy ||
-                        $existingDefect->line_conveyor !== $newLineConveyor ||
                         $existingDefect->jenis_mobil !== $newJenisMobil ||
                         $existingDefect->conveyor !== $newConveyor ||
                         $existingDefect->jenis_defect !== $newJenisDefect ||
@@ -93,7 +91,6 @@ class ExternalApiService
                             'user_name'         => $newUserName,
                             'shift'             => $newShift,
                             'jenis_assy'        => $newJenisAssy,
-                            'line_conveyor'     => $newLineConveyor,
                             'jenis_mobil'       => $newJenisMobil,
                             'conveyor'          => $newConveyor,
                             'jenis_defect'      => $newJenisDefect,
@@ -112,7 +109,7 @@ class ExternalApiService
                             'waktu' => now(),
                             'user_name' => $newUserName,
                             'jenis_aksi' => 'Update Report',
-                            'aktivitas' => "Mengubah report defect {$newJenisAssy} - {$newLineConveyor} - Jumlah {$newQuantity}",
+                            'aktivitas' => "Mengubah report defect {$newJenisAssy} - Jumlah {$newQuantity}",
                             'jenis_defect' => $newJenisDefect,
                             'ip_address' => request()->ip() ?? '127.0.0.1',
                         ]);
@@ -124,7 +121,6 @@ class ExternalApiService
                         'user_name'         => $newUserName,
                         'shift'             => $newShift,
                         'jenis_assy'        => $newJenisAssy,
-                        'line_conveyor'     => $newLineConveyor,
                         'jenis_mobil'       => $newJenisMobil,
                         'conveyor'          => $newConveyor,
                         'jenis_defect'      => $newJenisDefect,
@@ -143,7 +139,7 @@ class ExternalApiService
                         'waktu' => now(),
                         'user_name' => $defect->user_name,
                         'jenis_aksi' => 'Create Report',
-                        'aktivitas' => "Melaporkan defect {$defect->jenis_assy} - {$defect->line_conveyor} - Jumlah {$defect->quantity}",
+                        'aktivitas' => "Melaporkan defect {$defect->jenis_assy} - Jumlah {$defect->quantity}",
                         'jenis_defect' => $defect->jenis_defect,
                         'ip_address' => request()->ip() ?? '127.0.0.1',
                     ]);
@@ -161,7 +157,7 @@ class ExternalApiService
                     'waktu' => now(),
                     'user_name' => $deletedDefect->user_name,
                     'jenis_aksi' => 'Delete Report',
-                    'aktivitas' => "Menghapus report defect {$deletedDefect->jenis_assy} - {$deletedDefect->line_conveyor}",
+                    'aktivitas' => "Menghapus report defect {$deletedDefect->jenis_assy}",
                     'jenis_defect' => $deletedDefect->jenis_defect,
                     'ip_address' => request()->ip() ?? '127.0.0.1',
                 ]);
@@ -212,7 +208,6 @@ class ExternalApiService
                     'user_name'         => $item['nama_user'] ?? 'Unknown',
                     'shift'             => $item['shift'] ?? null,
                     'jenis_assy'        => $item['type'] ?? 'Final Assy',
-                    'line_conveyor'     => $item['line'] ?? '-',
                     'jenis_mobil'       => $item['jenis_mobil'] ?? null,
                     'conveyor'          => $item['conveyor'] ?? '-',
                     'jenis_defect'      => $item['jenis_defect'] ?? '-',
@@ -246,7 +241,7 @@ class ExternalApiService
                     'waktu' => now(),
                     'user_name' => $deletedDefect->user_name,
                     'jenis_aksi' => 'Delete Report',
-                    'aktivitas' => "Menghapus report defect {$deletedDefect->jenis_assy} - {$deletedDefect->line_conveyor}",
+                    'aktivitas' => "Menghapus report defect {$deletedDefect->jenis_assy}",
                     'jenis_defect' => $deletedDefect->jenis_defect,
                     'ip_address' => request()->ip() ?? '127.0.0.1',
                 ]);

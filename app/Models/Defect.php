@@ -15,7 +15,6 @@ class Defect extends Model
         'user_name',
         'shift',
         'jenis_assy',
-        'line_conveyor',
         'jenis_mobil',
         'conveyor',
         'jenis_defect',

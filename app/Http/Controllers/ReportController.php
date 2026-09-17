@@ -473,7 +473,6 @@ class ReportController extends Controller
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
             'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
             'conveyor'                 => 'required_if:type,Final Assy|nullable|string|max:255',
-            'line'                     => 'nullable|string|max:255',
             'tanggal'                  => 'required|date',
             'jam'                      => 'required|date_format:H:i',
             'jenis_defect'             => 'nullable|string|max:255',
@@ -507,7 +506,6 @@ class ReportController extends Controller
             'user_name'                => $userName,
             'shift'                    => $shift,
             'jenis_assy'               => $validated['type'],
-            'line_conveyor'            => $validated['type'] === 'Final Assy' ? null : ($validated['line'] ?? null),
             'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
             'conveyor'                 => $isPreAssy ? null : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
@@ -608,7 +606,6 @@ class ReportController extends Controller
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
             'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
             'conveyor'                 => 'required_if:type,Final Assy|nullable|string|max:255',
-            'line'                     => 'nullable|string|max:255',
             'tanggal'                  => 'required|date',
             'jam'                      => 'required|date_format:H:i',
             'jenis_defect'             => 'nullable|string|max:255',
@@ -637,7 +634,6 @@ class ReportController extends Controller
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $validated['type'],
-            'line_conveyor'            => $validated['type'] === 'Final Assy' ? null : ($validated['line'] ?? null),
             'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
             'conveyor'                 => $isPreAssy ? null : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
@@ -690,7 +686,7 @@ class ReportController extends Controller
         }
 
         $type = $defect->jenis_assy;
-        $line = $defect->line_conveyor;
+        $carlineOrLine = $defect->jenis_assy === 'Pre Assy' ? ($defect->carline?->name ?? '-') : ($defect->jenis_mobil . ' (' . ($defect->conveyor ?? '-') . ')');
 
         $defect->delete();
 
@@ -698,7 +694,7 @@ class ReportController extends Controller
             'waktu'        => now(),
             'user_name'    => session('user_name', 'Operator'),
             'jenis_aksi'   => 'Delete Report',
-            'aktivitas'    => "Menghapus laporan defect {$type} - {$line}",
+            'aktivitas'    => "Menghapus laporan defect {$type} - {$carlineOrLine}",
             'jenis_defect' => $defect->jenis_defect,
             'ip_address'   => request()->ip() ?? '127.0.0.1',
         ]);
@@ -737,7 +733,6 @@ class ReportController extends Controller
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
             'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
             'conveyor'                 => 'required_if:type,Final Assy|nullable|string|max:255',
-            'line'                     => 'nullable|string|max:255',
             'tanggal'                  => 'required|date',
             'jam'                      => 'required|date_format:H:i',
             'jenis_defect'             => 'nullable|string|max:255',
@@ -766,7 +761,6 @@ class ReportController extends Controller
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $validated['type'],
-            'line_conveyor'            => $validated['type'] === 'Final Assy' ? null : ($validated['line'] ?? null),
             'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
             'conveyor'                 => $isPreAssy ? null : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
@@ -811,7 +805,7 @@ class ReportController extends Controller
         $defect = Defect::findOrFail($id);
 
         $type = $defect->jenis_assy;
-        $line = $defect->line_conveyor;
+        $carlineOrLine = $defect->jenis_assy === 'Pre Assy' ? ($defect->carline?->name ?? '-') : ($defect->jenis_mobil . ' (' . ($defect->conveyor ?? '-') . ')');
         $defectType = $defect->jenis_defect;
 
         $defect->delete();
@@ -820,7 +814,7 @@ class ReportController extends Controller
             'waktu'        => now(),
             'user_name'    => session('user_name', 'Admin'),
             'jenis_aksi'   => 'Delete Report (Admin)',
-            'aktivitas'    => "Menghapus laporan defect {$type} - {$line}",
+            'aktivitas'    => "Menghapus laporan defect {$type} - {$carlineOrLine}",
             'jenis_defect' => $defectType,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);

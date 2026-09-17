@@ -101,7 +101,6 @@
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3">Waktu</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">User</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Shift</th>
-                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Line</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Carline</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Inspect Process</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Defect</th>
@@ -127,9 +126,6 @@
                                     </td>
                                     <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">
                                         {{ $record->shift ?? '-' }}
-                                    </td>
-                                    <td class="py-4 text-sm text-gray-950 font-bold px-4">
-                                        {{ $record->line_conveyor ?? '-' }}
                                     </td>
                                     <td class="py-4 text-sm font-bold px-4">
                                         <span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
@@ -175,7 +171,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="13" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
+                                    <td colspan="12" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -476,7 +472,7 @@
                     if (!tbody) return;
 
                     if (res.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="13" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="12" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
                         return;
                     }
 
@@ -487,7 +483,6 @@
                                 <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(item.waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(item.waktu)}</span></div></td>
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.user_name || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
-                                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.line_conveyor || '-'}</td>
                                 <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.carline_name || item.conveyor || '-'}</span></td>
                                 <td class="py-4 text-sm text-gray-700 font-semibold px-4">${item.inspect_process_type_name || '-'}</td>
                                 <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>

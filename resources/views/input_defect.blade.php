@@ -85,7 +85,7 @@
                         <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA ASSY <span class="text-brand">*</span></label>
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button" 
-                                    @click="form.type = 'Final Assy'; form.line = ''; form.carline_id = '';"
+                                    @click="form.type = 'Final Assy'; form.carline_id = '';"
                                     class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-extrabold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
                                     :class="form.type === 'Final Assy' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
                                 <span class="w-2 h-2 rounded-full" :class="form.type === 'Final Assy' ? 'bg-brand' : 'bg-gray-300'"></span>
@@ -174,18 +174,6 @@
                         name="jam" 
                         x-model="form.jam" 
                         required 
-                    />
-                </div>
-
-                <!-- LINE (Hanya untuk Pre Assy) -->
-                <div x-show="form.type === 'Pre Assy'">
-                    <x-form-input 
-                        label="LINE" 
-                        type="text" 
-                        name="line" 
-                        x-model="form.line" 
-                        placeholder="Masukkan Line..." 
-                        :required="false" 
                     />
                 </div>
 
@@ -351,13 +339,6 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3" x-show="form.type === 'Pre Assy' && form.line">
-                        <div>
-                            <span class="block text-gray-400 font-medium text-[10px] uppercase">Line</span>
-                            <span class="block font-extrabold text-gray-900 mt-0.5 break-words [overflow-wrap:anywhere]" x-text="form.line"></span>
-                        </div>
-                    </div>
-
                     <div class="h-px bg-gray-200"></div>
 
                     <div>
@@ -483,7 +464,6 @@
                 final_inspect_type_id: '{{ old("final_inspect_type_id", $defect->final_inspect_type_id ?? "") }}',
                 tanggal: '{{ old("tanggal", isset($defect) ? \Carbon\Carbon::parse($defect->waktu)->format("Y-m-d") : now()->format("Y-m-d")) }}',
                 jam: '{{ old("jam", isset($defect) ? \Carbon\Carbon::parse($defect->waktu)->format("H:i") : now()->format("H:i")) }}',
-                line: '{{ old("line", $defect->line_conveyor ?? "") }}',
                 jenis_defect: '{{ old("jenis_defect", $defect->jenis_defect ?? "") }}',
                 sub_defect: '{{ old("sub_defect", $defect->jenis_sub_defect ?? "") }}',
                 custom_sub_defect: '',
@@ -541,10 +521,6 @@
                 const initialDefect = '{{ old("jenis_defect", $defect->jenis_defect ?? "") }}';
                 const initialSubDefect = '{{ old("sub_defect", $defect->jenis_sub_defect ?? "") }}';
 
-                if (this.form.type === 'Final Assy') {
-                    this.form.line = '';
-                }
-
                 this.$nextTick(() => {
                     if (initialConveyor) {
                         this.form.conveyor = initialConveyor;
@@ -573,15 +549,14 @@
                         this.errorMessage = 'Mohon lengkapi seluruh field wajib (Jenis Mobil, Konveyor, Tanggal, Jam, Defect, Sub-defect, Jumlah).';
                         return;
                     }
-                    this.form.line = '';
                     this.form.carline_id = '';
                     if (this.form.jenis_mobil === 'MAZDA' && !this.form.final_inspect_type_id) {
                         this.errorMessage = 'Mohon pilih Quantity Inspect Type untuk mobil MAZDA.';
                         return;
                     }
                 } else if (this.form.type === 'Pre Assy') {
-                    if (!this.form.carline_id || !this.form.line || !this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !this.form.jumlah) {
-                        this.errorMessage = 'Mohon lengkapi seluruh field wajib (Carline, Line, Tanggal, Jam, Defect, Sub-defect, Jumlah).';
+                    if (!this.form.carline_id || !this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !this.form.jumlah) {
+                        this.errorMessage = 'Mohon lengkapi seluruh field wajib (Carline, Tanggal, Jam, Defect, Sub-defect, Jumlah).';
                         return;
                     }
                     this.form.jenis_mobil = '';

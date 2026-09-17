@@ -37,7 +37,6 @@ class ExampleTest extends TestCase
             'waktu' => now(),
             'user_name' => 'Operator Uji',
             'jenis_assy' => 'Final Assy',
-            'line_conveyor' => 'Toyota',
             'konveyor' => '664W-C5',
             'jenis_defect' => 'INSERT CIRCUIT',
             'jenis_sub_defect' => 'CROSS CIRCUIT',
@@ -70,7 +69,6 @@ class ExampleTest extends TestCase
             'waktu' => now(), // today
             'user_name' => 'Operator A',
             'jenis_assy' => 'Final Assy',
-            'line_conveyor' => 'Toyota',
             'konveyor' => '664W-C5',
             'jenis_defect' => 'TERMINAL',
             'jenis_sub_defect' => 'TERGORES',
