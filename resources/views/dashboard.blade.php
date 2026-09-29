@@ -284,12 +284,13 @@
 
             <!-- Responsive Table Container -->
             <div class="overflow-x-auto pb-2">
-                <table class="w-full min-w-[850px] text-left border-collapse">
+                <table class="w-full min-w-[950px] text-left border-collapse">
                     <thead>
                         <tr class="border-b border-border bg-gray-50/50">
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3">Waktu</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">User</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Shift</th>
+                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Ditemukan Oleh</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Assy</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Mobil</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Konveyor</th>
@@ -313,6 +314,19 @@
                                 </td>
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">
                                     {{ $defect->shift ?? '-' }}
+                                </td>
+                                <td class="py-4 text-xs font-bold px-4 text-center">
+                                    @if($defect->ditemukan_oleh === 'Inspektor')
+                                        <span class="inline-block px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 tracking-wider">
+                                            Inspektor
+                                        </span>
+                                    @elseif($defect->ditemukan_oleh === 'Operator')
+                                        <span class="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">
+                                            Operator
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400 font-normal">-</span>
+                                    @endif
                                 </td>
                                 <td class="py-4 text-sm font-medium px-4">
                                     @if($defect->jenis_assy === 'Final Assy')
@@ -350,7 +364,7 @@
                             </tr>
                         @empty
                             <tr id="emptyRow">
-                                <td colspan="10" class="py-6 text-center text-sm text-gray-500 font-medium">Tidak ada data defect terbaru.</td>
+                                <td colspan="11" class="py-6 text-center text-sm text-gray-500 font-medium">Tidak ada data defect terbaru.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -663,7 +677,7 @@
                     if (!tbody) return;
 
                     if (res.data.length === 0) {
-                        tbody.innerHTML = '<tr id="emptyRow"><td colspan="10" class="py-8 text-center text-xs text-gray-400 font-semibold">Belum ada data defect.</td></tr>';
+                        tbody.innerHTML = '<tr id="emptyRow"><td colspan="11" class="py-8 text-center text-xs text-gray-400 font-semibold">Belum ada data defect.</td></tr>';
                         return;
                     }
 
@@ -677,12 +691,18 @@
                         const patternBadge = item.pattern
                             ? `<span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.pattern}</span>`
                             : '<span class="text-gray-400">-</span>';
+                        const ditemukanBadge = item.ditemukan_oleh === 'Inspektor'
+                            ? '<span class="inline-block px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 text-xs font-bold tracking-wider">Inspektor</span>'
+                            : (item.ditemukan_oleh === 'Operator'
+                                ? '<span class="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 text-xs font-bold tracking-wider">Operator</span>'
+                                : '<span class="text-gray-400 font-normal">-</span>');
 
                         rowsHtml += `
                             <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${item.id}">
                                 <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(waktu)}</span></div></td>
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.user_name || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
+                                <td class="py-4 text-xs font-bold px-4 text-center">${ditemukanBadge}</td>
                                 <td class="py-4 text-sm font-medium px-4">${assyBadge}</td>
                                 <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
                                 <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || '-'}</span></td>

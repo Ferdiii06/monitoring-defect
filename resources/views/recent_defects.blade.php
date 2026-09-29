@@ -166,6 +166,7 @@
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2">Waktu</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">User</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Shift</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Ditemukan Oleh</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Assy</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
@@ -189,6 +190,19 @@
                                     </td>
                                     <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">
                                         {{ $record->shift ?? '-' }}
+                                    </td>
+                                    <td class="py-4 text-xs font-bold px-4 text-center">
+                                        @if($record->ditemukan_oleh === 'Inspektor')
+                                            <span class="inline-block px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 tracking-wider">
+                                                Inspektor
+                                            </span>
+                                        @elseif($record->ditemukan_oleh === 'Operator')
+                                            <span class="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">
+                                                Operator
+                                            </span>
+                                        @else
+                                            <span class="text-gray-400 font-normal">-</span>
+                                        @endif
                                     </td>
                                     <td class="py-4 text-xs font-bold px-4">
                                         @if($record->jenis_assy === 'Final Assy')
@@ -236,7 +250,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="10" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
+                                    <td colspan="11" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -524,7 +538,7 @@
                     if (!tbody) return;
 
                     if (res.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="10" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="11" class="py-12 text-center text-sm text-gray-400 font-medium">Tidak ada data defect untuk filter terpilih.</td></tr>';
                         return;
                     }
 
@@ -535,11 +549,18 @@
                             ? '<span class="inline-block px-2 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 tracking-wider">Final Assy</span>'
                             : '<span class="inline-block px-2 py-0.5 rounded border border-rose-200 bg-rose-50 text-rose-700 tracking-wider">Pre Assy</span>';
 
+                        const ditemukanBadge = item.ditemukan_oleh === 'Inspektor'
+                            ? '<span class="inline-block px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 tracking-wider">Inspektor</span>'
+                            : (item.ditemukan_oleh === 'Operator'
+                                ? '<span class="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">Operator</span>'
+                                : '<span class="text-gray-400 font-normal">-</span>');
+
                         html += `
                             <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${item.id}">
                                 <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(item.waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(item.waktu)}</span></div></td>
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.user_name || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
+                                <td class="py-4 text-xs font-bold px-4 text-center">${ditemukanBadge}</td>
                                 <td class="py-4 text-xs font-bold px-4">${assyBadge}</td>
                                 <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
                                 <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || '-'}</span></td>

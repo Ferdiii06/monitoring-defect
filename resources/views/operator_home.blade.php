@@ -78,6 +78,11 @@
                                         @if($defect->jenis_mobil)
                                             <span class="text-[11px] font-bold text-gray-900 tracking-wide">{{ $defect->jenis_mobil }}</span>
                                         @endif
+                                        @if($defect->ditemukan_oleh)
+                                            <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-wider {{ $defect->ditemukan_oleh === 'Inspektor' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
+                                                {{ $defect->ditemukan_oleh }}
+                                            </span>
+                                        @endif
                                     </div>
                                 </div>
 

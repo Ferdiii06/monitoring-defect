@@ -47,7 +47,7 @@
             </div>
         @endif
 
-        <form action="{{ isset($defect) && isset($backRoute) ? route('admin.report.update', $defect->id) : (isset($defect) ? route('input_defect.update', $defect->id) : route('input_defect.store')) }}" method="POST" id="defectForm">
+        <form action="{{ isset($defect) && isset($backRoute) ? route('admin.report.update', $defect->id) : (isset($defect) ? route('input_defect.update', $defect->id) : route('input_defect.store')) }}" method="POST" id="defectForm" @submit.prevent="if(step === 1) { goToConfirm(); } else { showConfirmModal = true; }">
             @csrf
             @if(isset($defect))
                 @method('PUT')
@@ -217,8 +217,8 @@
                         type="number" 
                         name="jumlah" 
                         x-model="form.jumlah" 
-                        min="1" 
-                        placeholder="1" 
+                        min="0" 
+                        placeholder="0" 
                         required 
                     />
                     <x-form-input 
@@ -400,9 +400,9 @@
 
             <!-- STEP 2: STICKY BOTTOM ACTION BAR -->
             <div x-show="step === 2" x-cloak class="fixed sm:sticky bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-border z-20 max-w-md mx-auto space-y-2">
-                <x-button-primary type="submit" class="w-full min-h-[48px] py-3 text-sm tracking-wide space-x-2">
+                <x-button-primary type="button" @click="showConfirmModal = true" class="w-full min-h-[48px] py-3 text-sm tracking-wide space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                    <span>KIRIM LAPORAN</span>
+                    <span>{{ isset($defect) ? 'SIMPAN PERUBAHAN' : 'KIRIM LAPORAN' }}</span>
                 </x-button-primary>
 
                 <x-button-secondary type="button" @click="step = 1" class="w-full min-h-[48px] text-xs">
@@ -411,6 +411,76 @@
             </div>
 
         </form>
+    </div>
+
+    <!-- Modal Konfirmasi Kirim / Simpan Laporan -->
+    <div x-show="showConfirmModal" 
+         x-cloak 
+         class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6"
+         role="dialog" 
+         aria-modal="true">
+        
+        <!-- Backdrop Blur Dim -->
+        <div x-show="showConfirmModal"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 backdrop-blur-none"
+             x-transition:enter-end="opacity-100 backdrop-blur-sm"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 backdrop-blur-sm"
+             x-transition:leave-end="opacity-0 backdrop-blur-none"
+             class="fixed inset-0 bg-gray-900/50 transition-opacity"
+             @click="if(!isSubmitting) showConfirmModal = false"></div>
+
+        <!-- Modal Dialog Content -->
+        <div x-show="showConfirmModal"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+             x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+             class="relative bg-white rounded-2xl max-w-sm sm:max-w-md w-full p-5 sm:p-6 shadow-2xl border border-gray-100 z-10 transform select-text" 
+             @click.away="if(!isSubmitting) showConfirmModal = false">
+            
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-red-50 border border-red-200/80 flex items-center justify-center text-brand shrink-0 mt-0.5 shadow-xs">
+                    <svg class="w-5 h-5 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-base font-extrabold text-gray-900 tracking-tight leading-snug">
+                        {{ isset($defect) ? 'Konfirmasi Simpan Perubahan?' : 'Konfirmasi Kirim Laporan?' }}
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                        Pastikan seluruh data sudah sesuai sebelum {{ isset($defect) ? 'disimpan' : 'dikirim' }} ke sistem monitoring QA.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Tombol Aksi Modal -->
+            <div class="mt-6 pt-4 border-t border-gray-100 flex items-center justify-end space-x-2.5">
+                <button type="button" 
+                        @click="showConfirmModal = false" 
+                        :disabled="isSubmitting"
+                        class="px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 text-xs font-bold transition-all disabled:opacity-50">
+                    Periksa Kembali
+                </button>
+                <button type="button" 
+                        @click="submitForm()" 
+                        :disabled="isSubmitting"
+                        class="min-h-[42px] px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-active text-white text-xs font-bold transition-all flex items-center justify-center space-x-1.5 shadow-sm shadow-brand/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <template x-if="isSubmitting">
+                        <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                    </template>
+                    <span x-text="isSubmitting ? 'Mengirim...' : '{{ isset($defect) ? "Ya, Simpan" : "Ya, Kirim Sekarang" }}'"></span>
+                </button>
+            </div>
+
+        </div>
     </div>
 
 </main>
@@ -450,6 +520,8 @@
         return {
             step: 1,
             errorMessage: '',
+            showConfirmModal: false,
+            isSubmitting: false,
             conveyorMap: conveyorMap,
             preAssyCarlines: preAssyCarlines,
             inspectProcessTypesList: inspectProcessTypesList,
@@ -467,7 +539,7 @@
                 jenis_defect: '{{ old("jenis_defect", $defect->jenis_defect ?? "") }}',
                 sub_defect: '{{ old("sub_defect", $defect->jenis_sub_defect ?? "") }}',
                 custom_sub_defect: '',
-                jumlah: {{ old("jumlah", $defect->quantity ?? 1) }},
+                jumlah: {{ old("jumlah", $defect->quantity ?? 0) }},
                 inspect_quantity: '{{ old("inspect_quantity", $defect->inspect_quantity ?? "") }}',
                 ditemukan_oleh: '{{ old("ditemukan_oleh", $defect->ditemukan_oleh ?? "") }}',
                 pattern: '{{ old("pattern", $defect->pattern ?? "") }}',
@@ -544,8 +616,10 @@
 
             goToConfirm() {
                 this.errorMessage = '';
+                const isJumlahValid = this.form.jumlah !== '' && this.form.jumlah !== null && !isNaN(this.form.jumlah) && Number(this.form.jumlah) >= 0;
+
                 if (this.form.type === 'Final Assy') {
-                    if (!this.form.jenis_mobil || !this.form.conveyor || !this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !this.form.jumlah) {
+                    if (!this.form.jenis_mobil || !this.form.conveyor || !this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !isJumlahValid) {
                         this.errorMessage = 'Mohon lengkapi seluruh field wajib (Jenis Mobil, Konveyor, Tanggal, Jam, Defect, Sub-defect, Jumlah).';
                         return;
                     }
@@ -555,7 +629,7 @@
                         return;
                     }
                 } else if (this.form.type === 'Pre Assy') {
-                    if (!this.form.carline_id || !this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !this.form.jumlah) {
+                    if (!this.form.carline_id || !this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !isJumlahValid) {
                         this.errorMessage = 'Mohon lengkapi seluruh field wajib (Carline, Tanggal, Jam, Defect, Sub-defect, Jumlah).';
                         return;
                     }
@@ -570,6 +644,15 @@
                 }
                 this.step = 2;
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+
+            submitForm() {
+                if (this.isSubmitting) return;
+                this.isSubmitting = true;
+                const formEl = document.getElementById('defectForm');
+                if (formEl) {
+                    formEl.submit();
+                }
             }
         };
     }
