@@ -493,7 +493,7 @@ class ReportController extends Controller
             'final_inspect_type_id'    => 'required_if:jenis_mobil,MAZDA|nullable|exists:final_assy_inspect_types,id',
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
-            'ditemukan_oleh'           => 'nullable|in:Inspektor,Operator',
+            'ditemukan_oleh'           => 'required|in:Inspektor,Operator',
         ]);
 
         $userName = session('user_name', 'Operator');
@@ -625,7 +625,7 @@ class ReportController extends Controller
             'final_inspect_type_id'    => 'required_if:jenis_mobil,MAZDA|nullable|exists:final_assy_inspect_types,id',
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
-            'ditemukan_oleh'           => 'nullable|in:Inspektor,Operator',
+            'ditemukan_oleh'           => 'required|in:Inspektor,Operator',
             'pattern'                  => 'nullable|string|max:255',
         ]);
 
@@ -788,7 +788,7 @@ class ReportController extends Controller
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => session('user_name'),
-            'jenis_aksi'   => 'Update Report (Admin)',
+            'jenis_aksi'   => 'Update Report',
             'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$validated['jumlah']}",
             'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
@@ -813,7 +813,7 @@ class ReportController extends Controller
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => session('user_name', 'Admin'),
-            'jenis_aksi'   => 'Delete Report (Admin)',
+            'jenis_aksi'   => 'Delete Report',
             'aktivitas'    => "Menghapus laporan defect {$type} - {$carlineOrLine}",
             'jenis_defect' => $defectType,
             'ip_address'   => $request->ip() ?? '127.0.0.1',

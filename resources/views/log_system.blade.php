@@ -155,23 +155,27 @@
                                         {{ $record->user_name }}
                                     </td>
                                     <td class="py-4 text-xs font-bold text-center px-4">
-                                        @if($record->jenis_aksi === 'Create Report')
-                                            <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 tracking-wider">
-                                                Create Report
-                                            </span>
-                                        @elseif($record->jenis_aksi === 'Delete Report')
-                                            <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 tracking-wider">
-                                                Delete Report
-                                            </span>
-                                        @elseif($record->jenis_aksi === 'Update Report')
-                                            <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">
-                                                Update Report
-                                            </span>
-                                        @else
-                                            <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 tracking-wider">
-                                                Create Account
-                                            </span>
-                                        @endif
+                                        @php
+                                            $action = trim($record->jenis_aksi ?? '');
+                                            if ($action === 'Create Report') {
+                                                $badgeStyle = 'border-emerald-200 bg-emerald-50 text-emerald-700';
+                                            } elseif ($action === 'Update Report' || str_contains($action, 'Update Report')) {
+                                                $badgeStyle = 'border-amber-200 bg-amber-50 text-amber-700';
+                                            } elseif ($action === 'Delete Report' || str_contains($action, 'Delete Report')) {
+                                                $badgeStyle = 'border-rose-200 bg-rose-50 text-rose-700';
+                                            } elseif ($action === 'Create Account') {
+                                                $badgeStyle = 'border-indigo-200 bg-indigo-50 text-indigo-700';
+                                            } elseif ($action === 'Update Account') {
+                                                $badgeStyle = 'border-sky-200 bg-sky-50 text-sky-700';
+                                            } elseif ($action === 'Delete Account') {
+                                                $badgeStyle = 'border-rose-200 bg-rose-50 text-rose-700';
+                                            } else {
+                                                $badgeStyle = 'border-gray-200 bg-gray-50 text-gray-700';
+                                            }
+                                        @endphp
+                                        <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border {{ $badgeStyle }} tracking-wider">
+                                            {{ $record->jenis_aksi }}
+                                        </span>
                                     </td>
                                     <td class="py-4 text-sm text-gray-600 font-medium px-4">
                                         {{ $record->aktivitas }}
@@ -400,15 +404,24 @@
         }
 
         function getActionBadge(jenisAksi) {
-            if (jenisAksi === 'Create Report') {
-                return '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 tracking-wider">Create Report</span>';
-            } else if (jenisAksi === 'Delete Report') {
-                return '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 tracking-wider">Delete Report</span>';
-            } else if (jenisAksi === 'Update Report') {
-                return '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">Update Report</span>';
-            } else {
-                return '<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 tracking-wider">Create Account</span>';
+            const action = (jenisAksi || '').trim();
+            let style = 'border-gray-200 bg-gray-50 text-gray-700';
+
+            if (action === 'Create Report') {
+                style = 'border-emerald-200 bg-emerald-50 text-emerald-700';
+            } else if (action === 'Update Report' || action.includes('Update Report')) {
+                style = 'border-amber-200 bg-amber-50 text-amber-700';
+            } else if (action === 'Delete Report' || action.includes('Delete Report')) {
+                style = 'border-rose-200 bg-rose-50 text-rose-700';
+            } else if (action === 'Create Account') {
+                style = 'border-indigo-200 bg-indigo-50 text-indigo-700';
+            } else if (action === 'Update Account') {
+                style = 'border-sky-200 bg-sky-50 text-sky-700';
+            } else if (action === 'Delete Account') {
+                style = 'border-rose-200 bg-rose-50 text-rose-700';
             }
+
+            return `<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border ${style} tracking-wider">${action || '-'}</span>`;
         }
 
         function fetchLiveLogs() {
