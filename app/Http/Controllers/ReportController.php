@@ -94,7 +94,8 @@ class ReportController extends Controller
             'WRONG ORIENTATION PART',
             'CUTTING - CRIMPING PRE ASSY DEFECT',
             'INJECTION GROMMET / SISUI DEFECT',
-            'OTHERS'
+            'OTHERS',
+            'Zero Defect'
         ];
 
         $lineOptions = ['TOYOTA', 'NISSAN', 'MAZDA'];
@@ -189,7 +190,8 @@ class ReportController extends Controller
             'INSULATION',
             'SEAL SUMBER',
             'CRIMPING',
-            'LAIN-LAIN'
+            'LAIN-LAIN',
+            'Zero Defect'
         ];
 
         $lineOptions = ['TOYOTA', 'NISSAN', 'MAZDA'];
@@ -386,7 +388,8 @@ class ReportController extends Controller
             'INSULATION',
             'SEAL SUMBER',
             'CRIMPING',
-            'LAIN-LAIN'
+            'LAIN-LAIN',
+            'Zero Defect'
         ];
 
         $finalAssyDefects = [
@@ -400,7 +403,8 @@ class ReportController extends Controller
             'WRONG ORIENTATION PART',
             'CUTTING - CRIMPING PRE ASSY DEFECT',
             'INJECTION GROMMET / SISUI DEFECT',
-            'OTHERS'
+            'OTHERS',
+            'Zero Defect'
         ];
 
         if ($selectedAssy === 'Pre Assy') {
@@ -512,6 +516,9 @@ class ReportController extends Controller
 
         $isPreAssy = $validated['type'] === 'Pre Assy';
         $finalInspectTypeId = (!$isPreAssy && $isApplicable) ? ($validated['final_inspect_type_id'] ?? null) : null;
+        $isZeroDefect = ($validated['jenis_defect'] ?? '') === 'Zero Defect';
+        $subDefect = $isZeroDefect ? '-' : ($validated['sub_defect'] ?? '-');
+        $quantity = $isZeroDefect ? 0 : $validated['jumlah'];
 
         $defect = Defect::create([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
@@ -521,8 +528,8 @@ class ReportController extends Controller
             'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
             'conveyor'                 => $isPreAssy ? null : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
-            'jenis_sub_defect'         => $validated['sub_defect'] ?? null,
-            'quantity'                 => $validated['jumlah'],
+            'jenis_sub_defect'         => $subDefect,
+            'quantity'                 => $quantity,
             'inspect_quantity'         => $validated['inspect_quantity'] ?? null,
             'end_number'               => $validated['end_number'] ?? null,
             'specification'            => $validated['specification'] ?? null,
@@ -537,7 +544,7 @@ class ReportController extends Controller
             'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
             'final_inspect_type_id'    => $finalInspectTypeId,
             'defect_type_id'           => $validated['defect_type_id'] ?? null,
-            'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
+            'sub_defect_type_id'       => $isZeroDefect ? null : ($validated['sub_defect_type_id'] ?? null),
             'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,
         ]);
 
@@ -546,7 +553,7 @@ class ReportController extends Controller
             'waktu'        => now(),
             'user_name'    => $userName,
             'jenis_aksi'   => 'Create Report',
-            'aktivitas'    => "Melaporkan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$validated['jumlah']}",
+            'aktivitas'    => "Melaporkan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$quantity}",
             'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
@@ -652,6 +659,9 @@ class ReportController extends Controller
 
         $isPreAssy = $validated['type'] === 'Pre Assy';
         $finalInspectTypeId = $this->resolveFinalInspectTypeIdForUpdate($defect, $validated, $isApplicable);
+        $isZeroDefect = ($validated['jenis_defect'] ?? '') === 'Zero Defect';
+        $subDefect = $isZeroDefect ? '-' : ($validated['sub_defect'] ?? '-');
+        $quantity = $isZeroDefect ? 0 : $validated['jumlah'];
 
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
@@ -659,8 +669,8 @@ class ReportController extends Controller
             'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
             'conveyor'                 => $isPreAssy ? null : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
-            'jenis_sub_defect'         => $validated['sub_defect'] ?? null,
-            'quantity'                 => $validated['jumlah'],
+            'jenis_sub_defect'         => $subDefect,
+            'quantity'                 => $quantity,
             'inspect_quantity'         => $validated['inspect_quantity'] ?? null,
             'end_number'               => $validated['end_number'] ?? null,
             'specification'            => $validated['specification'] ?? null,
@@ -674,7 +684,7 @@ class ReportController extends Controller
             'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
             'final_inspect_type_id'    => $finalInspectTypeId,
             'defect_type_id'           => $validated['defect_type_id'] ?? null,
-            'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
+            'sub_defect_type_id'       => $isZeroDefect ? null : ($validated['sub_defect_type_id'] ?? null),
             'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,
             'pattern'                  => $validated['pattern'] ?? null,
         ]);
@@ -684,7 +694,7 @@ class ReportController extends Controller
             'waktu'        => now(),
             'user_name'    => session('user_name', 'Operator'),
             'jenis_aksi'   => 'Update Report',
-            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$validated['jumlah']}",
+            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$quantity}",
             'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
@@ -789,6 +799,9 @@ class ReportController extends Controller
 
         $isPreAssy = $validated['type'] === 'Pre Assy';
         $finalInspectTypeId = $this->resolveFinalInspectTypeIdForUpdate($defect, $validated, $isApplicable);
+        $isZeroDefect = ($validated['jenis_defect'] ?? '') === 'Zero Defect';
+        $subDefect = $isZeroDefect ? '-' : ($validated['sub_defect'] ?? '-');
+        $quantity = $isZeroDefect ? 0 : $validated['jumlah'];
 
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
@@ -796,8 +809,8 @@ class ReportController extends Controller
             'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
             'conveyor'                 => $isPreAssy ? null : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
-            'jenis_sub_defect'         => $validated['sub_defect'] ?? null,
-            'quantity'                 => $validated['jumlah'],
+            'jenis_sub_defect'         => $subDefect,
+            'quantity'                 => $quantity,
             'inspect_quantity'         => $validated['inspect_quantity'] ?? null,
             'end_number'               => $validated['end_number'] ?? null,
             'specification'            => $validated['specification'] ?? null,
@@ -811,7 +824,7 @@ class ReportController extends Controller
             'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
             'final_inspect_type_id'    => $finalInspectTypeId,
             'defect_type_id'           => $validated['defect_type_id'] ?? null,
-            'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
+            'sub_defect_type_id'       => $isZeroDefect ? null : ($validated['sub_defect_type_id'] ?? null),
             'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,
             'pattern'                  => $validated['pattern'] ?? null,
         ]);
@@ -821,7 +834,7 @@ class ReportController extends Controller
             'waktu'        => now(),
             'user_name'    => session('user_name'),
             'jenis_aksi'   => 'Update Report',
-            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$validated['jumlah']}",
+            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$quantity}",
             'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
