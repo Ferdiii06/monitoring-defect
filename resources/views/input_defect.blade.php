@@ -220,7 +220,7 @@
                         x-model="form.jumlah" 
                         min="0" 
                         placeholder="0" 
-                        :readonly="form.jenis_defect === 'Zero Defect'"
+                        x-bind:readonly="form.jenis_defect === 'Zero Defect'"
                         x-bind:class="form.jenis_defect === 'Zero Defect' ? '!bg-gray-100 !cursor-not-allowed' : ''"
                         required 
                     />
