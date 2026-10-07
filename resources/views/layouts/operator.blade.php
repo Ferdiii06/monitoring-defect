@@ -7,6 +7,20 @@
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <!-- PWA Settings -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#990000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo-yazaki.jpg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
+
     <style>
         body { font-family: var(--font-sans); }
         /* Disable callout and user-select on primary interactive touch elements for app feel */
