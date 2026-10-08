@@ -88,7 +88,7 @@
                         <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA ASSY <span class="text-brand">*</span></label>
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button" 
-                                    @click="form.type = 'Final Assy'; form.carline_id = '';"
+                                    @click="form.type = 'Final Assy'; form.carline_id = ''; form.ditemukan_oleh = '';"
                                     class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-extrabold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
                                     :class="form.type === 'Final Assy' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
                                 <span class="w-2 h-2 rounded-full" :class="form.type === 'Final Assy' ? 'bg-brand' : 'bg-gray-300'"></span>
@@ -169,13 +169,20 @@
                         x-model="form.tanggal" 
                         required 
                     />
-                    <x-form-input 
-                        label="JAM TEMUAN" 
-                        type="time" 
-                        name="jam" 
-                        x-model="form.jam" 
-                        required 
-                    />
+                    <div class="w-full space-y-1.5">
+                        <label for="input_jam" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                            JAM TEMUAN <span class="text-brand">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="input_jam" 
+                            name="jam" 
+                            x-model="form.jam" 
+                            required 
+                            placeholder="HH:mm" 
+                            class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-150 cursor-pointer"
+                        >
+                    </div>
                 </div>
 
                 <!-- JENIS DEFECT -->
@@ -234,27 +241,29 @@
                     />
                 </div>
 
-                <!-- DITEMUKAN OLEH (Card Segmented Picker 2 Opsi) -->
-                <div class="space-y-1.5">
-                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">DITEMUKAN OLEH <span class="text-brand">*</span></label>
-                    <input type="hidden" name="ditemukan_oleh" :value="form.ditemukan_oleh">
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" 
-                                @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Inspektor' ? '' : 'Inspektor'"
-                                class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
-                                :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
-                            <span class="w-2 h-2 rounded-full" :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-brand' : 'bg-gray-300'"></span>
-                            <span>Inspektor</span>
-                        </button>
-                        <button type="button" 
-                                @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Operator' ? '' : 'Operator'"
-                                class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
-                                :class="form.ditemukan_oleh === 'Operator' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
-                            <span class="w-2 h-2 rounded-full" :class="form.ditemukan_oleh === 'Operator' ? 'bg-brand' : 'bg-gray-300'"></span>
-                            <span>Operator</span>
-                        </button>
+                <!-- DITEMUKAN OLEH (Card Segmented Picker 2 Opsi - Khusus Pre Assy) -->
+                <template x-if="form.type === 'Pre Assy'">
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">DITEMUKAN OLEH <span class="text-brand">*</span></label>
+                        <input type="hidden" name="ditemukan_oleh" :value="form.ditemukan_oleh">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button"
+                                    @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Inspektor' ? '' : 'Inspektor'"
+                                    class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
+                                    :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
+                                <span class="w-2 h-2 rounded-full" :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-brand' : 'bg-gray-300'"></span>
+                                <span>Inspektor</span>
+                            </button>
+                            <button type="button"
+                                    @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Operator' ? '' : 'Operator'"
+                                    class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
+                                    :class="form.ditemukan_oleh === 'Operator' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
+                                <span class="w-2 h-2 rounded-full" :class="form.ditemukan_oleh === 'Operator' ? 'bg-brand' : 'bg-gray-300'"></span>
+                                <span>Operator</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </template>
 
                 <!-- DYNAMIC FIELDS SECTION -->
                 <template x-if="form.type === 'Final Assy'">
@@ -368,7 +377,7 @@
                         <span class="font-extrabold text-teal-800 font-mono tabular-nums" x-text="form.inspect_quantity + ' Unit'"></span>
                     </div>
 
-                    <div x-show="form.ditemukan_oleh" class="flex justify-between items-center">
+                    <div x-show="form.type === 'Pre Assy' && form.ditemukan_oleh" class="flex justify-between items-center">
                         <span class="text-gray-500 font-medium text-[11px]">Ditemukan Oleh:</span>
                         <span class="font-bold text-gray-900" x-text="form.ditemukan_oleh"></span>
                     </div>
@@ -598,7 +607,11 @@
                 const isJumlahValid = this.form.jumlah !== '' && this.form.jumlah !== null && !isNaN(this.form.jumlah) && 
                     (isZeroDefect ? Number(this.form.jumlah) === 0 : Number(this.form.jumlah) >= 0);
 
-                if (!this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !isJumlahValid || !this.form.ditemukan_oleh) {
+                if (!this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !isJumlahValid) {
+                    return false;
+                }
+
+                if (this.form.type === 'Pre Assy' && !this.form.ditemukan_oleh) {
                     return false;
                 }
 
@@ -650,6 +663,20 @@
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 });
+
+                if (window.flatpickr) {
+                    window.flatpickr('#input_jam', {
+                        enableTime: true,
+                        noCalendar: true,
+                        time_24hr: true,
+                        dateFormat: 'H:i',
+                        allowInput: true,
+                        defaultDate: this.form.jam,
+                        onChange: (selectedDates, dateStr) => {
+                            this.form.jam = dateStr;
+                        }
+                    });
+                }
 
                 const initialConveyor = '{{ old("conveyor", $defect->conveyor ?? "") }}';
                 const initialFinalInspectType = '{{ old("final_inspect_type_id", $defect->final_inspect_type_id ?? "") }}';
@@ -711,6 +738,7 @@
 
                 if (this.form.type === 'Final Assy') {
                     this.form.carline_id = '';
+                    this.form.ditemukan_oleh = '';
                     if (!this.showFinalInspectType) {
                         this.form.final_inspect_type_id = '';
                     }
