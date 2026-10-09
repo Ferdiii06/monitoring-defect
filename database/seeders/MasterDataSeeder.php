@@ -119,5 +119,15 @@ class MasterDataSeeder extends Seeder
         foreach ($finalAssyInspectTypes as $name) {
             FinalAssyInspectType::firstOrCreate(['name' => $name]);
         }
+
+        // 6. Zero Defect (tanpa sub-defect)
+        DefectType::firstOrCreate([
+            'name' => 'Zero Defect',
+            'type' => 'Final Assy',
+        ]);
+        DefectType::firstOrCreate([
+            'name' => 'Zero Defect',
+            'type' => 'Pre Assy',
+        ]);
     }
 }

@@ -88,7 +88,7 @@
                         <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA ASSY <span class="text-brand">*</span></label>
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button" 
-                                    @click="form.type = 'Final Assy'; form.carline_id = '';"
+                                    @click="form.type = 'Final Assy'; form.carline_id = ''; form.ditemukan_oleh = '';"
                                     class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-extrabold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
                                     :class="form.type === 'Final Assy' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
                                 <span class="w-2 h-2 rounded-full" :class="form.type === 'Final Assy' ? 'bg-brand' : 'bg-gray-300'"></span>
@@ -169,19 +169,26 @@
                         x-model="form.tanggal" 
                         required 
                     />
-                    <x-form-input 
-                        label="JAM TEMUAN" 
-                        type="time" 
-                        name="jam" 
-                        x-model="form.jam" 
-                        required 
-                    />
+                    <div class="w-full space-y-1.5">
+                        <label for="input_jam" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                            JAM TEMUAN <span class="text-brand">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="input_jam" 
+                            name="jam" 
+                            x-model="form.jam" 
+                            required 
+                            placeholder="HH:mm" 
+                            class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-150 cursor-pointer"
+                        >
+                    </div>
                 </div>
 
                 <!-- JENIS DEFECT -->
                 <div class="space-y-1.5">
                     <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">JENIS DEFECT <span class="text-brand">*</span></label>
-                    <select x-model="form.jenis_defect" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer" required>
+                    <select x-model="form.jenis_defect" @change="onJenisDefectChange()" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer" required>
                         <option value="" disabled selected>Pilih Jenis Defect...</option>
                         <template x-for="defect in Object.keys(currentDefectMap)" :key="defect">
                             <option :value="defect" x-text="defect"></option>
@@ -190,16 +197,16 @@
                 </div>
 
                 <!-- SUB DEFECT -->
-                <div class="space-y-1.5">
+                <div x-show="form.jenis_defect !== 'Zero Defect'" class="space-y-1.5">
                     <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">JENIS SUB-DEFECT <span class="text-brand">*</span></label>
-                    <select x-model="form.sub_defect" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" :disabled="!form.jenis_defect" required>
+                    <select x-model="form.sub_defect" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" :disabled="!form.jenis_defect || form.jenis_defect === 'Zero Defect'" :required="form.jenis_defect !== 'Zero Defect'">
                         <option value="" disabled selected>Pilih Sub-Defect...</option>
                         <template x-for="sub in currentSubDefects" :key="sub">
                             <option :value="sub" x-text="sub"></option>
                         </template>
                     </select>
 
-                    <template x-if="form.sub_defect === 'LAIN-LAIN'">
+                    <template x-if="form.sub_defect === 'LAIN-LAIN' && form.jenis_defect !== 'Zero Defect'">
                         <div class="pt-1.5">
                             <x-form-input 
                                 type="text" 
@@ -220,6 +227,8 @@
                         x-model="form.jumlah" 
                         min="0" 
                         placeholder="0" 
+                        x-bind:readonly="form.jenis_defect === 'Zero Defect'"
+                        x-bind:class="form.jenis_defect === 'Zero Defect' ? '!bg-gray-100 !cursor-not-allowed' : ''"
                         required 
                     />
                     <x-form-input 
@@ -232,20 +241,20 @@
                     />
                 </div>
 
-                <!-- DITEMUKAN OLEH (Card Segmented Picker 2 Opsi) -->
+                <!-- DITEMUKAN OLEH (Card Segmented Picker 2 Opsi - Khusus Pre Assy) -->
                 <template x-if="form.type === 'Pre Assy'">
                     <div class="space-y-1.5">
                         <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">DITEMUKAN OLEH <span class="text-brand">*</span></label>
                         <input type="hidden" name="ditemukan_oleh" :value="form.ditemukan_oleh">
                         <div class="grid grid-cols-2 gap-2">
-                            <button type="button" 
+                            <button type="button"
                                     @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Inspektor' ? '' : 'Inspektor'"
                                     class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
                                     :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
                                 <span class="w-2 h-2 rounded-full" :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-brand' : 'bg-gray-300'"></span>
                                 <span>Inspektor</span>
                             </button>
-                            <button type="button" 
+                            <button type="button"
                                     @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Operator' ? '' : 'Operator'"
                                     class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
                                     :class="form.ditemukan_oleh === 'Operator' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
@@ -369,7 +378,7 @@
                         <span class="block font-black text-gray-900 font-mono uppercase text-sm mt-0.5" x-text="form.jenis_defect"></span>
                     </div>
 
-                    <div>
+                    <div x-show="form.jenis_defect !== 'Zero Defect'">
                         <span class="block text-gray-400 font-medium text-[10px] uppercase">Sub-Defect</span>
                         <span class="block font-bold text-gray-800 mt-0.5 break-words [overflow-wrap:anywhere]" x-text="form.sub_defect === 'LAIN-LAIN' ? form.custom_sub_defect : form.sub_defect"></span>
                     </div>
@@ -465,6 +474,7 @@
         'CUTTING - CRIMPING PRE ASSY DEFECT': ['9.A - SALAH BENTUK REAR CRIMPING', '9.B - BUTHYL MELELEH', '9.C - OVER MELT SHRINK TUBE', '9.D - SOLDER N-OK', '9.E - RAYCHAM N-OK', '9.F - BONDER LEPAS', '9.G - OVER CIRCUIT BONDER', '9.H - MISSING CIRCUIT BONDER', '9.I - SALAH CIRCUIT BONDER', '9.J - SALAH KIND WIRE ', '9.K - SALAH SIZE WIRE', '9.L - INSULATION MUNDUR', '9.M - SEAL RUBBER MUNDUR', '9.N - FRAYING CORE', '9.O - CRACK TERMINAL' ],
         'INJECTION GROMMET / SISUI DEFECT': ['10.A - INJECTION GROMMET BERGELEMBUNG', '10.B - INJECTION GROMMET KURANG', '10.C - INJECTION GROMMET TDK MATANG', '10.D - SISUI BOCOR'],
         'LAIN-LAIN': ['11.A - FOREIGN MATERIAL', '11.B - CIRCUIT TERJEPIT', '11.C - AIR CHECKER N-OK', '11.D - BAND CLIP KEPENDEKAN', '11.E - BAND CLIP PANJANG'],
+        'Zero Defect': [],
     };
 
     const preAssyDefects = {
@@ -476,6 +486,7 @@
         'SEAL SUMBER': ['F.1 - TERPOTONG', 'F.2 - TERBALIK', 'F.3 - TERLALU MUNDUR', 'F.4 - TERLALU MAJU', 'F.5 - TERCRIMPING', 'F.6 - MISSING', 'F.7 - SEAL SOBEK'],
         'CRIMPING': ['G.1 - FOREIGN MATERIAL', 'G.2 - ADB.1 TERMMINAL TERCIMPING', 'G.3 - NO CORE', 'G.4 - NO STRIPPING'],
         'LAIN-LAIN': ['H.1 - LANCE RUSAK', 'H.2 - STABILIZER RUSAK', 'H.3 - BELLMOUTH TIDAK STANDART', 'H.4 - KONDISI CORE BAG.A', 'H.5 - RESIN MASUK BAG.A', 'H.6 - RESIN BAREL BAG.B TERBUKA', 'H.7 - CORE TERLIHAT ATAS SISI C', 'H.8 - CORE TERLIHAT SAMPING SISI C', 'H.9 - SISI PUNGGUNG', 'H.10 - ABNORMAL RESIN', 'H.11 - PANJANG WELDING N-OK', 'H.12 - CIRCUIT TIDAK TERBONDER', 'H.13 - BONDER RETAK', 'H.14 - STRIPPING KEPANJANGAN'],
+        'Zero Defect': [],
     };
 
     function defectForm() {
@@ -594,10 +605,25 @@
                 this.syncFinalInspectType();
             },
 
-            get isStep1Valid() {
-                const isJumlahValid = this.form.jumlah !== '' && this.form.jumlah !== null && !isNaN(this.form.jumlah) && Number(this.form.jumlah) >= 0;
+            onJenisDefectChange() {
+                if (this.form.jenis_defect === 'Zero Defect') {
+                    this.form.sub_defect = '-';
+                    this.form.custom_sub_defect = '';
+                    this.form.jumlah = 0;
+                } else {
+                    if (this.form.sub_defect === '-') {
+                        this.form.sub_defect = '';
+                    }
+                    this.form.custom_sub_defect = '';
+                }
+            },
 
-                if (!this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !isJumlahValid) {
+            get isStep1Valid() {
+                const isZeroDefect = this.form.jenis_defect === 'Zero Defect';
+                const isJumlahValid = this.form.jumlah !== '' && this.form.jumlah !== null && !isNaN(this.form.jumlah) && 
+                    (isZeroDefect ? Number(this.form.jumlah) === 0 : Number(this.form.jumlah) >= 0);
+
+                if (!this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !isJumlahValid) {
                     return false;
                 }
 
@@ -605,7 +631,11 @@
                     return false;
                 }
 
-                if (this.form.sub_defect === 'LAIN-LAIN' && (!this.form.custom_sub_defect || !this.form.custom_sub_defect.trim())) {
+                if (!isZeroDefect && !this.form.sub_defect) {
+                    return false;
+                }
+
+                if (!isZeroDefect && this.form.sub_defect === 'LAIN-LAIN' && (!this.form.custom_sub_defect || !this.form.custom_sub_defect.trim())) {
                     return false;
                 }
 
@@ -636,7 +666,7 @@
             },
 
             get currentSubDefects() {
-                if (!this.form.jenis_defect) return [];
+                if (!this.form.jenis_defect || this.form.jenis_defect === 'Zero Defect') return [];
                 const list = [...(this.currentDefectMap[this.form.jenis_defect] || [])];
                 if (!list.includes('LAIN-LAIN')) list.push('LAIN-LAIN');
                 return list;
@@ -649,6 +679,20 @@
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 });
+
+                if (window.flatpickr) {
+                    window.flatpickr('#input_jam', {
+                        enableTime: true,
+                        noCalendar: true,
+                        time_24hr: true,
+                        dateFormat: 'H:i',
+                        allowInput: true,
+                        defaultDate: this.form.jam,
+                        onChange: (selectedDates, dateStr) => {
+                            this.form.jam = dateStr;
+                        }
+                    });
+                }
 
                 const initialConveyor = '{{ old("conveyor", $defect->conveyor ?? "") }}';
                 const initialFinalInspectType = '{{ old("final_inspect_type_id", $defect->final_inspect_type_id ?? "") }}';
@@ -669,7 +713,11 @@
                                 this.form.final_inspect_type_id = initialFinalInspectType;
                             }
                         }
-                        if (initialSubDefect) {
+                        if (initialDefect === 'Zero Defect') {
+                            this.form.sub_defect = '-';
+                            this.form.custom_sub_defect = '';
+                            this.form.jumlah = 0;
+                        } else if (initialSubDefect) {
                             const subs = this.currentSubDefects;
                             if (subs.includes(initialSubDefect)) {
                                 this.form.sub_defect = initialSubDefect;
@@ -699,8 +747,14 @@
                 if (!this.isStep1Valid) return;
                 this.errorMessage = '';
 
+                if (this.form.jenis_defect === 'Zero Defect') {
+                    this.form.sub_defect = '-';
+                    this.form.jumlah = 0;
+                }
+
                 if (this.form.type === 'Final Assy') {
                     this.form.carline_id = '';
+                    this.form.ditemukan_oleh = '';
                     if (!this.showFinalInspectType) {
                         this.form.final_inspect_type_id = '';
                     }
