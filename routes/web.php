@@ -106,6 +106,12 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
             Route::post('/final-assy-inspect-types', [\App\Http\Controllers\FinalAssyInspectTypeController::class, 'store'])->name('final_assy_inspect_types.store');
             Route::put('/final-assy-inspect-types/{id}', [\App\Http\Controllers\FinalAssyInspectTypeController::class, 'update'])->name('final_assy_inspect_types.update');
             Route::delete('/final-assy-inspect-types/{id}', [\App\Http\Controllers\FinalAssyInspectTypeController::class, 'destroy'])->name('final_assy_inspect_types.destroy');
+
+            // Area Ditemukan
+            Route::get('/area-ditemukans', [\App\Http\Controllers\AreaDitemukanController::class, 'index'])->name('area_ditemukans.index');
+            Route::post('/area-ditemukans', [\App\Http\Controllers\AreaDitemukanController::class, 'store'])->name('area_ditemukans.store');
+            Route::put('/area-ditemukans/{id}', [\App\Http\Controllers\AreaDitemukanController::class, 'update'])->name('area_ditemukans.update');
+            Route::delete('/area-ditemukans/{id}', [\App\Http\Controllers\AreaDitemukanController::class, 'destroy'])->name('area_ditemukans.destroy');
         });
     });
 });

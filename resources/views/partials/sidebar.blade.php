@@ -165,6 +165,13 @@
                                     <span>Final Assy Inspect Type</span>
                                 </a>
                             @endif
+                            @if(\Illuminate\Support\Facades\Route::has('admin.master.area_ditemukans.index'))
+                                <a href="{{ route('admin.master.area_ditemukans.index') }}" 
+                                   class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.area_ditemukans.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                                    <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.area_ditemukans.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    <span>Area Ditemukan</span>
+                                </a>
+                            @endif
                         </div>
                     </div>
                 </div>

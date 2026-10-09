@@ -233,26 +233,28 @@
                 </div>
 
                 <!-- DITEMUKAN OLEH (Card Segmented Picker 2 Opsi) -->
-                <div class="space-y-1.5">
-                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">DITEMUKAN OLEH <span class="text-brand">*</span></label>
-                    <input type="hidden" name="ditemukan_oleh" :value="form.ditemukan_oleh">
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" 
-                                @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Inspektor' ? '' : 'Inspektor'"
-                                class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
-                                :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
-                            <span class="w-2 h-2 rounded-full" :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-brand' : 'bg-gray-300'"></span>
-                            <span>Inspektor</span>
-                        </button>
-                        <button type="button" 
-                                @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Operator' ? '' : 'Operator'"
-                                class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
-                                :class="form.ditemukan_oleh === 'Operator' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
-                            <span class="w-2 h-2 rounded-full" :class="form.ditemukan_oleh === 'Operator' ? 'bg-brand' : 'bg-gray-300'"></span>
-                            <span>Operator</span>
-                        </button>
+                <template x-if="form.type === 'Pre Assy'">
+                    <div class="space-y-1.5">
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">DITEMUKAN OLEH <span class="text-brand">*</span></label>
+                        <input type="hidden" name="ditemukan_oleh" :value="form.ditemukan_oleh">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" 
+                                    @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Inspektor' ? '' : 'Inspektor'"
+                                    class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
+                                    :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
+                                <span class="w-2 h-2 rounded-full" :class="form.ditemukan_oleh === 'Inspektor' ? 'bg-brand' : 'bg-gray-300'"></span>
+                                <span>Inspektor</span>
+                            </button>
+                            <button type="button" 
+                                    @click="form.ditemukan_oleh = form.ditemukan_oleh === 'Operator' ? '' : 'Operator'"
+                                    class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-bold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
+                                    :class="form.ditemukan_oleh === 'Operator' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
+                                <span class="w-2 h-2 rounded-full" :class="form.ditemukan_oleh === 'Operator' ? 'bg-brand' : 'bg-gray-300'"></span>
+                                <span>Operator</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </template>
 
                 <!-- DYNAMIC FIELDS SECTION -->
                 <template x-if="form.type === 'Final Assy'">
@@ -261,7 +263,23 @@
                         <x-form-input label="END (#)" type="text" name="end_number" x-model="form.end_number" placeholder="Masukkan END (#)..." />
                         <x-form-input label="SPECIFICATION" type="text" name="specification" x-model="form.specification" placeholder="Masukkan Spesifikasi..." />
                         <x-form-input label="ACTUAL" type="text" name="actual" x-model="form.actual" placeholder="Masukkan Aktual..." />
-                        <x-form-input label="AREA DITEMUKAN" type="text" name="area_ditemukan" x-model="form.area_ditemukan" placeholder="Masukkan Area Ditemukan..." />
+                        <div class="space-y-1.5">
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA DITEMUKAN</label>
+                            <select name="area_ditemukan" x-model="form.area_ditemukan" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer">
+                                <option value="">Pilih Area Ditemukan...</option>
+                                @php
+                                    $masterAreaNames = isset($areaDitemukanList) ? $areaDitemukanList->pluck('name')->toArray() : [];
+                                @endphp
+                                @if(isset($areaDitemukanList))
+                                    @foreach($areaDitemukanList as $areaItem)
+                                        <option value="{{ $areaItem->name }}">{{ $areaItem->name }}</option>
+                                    @endforeach
+                                @endif
+                                @if(isset($defect) && $defect->area_ditemukan && !in_array($defect->area_ditemukan, $masterAreaNames))
+                                    <option value="{{ $defect->area_ditemukan }}">{{ $defect->area_ditemukan }}</option>
+                                @endif
+                            </select>
+                        </div>
                         <x-form-input label="JOB STATION" type="text" name="job_station" x-model="form.job_station" placeholder="Masukkan Job Station..." />
                         <div class="space-y-1.5">
                             <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">KETERANGAN (OPSIONAL)</label>
@@ -366,7 +384,7 @@
                         <span class="font-extrabold text-teal-800 font-mono tabular-nums" x-text="form.inspect_quantity + ' Unit'"></span>
                     </div>
 
-                    <div x-show="form.ditemukan_oleh" class="flex justify-between items-center">
+                    <div x-show="form.type === 'Pre Assy' && form.ditemukan_oleh" class="flex justify-between items-center">
                         <span class="text-gray-500 font-medium text-[11px]">Ditemukan Oleh:</span>
                         <span class="font-bold text-gray-900" x-text="form.ditemukan_oleh"></span>
                     </div>
@@ -490,7 +508,7 @@
                 end_number: '{{ old("end_number", $defect->end_number ?? "") }}',
                 specification: '{{ old("specification", $defect->specification ?? "") }}',
                 actual: '{{ old("actual", $defect->actual ?? "") }}',
-                area_ditemukan: '{{ old("area_ditemukan", $defect->area_ditemukan ?? "") }}',
+                area_ditemukan: '{{ addslashes(old("area_ditemukan", $defect->area_ditemukan ?? "")) }}',
                 job_station: '{{ old("job_station", $defect->job_station ?? "") }}',
                 keterangan: '{{ old("keterangan", $defect->keterangan ?? "") }}',
                 
@@ -579,7 +597,11 @@
             get isStep1Valid() {
                 const isJumlahValid = this.form.jumlah !== '' && this.form.jumlah !== null && !isNaN(this.form.jumlah) && Number(this.form.jumlah) >= 0;
 
-                if (!this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !isJumlahValid || !this.form.ditemukan_oleh) {
+                if (!this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !this.form.sub_defect || !isJumlahValid) {
+                    return false;
+                }
+
+                if (this.form.type === 'Pre Assy' && !this.form.ditemukan_oleh) {
                     return false;
                 }
 

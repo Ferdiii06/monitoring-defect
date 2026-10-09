@@ -17,6 +17,8 @@ use App\Models\Carline;
 use App\Models\DefectType;
 use App\Models\InspectProcessType;
 use App\Models\FinalAssyInspectType;
+use App\Models\AreaDitemukan;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Collection;
 
@@ -459,6 +461,7 @@ class ReportController extends Controller
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
             'finalAssyInspectTypes' => FinalAssyInspectType::orderBy('name')->get(),
+            'areaDitemukanList'     => Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]),
         ]);
     }
 
@@ -481,6 +484,10 @@ class ReportController extends Controller
         $conveyor = $request->input('conveyor');
         $isApplicable = $this->isFinalInspectTypeApplicable($type, $jenisMobil, $conveyor);
 
+        $allowedAreaDitemukan = Schema::hasTable('area_ditemukans')
+            ? AreaDitemukan::pluck('name')->toArray()
+            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI'];
+
         $validated = $request->validate([
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
             'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
@@ -494,7 +501,7 @@ class ReportController extends Controller
             'end_number'               => 'nullable|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => 'nullable|string|max:255',
+            'area_ditemukan'           => ['nullable', 'string', Rule::in($allowedAreaDitemukan)],
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
@@ -505,7 +512,7 @@ class ReportController extends Controller
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
-            'ditemukan_oleh'           => 'required|in:Inspektor,Operator',
+            'ditemukan_oleh'           => $isPreAssy ? 'required|in:Inspektor,Operator' : 'nullable|in:Inspektor,Operator',
         ]);
 
         $userName = session('user_name', 'Operator');
@@ -597,6 +604,7 @@ class ReportController extends Controller
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
             'finalAssyInspectTypes' => FinalAssyInspectType::orderBy('name')->get(),
+            'areaDitemukanList'     => Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]),
         ]);
     }
 
@@ -615,7 +623,7 @@ class ReportController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk mengubah laporan ini.');
         }
 
-        $defectType = $defect->type ?? $defect->jenis_assy;
+        $defectType = $defect->jenis_assy;
         $isPreAssy = $defectType === 'Pre Assy';
 
         if ($request->has('final_inspect_type_id') && ($request->input('final_inspect_type_id') === '' || $request->input('final_inspect_type_id') === null)) {
@@ -626,6 +634,13 @@ class ReportController extends Controller
         $jenisMobil = $request->input('jenis_mobil', $defect->jenis_mobil);
         $conveyor = $request->input('conveyor', $defect->conveyor);
         $isApplicable = $this->isFinalInspectTypeApplicable($type, $jenisMobil, $conveyor);
+
+        $allowedAreaDitemukan = Schema::hasTable('area_ditemukans')
+            ? AreaDitemukan::pluck('name')->toArray()
+            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI'];
+        if (!empty($defect->area_ditemukan) && !in_array($defect->area_ditemukan, $allowedAreaDitemukan)) {
+            $allowedAreaDitemukan[] = $defect->area_ditemukan;
+        }
 
         $validated = $request->validate([
             'type'                     => 'nullable|string|in:Final Assy,Pre Assy',
@@ -640,7 +655,7 @@ class ReportController extends Controller
             'end_number'               => 'nullable|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => 'nullable|string|max:255',
+            'area_ditemukan'           => ['nullable', 'string', Rule::in($allowedAreaDitemukan)],
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
@@ -669,7 +684,7 @@ class ReportController extends Controller
             'end_number'               => $validated['end_number'] ?? null,
             'specification'            => $validated['specification'] ?? null,
             'actual'                   => $validated['actual'] ?? null,
-            'area_ditemukan'           => $validated['area_ditemukan'] ?? null,
+            'area_ditemukan'           => $isPreAssy ? $defect->area_ditemukan : ($validated['area_ditemukan'] ?? null),
             'job_station'              => $validated['job_station'] ?? null,
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
@@ -745,6 +760,7 @@ class ReportController extends Controller
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
             'finalAssyInspectTypes' => FinalAssyInspectType::orderBy('name')->get(),
+            'areaDitemukanList'     => Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]),
         ]);
     }
 
@@ -755,7 +771,7 @@ class ReportController extends Controller
     {
         $defect = Defect::findOrFail($id);
 
-        $defectType = $defect->type ?? $defect->jenis_assy;
+        $defectType = $defect->jenis_assy;
         $isPreAssy = $defectType === 'Pre Assy';
 
         if ($request->has('final_inspect_type_id') && ($request->input('final_inspect_type_id') === '' || $request->input('final_inspect_type_id') === null)) {
@@ -766,6 +782,13 @@ class ReportController extends Controller
         $jenisMobil = $request->input('jenis_mobil', $defect->jenis_mobil);
         $conveyor = $request->input('conveyor', $defect->conveyor);
         $isApplicable = $this->isFinalInspectTypeApplicable($type, $jenisMobil, $conveyor);
+
+        $allowedAreaDitemukan = Schema::hasTable('area_ditemukans')
+            ? AreaDitemukan::pluck('name')->toArray()
+            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI'];
+        if (!empty($defect->area_ditemukan) && !in_array($defect->area_ditemukan, $allowedAreaDitemukan)) {
+            $allowedAreaDitemukan[] = $defect->area_ditemukan;
+        }
 
         $validated = $request->validate([
             'type'                     => 'nullable|string|in:Final Assy,Pre Assy',
@@ -780,7 +803,7 @@ class ReportController extends Controller
             'end_number'               => 'nullable|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => 'nullable|string|max:255',
+            'area_ditemukan'           => ['nullable', 'string', Rule::in($allowedAreaDitemukan)],
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
@@ -809,7 +832,7 @@ class ReportController extends Controller
             'end_number'               => $validated['end_number'] ?? null,
             'specification'            => $validated['specification'] ?? null,
             'actual'                   => $validated['actual'] ?? null,
-            'area_ditemukan'           => $validated['area_ditemukan'] ?? null,
+            'area_ditemukan'           => $isPreAssy ? $defect->area_ditemukan : ($validated['area_ditemukan'] ?? null),
             'job_station'              => $validated['job_station'] ?? null,
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
@@ -1149,7 +1172,7 @@ class ReportController extends Controller
      */
     private function resolveFinalInspectTypeIdForUpdate(Defect $defect, array $validated, bool $isApplicable): ?int
     {
-        $type = $validated['type'] ?? ($defect->type ?? $defect->jenis_assy);
+        $type = $validated['type'] ?? $defect->jenis_assy;
         if ($type === 'Pre Assy') {
             return null;
         }
