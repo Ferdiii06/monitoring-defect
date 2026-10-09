@@ -476,6 +476,7 @@ class ReportController extends Controller
         }
 
         $type = $request->input('type');
+        $isPreAssy = $type === 'Pre Assy';
         $jenisMobil = $request->input('jenis_mobil');
         $conveyor = $request->input('conveyor');
         $isApplicable = $this->isFinalInspectTypeApplicable($type, $jenisMobil, $conveyor);
@@ -538,7 +539,7 @@ class ReportController extends Controller
             'final_inspect_type_id'    => $finalInspectTypeId,
             'defect_type_id'           => $validated['defect_type_id'] ?? null,
             'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
-            'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,
+            'ditemukan_oleh'           => $isPreAssy ? ($validated['ditemukan_oleh'] ?? null) : null,
         ]);
 
         $lineOrCarline = $isPreAssy ? ($defect->carline?->name ?? '-') : ($validated['jenis_mobil'] . ' (' . ($validated['conveyor'] ?? '-') . ')');
@@ -614,19 +615,22 @@ class ReportController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk mengubah laporan ini.');
         }
 
+        $defectType = $defect->type ?? $defect->jenis_assy;
+        $isPreAssy = $defectType === 'Pre Assy';
+
         if ($request->has('final_inspect_type_id') && ($request->input('final_inspect_type_id') === '' || $request->input('final_inspect_type_id') === null)) {
             $request->merge(['final_inspect_type_id' => null]);
         }
 
-        $type = $request->input('type');
-        $jenisMobil = $request->input('jenis_mobil');
-        $conveyor = $request->input('conveyor');
+        $type = $request->input('type', $defectType);
+        $jenisMobil = $request->input('jenis_mobil', $defect->jenis_mobil);
+        $conveyor = $request->input('conveyor', $defect->conveyor);
         $isApplicable = $this->isFinalInspectTypeApplicable($type, $jenisMobil, $conveyor);
 
         $validated = $request->validate([
-            'type'                     => 'required|string|in:Final Assy,Pre Assy',
-            'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
-            'conveyor'                 => 'required_if:type,Final Assy|nullable|string|max:255',
+            'type'                     => 'nullable|string|in:Final Assy,Pre Assy',
+            'jenis_mobil'              => $isPreAssy ? 'nullable|string|max:255' : 'required|string|max:255',
+            'conveyor'                 => $isPreAssy ? 'nullable|string|max:255' : 'required|string|max:255',
             'tanggal'                  => 'required|date',
             'jam'                      => 'required|date_format:H:i',
             'jenis_defect'             => 'nullable|string|max:255',
@@ -641,21 +645,21 @@ class ReportController extends Controller
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
             'no_mesin'                 => 'nullable|string|max:255',
-            'carline_id'               => 'required_if:type,Pre Assy|nullable|exists:carlines,id',
+            'carline_id'               => $isPreAssy ? 'required|exists:carlines,id' : 'nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
-            'ditemukan_oleh'           => 'required|in:Inspektor,Operator',
+            'ditemukan_oleh'           => $isPreAssy ? 'required|in:Inspektor,Operator' : 'nullable|in:Inspektor,Operator',
             'pattern'                  => 'nullable|string|max:255',
         ]);
 
-        $isPreAssy = $validated['type'] === 'Pre Assy';
         $finalInspectTypeId = $this->resolveFinalInspectTypeIdForUpdate($defect, $validated, $isApplicable);
+        $recordType = $validated['type'] ?? $defectType;
 
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
-            'jenis_assy'               => $validated['type'],
+            'jenis_assy'               => $recordType,
             'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
             'conveyor'                 => $isPreAssy ? null : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
@@ -675,16 +679,16 @@ class ReportController extends Controller
             'final_inspect_type_id'    => $finalInspectTypeId,
             'defect_type_id'           => $validated['defect_type_id'] ?? null,
             'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
-            'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,
+            'ditemukan_oleh'           => $isPreAssy ? ($validated['ditemukan_oleh'] ?? null) : $defect->ditemukan_oleh,
             'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
-        $lineOrCarline = $isPreAssy ? ($defect->carline?->name ?? '-') : ($validated['jenis_mobil'] . ' (' . ($validated['conveyor'] ?? '-') . ')');
+        $lineOrCarline = $isPreAssy ? ($defect->carline?->name ?? '-') : (($validated['jenis_mobil'] ?? $defect->jenis_mobil) . ' (' . ($validated['conveyor'] ?? $defect->conveyor ?? '-') . ')');
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => session('user_name', 'Operator'),
             'jenis_aksi'   => 'Update Report',
-            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$validated['jumlah']}",
+            'aktivitas'    => "Mengubah laporan defect {$recordType} - {$lineOrCarline} - Jumlah {$validated['jumlah']}",
             'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
@@ -751,19 +755,22 @@ class ReportController extends Controller
     {
         $defect = Defect::findOrFail($id);
 
+        $defectType = $defect->type ?? $defect->jenis_assy;
+        $isPreAssy = $defectType === 'Pre Assy';
+
         if ($request->has('final_inspect_type_id') && ($request->input('final_inspect_type_id') === '' || $request->input('final_inspect_type_id') === null)) {
             $request->merge(['final_inspect_type_id' => null]);
         }
 
-        $type = $request->input('type');
-        $jenisMobil = $request->input('jenis_mobil');
-        $conveyor = $request->input('conveyor');
+        $type = $request->input('type', $defectType);
+        $jenisMobil = $request->input('jenis_mobil', $defect->jenis_mobil);
+        $conveyor = $request->input('conveyor', $defect->conveyor);
         $isApplicable = $this->isFinalInspectTypeApplicable($type, $jenisMobil, $conveyor);
 
         $validated = $request->validate([
-            'type'                     => 'required|string|in:Final Assy,Pre Assy',
-            'jenis_mobil'              => 'required_if:type,Final Assy|nullable|string|max:255',
-            'conveyor'                 => 'required_if:type,Final Assy|nullable|string|max:255',
+            'type'                     => 'nullable|string|in:Final Assy,Pre Assy',
+            'jenis_mobil'              => $isPreAssy ? 'nullable|string|max:255' : 'required|string|max:255',
+            'conveyor'                 => $isPreAssy ? 'nullable|string|max:255' : 'required|string|max:255',
             'tanggal'                  => 'required|date',
             'jam'                      => 'required|date_format:H:i',
             'jenis_defect'             => 'nullable|string|max:255',
@@ -778,21 +785,21 @@ class ReportController extends Controller
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
             'no_mesin'                 => 'nullable|string|max:255',
-            'carline_id'               => 'required_if:type,Pre Assy|nullable|exists:carlines,id',
+            'carline_id'               => $isPreAssy ? 'required|exists:carlines,id' : 'nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
-            'ditemukan_oleh'           => 'nullable|in:Inspektor,Operator',
+            'ditemukan_oleh'           => $isPreAssy ? 'required|in:Inspektor,Operator' : 'nullable|in:Inspektor,Operator',
             'pattern'                  => 'nullable|string|max:255',
         ]);
 
-        $isPreAssy = $validated['type'] === 'Pre Assy';
         $finalInspectTypeId = $this->resolveFinalInspectTypeIdForUpdate($defect, $validated, $isApplicable);
+        $recordType = $validated['type'] ?? $defectType;
 
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
-            'jenis_assy'               => $validated['type'],
+            'jenis_assy'               => $recordType,
             'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
             'conveyor'                 => $isPreAssy ? null : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
@@ -812,16 +819,16 @@ class ReportController extends Controller
             'final_inspect_type_id'    => $finalInspectTypeId,
             'defect_type_id'           => $validated['defect_type_id'] ?? null,
             'sub_defect_type_id'       => $validated['sub_defect_type_id'] ?? null,
-            'ditemukan_oleh'           => $validated['ditemukan_oleh'] ?? null,
+            'ditemukan_oleh'           => $isPreAssy ? ($validated['ditemukan_oleh'] ?? null) : $defect->ditemukan_oleh,
             'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
-        $lineOrCarline = $isPreAssy ? ($defect->carline?->name ?? '-') : ($validated['jenis_mobil'] . ' (' . ($validated['conveyor'] ?? '-') . ')');
+        $lineOrCarline = $isPreAssy ? ($defect->carline?->name ?? '-') : (($validated['jenis_mobil'] ?? $defect->jenis_mobil) . ' (' . ($validated['conveyor'] ?? $defect->conveyor ?? '-') . ')');
         ActivityLog::create([
             'waktu'        => now(),
             'user_name'    => session('user_name'),
             'jenis_aksi'   => 'Update Report',
-            'aktivitas'    => "Mengubah laporan defect {$validated['type']} - {$lineOrCarline} - Jumlah {$validated['jumlah']}",
+            'aktivitas'    => "Mengubah laporan defect {$recordType} - {$lineOrCarline} - Jumlah {$validated['jumlah']}",
             'jenis_defect' => $validated['jenis_defect'] ?? null,
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
@@ -1142,7 +1149,8 @@ class ReportController extends Controller
      */
     private function resolveFinalInspectTypeIdForUpdate(Defect $defect, array $validated, bool $isApplicable): ?int
     {
-        if (($validated['type'] ?? '') === 'Pre Assy') {
+        $type = $validated['type'] ?? ($defect->type ?? $defect->jenis_assy);
+        if ($type === 'Pre Assy') {
             return null;
         }
 
