@@ -330,110 +330,7 @@
                 </div>
             </div>
         </section>
-        <!-- Recent Defect Section -->
-        <section class="bg-surface border border-border rounded-2xl p-5 sm:p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)]">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
-                <div class="flex items-center space-x-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-brand"></span>
-                    <h2 class="text-base font-extrabold text-gray-950 tracking-tight">Recent Defect</h2>
-                </div>
-                <a href="{{ route('recent_defects.index') }}" class="text-xs font-bold text-brand hover:text-brand-active flex items-center space-x-1 transition-colors">
-                    <span>Lihat Semua</span>
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </a>
-            </div>
 
-            <!-- Responsive Table Container -->
-            <div class="overflow-x-auto pb-2">
-                <table class="w-full min-w-[950px] text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-border bg-gray-50/50">
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3">Waktu</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">User</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Shift</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Ditemukan Oleh</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Assy</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Mobil</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Konveyor</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Pattern</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Defect</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Sub Defect</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center pr-3">Quantity</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recentDefectsBody">
-                        @forelse($recentDefects as $defect)
-                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="{{ $defect->external_id ?? $defect->id }}">
-                                <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium">
-                                    <div class="text-xs leading-normal">
-                                        <span class="block text-gray-900">{{ \Carbon\Carbon::parse($defect->waktu)->translatedFormat('d F Y') }}</span>
-                                        <span class="block text-gray-400 mt-0.5 text-[11px]">{{ \Carbon\Carbon::parse($defect->waktu)->format('H:i:s') }}</span>
-                                    </div>
-                                </td>
-                                <td class="py-4 text-sm text-gray-900 font-bold px-4">
-                                    {{ $defect->user_name }}
-                                </td>
-                                <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">
-                                    {{ $defect->shift ?? '-' }}
-                                </td>
-                                <td class="py-4 text-xs font-bold px-4 text-center">
-                                    @if($defect->ditemukan_oleh === 'Inspektor')
-                                        <span class="inline-block px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 tracking-wider">
-                                            Inspektor
-                                        </span>
-                                    @elseif($defect->ditemukan_oleh === 'Operator')
-                                        <span class="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">
-                                            Operator
-                                        </span>
-                                    @else
-                                        <span class="text-gray-400 font-normal">-</span>
-                                    @endif
-                                </td>
-                                <td class="py-4 text-sm font-medium px-4">
-                                    @if($defect->jenis_assy === 'Final Assy')
-                                        <x-status-badge type="final-assy">Final Assy</x-status-badge>
-                                    @else
-                                        <x-status-badge type="pre-assy">Pre Assy</x-status-badge>
-                                    @endif
-                                </td>
-                                <td class="py-4 text-sm text-gray-950 font-bold px-4">
-                                    {{ $defect->jenis_mobil ?? '-' }}
-                                </td>
-                                <td class="py-4 text-sm font-bold px-4">
-                                    <span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
-                                        {{ $defect->conveyor }}
-                                    </span>
-                                </td>
-                                <td class="py-4 text-sm font-semibold px-4">
-                                    @if($defect->pattern)
-                                        <span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
-                                            {{ $defect->pattern }}
-                                        </span>
-                                    @else
-                                        <span class="text-gray-400">-</span>
-                                    @endif
-                                </td>
-                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
-                                    {{ $defect->jenis_defect }}
-                                </td>
-                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
-                                    {{ $defect->jenis_sub_defect }}
-                                </td>
-                                <td class="py-4 text-sm text-gray-900 font-bold font-mono tabular-nums text-center px-4 pr-2">
-                                    {{ $defect->quantity }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr id="emptyRow">
-                                <td colspan="11" class="py-6 text-center text-sm text-gray-500 font-medium">Tidak ada data defect terbaru.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
 
     <!-- Dashboard Analytics & Real-time Polling Script -->
     <script>
@@ -630,7 +527,9 @@
                             callbacks: {
                                 title: function(tooltipItems) {
                                     if (!tooltipItems.length) return '';
-                                    return tooltipItems[0].label || '';
+                                    const item = tooltipItems[0];
+                                    const labels = item.chart?.data?.labels;
+                                    return (labels && labels[item.dataIndex]) ? labels[item.dataIndex] : (item.label || '');
                                 },
                                 label: function(context) {
                                     const val = context.raw || 0;
@@ -703,22 +602,33 @@
         function updateDpmData(chart, wrapperId, emptyId, trends) {
             const wrapper = document.getElementById(wrapperId);
             const emptyEl = document.getElementById(emptyId);
+            const msgEl = emptyEl ? emptyEl.querySelector('p') : null;
 
-            const hasData = Array.isArray(trends) && trends.length > 0 && trends.some(t => (t.total_inspect || 0) > 0 || (t.total_defect || 0) > 0);
+            const trendList = Array.isArray(trends) ? trends : [];
 
-            if (!hasData) {
+            if (trendList.length === 0) {
+                if (msgEl) msgEl.textContent = 'Tidak ada data pada periode ini';
                 if (wrapper) wrapper.classList.add('hidden');
                 if (emptyEl) emptyEl.classList.remove('hidden');
                 return;
             }
 
+            const allDpmNull = trendList.every(t => t.dpm === null || t.dpm === undefined);
+            if (allDpmNull) {
+                if (msgEl) msgEl.textContent = 'Belum ada Quantity Inspect pada periode ini';
+                if (wrapper) wrapper.classList.add('hidden');
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            if (msgEl) msgEl.textContent = 'Tidak ada data pada periode ini';
             if (wrapper) wrapper.classList.remove('hidden');
             if (emptyEl) emptyEl.classList.add('hidden');
 
             if (chart) {
-                chart.data.labels = trends.map(t => t.label);
-                chart.data.datasets[0].data = trends.map(t => t.dpm);
-                chart.data.datasets[0]._meta = trends;
+                chart.data.labels = trendList.map(t => t.label);
+                chart.data.datasets[0].data = trendList.map(t => t.dpm);
+                chart.data.datasets[0]._meta = trendList;
                 chart.update('none'); // Update in place tanpa destroy / flicker
             }
         }
@@ -726,10 +636,13 @@
         function updateParetoData(chart, wrapperId, emptyId, pareto) {
             const wrapper = document.getElementById(wrapperId);
             const emptyEl = document.getElementById(emptyId);
+            const msgEl = emptyEl ? emptyEl.querySelector('p') : null;
 
-            const hasData = Array.isArray(pareto) && pareto.length > 0 && pareto.some(p => (p.total || 0) > 0);
+            const paretoList = Array.isArray(pareto) ? pareto : [];
+            const hasData = paretoList.length > 0 && paretoList.some(p => (p.total || 0) > 0);
 
             if (!hasData) {
+                if (msgEl) msgEl.textContent = 'Tidak ada data pada periode ini';
                 if (wrapper) wrapper.classList.add('hidden');
                 if (emptyEl) emptyEl.classList.remove('hidden');
                 return;
@@ -739,25 +652,25 @@
             if (emptyEl) emptyEl.classList.add('hidden');
 
             if (chart) {
-                chart.data.labels = pareto.map(p => p.sub_defect);
-                chart.data.datasets[0].data = pareto.map(p => p.cumulative_percent);
-                chart.data.datasets[1].data = pareto.map(p => p.total);
+                chart.data.labels = paretoList.map(p => p.name);
+                chart.data.datasets[0].data = paretoList.map(p => p.cumulative_percent);
+                chart.data.datasets[1].data = paretoList.map(p => p.total);
                 chart.update('none'); // Update in place tanpa destroy / flicker
             }
         }
 
         function applyAnalyticsData(res) {
-            if (!res || !res.success) return;
+            if (!res) return;
 
-            if (res.final_assy) {
-                updateDpmData(chartDpmFinal, 'wrapperDpmFinal', 'emptyDpmFinal', res.final_assy.dpm_trends);
-                updateParetoData(chartParetoFinal, 'wrapperParetoFinal', 'emptyParetoFinal', res.final_assy.pareto);
-            }
+            const dpmFinal = res.dpm_final || [];
+            const paretoFinal = res.pareto_final || [];
+            const dpmPre = res.dpm_pre || [];
+            const paretoPre = res.pareto_pre || [];
 
-            if (res.pre_assy) {
-                updateDpmData(chartDpmPre, 'wrapperDpmPre', 'emptyDpmPre', res.pre_assy.dpm_trends);
-                updateParetoData(chartParetoPre, 'wrapperParetoPre', 'emptyParetoPre', res.pre_assy.pareto);
-            }
+            updateDpmData(chartDpmFinal, 'wrapperDpmFinal', 'emptyDpmFinal', dpmFinal);
+            updateParetoData(chartParetoFinal, 'wrapperParetoFinal', 'emptyParetoFinal', paretoFinal);
+            updateDpmData(chartDpmPre, 'wrapperDpmPre', 'emptyDpmPre', dpmPre);
+            updateParetoData(chartParetoPre, 'wrapperParetoPre', 'emptyParetoPre', paretoPre);
         }
 
         // --- 4. Fetch Analytics (dengan AbortController & Filter State) ---
@@ -784,9 +697,19 @@
                 signal: analyticsAbortCtrl.signal,
                 headers: { 'Accept': 'application/json' }
             })
-            .then(r => {
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                return r.json();
+            .then(response => {
+                const contentType = response.headers.get('content-type') || '';
+                const isJson = contentType.includes('application/json');
+
+                if (!response.ok || !isJson) {
+                    if (response.redirected || response.status === 401 || response.status === 419 || !isJson) {
+                        const sessionErr = new Error('Sesi berakhir. Muat ulang halaman.');
+                        sessionErr.isSessionExpired = true;
+                        throw sessionErr;
+                    }
+                    throw new Error('Gagal memuat data, mencoba lagi pada polling berikutnya.');
+                }
+                return response.json();
             })
             .then(res => {
                 applyAnalyticsData(res);
@@ -797,8 +720,13 @@
                 if (err.name === 'AbortError') return;
                 console.error('[Analytics] Error fetch analytics:', err);
                 if (loadingEl) loadingEl.classList.add('hidden');
+
+                const message = err.isSessionExpired
+                    ? 'Sesi berakhir. Muat ulang halaman.'
+                    : 'Gagal memuat data, mencoba lagi pada polling berikutnya.';
+
                 if (errorEl && errorMsgEl) {
-                    errorMsgEl.innerText = 'Gagal memperbarui analitik: ' + (err.message || 'Koneksi bermasalah');
+                    errorMsgEl.innerText = message;
                     errorEl.classList.remove('hidden');
                 }
             });
@@ -904,22 +832,7 @@
             });
         }
 
-        // --- 6. Polling Stats & Recent Defects (Pertahankan dari kode lama) ---
-        function formatDate(dateStr) {
-            if (!dateStr) return '-';
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr;
-            const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-            return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
-        }
-
-        function formatTime(dateStr) {
-            if (!dateStr) return '';
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return '';
-            return d.toTimeString().substring(0, 8);
-        }
-
+        // --- 6. Polling Stats (Pertahankan dari kode lama) ---
         function flashElement(el) {
             if (!el) return;
             el.classList.remove('poll-updated');
@@ -970,68 +883,15 @@
                 .catch(err => console.error('[Polling] Gagal fetch stats:', err));
         }
 
-        function fetchRecentDefects() {
-            fetch('{{ url("/api/dashboard/recent-defects") }}')
-                .then(r => r.json())
-                .then(res => {
-                    if (!res.success || !Array.isArray(res.data)) return;
-                    const tbody = document.getElementById('recentDefectsBody');
-                    if (!tbody) return;
-
-                    if (res.data.length === 0) {
-                        tbody.innerHTML = '<tr id="emptyRow"><td colspan="11" class="py-8 text-center text-xs text-gray-400 font-semibold">Belum ada data defect.</td></tr>';
-                        return;
-                    }
-
-                    let rowsHtml = '';
-                    res.data.forEach(item => {
-                        const waktu = item.waktu || item.created_at;
-                        const jenisAssy = item.jenis_assy || 'Final Assy';
-                        const assyBadge = jenisAssy === 'Final Assy'
-                            ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider uppercase font-mono bg-teal-50 text-final-assy border border-teal-200/80">Final Assy</span>'
-                            : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider uppercase font-mono bg-slate-100 text-pre-assy border border-slate-300/80">Pre Assy</span>';
-                        const patternBadge = item.pattern
-                            ? `<span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.pattern}</span>`
-                            : '<span class="text-gray-400">-</span>';
-                        const ditemukanBadge = item.ditemukan_oleh === 'Inspektor'
-                            ? '<span class="inline-block px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 text-xs font-bold tracking-wider">Inspektor</span>'
-                            : (item.ditemukan_oleh === 'Operator'
-                                ? '<span class="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 text-xs font-bold tracking-wider">Operator</span>'
-                                : '<span class="text-gray-400 font-normal">-</span>');
-
-                        rowsHtml += `
-                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${item.id}">
-                                <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(waktu)}</span></div></td>
-                                <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.user_name || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
-                                <td class="py-4 text-xs font-bold px-4 text-center">${ditemukanBadge}</td>
-                                <td class="py-4 text-sm font-medium px-4">${assyBadge}</td>
-                                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
-                                <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || '-'}</span></td>
-                                <td class="py-4 text-sm font-semibold px-4">${patternBadge}</td>
-                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
-                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_sub_defect || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 font-bold font-mono tabular-nums text-center px-4 pr-2">${item.quantity || 0}</td>
-                            </tr>
-                        `;
-                    });
-
-                    tbody.innerHTML = rowsHtml;
-                })
-                .catch(err => console.error('[Polling] Gagal fetch recent defects:', err));
-        }
-
         // --- 7. Polling Execution (8s & Tab Inactive Prevention) ---
         function runPollingCycle() {
             if (document.hidden) return; // Jangan polling saat tab tidak aktif
             fetchStats();
-            fetchRecentDefects();
             fetchAnalytics();
         }
 
         // Initial Load
         fetchStats();
-        fetchRecentDefects();
         fetchAnalytics();
 
         // Start 8-second interval
