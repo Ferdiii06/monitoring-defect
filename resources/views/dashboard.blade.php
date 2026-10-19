@@ -128,145 +128,208 @@
         </x-metric-card>
     </section>
 
-        <!-- Defect & Inspect Trend Section (Final Assy & Pre Assy Dipisah) -->
-        <section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
-            
-            <!-- Card 1: Final Assy Trend -->
-            <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between">
-                <div>
-                    <div class="flex flex-wrap justify-between items-center gap-3 mb-5 pb-3 border-b border-gray-100">
-                        <div>
-                            <div class="flex items-center space-x-2.5">
-                                <span class="w-3 h-3 rounded-lg bg-teal-500 inline-block shadow-sm shadow-teal-500/30"></span>
-                                <h2 class="text-base font-extrabold text-gray-950 tracking-tight">Tren Final Assy</h2>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-0.5">Perbandingan Qty Inspect (Teal) vs Qty Defect (Merah Yazaki)</p>
-                        </div>
-
-                        <div class="flex items-center space-x-3">
-                            <!-- Period Switcher Final Assy -->
-                            <div class="relative">
-                                <select id="periodFinalAssy" class="appearance-none border border-gray-200 rounded-xl text-xs font-bold text-gray-700 px-3.5 pr-8 py-2 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
-                                    <option value="month">BULAN INI</option>
-                                    <option value="week">MINGGU INI</option>
-                                    <option value="today">HARI INI</option>
-                                </select>
-                                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                </div>
-                            </div>
-
-                            <!-- Live Badge -->
-                            <span class="flex items-center space-x-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full font-bold shadow-xs">
-                                <span class="relative flex h-2 w-2">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                </span>
-                                <span>Live</span>
-                            </span>
-                        </div>
+        <!-- Unified Filter Bar Section -->
+        <section class="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <!-- Left: Title & Indicator -->
+                <div class="flex items-center space-x-3">
+                    <span class="w-3 h-3 rounded-lg bg-[#8b0000] inline-block shadow-sm shadow-[#8b0000]/30"></span>
+                    <div>
+                        <h2 class="text-base font-extrabold text-gray-950 tracking-tight">Filter Analitik</h2>
+                        <p class="text-xs text-gray-500">Sesuaikan rentang tanggal, agregasi, konveyor, dan carline</p>
                     </div>
+                </div>
 
-                    <!-- Mini Summary Cards Final Assy -->
-                    <div class="grid grid-cols-2 gap-3 mb-5">
-                        <div class="bg-teal-50/60 border border-teal-100 rounded-xl p-3.5">
-                            <div class="flex items-center space-x-1.5 mb-1">
-                                <span class="w-2 h-2 rounded-full bg-teal-600"></span>
-                                <span class="text-[10px] font-bold text-teal-800 uppercase tracking-wider">Total Inspect</span>
-                            </div>
-                            <span id="final-summary-inspect" class="text-xl font-extrabold text-teal-950 font-mono tabular-nums leading-none">
-                                {{ number_format($finalAssyChart['total_inspect'], 0, ',', '.') }}
-                            </span>
-                            <span id="final-today-inspect" class="block text-[10px] font-semibold font-mono tabular-nums text-teal-700 mt-1">Hari ini: {{ number_format($finalAssyChart['today_inspect'], 0, ',', '.') }}</span>
-                        </div>
-                        <div class="bg-red-50/60 border border-red-100 rounded-xl p-3.5">
-                            <div class="flex items-center space-x-1.5 mb-1">
-                                <span class="w-2 h-2 rounded-full bg-[#8b0000]"></span>
-                                <span class="text-[10px] font-bold text-[#8b0000] uppercase tracking-wider">Total Defect</span>
-                            </div>
-                            <span id="final-summary-defect" class="text-xl font-extrabold text-[#8b0000] font-mono tabular-nums leading-none">
-                                {{ number_format($finalAssyChart['total_defect'], 0, ',', '.') }}
-                            </span>
-                            <span id="final-today-defect" class="block text-[10px] font-semibold font-mono tabular-nums text-red-700 mt-1">Hari ini: {{ number_format($finalAssyChart['today_defect'], 0, ',', '.') }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Canvas for Chart.js Final Assy -->
-                    <div class="relative h-64 w-full">
-                        <canvas id="finalAssyChart"></canvas>
-                    </div>
+                <!-- Right: Status indicator (Loading & Live) -->
+                <div class="flex items-center space-x-3 self-end lg:self-center">
+                    <span id="analyticsLoading" class="hidden items-center space-x-1.5 text-[11px] text-[#8b0000] bg-red-50 border border-red-100 px-2.5 py-1 rounded-full font-bold">
+                        <svg class="animate-spin h-3 w-3 text-[#8b0000]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>Memuat...</span>
+                    </span>
+                    <span class="flex items-center space-x-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full font-bold shadow-xs">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span>Live (8s)</span>
+                    </span>
                 </div>
             </div>
 
-            <!-- Card 2: Pre Assy Trend -->
-            <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between">
+            <!-- Error Banner -->
+            <div id="analyticsError" class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700">
+                <span id="analyticsErrorMessage">Gagal memuat analitik</span>
+            </div>
+
+            <!-- Filter Controls Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-100 items-end">
+                <!-- 1. Rentang Tanggal (Flatpickr) -->
                 <div>
-                    <div class="flex flex-wrap justify-between items-center gap-3 mb-5 pb-3 border-b border-gray-100">
-                        <div>
-                            <div class="flex items-center space-x-2.5">
-                                <span class="w-3 h-3 rounded-lg bg-teal-500 inline-block shadow-sm shadow-teal-500/30"></span>
-                                <h2 class="text-base font-extrabold text-gray-950 tracking-tight">Tren Pre Assy</h2>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-0.5">Perbandingan Qty Inspect (Teal) vs Qty Defect (Merah Yazaki)</p>
-                        </div>
+                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Rentang Tanggal</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <svg class="w-4 h-4 text-[#8b0000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </span>
+                        <input type="text" id="filterDateRange" readonly placeholder="Pilih rentang tanggal" class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
+                    </div>
+                </div>
 
-                        <div class="flex items-center space-x-3">
-                            <!-- Period Switcher Pre Assy -->
-                            <div class="relative">
-                                <select id="periodPreAssy" class="appearance-none border border-gray-200 rounded-xl text-xs font-bold text-gray-700 px-3.5 pr-8 py-2 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
-                                    <option value="month">BULAN INI</option>
-                                    <option value="week">MINGGU INI</option>
-                                    <option value="today">HARI INI</option>
-                                </select>
-                                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                </div>
-                            </div>
+                <!-- 2. Pengelompokan (Segmented Control) -->
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Pengelompokan</label>
+                    <div class="inline-flex w-full bg-gray-100 p-1 rounded-xl border border-gray-200/70" role="group">
+                        <button type="button" data-val="day" class="btn-group-by flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center bg-[#8b0000] text-white shadow-xs">Hari</button>
+                        <button type="button" data-val="week" class="btn-group-by flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center text-gray-600 hover:text-gray-900">Minggu</button>
+                        <button type="button" data-val="month" class="btn-group-by flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center text-gray-600 hover:text-gray-900">Bulan</button>
+                    </div>
+                </div>
 
-                            <!-- Live Badge -->
-                            <span class="flex items-center space-x-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full font-bold shadow-xs">
-                                <span class="relative flex h-2 w-2">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                </span>
-                                <span>Live</span>
-                            </span>
+                <!-- 3. Konveyor (Final Assy) -->
+                <div>
+                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Konveyor (Final Assy)</label>
+                    <div class="relative">
+                        <select id="filterConveyor" class="w-full appearance-none border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 px-3 pr-8 py-2 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
+                            <option value="all">Semua Konveyor</option>
+                            @if(isset($finalAssyConveyors))
+                                @foreach($finalAssyConveyors as $conveyor)
+                                    <option value="{{ $conveyor }}">{{ $conveyor }}</option>
+                                @endforeach
+                            @endif
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Mini Summary Cards Pre Assy -->
-                    <div class="grid grid-cols-2 gap-3 mb-5">
-                        <div class="bg-teal-50/60 border border-teal-100 rounded-xl p-3.5">
-                            <div class="flex items-center space-x-1.5 mb-1">
-                                <span class="w-2 h-2 rounded-full bg-teal-600"></span>
-                                <span class="text-[10px] font-bold text-teal-800 uppercase tracking-wider">Total Inspect</span>
+                <!-- 4. Carline (Pre Assy) + Reset Button -->
+                <div class="flex items-center space-x-2">
+                    <div class="flex-1">
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Carline (Pre Assy)</label>
+                        <div class="relative">
+                            <select id="filterCarline" class="w-full appearance-none border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 px-3 pr-8 py-2 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
+                                <option value="all">Semua Carline</option>
+                                @if(isset($preAssyCarlines))
+                                    @foreach($preAssyCarlines as $carline)
+                                        <option value="{{ $carline->id }}">{{ $carline->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
-                            <span id="pre-summary-inspect" class="text-xl font-extrabold text-teal-950 font-mono tabular-nums leading-none">
-                                {{ number_format($preAssyChart['total_inspect'], 0, ',', '.') }}
-                            </span>
-                            <span id="pre-today-inspect" class="block text-[10px] font-semibold font-mono tabular-nums text-teal-700 mt-1">Hari ini: {{ number_format($preAssyChart['today_inspect'], 0, ',', '.') }}</span>
-                        </div>
-                        <div class="bg-red-50/60 border border-red-100 rounded-xl p-3.5">
-                            <div class="flex items-center space-x-1.5 mb-1">
-                                <span class="w-2 h-2 rounded-full bg-[#8b0000]"></span>
-                                <span class="text-[10px] font-bold text-[#8b0000] uppercase tracking-wider">Total Defect</span>
-                            </div>
-                            <span id="pre-summary-defect" class="text-xl font-extrabold text-[#8b0000] font-mono tabular-nums leading-none">
-                                {{ number_format($preAssyChart['total_defect'], 0, ',', '.') }}
-                            </span>
-                            <span id="pre-today-defect" class="block text-[10px] font-semibold font-mono tabular-nums text-red-700 mt-1">Hari ini: {{ number_format($preAssyChart['today_defect'], 0, ',', '.') }}</span>
                         </div>
                     </div>
-
-                    <!-- Canvas for Chart.js Pre Assy -->
-                    <div class="relative h-64 w-full">
-                        <canvas id="preAssyChart"></canvas>
+                    <div>
+                        <label class="block text-[11px] font-bold text-transparent uppercase tracking-wider mb-1.5 select-none">Aksi</label>
+                        <button type="button" id="btnResetFilter" title="Reset semua filter ke default" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all shadow-xs flex items-center space-x-1.5">
+                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            <span>Reset</span>
+                        </button>
                     </div>
                 </div>
             </div>
-
         </section>
 
+        <!-- 4 Charts Grid (2x2 Desktop, 1 Col Mobile) -->
+        <section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+            <!-- Kolom Kiri: Final Assy (DPM di atas, Pareto di bawah) -->
+            <div class="space-y-6">
+                <!-- 1. DPM Final Assy -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300">
+                    <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-lg bg-teal-500 inline-block shadow-sm shadow-teal-500/30"></span>
+                                <h3 class="text-base font-extrabold text-gray-950 tracking-tight">DPM Final Assy</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-0.5">Defect Per Million (DPM) tren per periode</p>
+                        </div>
+                        <span class="text-[11px] font-bold text-teal-700 bg-teal-50 border border-teal-100 px-2.5 py-0.5 rounded-full">Final Assy</span>
+                    </div>
+                    <div id="wrapperDpmFinal" class="relative h-64 w-full">
+                        <canvas id="chartDpmFinal"></canvas>
+                    </div>
+                    <div id="emptyDpmFinal" class="hidden flex flex-col items-center justify-center h-64 text-center p-6 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                        <svg class="w-10 h-10 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <p class="text-xs font-semibold text-gray-500">Tidak ada data pada periode ini</p>
+                    </div>
+                </div>
+
+                <!-- 2. Pareto Final Assy -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300">
+                    <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-lg bg-[#8b0000] inline-block shadow-sm shadow-[#8b0000]/30"></span>
+                                <h3 class="text-base font-extrabold text-gray-950 tracking-tight">Pareto Final Assy</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-0.5">Total defect & persentase kumulatif per sub defect</p>
+                        </div>
+                        <span class="text-[11px] font-bold text-red-700 bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-full">Final Assy</span>
+                    </div>
+                    <div id="wrapperParetoFinal" class="relative h-64 w-full">
+                        <canvas id="chartParetoFinal"></canvas>
+                    </div>
+                    <div id="emptyParetoFinal" class="hidden flex flex-col items-center justify-center h-64 text-center p-6 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                        <svg class="w-10 h-10 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <p class="text-xs font-semibold text-gray-500">Tidak ada data pada periode ini</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan: Pre Assy (DPM di atas, Pareto di bawah) -->
+            <div class="space-y-6">
+                <!-- 3. DPM Pre Assy -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300">
+                    <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-lg bg-sky-600 inline-block shadow-sm shadow-sky-600/30"></span>
+                                <h3 class="text-base font-extrabold text-gray-950 tracking-tight">DPM Pre Assy</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-0.5">Defect Per Million (DPM) tren per periode</p>
+                        </div>
+                        <span class="text-[11px] font-bold text-sky-700 bg-sky-50 border border-sky-100 px-2.5 py-0.5 rounded-full">Pre Assy</span>
+                    </div>
+                    <div id="wrapperDpmPre" class="relative h-64 w-full">
+                        <canvas id="chartDpmPre"></canvas>
+                    </div>
+                    <div id="emptyDpmPre" class="hidden flex flex-col items-center justify-center h-64 text-center p-6 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                        <svg class="w-10 h-10 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <p class="text-xs font-semibold text-gray-500">Tidak ada data pada periode ini</p>
+                    </div>
+                </div>
+
+                <!-- 4. Pareto Pre Assy -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300">
+                    <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-lg bg-slate-700 inline-block shadow-sm shadow-slate-700/30"></span>
+                                <h3 class="text-base font-extrabold text-gray-950 tracking-tight">Pareto Pre Assy</h3>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-0.5">Total defect & persentase kumulatif per sub defect</p>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-full">Pre Assy</span>
+                    </div>
+                    <div id="wrapperParetoPre" class="relative h-64 w-full">
+                        <canvas id="chartParetoPre"></canvas>
+                    </div>
+                    <div id="emptyParetoPre" class="hidden flex flex-col items-center justify-center h-64 text-center p-6 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                        <svg class="w-10 h-10 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <p class="text-xs font-semibold text-gray-500">Tidak ada data pada periode ini</p>
+                    </div>
+                </div>
+            </div>
+        </section>
         <!-- Recent Defect Section -->
         <section class="bg-surface border border-border rounded-2xl p-5 sm:p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)]">
             <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
@@ -372,186 +435,476 @@
             </div>
         </section>
 
-    <!-- ChartJS Initialization Script (Final Assy & Pre Assy Dual Metrics) -->
+    <!-- Dashboard Analytics & Real-time Polling Script -->
     <script>
-        let finalChartInstance = null;
-        let preChartInstance = null;
-        let currentFinalAssy = @json($finalAssyChart);
-        let currentPreAssy = @json($preAssyChart);
+    document.addEventListener("DOMContentLoaded", function () {
+        // --- 1. Filter State & Helpers ---
+        function getInitialDates() {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - 30);
+            const pad = n => String(n).padStart(2, '0');
+            const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            return { start: fmt(start), end: fmt(end) };
+        }
 
-        const labelsToday = [
-            '00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00',
-            '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00',
-            '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
-        ];
-        const labelsWeek = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-        const labelsMonth = ['Tgl 1-5', 'Tgl 6-10', 'Tgl 11-15', 'Tgl 16-20', 'Tgl 21-25', 'Tgl 26+'];
+        const initialDates = getInitialDates();
+        const activeFilters = {
+            start_date: initialDates.start,
+            end_date: initialDates.end,
+            group_by: 'day',
+            conveyor: 'all',
+            carline_id: 'all'
+        };
 
-        document.addEventListener("DOMContentLoaded", function () {
-            function createAssyChart(canvasId, assyData, periodSelectId) {
-                const canvas = document.getElementById(canvasId);
-                if (!canvas) return null;
-                const ctx = canvas.getContext('2d');
+        let analyticsAbortCtrl = null;
+        let debounceTimer = null;
+        let pollingTimer = null;
 
-                const gradInspect = ctx.createLinearGradient(0, 0, 0, canvas.height || 260);
-                gradInspect.addColorStop(0, 'rgba(13, 148, 136, 0.28)');
-                gradInspect.addColorStop(1, 'rgba(13, 148, 136, 0.01)');
+        // --- 2. Chart Inisialisasi ---
+        function createDpmChart(canvasId, accentColor, bgGradientColor) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return null;
+            const ctx = canvas.getContext('2d');
 
-                const gradDefect = ctx.createLinearGradient(0, 0, 0, canvas.height || 260);
-                gradDefect.addColorStop(0, 'rgba(185, 28, 28, 0.32)');
-                gradDefect.addColorStop(1, 'rgba(185, 28, 28, 0.01)');
-
-                const chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labelsMonth,
-                        datasets: [
-                            {
-                                label: 'Qty Inspect',
-                                data: assyData.month.inspect,
-                                borderColor: '#0d9488',
-                                backgroundColor: gradInspect,
-                                borderWidth: 2.5,
-                                fill: true,
-                                tension: 0.35,
-                                pointBackgroundColor: '#0d9488',
-                                pointBorderColor: '#ffffff',
-                                pointBorderWidth: 2,
-                                pointRadius: 4,
-                                pointHoverRadius: 6,
-                                pointHoverBorderWidth: 3,
-                                pointHoverBackgroundColor: '#0f766e',
-                            },
-                            {
-                                label: 'Qty Defect',
-                                data: assyData.month.defect,
-                                borderColor: '#b91c1c',
-                                backgroundColor: gradDefect,
-                                borderWidth: 2.5,
-                                fill: true,
-                                tension: 0.35,
-                                pointBackgroundColor: '#8b0000',
-                                pointBorderColor: '#ffffff',
-                                pointBorderWidth: 2,
-                                pointRadius: 4,
-                                pointHoverRadius: 6,
-                                pointHoverBorderWidth: 3,
-                                pointHoverBackgroundColor: '#7f1d1d',
-                            }
-                        ]
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'DPM',
+                        data: [],
+                        borderColor: accentColor,
+                        backgroundColor: bgGradientColor,
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.35,
+                        spanGaps: false, // Titik null tidak digambar
+                        pointBackgroundColor: accentColor,
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        _meta: []
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top',
-                                align: 'end',
-                                labels: {
-                                    boxWidth: 10,
-                                    boxHeight: 10,
-                                    usePointStyle: true,
-                                    pointStyle: 'circle',
-                                    padding: 16,
-                                    color: '#4b5563',
-                                    font: {
-                                        size: 11,
-                                        weight: '600'
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(17, 24, 39, 0.96)',
-                                titleColor: '#f9fafb',
-                                titleFont: { size: 12, weight: '700' },
-                                bodyColor: '#f3f4f6',
-                                bodyFont: { size: 11, weight: '500' },
-                                padding: 12,
-                                cornerRadius: 10,
-                                borderColor: 'rgba(255, 255, 255, 0.1)',
-                                borderWidth: 1,
-                                displayColors: true,
-                                boxPadding: 6,
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.dataset.label || '';
-                                        const value = context.parsed.y || 0;
-                                        return `  ${label}: ${value.toLocaleString('id-ID')} unit`;
-                                    }
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.96)',
+                            titleColor: '#f9fafb',
+                            titleFont: { size: 12, weight: '700' },
+                            bodyColor: '#f3f4f6',
+                            bodyFont: { size: 11, weight: '500' },
+                            padding: 12,
+                            cornerRadius: 10,
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    const meta = context.dataset._meta ? context.dataset._meta[context.dataIndex] : null;
+                                    const rawVal = context.raw;
+                                    const dpmStr = (rawVal !== null && rawVal !== undefined)
+                                        ? Number(rawVal).toLocaleString('id-ID')
+                                        : '-';
+                                    const defectStr = meta && meta.total_defect !== undefined
+                                        ? Number(meta.total_defect).toLocaleString('id-ID')
+                                        : '0';
+                                    const inspectStr = meta && meta.total_inspect !== undefined
+                                        ? Number(meta.total_inspect).toLocaleString('id-ID')
+                                        : '0';
+
+                                    return [
+                                        `  DPM: ${dpmStr}`,
+                                        `  Total Defect: ${defectStr} unit`,
+                                        `  Total Inspect: ${inspectStr} unit`
+                                    ];
                                 }
                             }
-                        },
-                scales: {
-                    x: {
-                        grid: { 
-                            display: false 
-                        },
-                        ticks: {
-                            color: '#6b7280',
-                            font: { size: 11, weight: '600' },
-                            padding: 6
                         }
                     },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0,
-                            color: '#6b7280',
-                            font: { size: 11, weight: '600' },
-                            padding: 8
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#6b7280',
+                                font: { size: 11, weight: '600' },
+                                padding: 6
+                            }
                         },
-                        grid: { 
-                            color: '#e5e7eb',
-                            drawBorder: false
-                        },
-                        border: {
-                            dash: [3, 3]
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                color: '#6b7280',
+                                font: { size: 11, weight: '600' },
+                                padding: 8,
+                                callback: function(val) {
+                                    return val.toLocaleString('id-ID');
+                                }
+                            },
+                            grid: { color: '#e5e7eb', drawBorder: false },
+                            border: { dash: [3, 3] }
                         }
                     }
                 }
+            });
+        }
+
+        function createParetoChart(canvasId, barColor) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return null;
+            const ctx = canvas.getContext('2d');
+
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Kumulatif %',
+                            data: [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: '#f59e0b',
+                            borderWidth: 2,
+                            pointRadius: 3.5,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#f59e0b',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 1.5,
+                            fill: false,
+                            tension: 0.25,
+                            yAxisID: 'y1',
+                            order: 1
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Total Defect',
+                            data: [],
+                            backgroundColor: barColor,
+                            borderRadius: 6,
+                            yAxisID: 'y',
+                            order: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                usePointStyle: true,
+                                padding: 12,
+                                color: '#4b5563',
+                                font: { size: 11, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.96)',
+                            titleColor: '#f9fafb',
+                            titleFont: { size: 12, weight: '700' },
+                            bodyColor: '#f3f4f6',
+                            bodyFont: { size: 11, weight: '500' },
+                            padding: 12,
+                            cornerRadius: 10,
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    if (!tooltipItems.length) return '';
+                                    return tooltipItems[0].label || '';
+                                },
+                                label: function(context) {
+                                    const val = context.raw || 0;
+                                    if (context.dataset.yAxisID === 'y1') {
+                                        return `  Kumulatif: ${Number(val).toFixed(1)}%`;
+                                    }
+                                    return `  Total Defect: ${Number(val).toLocaleString('id-ID')} unit`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#6b7280',
+                                font: { size: 10, weight: '600' },
+                                padding: 6,
+                                callback: function(val, index) {
+                                    const label = this.getLabelForValue(val);
+                                    if (typeof label === 'string' && label.length > 13) {
+                                        return label.substring(0, 13) + '…';
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                color: '#6b7280',
+                                font: { size: 11, weight: '600' },
+                                padding: 8,
+                                callback: function(val) {
+                                    return val.toLocaleString('id-ID');
+                                }
+                            },
+                            grid: { color: '#e5e7eb', drawBorder: false },
+                            border: { dash: [3, 3] }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            min: 0,
+                            max: 100,
+                            grid: { display: false },
+                            ticks: {
+                                color: '#d97706',
+                                font: { size: 10, weight: '600' },
+                                padding: 6,
+                                callback: function(val) {
+                                    return val + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        const chartDpmFinal = createDpmChart('chartDpmFinal', '#0d9488', 'rgba(13, 148, 136, 0.12)');
+        const chartParetoFinal = createParetoChart('chartParetoFinal', '#8b0000');
+        const chartDpmPre = createDpmChart('chartDpmPre', '#0284c7', 'rgba(2, 132, 199, 0.12)');
+        const chartParetoPre = createParetoChart('chartParetoPre', '#334155');
+
+        // --- 3. In-Place Update & Empty State Logic ---
+        function updateDpmData(chart, wrapperId, emptyId, trends) {
+            const wrapper = document.getElementById(wrapperId);
+            const emptyEl = document.getElementById(emptyId);
+
+            const hasData = Array.isArray(trends) && trends.length > 0 && trends.some(t => (t.total_inspect || 0) > 0 || (t.total_defect || 0) > 0);
+
+            if (!hasData) {
+                if (wrapper) wrapper.classList.add('hidden');
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            if (wrapper) wrapper.classList.remove('hidden');
+            if (emptyEl) emptyEl.classList.add('hidden');
+
+            if (chart) {
+                chart.data.labels = trends.map(t => t.label);
+                chart.data.datasets[0].data = trends.map(t => t.dpm);
+                chart.data.datasets[0]._meta = trends;
+                chart.update('none'); // Update in place tanpa destroy / flicker
+            }
+        }
+
+        function updateParetoData(chart, wrapperId, emptyId, pareto) {
+            const wrapper = document.getElementById(wrapperId);
+            const emptyEl = document.getElementById(emptyId);
+
+            const hasData = Array.isArray(pareto) && pareto.length > 0 && pareto.some(p => (p.total || 0) > 0);
+
+            if (!hasData) {
+                if (wrapper) wrapper.classList.add('hidden');
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            if (wrapper) wrapper.classList.remove('hidden');
+            if (emptyEl) emptyEl.classList.add('hidden');
+
+            if (chart) {
+                chart.data.labels = pareto.map(p => p.sub_defect);
+                chart.data.datasets[0].data = pareto.map(p => p.cumulative_percent);
+                chart.data.datasets[1].data = pareto.map(p => p.total);
+                chart.update('none'); // Update in place tanpa destroy / flicker
+            }
+        }
+
+        function applyAnalyticsData(res) {
+            if (!res || !res.success) return;
+
+            if (res.final_assy) {
+                updateDpmData(chartDpmFinal, 'wrapperDpmFinal', 'emptyDpmFinal', res.final_assy.dpm_trends);
+                updateParetoData(chartParetoFinal, 'wrapperParetoFinal', 'emptyParetoFinal', res.final_assy.pareto);
+            }
+
+            if (res.pre_assy) {
+                updateDpmData(chartDpmPre, 'wrapperDpmPre', 'emptyDpmPre', res.pre_assy.dpm_trends);
+                updateParetoData(chartParetoPre, 'wrapperParetoPre', 'emptyParetoPre', res.pre_assy.pareto);
+            }
+        }
+
+        // --- 4. Fetch Analytics (dengan AbortController & Filter State) ---
+        function fetchAnalytics() {
+            if (analyticsAbortCtrl) {
+                analyticsAbortCtrl.abort();
+            }
+            analyticsAbortCtrl = new AbortController();
+
+            const loadingEl = document.getElementById('analyticsLoading');
+            const errorEl = document.getElementById('analyticsError');
+            const errorMsgEl = document.getElementById('analyticsErrorMessage');
+
+            if (loadingEl) loadingEl.classList.remove('hidden');
+
+            const params = new URLSearchParams();
+            if (activeFilters.start_date) params.append('start_date', activeFilters.start_date);
+            if (activeFilters.end_date) params.append('end_date', activeFilters.end_date);
+            if (activeFilters.group_by) params.append('group_by', activeFilters.group_by);
+            if (activeFilters.conveyor && activeFilters.conveyor !== 'all') params.append('conveyor', activeFilters.conveyor);
+            if (activeFilters.carline_id && activeFilters.carline_id !== 'all') params.append('carline_id', activeFilters.carline_id);
+
+            fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
+                signal: analyticsAbortCtrl.signal,
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(r => {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(res => {
+                applyAnalyticsData(res);
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (errorEl) errorEl.classList.add('hidden');
+            })
+            .catch(err => {
+                if (err.name === 'AbortError') return;
+                console.error('[Analytics] Error fetch analytics:', err);
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (errorEl && errorMsgEl) {
+                    errorMsgEl.innerText = 'Gagal memperbarui analitik: ' + (err.message || 'Koneksi bermasalah');
+                    errorEl.classList.remove('hidden');
+                }
+            });
+        }
+
+        function triggerFilterChange(debounceMs = 300) {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            if (debounceMs === 0) {
+                fetchAnalytics();
+            } else {
+                debounceTimer = setTimeout(fetchAnalytics, debounceMs);
+            }
+        }
+
+        // --- 5. Flatpickr & UI Filter Events ---
+        let fpInstance = null;
+        if (window.flatpickr) {
+            fpInstance = window.flatpickr("#filterDateRange", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                defaultDate: [initialDates.start, initialDates.end],
+                onChange: function (selectedDates) {
+                    if (selectedDates.length === 2) {
+                        const pad = n => String(n).padStart(2, '0');
+                        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                        activeFilters.start_date = fmt(selectedDates[0]);
+                        activeFilters.end_date = fmt(selectedDates[1]);
+                        triggerFilterChange(300);
+                    } else if (selectedDates.length === 0) {
+                        activeFilters.start_date = '';
+                        activeFilters.end_date = '';
+                        triggerFilterChange(300);
+                    }
+                }
+            });
+        }
+
+        // Segmented Control (Hari | Minggu | Bulan)
+        const groupButtons = document.querySelectorAll('.btn-group-by');
+        groupButtons.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const val = this.dataset.val;
+                if (activeFilters.group_by === val) return;
+
+                activeFilters.group_by = val;
+                groupButtons.forEach(b => {
+                    b.classList.remove('bg-[#8b0000]', 'text-white', 'shadow-xs');
+                    b.classList.add('text-gray-600', 'hover:text-gray-900');
+                });
+                this.classList.remove('text-gray-600', 'hover:text-gray-900');
+                this.classList.add('bg-[#8b0000]', 'text-white', 'shadow-xs');
+
+                triggerFilterChange(300);
+            });
+        });
+
+        // Dropdown Konveyor (Final Assy)
+        const conveyorSelect = document.getElementById('filterConveyor');
+        if (conveyorSelect) {
+            conveyorSelect.addEventListener('change', function () {
+                activeFilters.conveyor = this.value;
+                triggerFilterChange(300);
+            });
+        }
+
+        // Dropdown Carline (Pre Assy)
+        const carlineSelect = document.getElementById('filterCarline');
+        if (carlineSelect) {
+            carlineSelect.addEventListener('change', function () {
+                activeFilters.carline_id = this.value;
+                triggerFilterChange(300);
+            });
+        }
+
+        // Reset Filter Button
+        const btnReset = document.getElementById('btnResetFilter');
+        if (btnReset) {
+            btnReset.addEventListener('click', function () {
+                const resetDates = getInitialDates();
+                activeFilters.start_date = resetDates.start;
+                activeFilters.end_date = resetDates.end;
+                activeFilters.group_by = 'day';
+                activeFilters.conveyor = 'all';
+                activeFilters.carline_id = 'all';
+
+                if (fpInstance) {
+                    fpInstance.setDate([resetDates.start, resetDates.end], false);
+                }
+                if (conveyorSelect) conveyorSelect.value = 'all';
+                if (carlineSelect) carlineSelect.value = 'all';
+
+                groupButtons.forEach(b => {
+                    if (b.dataset.val === 'day') {
+                        b.classList.remove('text-gray-600', 'hover:text-gray-900');
+                        b.classList.add('bg-[#8b0000]', 'text-white', 'shadow-xs');
+                    } else {
+                        b.classList.remove('bg-[#8b0000]', 'text-white', 'shadow-xs');
+                        b.classList.add('text-gray-600', 'hover:text-gray-900');
                     }
                 });
 
-                const selectEl = document.getElementById(periodSelectId);
-                if (selectEl) {
-                    selectEl.addEventListener('change', function () {
-                        const val = this.value;
-                        const dataObj = (canvasId === 'finalAssyChart') ? currentFinalAssy : currentPreAssy;
-                        if (val === 'today') {
-                            chart.data.labels = labelsToday;
-                            chart.data.datasets[0].data = dataObj.today.inspect;
-                            chart.data.datasets[1].data = dataObj.today.defect;
-                        } else if (val === 'week') {
-                            chart.data.labels = labelsWeek;
-                            chart.data.datasets[0].data = dataObj.week.inspect;
-                            chart.data.datasets[1].data = dataObj.week.defect;
-                        } else {
-                            chart.data.labels = labelsMonth;
-                            chart.data.datasets[0].data = dataObj.month.inspect;
-                            chart.data.datasets[1].data = dataObj.month.defect;
-                        }
-                        chart.update();
-                    });
-                }
+                triggerFilterChange(0);
+            });
+        }
 
-                return chart;
-            }
-
-            finalChartInstance = createAssyChart('finalAssyChart', currentFinalAssy, 'periodFinalAssy');
-            preChartInstance = createAssyChart('preAssyChart', currentPreAssy, 'periodPreAssy');
-        });
-    </script>
-
-    <!-- AJAX Polling Script (8 Detik) Real-time -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        let pollingTimer = null;
-
+        // --- 6. Polling Stats & Recent Defects (Pertahankan dari kode lama) ---
         function formatDate(dateStr) {
             if (!dateStr) return '-';
             const d = new Date(dateStr);
@@ -570,7 +923,7 @@
         function flashElement(el) {
             if (!el) return;
             el.classList.remove('poll-updated');
-            void el.offsetWidth; // trigger DOM reflow to restart animation
+            void el.offsetWidth;
             el.classList.add('poll-updated');
         }
 
@@ -615,57 +968,6 @@
                     }
                 })
                 .catch(err => console.error('[Polling] Gagal fetch stats:', err));
-        }
-
-        function fetchChartsData() {
-            fetch('{{ url("/api/dashboard/charts") }}')
-                .then(r => r.json())
-                .then(res => {
-                    if (!res.success) return;
-
-                    currentFinalAssy = res.finalAssy;
-                    currentPreAssy = res.preAssy;
-
-                    // Update Final Assy Chart
-                    const finalPeriod = document.getElementById('periodFinalAssy') ? document.getElementById('periodFinalAssy').value : 'month';
-                    if (finalChartInstance && currentFinalAssy && currentFinalAssy[finalPeriod]) {
-                        finalChartInstance.data.datasets[0].data = currentFinalAssy[finalPeriod].inspect;
-                        finalChartInstance.data.datasets[1].data = currentFinalAssy[finalPeriod].defect;
-                        finalChartInstance.update('none');
-                    }
-
-                    // Update Pre Assy Chart
-                    const prePeriod = document.getElementById('periodPreAssy') ? document.getElementById('periodPreAssy').value : 'month';
-                    if (preChartInstance && currentPreAssy && currentPreAssy[prePeriod]) {
-                        preChartInstance.data.datasets[0].data = currentPreAssy[prePeriod].inspect;
-                        preChartInstance.data.datasets[1].data = currentPreAssy[prePeriod].defect;
-                        preChartInstance.update('none');
-                    }
-
-                    // Update Mini Summaries
-                    if (currentFinalAssy) {
-                        const elFI = document.getElementById('final-summary-inspect');
-                        if (elFI) elFI.innerText = currentFinalAssy.total_inspect.toLocaleString('id-ID');
-                        const elFD = document.getElementById('final-summary-defect');
-                        if (elFD) elFD.innerText = currentFinalAssy.total_defect.toLocaleString('id-ID');
-                        const elFTI = document.getElementById('final-today-inspect');
-                        if (elFTI) elFTI.innerText = `Hari ini: ${currentFinalAssy.today_inspect.toLocaleString('id-ID')}`;
-                        const elFTD = document.getElementById('final-today-defect');
-                        if (elFTD) elFTD.innerText = `Hari ini: ${currentFinalAssy.today_defect.toLocaleString('id-ID')}`;
-                    }
-
-                    if (currentPreAssy) {
-                        const elPI = document.getElementById('pre-summary-inspect');
-                        if (elPI) elPI.innerText = currentPreAssy.total_inspect.toLocaleString('id-ID');
-                        const elPD = document.getElementById('pre-summary-defect');
-                        if (elPD) elPD.innerText = currentPreAssy.total_defect.toLocaleString('id-ID');
-                        const elPTI = document.getElementById('pre-today-inspect');
-                        if (elPTI) elPTI.innerText = `Hari ini: ${currentPreAssy.today_inspect.toLocaleString('id-ID')}`;
-                        const elPTD = document.getElementById('pre-today-defect');
-                        if (elPTD) elPTD.innerText = `Hari ini: ${currentPreAssy.today_defect.toLocaleString('id-ID')}`;
-                    }
-                })
-                .catch(err => console.error('[Polling] Gagal fetch charts data:', err));
         }
 
         function fetchRecentDefects() {
@@ -719,20 +1021,32 @@
                 .catch(err => console.error('[Polling] Gagal fetch recent defects:', err));
         }
 
-        // Initial fetch
-        fetchStats();
-        fetchChartsData();
-        fetchRecentDefects();
-
-        // 8-second polling timer
-        pollingTimer = setInterval(() => {
+        // --- 7. Polling Execution (8s & Tab Inactive Prevention) ---
+        function runPollingCycle() {
+            if (document.hidden) return; // Jangan polling saat tab tidak aktif
             fetchStats();
-            fetchChartsData();
             fetchRecentDefects();
-        }, 8000);
+            fetchAnalytics();
+        }
+
+        // Initial Load
+        fetchStats();
+        fetchRecentDefects();
+        fetchAnalytics();
+
+        // Start 8-second interval
+        pollingTimer = setInterval(runPollingCycle, 8000);
+
+        // Resume saat tab kembali aktif
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                runPollingCycle();
+            }
+        });
 
         window.addEventListener('beforeunload', function() {
             if (pollingTimer) clearInterval(pollingTimer);
+            if (analyticsAbortCtrl) analyticsAbortCtrl.abort();
         });
     });
     </script>

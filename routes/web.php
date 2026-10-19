@@ -46,6 +46,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
     // Protected Admin routes (only accessible by Administrators)
     Route::middleware(['admin'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/analytics', [DashboardController::class, 'analytics'])->name('admin.dashboard.analytics');
 
         // Add Account routes
         Route::get('/add-account', [\App\Http\Controllers\AccountController::class, 'index'])->name('account.create');
