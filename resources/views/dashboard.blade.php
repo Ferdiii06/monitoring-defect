@@ -359,7 +359,7 @@
         let pollingTimer = null;
 
         // --- 2. Chart Inisialisasi ---
-        function createDpmChart(canvasId, accentColor, bgGradientColor) {
+        function createDpmChart(canvasId, accentColor, bgGradientColor, targetColor = '#e11d48') {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return null;
             const ctx = canvas.getContext('2d');
@@ -368,22 +368,40 @@
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'DPM',
-                        data: [],
-                        borderColor: accentColor,
-                        backgroundColor: bgGradientColor,
-                        borderWidth: 2.5,
-                        fill: true,
-                        tension: 0.35,
-                        spanGaps: false, // Titik null tidak digambar
-                        pointBackgroundColor: accentColor,
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        _meta: []
-                    }]
+                    datasets: [
+                        {
+                            label: 'DPM Real',
+                            data: [],
+                            borderColor: accentColor,
+                            backgroundColor: bgGradientColor,
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.35,
+                            spanGaps: false,
+                            pointBackgroundColor: accentColor,
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            _meta: []
+                        },
+                        {
+                            label: 'Target',
+                            data: [],
+                            borderColor: targetColor,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [6, 4],
+                            fill: false,
+                            tension: 0.2,
+                            spanGaps: false, // target null tidak digambar
+                            pointRadius: 2.5,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: targetColor,
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 1.5
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -393,7 +411,19 @@
                         intersect: false,
                     },
                     plugins: {
-                        legend: { display: false },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                boxWidth: 14,
+                                boxHeight: 4,
+                                usePointStyle: false,
+                                padding: 12,
+                                color: '#4b5563',
+                                font: { size: 11, weight: '600' }
+                            }
+                        },
                         tooltip: {
                             backgroundColor: 'rgba(17, 24, 39, 0.96)',
                             titleColor: '#f9fafb',
@@ -406,11 +436,22 @@
                             borderWidth: 1,
                             callbacks: {
                                 label: function(context) {
-                                    const meta = context.dataset._meta ? context.dataset._meta[context.dataIndex] : null;
-                                    const rawVal = context.raw;
-                                    const dpmStr = (rawVal !== null && rawVal !== undefined)
-                                        ? Number(rawVal).toLocaleString('id-ID')
+                                    const hasDataset0 = context.chart.tooltip?.dataPoints?.some(dp => dp.datasetIndex === 0);
+                                    if (hasDataset0 && context.datasetIndex !== 0) {
+                                        return null;
+                                    }
+
+                                    const i = context.dataIndex;
+                                    const meta = context.chart.data.datasets[0]._meta ? context.chart.data.datasets[0]._meta[i] : null;
+                                    const dpmVal = meta ? meta.dpm : (context.datasetIndex === 0 ? context.raw : null);
+                                    const targetVal = meta ? meta.target : (context.datasetIndex === 1 ? context.raw : null);
+
+                                    const dpmStr = (dpmVal !== null && dpmVal !== undefined)
+                                        ? Number(dpmVal).toLocaleString('id-ID')
                                         : '-';
+                                    const targetStr = (targetVal !== null && targetVal !== undefined)
+                                        ? Number(targetVal).toLocaleString('id-ID')
+                                        : 'Belum ada target';
                                     const defectStr = meta && meta.total_defect !== undefined
                                         ? Number(meta.total_defect).toLocaleString('id-ID')
                                         : '0';
@@ -419,7 +460,8 @@
                                         : '0';
 
                                     return [
-                                        `  DPM: ${dpmStr}`,
+                                        `  DPM Real: ${dpmStr}`,
+                                        `  Target: ${targetStr}`,
                                         `  Total Defect: ${defectStr} unit`,
                                         `  Total Inspect: ${inspectStr} unit`
                                     ];
@@ -626,9 +668,37 @@
             if (emptyEl) emptyEl.classList.add('hidden');
 
             if (chart) {
+                const baseColor = chart.data.datasets[0].borderColor || '#0d9488';
                 chart.data.labels = trendList.map(t => t.label);
+
+                // Dataset 0: DPM Real
                 chart.data.datasets[0].data = trendList.map(t => t.dpm);
                 chart.data.datasets[0]._meta = trendList;
+
+                // Titik DPM Real berwarna merah jika nilainya di atas target, normal jika di bawah atau sama dengan target atau target tidak ada
+                chart.data.datasets[0].pointBackgroundColor = trendList.map(t => {
+                    const hasTarget = t.target !== null && t.target !== undefined;
+                    const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                    if (hasTarget && hasDpm && Number(t.dpm) > Number(t.target)) {
+                        return '#ef4444';
+                    }
+                    return baseColor;
+                });
+
+                chart.data.datasets[0].pointBorderColor = trendList.map(t => {
+                    const hasTarget = t.target !== null && t.target !== undefined;
+                    const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                    if (hasTarget && hasDpm && Number(t.dpm) > Number(t.target)) {
+                        return '#b91c1c';
+                    }
+                    return '#ffffff';
+                });
+
+                // Dataset 1: Target
+                if (chart.data.datasets[1]) {
+                    chart.data.datasets[1].data = trendList.map(t => (t.target !== null && t.target !== undefined ? Number(t.target) : null));
+                }
+
                 chart.update('none'); // Update in place tanpa destroy / flicker
             }
         }

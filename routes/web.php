@@ -107,6 +107,28 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
             Route::post('/final-assy-inspect-types', [\App\Http\Controllers\FinalAssyInspectTypeController::class, 'store'])->name('final_assy_inspect_types.store');
             Route::put('/final-assy-inspect-types/{id}', [\App\Http\Controllers\FinalAssyInspectTypeController::class, 'update'])->name('final_assy_inspect_types.update');
             Route::delete('/final-assy-inspect-types/{id}', [\App\Http\Controllers\FinalAssyInspectTypeController::class, 'destroy'])->name('final_assy_inspect_types.destroy');
+
+            // Target DPM (DPM Targets)
+            Route::get('/dpm-targets', [\App\Http\Controllers\DpmTargetController::class, 'index'])->name('dpm_targets.index');
+            Route::post('/dpm-targets', [\App\Http\Controllers\DpmTargetController::class, 'store'])->name('dpm_targets.store');
+            Route::put('/dpm-targets/{id}', [\App\Http\Controllers\DpmTargetController::class, 'update'])->name('dpm_targets.update');
+            Route::delete('/dpm-targets/{id}', [\App\Http\Controllers\DpmTargetController::class, 'destroy'])->name('dpm_targets.destroy');
+
+            // Route name alias for kebab-case
+            Route::name('dpm-targets.')->group(function () {
+                Route::get('/dpm_targets', [\App\Http\Controllers\DpmTargetController::class, 'index'])->name('index');
+                Route::post('/dpm_targets', [\App\Http\Controllers\DpmTargetController::class, 'store'])->name('store');
+                Route::put('/dpm_targets/{id}', [\App\Http\Controllers\DpmTargetController::class, 'update'])->name('update');
+                Route::delete('/dpm_targets/{id}', [\App\Http\Controllers\DpmTargetController::class, 'destroy'])->name('destroy');
+            });
+        });
+
+        // Alias for master.dpm-targets.* (without admin. prefix)
+        Route::prefix('master')->name('master.dpm-targets.')->group(function () {
+            Route::get('/dpm-targets/alias', [\App\Http\Controllers\DpmTargetController::class, 'index'])->name('index');
+            Route::post('/dpm-targets/alias', [\App\Http\Controllers\DpmTargetController::class, 'store'])->name('store');
+            Route::put('/dpm-targets/alias/{id}', [\App\Http\Controllers\DpmTargetController::class, 'update'])->name('update');
+            Route::delete('/dpm-targets/alias/{id}', [\App\Http\Controllers\DpmTargetController::class, 'destroy'])->name('destroy');
         });
     });
 });

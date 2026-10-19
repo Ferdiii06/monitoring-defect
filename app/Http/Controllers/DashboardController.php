@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Models\Defect;
 use App\Models\User;
+use App\Models\DpmTarget;
 use App\Services\ExternalApiService;
 use Carbon\Carbon;
 
@@ -249,6 +250,12 @@ class DashboardController extends Controller
             ->orderBy('bucket_date', 'asc')
             ->get();
 
+        // 1 query untuk mengambil semua target DPM relevan untuk assy ini
+        $targets = DpmTarget::where('jenis_assy', $jenisAssy)
+            ->where('period_start', '<=', $endDate->format('Y-m-d'))
+            ->where('period_end', '>=', $startDate->format('Y-m-d'))
+            ->get();
+
         $grouped = [];
 
         foreach ($rawRecords as $rec) {
@@ -279,7 +286,7 @@ class DashboardController extends Controller
         }
 
         $points = [];
-        foreach ($grouped as $bucket) {
+        foreach ($grouped as $key => $bucket) {
             $totalDefect = $bucket['total_defect'];
             $totalInspect = $bucket['total_inspect'];
             $dpm = null;
@@ -288,11 +295,39 @@ class DashboardController extends Controller
                 $dpm = round(($totalDefect / $totalInspect) * 1000000, 2);
             }
 
+            // Tentukan tanggal acuan: tanggal paling awal dalam rentang filter yang masuk bucket
+            if ($groupBy === 'week') {
+                $monday = Carbon::parse($key)->startOfDay();
+                $refDate = $monday->lt($startDate) ? $startDate->format('Y-m-d') : $monday->format('Y-m-d');
+            } elseif ($groupBy === 'month') {
+                $firstDay = Carbon::parse($key . '-01')->startOfDay();
+                $refDate = $firstDay->lt($startDate) ? $startDate->format('Y-m-d') : $firstDay->format('Y-m-d');
+            } else {
+                $refDate = $key;
+            }
+
+            // Cocokkan DpmTarget di memori PHP (tanpa query per titik)
+            $targetVal = null;
+            foreach ($targets as $t) {
+                $pStart = $t->period_start instanceof \DateTimeInterface
+                    ? $t->period_start->format('Y-m-d')
+                    : substr((string) $t->period_start, 0, 10);
+                $pEnd = $t->period_end instanceof \DateTimeInterface
+                    ? $t->period_end->format('Y-m-d')
+                    : substr((string) $t->period_end, 0, 10);
+
+                if ($pStart <= $refDate && $pEnd >= $refDate) {
+                    $targetVal = (float) $t->target_dpm;
+                    break;
+                }
+            }
+
             $points[] = [
                 'label'        => $bucket['label'],
                 'total_defect' => $totalDefect,
                 'total_inspect'=> $totalInspect,
                 'dpm'          => $dpm,
+                'target'       => $targetVal,
             ];
         }
 

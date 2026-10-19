@@ -165,6 +165,11 @@
                                     <span>Final Assy Inspect Type</span>
                                 </a>
                             @endif
+                            <a href="{{ route('admin.master.dpm_targets.index') }}" 
+                               class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ (request()->routeIs('admin.master.dpm_targets.*') || request()->routeIs('admin.master.dpm-targets.*')) ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                                <svg class="w-4 h-4 shrink-0 {{ (request()->routeIs('admin.master.dpm_targets.*') || request()->routeIs('admin.master.dpm-targets.*')) ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                                <span>Target DPM</span>
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -6,6 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\Defect;
 use App\Models\Carline;
+use App\Models\DpmTarget;
 use Carbon\Carbon;
 
 class AdminDashboardAnalyticsTest extends TestCase
@@ -299,5 +300,120 @@ class AdminDashboardAnalyticsTest extends TestCase
 
         $this->assertEquals(5, $dpmPre2[0]['total_defect']);
         $this->assertEquals(500, $dpmPre2[0]['total_inspect']);
+    }
+
+    public function test_dpm_targets_matching_isolation_and_transitions(): void
+    {
+        // 1. Buat 2 target berurutan untuk Final Assy:
+        // Target A: 1 Jan 2026 s/d 15 Jan 2026 -> target = 50.00
+        DpmTarget::create([
+            'jenis_assy'   => 'Final Assy',
+            'period_start' => '2026-01-01',
+            'period_end'   => '2026-01-15',
+            'target_dpm'   => 50.00,
+        ]);
+
+        // Target B: 16 Jan 2026 s/d 31 Jan 2026 -> target = 30.00
+        DpmTarget::create([
+            'jenis_assy'   => 'Final Assy',
+            'period_start' => '2026-01-16',
+            'period_end'   => '2026-01-31',
+            'target_dpm'   => 30.00,
+        ]);
+
+        // 2. Buat target untuk Pre Assy (hanya 1 Jan s/d 15 Jan) -> target = 80.00
+        DpmTarget::create([
+            'jenis_assy'   => 'Pre Assy',
+            'period_start' => '2026-01-01',
+            'period_end'   => '2026-01-15',
+            'target_dpm'   => 80.00,
+        ]);
+
+        // 3. Buat defect data untuk Final Assy:
+        // Titik 1: 10 Jan 2026 (dalam rentang Target A)
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-01-10 09:00:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 1,
+            'inspect_quantity' => 100,
+        ]);
+
+        // Titik 2: 20 Jan 2026 (dalam rentang Target B - perpindahan target)
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-01-20 09:00:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 2,
+            'inspect_quantity' => 100,
+        ]);
+
+        // Titik 3: 05 Feb 2026 (di luar semua rentang target)
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-02-05 09:00:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 1,
+            'inspect_quantity' => 100,
+        ]);
+
+        // 4. Buat defect data untuk Pre Assy:
+        // Titik Pre 1: 10 Jan 2026 (dalam rentang target Pre Assy 80.00, BUKAN 50.00)
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-01-10 09:00:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Pre Assy',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 2,
+            'inspect_quantity' => 100,
+        ]);
+
+        // Titik Pre 2: 20 Jan 2026 (di luar rentang target Pre Assy -> harus NULL, tidak boleh bocor dari Final Assy yang 30.00)
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-01-20 09:00:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Pre Assy',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 1,
+            'inspect_quantity' => 100,
+        ]);
+
+        // Request analytics rentang 2026-01-01 s/d 2026-02-10
+        $response = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-01-01&end_date=2026-02-10&group_by=day');
+
+        $response->assertStatus(200);
+        $dpmFinal = $response->json('dpm_final');
+        $dpmPre = $response->json('dpm_pre');
+
+        $this->assertCount(3, $dpmFinal);
+        // Titik 1 Final Assy (10 Jan 2026): target = 50.0
+        $this->assertEquals('2026-01-10', $dpmFinal[0]['label']);
+        $this->assertEquals(50.0, $dpmFinal[0]['target']);
+
+        // Titik 2 Final Assy (20 Jan 2026): target = 30.0 (perpindahan target menghasilkan nilai berbeda)
+        $this->assertEquals('2026-01-20', $dpmFinal[1]['label']);
+        $this->assertEquals(30.0, $dpmFinal[1]['target']);
+
+        // Titik 3 Final Assy (05 Feb 2026): di luar target = null
+        $this->assertEquals('2026-02-05', $dpmFinal[2]['label']);
+        $this->assertNull($dpmFinal[2]['target']);
+
+        // Pre Assy:
+        $this->assertCount(2, $dpmPre);
+        // Titik 1 Pre Assy (10 Jan 2026): target = 80.0 (isolasi target jenis_assy)
+        $this->assertEquals('2026-01-10', $dpmPre[0]['label']);
+        $this->assertEquals(80.0, $dpmPre[0]['target']);
+
+        // Titik 2 Pre Assy (20 Jan 2026): target = null (tidak bocor dari Final Assy 30.0)
+        $this->assertEquals('2026-01-20', $dpmPre[1]['label']);
+        $this->assertNull($dpmPre[1]['target']);
     }
 }
