@@ -216,18 +216,24 @@ class DashboardController extends Controller
             $carlineId = null;
         }
 
-        $dpmFinal = $this->buildDpmTrends('Final Assy', $startDate, $endDate, $groupBy, $conveyor, null);
-        $paretoFinal = $this->buildPareto('Final Assy', $startDate, $endDate, $conveyor, null);
+        $assy = strtolower((string) $request->input('assy'));
 
-        $dpmPre = $this->buildDpmTrends('Pre Assy', $startDate, $endDate, $groupBy, null, $carlineId);
-        $paretoPre = $this->buildPareto('Pre Assy', $startDate, $endDate, null, $carlineId);
+        $data = [];
 
-        return response()->json([
-            'dpm_final'    => $dpmFinal,
-            'pareto_final' => $paretoFinal,
-            'dpm_pre'      => $dpmPre,
-            'pareto_pre'   => $paretoPre,
-        ]);
+        if ($assy === 'final') {
+            $data['dpm_final'] = $this->buildDpmTrends('Final Assy', $startDate, $endDate, $groupBy, $conveyor, null);
+            $data['pareto_final'] = $this->buildPareto('Final Assy', $startDate, $endDate, $conveyor, null);
+        } elseif ($assy === 'pre') {
+            $data['dpm_pre'] = $this->buildDpmTrends('Pre Assy', $startDate, $endDate, $groupBy, null, $carlineId);
+            $data['pareto_pre'] = $this->buildPareto('Pre Assy', $startDate, $endDate, null, $carlineId);
+        } else {
+            $data['dpm_final'] = $this->buildDpmTrends('Final Assy', $startDate, $endDate, $groupBy, $conveyor, null);
+            $data['pareto_final'] = $this->buildPareto('Final Assy', $startDate, $endDate, $conveyor, null);
+            $data['dpm_pre'] = $this->buildDpmTrends('Pre Assy', $startDate, $endDate, $groupBy, null, $carlineId);
+            $data['pareto_pre'] = $this->buildPareto('Pre Assy', $startDate, $endDate, null, $carlineId);
+        }
+
+        return response()->json($data);
     }
 
     /**

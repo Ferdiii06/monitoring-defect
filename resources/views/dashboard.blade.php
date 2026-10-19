@@ -128,121 +128,101 @@
         </x-metric-card>
     </section>
 
-        <!-- Unified Filter Bar Section -->
-        <section class="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] mb-6">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <!-- Left: Title & Indicator -->
-                <div class="flex items-center space-x-3">
-                    <span class="w-3 h-3 rounded-lg bg-[#8b0000] inline-block shadow-sm shadow-[#8b0000]/30"></span>
-                    <div>
-                        <h2 class="text-base font-extrabold text-gray-950 tracking-tight">Filter Analitik</h2>
-                        <p class="text-xs text-gray-500">Sesuaikan rentang tanggal, agregasi, konveyor, dan carline</p>
-                    </div>
-                </div>
-
-                <!-- Right: Status indicator (Loading & Live) -->
-                <div class="flex items-center space-x-3 self-end lg:self-center">
-                    <span id="analyticsLoading" class="hidden items-center space-x-1.5 text-[11px] text-[#8b0000] bg-red-50 border border-red-100 px-2.5 py-1 rounded-full font-bold">
-                        <svg class="animate-spin h-3 w-3 text-[#8b0000]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                        </svg>
-                        <span>Memuat...</span>
-                    </span>
-                    <span class="flex items-center space-x-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full font-bold shadow-xs">
-                        <span class="relative flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                        </span>
-                        <span>Live (8s)</span>
-                    </span>
-                </div>
-            </div>
-
-            <!-- Error Banner -->
-            <div id="analyticsError" class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700">
-                <span id="analyticsErrorMessage">Gagal memuat analitik</span>
-            </div>
-
-            <!-- Filter Controls Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-100 items-end">
-                <!-- 1. Rentang Tanggal (Flatpickr) -->
-                <div>
-                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Rentang Tanggal</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                            <svg class="w-4 h-4 text-[#8b0000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                        </span>
-                        <input type="text" id="filterDateRange" readonly placeholder="Pilih rentang tanggal" class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
-                    </div>
-                </div>
-
-                <!-- 2. Pengelompokan (Segmented Control) -->
-                <div>
-                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Pengelompokan</label>
-                    <div class="inline-flex w-full bg-gray-100 p-1 rounded-xl border border-gray-200/70" role="group">
-                        <button type="button" data-val="day" class="btn-group-by flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center bg-[#8b0000] text-white shadow-xs">Hari</button>
-                        <button type="button" data-val="week" class="btn-group-by flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center text-gray-600 hover:text-gray-900">Minggu</button>
-                        <button type="button" data-val="month" class="btn-group-by flex-1 py-1.5 text-xs font-bold rounded-lg transition-all text-center text-gray-600 hover:text-gray-900">Bulan</button>
-                    </div>
-                </div>
-
-                <!-- 3. Konveyor (Final Assy) -->
-                <div>
-                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Konveyor (Final Assy)</label>
-                    <div class="relative">
-                        <select id="filterConveyor" class="w-full appearance-none border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 px-3 pr-8 py-2 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
-                            <option value="all">Semua Konveyor</option>
-                            @if(isset($finalAssyConveyors))
-                                @foreach($finalAssyConveyors as $conveyor)
-                                    <option value="{{ $conveyor }}">{{ $conveyor }}</option>
-                                @endforeach
-                            @endif
-                        </select>
-                        <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        <!-- 2 Columns Grid: Final Assy (Left) & Pre Assy (Right) -->
+        <section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+            <!-- KOLOM KIRI: FINAL ASSY -->
+            <div class="space-y-6">
+                <!-- 1. Filter Bar Final Assy -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
+                    <div class="flex items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                        <div class="flex items-center space-x-2.5">
+                            <span class="w-3 h-3 rounded-lg bg-teal-500 inline-block shadow-sm shadow-teal-500/30"></span>
+                            <div>
+                                <h2 class="text-base font-extrabold text-gray-950 tracking-tight">Final Assy</h2>
+                                <p class="text-xs text-gray-500">Filter analitik khusus Final Assy</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span id="loadingFinal" class="hidden items-center space-x-1.5 text-[11px] text-teal-700 bg-teal-50 border border-teal-100 px-2.5 py-0.5 rounded-full font-bold">
+                                <svg class="animate-spin h-3 w-3 text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span>Memuat...</span>
+                            </span>
+                            <span class="flex items-center space-x-1 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full font-bold shadow-xs">
+                                <span class="relative flex h-1.5 w-1.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                </span>
+                                <span>Live (8s)</span>
+                            </span>
                         </div>
                     </div>
-                </div>
 
-                <!-- 4. Carline (Pre Assy) + Reset Button -->
-                <div class="flex items-center space-x-2">
-                    <div class="flex-1">
-                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">Carline (Pre Assy)</label>
-                        <div class="relative">
-                            <select id="filterCarline" class="w-full appearance-none border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 px-3 pr-8 py-2 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
-                                <option value="all">Semua Carline</option>
-                                @if(isset($preAssyCarlines))
-                                    @foreach($preAssyCarlines as $carline)
-                                        <option value="{{ $carline->id }}">{{ $carline->name }}</option>
-                                    @endforeach
-                                @endif
-                            </select>
-                            <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <!-- Error Banner Final Assy -->
+                    <div id="errorFinal" class="hidden mt-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700">
+                        <span id="errorMessageFinal">Gagal memuat analitik Final Assy</span>
+                    </div>
+
+                    <!-- Filter Controls Final Assy -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mt-3 items-end">
+                        <!-- Rentang Tanggal -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Rentang Tanggal</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+                                    <svg class="w-3.5 h-3.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                </span>
+                                <input type="text" id="filterDateRangeFinal" readonly placeholder="Pilih rentang tanggal" class="w-full pl-8 pr-2.5 py-1.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 cursor-pointer transition shadow-xs">
+                            </div>
+                        </div>
+
+                        <!-- Pengelompokan DPM -->
+                        <div>
+                            <div class="flex items-center space-x-1 mb-1">
+                                <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider">Pengelompokan DPM</label>
+                                <span class="cursor-help text-gray-400 hover:text-gray-600 transition" title="Pareto tidak terpengaruh pengelompokan">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </span>
+                            </div>
+                            <div class="inline-flex w-full bg-gray-100 p-0.5 rounded-xl border border-gray-200/70" role="group">
+                                <button type="button" data-val="day" class="btn-group-by-final flex-1 py-1 text-xs font-bold rounded-lg transition-all text-center bg-teal-600 text-white shadow-xs">Hari</button>
+                                <button type="button" data-val="week" class="btn-group-by-final flex-1 py-1 text-xs font-bold rounded-lg transition-all text-center text-gray-600 hover:text-gray-900">Minggu</button>
+                                <button type="button" data-val="month" class="btn-group-by-final flex-1 py-1 text-xs font-bold rounded-lg transition-all text-center text-gray-600 hover:text-gray-900">Bulan</button>
+                            </div>
+                        </div>
+
+                        <!-- Konveyor + Reset Button -->
+                        <div class="flex items-center space-x-2">
+                            <div class="flex-1">
+                                <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Konveyor</label>
+                                <div class="relative">
+                                    <select id="filterConveyorFinal" class="w-full appearance-none border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 px-2.5 pr-7 py-1.5 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 cursor-pointer transition shadow-xs">
+                                        <option value="all">Semua Konveyor</option>
+                                        @if(isset($finalAssyConveyors))
+                                            @foreach($finalAssyConveyors as $conveyor)
+                                                <option value="{{ $conveyor }}">{{ $conveyor }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-400">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-transparent uppercase tracking-wider mb-1 select-none">Aksi</label>
+                                <button type="button" id="btnResetFilterFinal" title="Reset filter Final Assy ke default" class="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all shadow-xs flex items-center space-x-1">
+                                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    <span>Reset</span>
+                                </button>
                             </div>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-transparent uppercase tracking-wider mb-1.5 select-none">Aksi</label>
-                        <button type="button" id="btnResetFilter" title="Reset semua filter ke default" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all shadow-xs flex items-center space-x-1.5">
-                            <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                            </svg>
-                            <span>Reset</span>
-                        </button>
-                    </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- 4 Charts Grid (2x2 Desktop, 1 Col Mobile) -->
-        <section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
-            <!-- Kolom Kiri: Final Assy (DPM di atas, Pareto di bawah) -->
-            <div class="space-y-6">
-                <!-- 1. DPM Final Assy -->
+                <!-- 2. DPM Final Assy -->
                 <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300">
                     <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
                         <div>
@@ -263,7 +243,7 @@
                     </div>
                 </div>
 
-                <!-- 2. Pareto Final Assy -->
+                <!-- 3. Pareto Final Assy -->
                 <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300">
                     <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
                         <div>
@@ -285,9 +265,99 @@
                 </div>
             </div>
 
-            <!-- Kolom Kanan: Pre Assy (DPM di atas, Pareto di bawah) -->
+            <!-- KOLOM KANAN: PRE ASSY -->
             <div class="space-y-6">
-                <!-- 3. DPM Pre Assy -->
+                <!-- 1. Filter Bar Pre Assy -->
+                <div class="bg-white border border-gray-100 rounded-2xl p-4 sm:p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)]">
+                    <div class="flex items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                        <div class="flex items-center space-x-2.5">
+                            <span class="w-3 h-3 rounded-lg bg-sky-600 inline-block shadow-sm shadow-sky-600/30"></span>
+                            <div>
+                                <h2 class="text-base font-extrabold text-gray-950 tracking-tight">Pre Assy</h2>
+                                <p class="text-xs text-gray-500">Filter analitik khusus Pre Assy</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span id="loadingPre" class="hidden items-center space-x-1.5 text-[11px] text-sky-700 bg-sky-50 border border-sky-100 px-2.5 py-0.5 rounded-full font-bold">
+                                <svg class="animate-spin h-3 w-3 text-sky-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span>Memuat...</span>
+                            </span>
+                            <span class="flex items-center space-x-1 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full font-bold shadow-xs">
+                                <span class="relative flex h-1.5 w-1.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                </span>
+                                <span>Live (8s)</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Error Banner Pre Assy -->
+                    <div id="errorPre" class="hidden mt-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700">
+                        <span id="errorMessagePre">Gagal memuat analitik Pre Assy</span>
+                    </div>
+
+                    <!-- Filter Controls Pre Assy -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mt-3 items-end">
+                        <!-- Rentang Tanggal -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Rentang Tanggal</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+                                    <svg class="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                </span>
+                                <input type="text" id="filterDateRangePre" readonly placeholder="Pilih rentang tanggal" class="w-full pl-8 pr-2.5 py-1.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 cursor-pointer transition shadow-xs">
+                            </div>
+                        </div>
+
+                        <!-- Pengelompokan DPM -->
+                        <div>
+                            <div class="flex items-center space-x-1 mb-1">
+                                <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider">Pengelompokan DPM</label>
+                                <span class="cursor-help text-gray-400 hover:text-gray-600 transition" title="Pareto tidak terpengaruh pengelompokan">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </span>
+                            </div>
+                            <div class="inline-flex w-full bg-gray-100 p-0.5 rounded-xl border border-gray-200/70" role="group">
+                                <button type="button" data-val="day" class="btn-group-by-pre flex-1 py-1 text-xs font-bold rounded-lg transition-all text-center bg-sky-600 text-white shadow-xs">Hari</button>
+                                <button type="button" data-val="week" class="btn-group-by-pre flex-1 py-1 text-xs font-bold rounded-lg transition-all text-center text-gray-600 hover:text-gray-900">Minggu</button>
+                                <button type="button" data-val="month" class="btn-group-by-pre flex-1 py-1 text-xs font-bold rounded-lg transition-all text-center text-gray-600 hover:text-gray-900">Bulan</button>
+                            </div>
+                        </div>
+
+                        <!-- Carline + Reset Button -->
+                        <div class="flex items-center space-x-2">
+                            <div class="flex-1">
+                                <label class="block text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-1">Carline</label>
+                                <div class="relative">
+                                    <select id="filterCarlinePre" class="w-full appearance-none border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 px-2.5 pr-7 py-1.5 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-600 cursor-pointer transition shadow-xs">
+                                        <option value="all">Semua Carline</option>
+                                        @if(isset($preAssyCarlines))
+                                            @foreach($preAssyCarlines as $carline)
+                                                <option value="{{ $carline->id }}">{{ $carline->name }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-gray-400">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-transparent uppercase tracking-wider mb-1 select-none">Aksi</label>
+                                <button type="button" id="btnResetFilterPre" title="Reset filter Pre Assy ke default" class="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all shadow-xs flex items-center space-x-1">
+                                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    <span>Reset</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. DPM Pre Assy -->
                 <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300">
                     <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
                         <div>
@@ -308,7 +378,7 @@
                     </div>
                 </div>
 
-                <!-- 4. Pareto Pre Assy -->
+                <!-- 3. Pareto Pre Assy -->
                 <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300">
                     <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
                         <div>
@@ -335,7 +405,9 @@
     <!-- Dashboard Analytics & Real-time Polling Script -->
     <script>
     document.addEventListener("DOMContentLoaded", function () {
-        // --- 1. Filter State & Helpers ---
+        // --- 1. Month Names & Helpers ---
+        const MONTH_NAMES_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
         function getInitialDates() {
             const end = new Date();
             const start = new Date();
@@ -345,26 +417,86 @@
             return { start: fmt(start), end: fmt(end) };
         }
 
-        const initialDates = getInitialDates();
-        const activeFilters = {
-            start_date: initialDates.start,
-            end_date: initialDates.end,
+        function formatDpmXLabel(rawLabel, groupBy) {
+            if (!rawLabel || typeof rawLabel !== 'string') return rawLabel || '';
+            const pad = n => String(n).padStart(2, '0');
+
+            if (groupBy === 'month') {
+                const parts = rawLabel.split('-');
+                if (parts.length >= 2) {
+                    const yr = parts[0];
+                    const moIdx = parseInt(parts[1], 10) - 1;
+                    const mo = MONTH_NAMES_ID[moIdx] || parts[1];
+                    return `${mo} ${yr}`;
+                }
+                return rawLabel;
+            }
+
+            if (groupBy === 'week') {
+                const parts = rawLabel.split('-');
+                if (parts.length === 3) {
+                    const y = parseInt(parts[0], 10);
+                    const m = parseInt(parts[1], 10) - 1;
+                    const d = parseInt(parts[2], 10);
+                    const startD = new Date(y, m, d);
+                    const endD = new Date(y, m, d + 6);
+
+                    const startDayStr = pad(startD.getDate());
+                    const endDayStr = pad(endD.getDate());
+                    const startMo = MONTH_NAMES_ID[startD.getMonth()];
+                    const endMo = MONTH_NAMES_ID[endD.getMonth()];
+
+                    if (startD.getMonth() === endD.getMonth()) {
+                        return `${startDayStr}-${endDayStr} ${endMo}`;
+                    } else {
+                        return `${startDayStr} ${startMo}-${endDayStr} ${endMo}`;
+                    }
+                }
+                return rawLabel;
+            }
+
+            // Default 'day': format 'YYYY-MM-DD' -> "05 Okt"
+            const parts = rawLabel.split('-');
+            if (parts.length === 3) {
+                const dayStr = pad(parseInt(parts[2], 10));
+                const moIdx = parseInt(parts[1], 10) - 1;
+                const mo = MONTH_NAMES_ID[moIdx] || parts[1];
+                return `${dayStr} ${mo}`;
+            }
+
+            return rawLabel;
+        }
+
+        // --- 2. Filter States Terpisah ---
+        const initialFinal = getInitialDates();
+        const filtersFinal = {
+            start_date: initialFinal.start,
+            end_date: initialFinal.end,
             group_by: 'day',
-            conveyor: 'all',
+            conveyor: 'all'
+        };
+
+        const initialPre = getInitialDates();
+        const filtersPre = {
+            start_date: initialPre.start,
+            end_date: initialPre.end,
+            group_by: 'day',
             carline_id: 'all'
         };
 
-        let analyticsAbortCtrl = null;
-        let debounceTimer = null;
+        let abortFinal = null;
+        let abortPre = null;
+        let debounceFinal = null;
+        let debouncePre = null;
         let pollingTimer = null;
 
-        // --- 2. Chart Inisialisasi ---
+        // --- 3. Chart Factory ---
         function createDpmChart(canvasId, accentColor, bgGradientColor, targetColor = '#e11d48') {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return null;
             const ctx = canvas.getContext('2d');
 
-            return new Chart(ctx, {
+            const chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: [],
@@ -394,12 +526,9 @@
                             borderDash: [6, 4],
                             fill: false,
                             tension: 0.2,
-                            spanGaps: false, // target null tidak digambar
-                            pointRadius: 2.5,
-                            pointHoverRadius: 5,
-                            pointBackgroundColor: targetColor,
-                            pointBorderColor: '#ffffff',
-                            pointBorderWidth: 1.5
+                            spanGaps: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 0
                         }
                     ]
                 },
@@ -435,6 +564,18 @@
                             borderColor: 'rgba(255, 255, 255, 0.1)',
                             borderWidth: 1,
                             callbacks: {
+                                title: function(tooltipItems) {
+                                    if (!tooltipItems.length) return '';
+                                    const item = tooltipItems[0];
+                                    const raw = item.label || '';
+                                    const gb = item.chart?._groupBy || 'day';
+                                    if (gb === 'week') {
+                                        return `Minggu: ${raw}`;
+                                    } else if (gb === 'month') {
+                                        return `Bulan: ${raw}`;
+                                    }
+                                    return `Tanggal: ${raw}`;
+                                },
                                 label: function(context) {
                                     const hasDataset0 = context.chart.tooltip?.dataPoints?.some(dp => dp.datasetIndex === 0);
                                     if (hasDataset0 && context.datasetIndex !== 0) {
@@ -475,7 +616,11 @@
                             ticks: {
                                 color: '#6b7280',
                                 font: { size: 11, weight: '600' },
-                                padding: 6
+                                padding: 6,
+                                callback: function(val, index) {
+                                    const rawLabel = this.chart.data.labels[index];
+                                    return formatDpmXLabel(rawLabel, this.chart._groupBy || 'day');
+                                }
                             }
                         },
                         y: {
@@ -495,6 +640,9 @@
                     }
                 }
             });
+
+            chart._groupBy = 'day';
+            return chart;
         }
 
         function createParetoChart(canvasId, barColor) {
@@ -530,6 +678,7 @@
                             data: [],
                             backgroundColor: barColor,
                             borderRadius: 6,
+                            maxBarThickness: 56,
                             yAxisID: 'y',
                             order: 2
                         }
@@ -609,7 +758,10 @@
                                 font: { size: 11, weight: '600' },
                                 padding: 8,
                                 callback: function(val) {
-                                    return val.toLocaleString('id-ID');
+                                    if (Number.isInteger(val)) {
+                                        return val.toLocaleString('id-ID');
+                                    }
+                                    return '';
                                 }
                             },
                             grid: { color: '#e5e7eb', drawBorder: false },
@@ -640,8 +792,8 @@
         const chartDpmPre = createDpmChart('chartDpmPre', '#0284c7', 'rgba(2, 132, 199, 0.12)');
         const chartParetoPre = createParetoChart('chartParetoPre', '#334155');
 
-        // --- 3. In-Place Update & Empty State Logic ---
-        function updateDpmData(chart, wrapperId, emptyId, trends) {
+        // --- 4. In-Place Update & Empty State Logic ---
+        function updateDpmData(chart, wrapperId, emptyId, trends, groupBy = 'day') {
             const wrapper = document.getElementById(wrapperId);
             const emptyEl = document.getElementById(emptyId);
             const msgEl = emptyEl ? emptyEl.querySelector('p') : null;
@@ -668,6 +820,7 @@
             if (emptyEl) emptyEl.classList.add('hidden');
 
             if (chart) {
+                chart._groupBy = groupBy;
                 const baseColor = chart.data.datasets[0].borderColor || '#0d9488';
                 chart.data.labels = trendList.map(t => t.label);
 
@@ -729,42 +882,28 @@
             }
         }
 
-        function applyAnalyticsData(res) {
-            if (!res) return;
-
-            const dpmFinal = res.dpm_final || [];
-            const paretoFinal = res.pareto_final || [];
-            const dpmPre = res.dpm_pre || [];
-            const paretoPre = res.pareto_pre || [];
-
-            updateDpmData(chartDpmFinal, 'wrapperDpmFinal', 'emptyDpmFinal', dpmFinal);
-            updateParetoData(chartParetoFinal, 'wrapperParetoFinal', 'emptyParetoFinal', paretoFinal);
-            updateDpmData(chartDpmPre, 'wrapperDpmPre', 'emptyDpmPre', dpmPre);
-            updateParetoData(chartParetoPre, 'wrapperParetoPre', 'emptyParetoPre', paretoPre);
-        }
-
-        // --- 4. Fetch Analytics (dengan AbortController & Filter State) ---
-        function fetchAnalytics() {
-            if (analyticsAbortCtrl) {
-                analyticsAbortCtrl.abort();
+        // --- 5. Fetch Final & Fetch Pre Terpisah (dengan AbortController & State) ---
+        function fetchFinal() {
+            if (abortFinal) {
+                abortFinal.abort();
             }
-            analyticsAbortCtrl = new AbortController();
+            abortFinal = new AbortController();
 
-            const loadingEl = document.getElementById('analyticsLoading');
-            const errorEl = document.getElementById('analyticsError');
-            const errorMsgEl = document.getElementById('analyticsErrorMessage');
+            const loadingEl = document.getElementById('loadingFinal');
+            const errorEl = document.getElementById('errorFinal');
+            const errorMsgEl = document.getElementById('errorMessageFinal');
 
             if (loadingEl) loadingEl.classList.remove('hidden');
 
             const params = new URLSearchParams();
-            if (activeFilters.start_date) params.append('start_date', activeFilters.start_date);
-            if (activeFilters.end_date) params.append('end_date', activeFilters.end_date);
-            if (activeFilters.group_by) params.append('group_by', activeFilters.group_by);
-            if (activeFilters.conveyor && activeFilters.conveyor !== 'all') params.append('conveyor', activeFilters.conveyor);
-            if (activeFilters.carline_id && activeFilters.carline_id !== 'all') params.append('carline_id', activeFilters.carline_id);
+            params.append('assy', 'final');
+            if (filtersFinal.start_date) params.append('start_date', filtersFinal.start_date);
+            if (filtersFinal.end_date) params.append('end_date', filtersFinal.end_date);
+            if (filtersFinal.group_by) params.append('group_by', filtersFinal.group_by);
+            if (filtersFinal.conveyor && filtersFinal.conveyor !== 'all') params.append('conveyor', filtersFinal.conveyor);
 
             fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
-                signal: analyticsAbortCtrl.signal,
+                signal: abortFinal.signal,
                 headers: { 'Accept': 'application/json' }
             })
             .then(response => {
@@ -782,13 +921,14 @@
                 return response.json();
             })
             .then(res => {
-                applyAnalyticsData(res);
+                updateDpmData(chartDpmFinal, 'wrapperDpmFinal', 'emptyDpmFinal', res.dpm_final || [], filtersFinal.group_by);
+                updateParetoData(chartParetoFinal, 'wrapperParetoFinal', 'emptyParetoFinal', res.pareto_final || []);
                 if (loadingEl) loadingEl.classList.add('hidden');
                 if (errorEl) errorEl.classList.add('hidden');
             })
             .catch(err => {
                 if (err.name === 'AbortError') return;
-                console.error('[Analytics] Error fetch analytics:', err);
+                console.error('[Analytics Final] Error fetch:', err);
                 if (loadingEl) loadingEl.classList.add('hidden');
 
                 const message = err.isSessionExpired
@@ -802,107 +942,238 @@
             });
         }
 
-        function triggerFilterChange(debounceMs = 300) {
-            if (debounceTimer) clearTimeout(debounceTimer);
+        function fetchPre() {
+            if (abortPre) {
+                abortPre.abort();
+            }
+            abortPre = new AbortController();
+
+            const loadingEl = document.getElementById('loadingPre');
+            const errorEl = document.getElementById('errorPre');
+            const errorMsgEl = document.getElementById('errorMessagePre');
+
+            if (loadingEl) loadingEl.classList.remove('hidden');
+
+            const params = new URLSearchParams();
+            params.append('assy', 'pre');
+            if (filtersPre.start_date) params.append('start_date', filtersPre.start_date);
+            if (filtersPre.end_date) params.append('end_date', filtersPre.end_date);
+            if (filtersPre.group_by) params.append('group_by', filtersPre.group_by);
+            if (filtersPre.carline_id && filtersPre.carline_id !== 'all') params.append('carline_id', filtersPre.carline_id);
+
+            fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
+                signal: abortPre.signal,
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type') || '';
+                const isJson = contentType.includes('application/json');
+
+                if (!response.ok || !isJson) {
+                    if (response.redirected || response.status === 401 || response.status === 419 || !isJson) {
+                        const sessionErr = new Error('Sesi berakhir. Muat ulang halaman.');
+                        sessionErr.isSessionExpired = true;
+                        throw sessionErr;
+                    }
+                    throw new Error('Gagal memuat data, mencoba lagi pada polling berikutnya.');
+                }
+                return response.json();
+            })
+            .then(res => {
+                updateDpmData(chartDpmPre, 'wrapperDpmPre', 'emptyDpmPre', res.dpm_pre || [], filtersPre.group_by);
+                updateParetoData(chartParetoPre, 'wrapperParetoPre', 'emptyParetoPre', res.pareto_pre || []);
+                if (loadingEl) loadingEl.classList.add('hidden');
+                if (errorEl) errorEl.classList.add('hidden');
+            })
+            .catch(err => {
+                if (err.name === 'AbortError') return;
+                console.error('[Analytics Pre] Error fetch:', err);
+                if (loadingEl) loadingEl.classList.add('hidden');
+
+                const message = err.isSessionExpired
+                    ? 'Sesi berakhir. Muat ulang halaman.'
+                    : 'Gagal memuat data, mencoba lagi pada polling berikutnya.';
+
+                if (errorEl && errorMsgEl) {
+                    errorMsgEl.innerText = message;
+                    errorEl.classList.remove('hidden');
+                }
+            });
+        }
+
+        function triggerFilterFinal(debounceMs = 300) {
+            if (debounceFinal) clearTimeout(debounceFinal);
             if (debounceMs === 0) {
-                fetchAnalytics();
+                fetchFinal();
             } else {
-                debounceTimer = setTimeout(fetchAnalytics, debounceMs);
+                debounceFinal = setTimeout(fetchFinal, debounceMs);
             }
         }
 
-        // --- 5. Flatpickr & UI Filter Events ---
-        let fpInstance = null;
+        function triggerFilterPre(debounceMs = 300) {
+            if (debouncePre) clearTimeout(debouncePre);
+            if (debounceMs === 0) {
+                fetchPre();
+            } else {
+                debouncePre = setTimeout(fetchPre, debounceMs);
+            }
+        }
+
+        // --- 6. Flatpickr & UI Events Final Assy ---
+        let fpFinal = null;
         if (window.flatpickr) {
-            fpInstance = window.flatpickr("#filterDateRange", {
+            fpFinal = window.flatpickr("#filterDateRangeFinal", {
                 mode: "range",
                 dateFormat: "Y-m-d",
-                defaultDate: [initialDates.start, initialDates.end],
+                defaultDate: [initialFinal.start, initialFinal.end],
                 onChange: function (selectedDates) {
                     if (selectedDates.length === 2) {
                         const pad = n => String(n).padStart(2, '0');
                         const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-                        activeFilters.start_date = fmt(selectedDates[0]);
-                        activeFilters.end_date = fmt(selectedDates[1]);
-                        triggerFilterChange(300);
+                        filtersFinal.start_date = fmt(selectedDates[0]);
+                        filtersFinal.end_date = fmt(selectedDates[1]);
+                        triggerFilterFinal(300);
                     } else if (selectedDates.length === 0) {
-                        activeFilters.start_date = '';
-                        activeFilters.end_date = '';
-                        triggerFilterChange(300);
+                        filtersFinal.start_date = '';
+                        filtersFinal.end_date = '';
+                        triggerFilterFinal(300);
                     }
                 }
             });
         }
 
-        // Segmented Control (Hari | Minggu | Bulan)
-        const groupButtons = document.querySelectorAll('.btn-group-by');
-        groupButtons.forEach(btn => {
+        const groupButtonsFinal = document.querySelectorAll('.btn-group-by-final');
+        groupButtonsFinal.forEach(btn => {
             btn.addEventListener('click', function () {
                 const val = this.dataset.val;
-                if (activeFilters.group_by === val) return;
+                if (filtersFinal.group_by === val) return;
 
-                activeFilters.group_by = val;
-                groupButtons.forEach(b => {
-                    b.classList.remove('bg-[#8b0000]', 'text-white', 'shadow-xs');
+                filtersFinal.group_by = val;
+                groupButtonsFinal.forEach(b => {
+                    b.classList.remove('bg-teal-600', 'text-white', 'shadow-xs');
                     b.classList.add('text-gray-600', 'hover:text-gray-900');
                 });
                 this.classList.remove('text-gray-600', 'hover:text-gray-900');
-                this.classList.add('bg-[#8b0000]', 'text-white', 'shadow-xs');
+                this.classList.add('bg-teal-600', 'text-white', 'shadow-xs');
 
-                triggerFilterChange(300);
+                triggerFilterFinal(300);
             });
         });
 
-        // Dropdown Konveyor (Final Assy)
-        const conveyorSelect = document.getElementById('filterConveyor');
-        if (conveyorSelect) {
-            conveyorSelect.addEventListener('change', function () {
-                activeFilters.conveyor = this.value;
-                triggerFilterChange(300);
+        const conveyorSelectFinal = document.getElementById('filterConveyorFinal');
+        if (conveyorSelectFinal) {
+            conveyorSelectFinal.addEventListener('change', function () {
+                filtersFinal.conveyor = this.value;
+                triggerFilterFinal(300);
             });
         }
 
-        // Dropdown Carline (Pre Assy)
-        const carlineSelect = document.getElementById('filterCarline');
-        if (carlineSelect) {
-            carlineSelect.addEventListener('change', function () {
-                activeFilters.carline_id = this.value;
-                triggerFilterChange(300);
-            });
-        }
-
-        // Reset Filter Button
-        const btnReset = document.getElementById('btnResetFilter');
-        if (btnReset) {
-            btnReset.addEventListener('click', function () {
+        const btnResetFinal = document.getElementById('btnResetFilterFinal');
+        if (btnResetFinal) {
+            btnResetFinal.addEventListener('click', function () {
                 const resetDates = getInitialDates();
-                activeFilters.start_date = resetDates.start;
-                activeFilters.end_date = resetDates.end;
-                activeFilters.group_by = 'day';
-                activeFilters.conveyor = 'all';
-                activeFilters.carline_id = 'all';
+                filtersFinal.start_date = resetDates.start;
+                filtersFinal.end_date = resetDates.end;
+                filtersFinal.group_by = 'day';
+                filtersFinal.conveyor = 'all';
 
-                if (fpInstance) {
-                    fpInstance.setDate([resetDates.start, resetDates.end], false);
+                if (fpFinal) {
+                    fpFinal.setDate([resetDates.start, resetDates.end], false);
                 }
-                if (conveyorSelect) conveyorSelect.value = 'all';
-                if (carlineSelect) carlineSelect.value = 'all';
+                if (conveyorSelectFinal) conveyorSelectFinal.value = 'all';
 
-                groupButtons.forEach(b => {
+                groupButtonsFinal.forEach(b => {
                     if (b.dataset.val === 'day') {
                         b.classList.remove('text-gray-600', 'hover:text-gray-900');
-                        b.classList.add('bg-[#8b0000]', 'text-white', 'shadow-xs');
+                        b.classList.add('bg-teal-600', 'text-white', 'shadow-xs');
                     } else {
-                        b.classList.remove('bg-[#8b0000]', 'text-white', 'shadow-xs');
+                        b.classList.remove('bg-teal-600', 'text-white', 'shadow-xs');
                         b.classList.add('text-gray-600', 'hover:text-gray-900');
                     }
                 });
 
-                triggerFilterChange(0);
+                triggerFilterFinal(0);
             });
         }
 
-        // --- 6. Polling Stats (Pertahankan dari kode lama) ---
+        // --- 7. Flatpickr & UI Events Pre Assy ---
+        let fpPre = null;
+        if (window.flatpickr) {
+            fpPre = window.flatpickr("#filterDateRangePre", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                defaultDate: [initialPre.start, initialPre.end],
+                onChange: function (selectedDates) {
+                    if (selectedDates.length === 2) {
+                        const pad = n => String(n).padStart(2, '0');
+                        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                        filtersPre.start_date = fmt(selectedDates[0]);
+                        filtersPre.end_date = fmt(selectedDates[1]);
+                        triggerFilterPre(300);
+                    } else if (selectedDates.length === 0) {
+                        filtersPre.start_date = '';
+                        filtersPre.end_date = '';
+                        triggerFilterPre(300);
+                    }
+                }
+            });
+        }
+
+        const groupButtonsPre = document.querySelectorAll('.btn-group-by-pre');
+        groupButtonsPre.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const val = this.dataset.val;
+                if (filtersPre.group_by === val) return;
+
+                filtersPre.group_by = val;
+                groupButtonsPre.forEach(b => {
+                    b.classList.remove('bg-sky-600', 'text-white', 'shadow-xs');
+                    b.classList.add('text-gray-600', 'hover:text-gray-900');
+                });
+                this.classList.remove('text-gray-600', 'hover:text-gray-900');
+                this.classList.add('bg-sky-600', 'text-white', 'shadow-xs');
+
+                triggerFilterPre(300);
+            });
+        });
+
+        const carlineSelectPre = document.getElementById('filterCarlinePre');
+        if (carlineSelectPre) {
+            carlineSelectPre.addEventListener('change', function () {
+                filtersPre.carline_id = this.value;
+                triggerFilterPre(300);
+            });
+        }
+
+        const btnResetPre = document.getElementById('btnResetFilterPre');
+        if (btnResetPre) {
+            btnResetPre.addEventListener('click', function () {
+                const resetDates = getInitialDates();
+                filtersPre.start_date = resetDates.start;
+                filtersPre.end_date = resetDates.end;
+                filtersPre.group_by = 'day';
+                filtersPre.carline_id = 'all';
+
+                if (fpPre) {
+                    fpPre.setDate([resetDates.start, resetDates.end], false);
+                }
+                if (carlineSelectPre) carlineSelectPre.value = 'all';
+
+                groupButtonsPre.forEach(b => {
+                    if (b.dataset.val === 'day') {
+                        b.classList.remove('text-gray-600', 'hover:text-gray-900');
+                        b.classList.add('bg-sky-600', 'text-white', 'shadow-xs');
+                    } else {
+                        b.classList.remove('bg-sky-600', 'text-white', 'shadow-xs');
+                        b.classList.add('text-gray-600', 'hover:text-gray-900');
+                    }
+                });
+
+                triggerFilterPre(0);
+            });
+        }
+
+        // --- 8. Polling Stats (Real-time Defect & Users) ---
         function flashElement(el) {
             if (!el) return;
             el.classList.remove('poll-updated');
@@ -953,18 +1224,20 @@
                 .catch(err => console.error('[Polling] Gagal fetch stats:', err));
         }
 
-        // --- 7. Polling Execution (8s & Tab Inactive Prevention) ---
+        // --- 9. Polling Execution (8s & Tab Inactive Prevention) ---
         function runPollingCycle() {
-            if (document.hidden) return; // Jangan polling saat tab tidak aktif
+            if (document.hidden) return;
             fetchStats();
-            fetchAnalytics();
+            fetchFinal();
+            fetchPre();
         }
 
         // Initial Load
         fetchStats();
-        fetchAnalytics();
+        fetchFinal();
+        fetchPre();
 
-        // Start 8-second interval
+        // 8-second interval
         pollingTimer = setInterval(runPollingCycle, 8000);
 
         // Resume saat tab kembali aktif
@@ -976,7 +1249,8 @@
 
         window.addEventListener('beforeunload', function() {
             if (pollingTimer) clearInterval(pollingTimer);
-            if (analyticsAbortCtrl) analyticsAbortCtrl.abort();
+            if (abortFinal) abortFinal.abort();
+            if (abortPre) abortPre.abort();
         });
     });
     </script>

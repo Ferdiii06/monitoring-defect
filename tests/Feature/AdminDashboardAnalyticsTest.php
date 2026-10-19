@@ -416,4 +416,82 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertEquals('2026-01-20', $dpmPre[1]['label']);
         $this->assertNull($dpmPre[1]['target']);
     }
+
+    public function test_analytics_with_assy_parameter(): void
+    {
+        $carline1 = Carline::create(['name' => 'CARLINE-1']);
+        $carline2 = Carline::create(['name' => 'CARLINE-2']);
+
+        DpmTarget::create([
+            'jenis_assy'   => 'Final Assy',
+            'period_start' => '2026-03-01',
+            'period_end'   => '2026-03-31',
+            'target_dpm'   => 45.00,
+        ]);
+
+        DpmTarget::create([
+            'jenis_assy'   => 'Pre Assy',
+            'period_start' => '2026-03-01',
+            'period_end'   => '2026-03-31',
+            'target_dpm'   => 65.00,
+        ]);
+
+        // Final Assy defect
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-03-10 10:00:00'),
+            'user_name'        => 'Operator A',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => 'CONV-A',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 3,
+            'inspect_quantity' => 100,
+        ]);
+
+        // Pre Assy defect
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-03-10 10:00:00'),
+            'user_name'        => 'Operator B',
+            'jenis_assy'       => 'Pre Assy',
+            'carline_id'       => $carline1->id,
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'WIRE',
+            'quantity'         => 5,
+            'inspect_quantity' => 100,
+        ]);
+
+        // 1. Uji assy=final:
+        // Kirim carline_id=$carline2->id (filter silang yang harus diabaikan oleh Final Assy)
+        $resFinal = $this->actingAsAdmin()->getJson('/dashboard/analytics?assy=final&start_date=2026-03-01&end_date=2026-03-31&carline_id=' . $carline2->id . '&conveyor=CONV-A');
+        $resFinal->assertStatus(200);
+
+        // Hanya mengembalikan dpm_final dan pareto_final
+        $jsonFinal = $resFinal->json();
+        $this->assertArrayHasKey('dpm_final', $jsonFinal);
+        $this->assertArrayHasKey('pareto_final', $jsonFinal);
+        $this->assertArrayNotHasKey('dpm_pre', $jsonFinal);
+        $this->assertArrayNotHasKey('pareto_pre', $jsonFinal);
+
+        // Key target tetap ada dan benar
+        $this->assertCount(1, $jsonFinal['dpm_final']);
+        $this->assertEquals(45.0, $jsonFinal['dpm_final'][0]['target']);
+        $this->assertEquals(3, $jsonFinal['dpm_final'][0]['total_defect']);
+
+        // 2. Uji assy=pre:
+        // Kirim conveyor=CONV-NONEXISTENT (filter silang yang harus diabaikan oleh Pre Assy)
+        $resPre = $this->actingAsAdmin()->getJson('/dashboard/analytics?assy=pre&start_date=2026-03-01&end_date=2026-03-31&conveyor=CONV-NONEXISTENT&carline_id=' . $carline1->id);
+        $resPre->assertStatus(200);
+
+        // Hanya mengembalikan dpm_pre dan pareto_pre
+        $jsonPre = $resPre->json();
+        $this->assertArrayHasKey('dpm_pre', $jsonPre);
+        $this->assertArrayHasKey('pareto_pre', $jsonPre);
+        $this->assertArrayNotHasKey('dpm_final', $jsonPre);
+        $this->assertArrayNotHasKey('pareto_final', $jsonPre);
+
+        // Key target tetap ada dan benar
+        $this->assertCount(1, $jsonPre['dpm_pre']);
+        $this->assertEquals(65.0, $jsonPre['dpm_pre'][0]['target']);
+        $this->assertEquals(5, $jsonPre['dpm_pre'][0]['total_defect']);
+    }
 }
