@@ -167,9 +167,9 @@
                             <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Defect Final</span>
                             <span class="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200/80" id="summaryPeriodParetoFinal">Memuat...</span>
                         </div>
-                        <div class="mt-2 flex items-baseline space-x-2">
-                            <span class="text-xl font-black text-slate-900 font-mono tracking-tight truncate max-w-[170px]" id="summaryValParetoFinal">-</span>
-                            <span class="text-xs font-bold text-teal-700 font-mono" id="summaryCountParetoFinal"></span>
+                        <div class="mt-2 flex items-baseline space-x-2 min-w-0">
+                            <span class="text-xl font-black text-slate-900 font-mono tracking-tight truncate flex-1 min-w-0" id="summaryValParetoFinal">-</span>
+                            <span class="text-xs font-bold text-teal-700 font-mono shrink-0" id="summaryCountParetoFinal"></span>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-1 truncate" id="summarySubParetoFinal">Sub defect peringkat 1</p>
                     </div>
@@ -387,9 +387,9 @@
                             <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Defect Pre</span>
                             <span class="text-[10px] font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/80" id="summaryPeriodParetoPre">Memuat...</span>
                         </div>
-                        <div class="mt-2 flex items-baseline space-x-2">
-                            <span class="text-xl font-black text-slate-900 font-mono tracking-tight truncate max-w-[170px]" id="summaryValParetoPre">-</span>
-                            <span class="text-xs font-bold text-blue-700 font-mono" id="summaryCountParetoPre"></span>
+                        <div class="mt-2 flex items-baseline space-x-2 min-w-0">
+                            <span class="text-xl font-black text-slate-900 font-mono tracking-tight truncate flex-1 min-w-0" id="summaryValParetoPre">-</span>
+                            <span class="text-xs font-bold text-blue-700 font-mono shrink-0" id="summaryCountParetoPre"></span>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-1 truncate" id="summarySubParetoPre">Sub defect peringkat 1</p>
                     </div>
@@ -598,6 +598,45 @@
             const pad = n => String(n).padStart(2, '0');
             const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
             return { start: fmt(start), end: fmt(end) };
+        }
+
+        function formatPeriodLabel(startStr, endStr) {
+            if (!startStr && !endStr) return 'Semua Periode';
+            const fmt = str => {
+                if (!str) return null;
+                const p = str.split('-');
+                if (p.length === 3) {
+                    const d = parseInt(p[2], 10);
+                    const m = parseInt(p[1], 10) - 1;
+                    const y = p[0];
+                    return { d: String(d).padStart(2, '0'), m: MONTH_NAMES_ID[m] || p[1], y };
+                }
+                return { d: str, m: '', y: '' };
+            };
+
+            const s = fmt(startStr);
+            const e = fmt(endStr);
+
+            if (s && !e) return `Sejak ${s.d} ${s.m} ${s.y}`.trim();
+            if (!s && e) return `s/d ${e.d} ${e.m} ${e.y}`.trim();
+            if (s && e) {
+                if (s.y === e.y && s.m === e.m && s.d === e.d) {
+                    return `${s.d} ${s.m} ${s.y}`;
+                }
+                if (s.y === e.y) {
+                    return `${s.d} ${s.m} - ${e.d} ${e.m} ${s.y}`;
+                }
+                return `${s.d} ${s.m} ${s.y} - ${e.d} ${e.m} ${e.y}`;
+            }
+            return 'Semua Periode';
+        }
+
+        function markLastUpdated() {
+            const clockEl = document.getElementById('lastUpdatedClock');
+            if (!clockEl) return;
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            clockEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())} WIB`;
         }
 
         function formatDpmXLabel(rawLabel, groupBy) {
@@ -1138,6 +1177,108 @@
             }
         }
 
+        function updateDpmSummaryCard(type, trends, filters) {
+            const isFinal = type === 'final';
+            const titleEl = document.getElementById(isFinal ? 'summaryTitleDpmFinal' : 'summaryTitleDpmPre');
+            const periodEl = document.getElementById(isFinal ? 'summaryPeriodDpmFinal' : 'summaryPeriodDpmPre');
+            const valEl = document.getElementById(isFinal ? 'summaryValDpmFinal' : 'summaryValDpmPre');
+            const unitEl = document.getElementById(isFinal ? 'summaryUnitDpmFinal' : 'summaryUnitDpmPre');
+            const subEl = document.getElementById(isFinal ? 'summarySubDpmFinal' : 'summarySubDpmPre');
+
+            if (periodEl) {
+                periodEl.textContent = formatPeriodLabel(filters.start_date, filters.end_date);
+            }
+
+            const list = Array.isArray(trends) ? trends : [];
+
+            // Cek ketersediaan data jumlah (total_defect & total_inspect) di dalam respons
+            const hasQuantity = list.length > 0 && list.some(item => item.total_inspect !== undefined && item.total_defect !== undefined);
+
+            if (hasQuantity) {
+                if (titleEl) titleEl.textContent = isFinal ? 'DPM Final Assy' : 'DPM Pre Assy';
+
+                let sumDefect = 0;
+                let sumInspect = 0;
+                for (const item of list) {
+                    sumDefect += (Number(item.total_defect) || 0);
+                    sumInspect += (Number(item.total_inspect) || 0);
+                }
+
+                if (sumInspect > 0) {
+                    const dpmCalc = Math.round((sumDefect / sumInspect) * 1000000);
+                    if (valEl) valEl.textContent = dpmCalc.toLocaleString('id-ID');
+                    if (unitEl) unitEl.textContent = 'PPM';
+
+                    // Cek target terakhir jika ada
+                    const latestTargetItem = [...list].reverse().find(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
+                    if (latestTargetItem && subEl) {
+                        const targetVal = Number(latestTargetItem.target);
+                        if (dpmCalc > targetVal) {
+                            subEl.innerHTML = `<span class="text-red-600 font-semibold">⚠️ Melebihi Target (${targetVal.toLocaleString('id-ID')})</span> &bull; ${sumDefect.toLocaleString('id-ID')} def / ${sumInspect.toLocaleString('id-ID')} insp`;
+                        } else {
+                            subEl.innerHTML = `<span class="text-emerald-600 font-semibold">✓ Memenuhi Target (${targetVal.toLocaleString('id-ID')})</span> &bull; ${sumDefect.toLocaleString('id-ID')} def / ${sumInspect.toLocaleString('id-ID')} insp`;
+                        }
+                    } else if (subEl) {
+                        subEl.textContent = `${sumDefect.toLocaleString('id-ID')} defect / ${sumInspect.toLocaleString('id-ID')} inspect`;
+                    }
+                } else {
+                    if (valEl) valEl.textContent = '-';
+                    if (unitEl) unitEl.textContent = 'PPM';
+                    if (subEl) subEl.textContent = '0 inspect pada periode ini';
+                }
+            } else {
+                // Data jumlah tidak ada di respons -> pakai label "DPM terakhir"
+                if (titleEl) titleEl.textContent = 'DPM Terakhir';
+
+                const lastValid = [...list].reverse().find(item => item.dpm !== null && item.dpm !== undefined && !isNaN(Number(item.dpm)));
+                if (lastValid && valEl) {
+                    valEl.textContent = Math.round(Number(lastValid.dpm)).toLocaleString('id-ID');
+                    if (unitEl) unitEl.textContent = 'PPM';
+                    if (subEl) subEl.textContent = `Titik terakhir (${lastValid.label || 'data'})`;
+                } else {
+                    if (valEl) valEl.textContent = '-';
+                    if (unitEl) unitEl.textContent = 'PPM';
+                    if (subEl) subEl.textContent = 'Data tidak tersedia';
+                }
+            }
+        }
+
+        function updateParetoSummaryCard(type, pareto, filters) {
+            const isFinal = type === 'final';
+            const periodEl = document.getElementById(isFinal ? 'summaryPeriodParetoFinal' : 'summaryPeriodParetoPre');
+            const valEl = document.getElementById(isFinal ? 'summaryValParetoFinal' : 'summaryValParetoPre');
+            const countEl = document.getElementById(isFinal ? 'summaryCountParetoFinal' : 'summaryCountParetoPre');
+            const subEl = document.getElementById(isFinal ? 'summarySubParetoFinal' : 'summarySubParetoPre');
+
+            if (periodEl) {
+                periodEl.textContent = formatPeriodLabel(filters.start_date, filters.end_date);
+            }
+
+            const list = Array.isArray(pareto) ? pareto : [];
+            const topItem = list.length > 0 && (list[0].total > 0) ? list[0] : null;
+
+            if (topItem) {
+                if (valEl) {
+                    valEl.textContent = topItem.name;
+                    valEl.title = topItem.name;
+                }
+                if (countEl) {
+                    countEl.textContent = `(${Number(topItem.total).toLocaleString('id-ID')} unit)`;
+                }
+                if (subEl) {
+                    const cum = topItem.cumulative_percent !== undefined ? `${Number(topItem.cumulative_percent).toFixed(1)}%` : '';
+                    subEl.textContent = cum ? `Peringkat 1 (${cum} kumulatif)` : 'Peringkat 1 terbanyak';
+                }
+            } else {
+                if (valEl) {
+                    valEl.textContent = 'Tidak Ada Defect';
+                    valEl.title = '';
+                }
+                if (countEl) countEl.textContent = '';
+                if (subEl) subEl.textContent = 'Nol defect pada periode ini';
+            }
+        }
+
         // --- 5. Fetch Functions Terpisah Per Grafik (Isolated Abort & State) ---
         function fetchDpmFinal() {
             if (abortDpmFinal) abortDpmFinal.abort();
@@ -1174,7 +1315,10 @@
                 return response.json();
             })
             .then(res => {
-                updateDpmData(chartDpmFinal, 'wrapperDpmFinal', 'emptyDpmFinal', res.dpm_final || [], filtersDpmFinal.group_by);
+                const data = res.dpm_final || [];
+                updateDpmData(chartDpmFinal, 'wrapperDpmFinal', 'emptyDpmFinal', data, filtersDpmFinal.group_by);
+                updateDpmSummaryCard('final', data, filtersDpmFinal);
+                markLastUpdated();
                 if (loadingEl) loadingEl.classList.add('hidden');
                 if (errorEl) errorEl.classList.add('hidden');
             })
@@ -1226,7 +1370,10 @@
                 return response.json();
             })
             .then(res => {
-                updateParetoData(chartParetoFinal, 'wrapperParetoFinal', 'emptyParetoFinal', res.pareto_final || []);
+                const data = res.pareto_final || [];
+                updateParetoData(chartParetoFinal, 'wrapperParetoFinal', 'emptyParetoFinal', data);
+                updateParetoSummaryCard('final', data, filtersParetoFinal);
+                markLastUpdated();
                 if (loadingEl) loadingEl.classList.add('hidden');
                 if (errorEl) errorEl.classList.add('hidden');
             })
@@ -1279,7 +1426,10 @@
                 return response.json();
             })
             .then(res => {
-                updateDpmData(chartDpmPre, 'wrapperDpmPre', 'emptyDpmPre', res.dpm_pre || [], filtersDpmPre.group_by);
+                const data = res.dpm_pre || [];
+                updateDpmData(chartDpmPre, 'wrapperDpmPre', 'emptyDpmPre', data, filtersDpmPre.group_by);
+                updateDpmSummaryCard('pre', data, filtersDpmPre);
+                markLastUpdated();
                 if (loadingEl) loadingEl.classList.add('hidden');
                 if (errorEl) errorEl.classList.add('hidden');
             })
@@ -1331,7 +1481,10 @@
                 return response.json();
             })
             .then(res => {
-                updateParetoData(chartParetoPre, 'wrapperParetoPre', 'emptyParetoPre', res.pareto_pre || []);
+                const data = res.pareto_pre || [];
+                updateParetoData(chartParetoPre, 'wrapperParetoPre', 'emptyParetoPre', data);
+                updateParetoSummaryCard('pre', data, filtersParetoPre);
+                markLastUpdated();
                 if (loadingEl) loadingEl.classList.add('hidden');
                 if (errorEl) errorEl.classList.add('hidden');
             })
@@ -1387,10 +1540,14 @@
                         const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
                         filtersDpmFinal.start_date = fmt(selectedDates[0]);
                         filtersDpmFinal.end_date = fmt(selectedDates[1]);
+                        const periodEl = document.getElementById('summaryPeriodDpmFinal');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersDpmFinal.start_date, filtersDpmFinal.end_date);
                         triggerFilterDpmFinal(300);
                     } else if (selectedDates.length === 0) {
                         filtersDpmFinal.start_date = '';
                         filtersDpmFinal.end_date = '';
+                        const periodEl = document.getElementById('summaryPeriodDpmFinal');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
                         triggerFilterDpmFinal(300);
                     }
                 }
@@ -1430,6 +1587,9 @@
                 filtersDpmFinal.group_by = 'day';
                 filtersDpmFinal.conveyor = 'all';
 
+                const periodEl = document.getElementById('summaryPeriodDpmFinal');
+                if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
+
                 if (fpDpmFinal) fpDpmFinal.setDate([resetDates.start, resetDates.end], false);
                 if (conveyorSelectDpmFinal) conveyorSelectDpmFinal.value = 'all';
 
@@ -1460,10 +1620,14 @@
                         const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
                         filtersParetoFinal.start_date = fmt(selectedDates[0]);
                         filtersParetoFinal.end_date = fmt(selectedDates[1]);
+                        const periodEl = document.getElementById('summaryPeriodParetoFinal');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersParetoFinal.start_date, filtersParetoFinal.end_date);
                         triggerFilterParetoFinal(300);
                     } else if (selectedDates.length === 0) {
                         filtersParetoFinal.start_date = '';
                         filtersParetoFinal.end_date = '';
+                        const periodEl = document.getElementById('summaryPeriodParetoFinal');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
                         triggerFilterParetoFinal(300);
                     }
                 }
@@ -1486,6 +1650,9 @@
                 filtersParetoFinal.end_date = resetDates.end;
                 filtersParetoFinal.conveyor = 'all';
 
+                const periodEl = document.getElementById('summaryPeriodParetoFinal');
+                if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
+
                 if (fpParetoFinal) fpParetoFinal.setDate([resetDates.start, resetDates.end], false);
                 if (conveyorSelectParetoFinal) conveyorSelectParetoFinal.value = 'all';
 
@@ -1506,10 +1673,14 @@
                         const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
                         filtersDpmPre.start_date = fmt(selectedDates[0]);
                         filtersDpmPre.end_date = fmt(selectedDates[1]);
+                        const periodEl = document.getElementById('summaryPeriodDpmPre');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersDpmPre.start_date, filtersDpmPre.end_date);
                         triggerFilterDpmPre(300);
                     } else if (selectedDates.length === 0) {
                         filtersDpmPre.start_date = '';
                         filtersDpmPre.end_date = '';
+                        const periodEl = document.getElementById('summaryPeriodDpmPre');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
                         triggerFilterDpmPre(300);
                     }
                 }
@@ -1549,6 +1720,9 @@
                 filtersDpmPre.group_by = 'day';
                 filtersDpmPre.carline_id = 'all';
 
+                const periodEl = document.getElementById('summaryPeriodDpmPre');
+                if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
+
                 if (fpDpmPre) fpDpmPre.setDate([resetDates.start, resetDates.end], false);
                 if (carlineSelectDpmPre) carlineSelectDpmPre.value = 'all';
 
@@ -1579,10 +1753,14 @@
                         const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
                         filtersParetoPre.start_date = fmt(selectedDates[0]);
                         filtersParetoPre.end_date = fmt(selectedDates[1]);
+                        const periodEl = document.getElementById('summaryPeriodParetoPre');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersParetoPre.start_date, filtersParetoPre.end_date);
                         triggerFilterParetoPre(300);
                     } else if (selectedDates.length === 0) {
                         filtersParetoPre.start_date = '';
                         filtersParetoPre.end_date = '';
+                        const periodEl = document.getElementById('summaryPeriodParetoPre');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
                         triggerFilterParetoPre(300);
                     }
                 }
@@ -1605,6 +1783,9 @@
                 filtersParetoPre.end_date = resetDates.end;
                 filtersParetoPre.carline_id = 'all';
 
+                const periodEl = document.getElementById('summaryPeriodParetoPre');
+                if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
+
                 if (fpParetoPre) fpParetoPre.setDate([resetDates.start, resetDates.end], false);
                 if (carlineSelectParetoPre) carlineSelectParetoPre.value = 'all';
 
@@ -1624,6 +1805,7 @@
             fetch('{{ url("/api/dashboard/stats") }}')
                 .then(r => r.json())
                 .then(stats => {
+                    markLastUpdated();
                     const totalEl = document.getElementById('stat-total-defect');
                     if (totalEl && stats.totalDefect !== undefined) {
                         const newTxt = stats.totalDefect.toLocaleString('id-ID');
@@ -1671,6 +1853,20 @@
             fetchParetoFinal();
             fetchDpmPre();
             fetchParetoPre();
+        }
+
+        // Inisialisasi label periode awal kartu analitik
+        if (document.getElementById('summaryPeriodDpmFinal')) {
+            document.getElementById('summaryPeriodDpmFinal').textContent = formatPeriodLabel(filtersDpmFinal.start_date, filtersDpmFinal.end_date);
+        }
+        if (document.getElementById('summaryPeriodParetoFinal')) {
+            document.getElementById('summaryPeriodParetoFinal').textContent = formatPeriodLabel(filtersParetoFinal.start_date, filtersParetoFinal.end_date);
+        }
+        if (document.getElementById('summaryPeriodDpmPre')) {
+            document.getElementById('summaryPeriodDpmPre').textContent = formatPeriodLabel(filtersDpmPre.start_date, filtersDpmPre.end_date);
+        }
+        if (document.getElementById('summaryPeriodParetoPre')) {
+            document.getElementById('summaryPeriodParetoPre').textContent = formatPeriodLabel(filtersParetoPre.start_date, filtersParetoPre.end_date);
         }
 
         // Initial Load
