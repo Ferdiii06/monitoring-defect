@@ -23,6 +23,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+.agents/
 
 # Scratch & Debug Scripts
 verify_*.php
@@ -41,3 +42,5 @@ error.html
 *.html
 !docs/**/*.html
 
+
+.agents/
