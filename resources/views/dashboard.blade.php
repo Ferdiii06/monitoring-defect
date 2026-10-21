@@ -6,35 +6,13 @@
     <!-- Header Section -->
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-            <div class="flex items-center space-x-2.5">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wider bg-red-100 text-brand uppercase">PT JAI</span>
-                <span class="text-xs font-semibold text-slate-500">Quality Assurance Division</span>
-            </div>
-            <h1 class="text-2xl font-black text-slate-900 tracking-tight leading-tight mt-1">Monitoring Defect & Kualitas QA</h1>
-            <p class="text-xs font-medium text-slate-500 mt-0.5">Analitik real-time performa proses perakitan kabel body (Wiring Harness).</p>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight leading-tight">Monitoring Defect & Kualitas QA</h1>
+            <p class="text-xs font-medium text-slate-500 mt-1">Analitik real-time performa proses perakitan kabel body (Wiring Harness).</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
-            <!-- Live Clock Status Container -->
-            <div id="statusContainer" class="flex items-center space-x-2 text-xs font-semibold text-slate-600 bg-white border border-slate-200/90 px-3.5 py-2 rounded-xl shadow-2xs">
-                <span id="statusIndicatorDot" class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span id="statusLabel" class="text-slate-500">Update:</span>
-                <span id="lastUpdatedClock" class="font-mono font-bold text-slate-800">Menghubungkan...</span>
-            </div>
-
-            <!-- Add Account Button -->
-            <a href="{{ route('account.create') }}" class="bg-brand hover:bg-brand-active text-white text-xs font-bold py-2.5 px-4 rounded-xl transition duration-150 shadow-xs shadow-brand/20 flex items-center space-x-1.5 active:scale-95">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                <span>Add Account</span>
-            </a>
-
+        <div class="flex items-center gap-3">
             <!-- Admin Profile Card -->
-            <div class="flex items-center space-x-3 border-l border-slate-200 pl-3">
+            <div class="flex items-center space-x-3">
                 <div class="text-right">
                     <span class="block text-xs font-extrabold text-slate-900">{{ session('user_name', 'Admin QA') }}</span>
                     <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Administrator</span>
@@ -631,14 +609,6 @@
                 return `${s.d} ${s.m} ${s.y} - ${e.d} ${e.m} ${e.y}`;
             }
             return 'Semua Periode';
-        }
-
-        function markLastUpdated() {
-            const clockEl = document.getElementById('lastUpdatedClock');
-            if (!clockEl) return;
-            const now = new Date();
-            const pad = n => String(n).padStart(2, '0');
-            clockEl.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())} WIB`;
         }
 
         function formatDpmXLabel(rawLabel, groupBy) {
@@ -1447,7 +1417,6 @@
                 const data = res.dpm_final || [];
                 updateDpmData(chartDpmFinal, 'wrapperDpmFinal', 'emptyDpmFinal', data, filtersDpmFinal.group_by);
                 updateDpmSummaryCard('final', data, filtersDpmFinal);
-                markLastUpdated();
                 setLoadingBadge('loadingDpmFinal', 'success');
                 if (errorEl) errorEl.classList.add('hidden');
             })
@@ -1507,7 +1476,6 @@
                 const data = res.pareto_final || [];
                 updateParetoData(chartParetoFinal, 'wrapperParetoFinal', 'emptyParetoFinal', data);
                 updateParetoSummaryCard('final', data, filtersParetoFinal);
-                markLastUpdated();
                 setLoadingBadge('loadingParetoFinal', 'success');
                 if (errorEl) errorEl.classList.add('hidden');
             })
@@ -1568,7 +1536,6 @@
                 const data = res.dpm_pre || [];
                 updateDpmData(chartDpmPre, 'wrapperDpmPre', 'emptyDpmPre', data, filtersDpmPre.group_by);
                 updateDpmSummaryCard('pre', data, filtersDpmPre);
-                markLastUpdated();
                 setLoadingBadge('loadingDpmPre', 'success');
                 if (errorEl) errorEl.classList.add('hidden');
             })
@@ -1628,7 +1595,6 @@
                 const data = res.pareto_pre || [];
                 updateParetoData(chartParetoPre, 'wrapperParetoPre', 'emptyParetoPre', data);
                 updateParetoSummaryCard('pre', data, filtersParetoPre);
-                markLastUpdated();
                 setLoadingBadge('loadingParetoPre', 'success');
                 if (errorEl) errorEl.classList.add('hidden');
             })
@@ -1952,7 +1918,6 @@
             fetch('{{ url("/api/dashboard/stats") }}')
                 .then(r => r.json())
                 .then(stats => {
-                    markLastUpdated();
                     const totalEl = document.getElementById('stat-total-defect');
                     if (totalEl && stats.totalDefect !== undefined) {
                         const newTxt = stats.totalDefect.toLocaleString('id-ID');
