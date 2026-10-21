@@ -107,19 +107,21 @@
                     </div>
                 </div>
 
-                <!-- 3. Target DPM -->
+                <!-- 3. Target DPM / PPM -->
                 <div>
                     <label for="add_target_dpm" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
-                        Target DPM <span class="text-red-500">*</span>
+                        <span x-text="addForm.jenis_assy === 'Pre Assy' ? 'Target PPM' : 'Target DPM'">Target DPM</span> <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                        <input type="number" step="0.01" min="0" id="add_target_dpm" name="target_dpm" x-model="addForm.target_dpm" placeholder="Contoh: 15.00" required
+                        <input type="number" step="0.01" min="0" id="add_target_dpm" name="target_dpm" x-model="addForm.target_dpm"
+                            :placeholder="addForm.jenis_assy === 'Pre Assy' ? 'Contoh: 15.00 PPM' : 'Contoh: 15.00 DPM'" placeholder="Contoh: 15.00" required
                             class="w-full border border-gray-200 rounded-xl p-2.5 pr-14 text-xs font-mono font-bold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] transition shadow-xs">
-                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-xs font-bold text-gray-400">
+                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-xs font-bold text-gray-400"
+                            x-text="addForm.jenis_assy === 'Pre Assy' ? 'PPM' : 'DPM'">
                             DPM
                         </span>
                     </div>
-                    <p class="text-[10px] font-medium text-gray-400 mt-1">Batas toleransi cacat per satu juta unit.</p>
+                    <p class="text-[10px] font-medium text-gray-400 mt-1">Batas toleransi cacat per satu juta pcs.</p>
                 </div>
 
                 <!-- Submit Button -->
@@ -226,7 +228,7 @@
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3 w-14">No</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Periode Target</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Durasi</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-right">Target DPM</th>
+                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-right">Target PPM</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center pr-3 w-32">Aksi</th>
                         </tr>
                     </thead>
@@ -246,7 +248,7 @@
                                 </td>
                                 <td class="py-3.5 px-4 text-right">
                                     <span class="inline-block bg-sky-50 text-sky-800 border border-sky-200/80 text-xs font-bold font-mono px-2.5 py-0.5 rounded-lg">
-                                        {{ number_format($target->target_dpm, 2, ',', '.') }} DPM
+                                        {{ number_format($target->target_dpm, 2, ',', '.') }} PPM
                                     </span>
                                 </td>
                                 <td class="py-3.5 text-center px-4 pr-3">
@@ -267,7 +269,7 @@
                         @empty
                             <tr>
                                 <td colspan="5" class="py-12 text-center text-xs text-gray-400 font-semibold">
-                                    Belum ada target DPM untuk Pre Assy.
+                                    Belum ada target PPM untuk Pre Assy.
                                 </td>
                             </tr>
                         @endforelse
@@ -340,15 +342,16 @@
                     </div>
                 </div>
 
-                <!-- Target DPM -->
+                <!-- Target DPM / PPM -->
                 <div>
                     <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
-                        Target DPM <span class="text-red-500">*</span>
+                        <span x-text="editForm.jenis_assy === 'Pre Assy' ? 'Target PPM' : 'Target DPM'">Target DPM</span> <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
                         <input type="number" step="0.01" min="0" name="target_dpm" x-model="editForm.target_dpm" required
                             class="w-full border border-gray-200 rounded-xl p-2.5 pr-14 text-xs font-mono font-bold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] transition shadow-xs">
-                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-xs font-bold text-gray-400">
+                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-xs font-bold text-gray-400"
+                            x-text="editForm.jenis_assy === 'Pre Assy' ? 'PPM' : 'DPM'">
                             DPM
                         </span>
                     </div>

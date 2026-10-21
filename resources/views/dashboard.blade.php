@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
+@section('title', 'Monitoring Internal Defect')
 
 @section('content')
     <!-- Header Section -->
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-            <h1 class="text-2xl font-black text-slate-900 tracking-tight leading-tight">Monitoring Defect & Kualitas QA</h1>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight leading-tight">Monitoring Internal Defect</h1>
             <p class="text-xs font-medium text-slate-500 mt-1">Analitik real-time performa proses perakitan kabel body (Wiring Harness).</p>
         </div>
 
@@ -134,7 +134,7 @@
                         </div>
                         <div class="mt-2 flex items-baseline space-x-2">
                             <span class="text-2xl font-black text-slate-900 font-mono tracking-tight tabular-nums" id="summaryValDpmFinal">-</span>
-                            <span class="text-[11px] text-slate-400 font-semibold" id="summaryUnitDpmFinal">PPM</span>
+                            <span class="text-[11px] text-slate-400 font-semibold" id="summaryUnitDpmFinal">DPM</span>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-1 truncate" id="summarySubDpmFinal">Kalkulasi total defect / inspect</p>
                     </div>
@@ -350,7 +350,7 @@
                     <!-- Summary DPM Pre Assy -->
                     <div class="bg-white border border-slate-200 border-t-4 border-t-blue-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
                         <div class="flex items-center justify-between">
-                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="summaryTitleDpmPre">DPM Pre Assy</span>
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="summaryTitleDpmPre">PPM Pre Assy</span>
                             <span class="text-[10px] font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/80" id="summaryPeriodDpmPre">Memuat...</span>
                         </div>
                         <div class="mt-2 flex items-baseline space-x-2">
@@ -382,10 +382,10 @@
                             <span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block shadow-xs"></span>
                             <div>
                                 <div class="flex items-center space-x-2">
-                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight">DPM Pre Assy</h3>
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight">PPM Pre Assy</h3>
                                     <span class="text-[10px] font-bold text-blue-800 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md">Pre Assy</span>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-0.5">Defect Per Million tren per periode</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Parts Per Million tren per periode</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -408,7 +408,7 @@
 
                     <!-- Error Banner -->
                     <div id="errorDpmPre" class="hidden mt-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700">
-                        <span id="errorMessageDpmPre">Gagal memuat analitik DPM Pre Assy</span>
+                        <span id="errorMessageDpmPre">Gagal memuat analitik PPM Pre Assy</span>
                     </div>
 
                     <!-- Card Filter Toolbar -->
@@ -454,7 +454,7 @@
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-transparent uppercase tracking-wider mb-1 select-none">Aksi</label>
-                                <button type="button" id="btnResetDpmPre" title="Reset filter DPM Pre Assy ke default" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-lg transition-all shadow-2xs flex items-center space-x-1">
+                                <button type="button" id="btnResetDpmPre" title="Reset filter PPM Pre Assy ke default" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-lg transition-all shadow-2xs flex items-center space-x-1">
                                     <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                                     <span>Reset</span>
                                 </button>
@@ -705,7 +705,7 @@
         let pollingTimer = null;
 
         // --- 3. Chart Factory ---
-        function createDpmChart(canvasId, accentColor, bgGradientColor, targetColor = '#64748b') {
+        function createDpmChart(canvasId, accentColor, bgGradientColor, targetColor = '#64748b', metricLabel = 'DPM') {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return null;
             const ctx = canvas.getContext('2d');
@@ -716,7 +716,7 @@
                     labels: [],
                     datasets: [
                         {
-                            label: 'DPM Real',
+                            label: `${metricLabel} Real`,
                             data: [],
                             borderColor: accentColor,
                             backgroundColor: bgGradientColor,
@@ -732,7 +732,7 @@
                             _meta: []
                         },
                         {
-                            label: 'Target DPM',
+                            label: `Target ${metricLabel}`,
                             data: [],
                             borderColor: targetColor, // Abu gelap putus-putus
                             backgroundColor: 'transparent',
@@ -743,7 +743,7 @@
                             spanGaps: false,
                             pointRadius: 0,
                             pointHoverRadius: 0,
-                            hidden: true // Disembunyikan default jika belum ada target DPM
+                            hidden: true // Disembunyikan default jika belum ada target DPM / PPM
                         }
                     ]
                 },
@@ -822,17 +822,18 @@
                                         ? Number(meta.total_inspect).toLocaleString('id-ID')
                                         : '0';
 
+                                    const currentMetric = context.chart?._metricLabel || metricLabel || 'DPM';
                                     const lines = [
-                                        `  DPM Real: ${dpmStr}`
+                                        `  ${currentMetric} Real: ${dpmStr}`
                                     ];
                                     if (targetStr !== null) {
-                                        lines.push(`  Target DPM: ${targetStr}`);
+                                        lines.push(`  Target ${currentMetric}: ${targetStr}`);
                                         if (dpmVal !== null && Number(dpmVal) > Number(targetVal)) {
                                             lines.push(`  ⚠️ Status: Melebihi Target`);
                                         }
                                     }
-                                    lines.push(`  Total Defect: ${defectStr} unit`);
-                                    lines.push(`  Total Inspect: ${inspectStr} unit`);
+                                    lines.push(`  Total Defect: ${defectStr} pcs`);
+                                    lines.push(`  Total Inspect: ${inspectStr} pcs`);
                                     return lines;
                                 }
                             }
@@ -855,7 +856,7 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'DPM',
+                                text: metricLabel,
                                 color: '#475569',
                                 font: { size: 10, weight: '700' }
                             },
@@ -876,6 +877,7 @@
             });
 
             chart._groupBy = 'day';
+            chart._metricLabel = metricLabel;
             return chart;
         }
 
@@ -961,7 +963,7 @@
                                     if (context.dataset.yAxisID === 'y1') {
                                         return `  Kumulatif: ${Number(val).toFixed(1)}%`;
                                     }
-                                    return `  Total Defect: ${Number(val).toLocaleString('id-ID')} unit`;
+                                    return `  Total Defect: ${Number(val).toLocaleString('id-ID')} pcs`;
                                 }
                             }
                         }
@@ -988,7 +990,7 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Defect (Unit)',
+                                text: 'Defect (pcs)',
                                 color: '#475569',
                                 font: { size: 10, weight: '700' }
                             },
@@ -1034,9 +1036,9 @@
         }
 
         // Final Assy (Teal: #0f766e) & Pre Assy (Cobalt Blue: #1d4ed8 / #1e40af)
-        const chartDpmFinal = createDpmChart('chartDpmFinal', '#0f766e', 'rgba(15, 118, 110, 0.08)', '#64748b');
+        const chartDpmFinal = createDpmChart('chartDpmFinal', '#0f766e', 'rgba(15, 118, 110, 0.08)', '#64748b', 'DPM');
         const chartParetoFinal = createParetoChart('chartParetoFinal', '#0f766e');
-        const chartDpmPre = createDpmChart('chartDpmPre', '#1d4ed8', 'rgba(29, 78, 216, 0.08)', '#64748b');
+        const chartDpmPre = createDpmChart('chartDpmPre', '#1d4ed8', 'rgba(29, 78, 216, 0.08)', '#64748b', 'PPM');
         const chartParetoPre = createParetoChart('chartParetoPre', '#1e40af');
 
         // Pre Assy specific adjustments
@@ -1096,11 +1098,12 @@
             // Render catatan teks kondisi data inspect dan tren
             if (noteEl) {
                 const notes = [];
+                const mLabel = chart?._metricLabel || 'DPM';
                 if (missingInspectCount > 0) {
-                    notes.push(`${missingInspectCount} periode belum memiliki data inspect, DPM-nya tidak dapat dihitung.`);
+                    notes.push(`${missingInspectCount} periode belum memiliki data inspect, ${mLabel}-nya tidak dapat dihitung.`);
                 }
                 if (validDpmCount === 1) {
-                    notes.push('Baru 1 titik DPM valid. Garis tren muncul setelah minimal 2 periode memiliki data inspect.');
+                    notes.push(`Baru 1 titik ${mLabel} valid. Garis tren muncul setelah minimal 2 periode memiliki data inspect.`);
                 }
 
                 if (notes.length > 0) {
@@ -1235,7 +1238,7 @@
             const hasQuantity = list.length > 0 && list.some(item => item.total_inspect !== undefined && item.total_defect !== undefined);
 
             if (hasQuantity) {
-                if (titleEl) titleEl.textContent = isFinal ? 'DPM Final Assy' : 'DPM Pre Assy';
+                if (titleEl) titleEl.textContent = isFinal ? 'DPM Final Assy' : 'PPM Pre Assy';
 
                 let validDefect = 0;
                 let validInspect = 0;
@@ -1255,7 +1258,7 @@
                 if (validInspect > 0) {
                     const dpmCalc = Math.round((validDefect / validInspect) * 1000000);
                     if (valEl) valEl.textContent = dpmCalc.toLocaleString('id-ID');
-                    if (unitEl) unitEl.textContent = 'PPM';
+                    if (unitEl) unitEl.textContent = isFinal ? 'DPM' : 'PPM';
 
                     // Cek target terakhir jika ada
                     const latestTargetItem = [...list].reverse().find(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
@@ -1276,7 +1279,7 @@
                     if (subEl) subEl.innerHTML = subText;
                 } else {
                     if (valEl) valEl.textContent = '-';
-                    if (unitEl) unitEl.textContent = 'PPM';
+                    if (unitEl) unitEl.textContent = isFinal ? 'DPM' : 'PPM';
                     if (subEl) {
                         if (excludedDefect > 0) {
                             subEl.innerHTML = `<span class="text-amber-600 font-medium">0 inspect valid &bull; ${excludedDefect.toLocaleString('id-ID')} defect belum punya data inspect</span>`;
@@ -1286,17 +1289,17 @@
                     }
                 }
             } else {
-                // Data jumlah tidak ada di respons -> pakai label "DPM terakhir"
-                if (titleEl) titleEl.textContent = 'DPM Terakhir';
+                // Data jumlah tidak ada di respons -> pakai label "DPM / PPM terakhir"
+                if (titleEl) titleEl.textContent = isFinal ? 'DPM Terakhir' : 'PPM Terakhir';
 
                 const lastValid = [...list].reverse().find(item => item.dpm !== null && item.dpm !== undefined && !isNaN(Number(item.dpm)));
                 if (lastValid && valEl) {
                     valEl.textContent = Math.round(Number(lastValid.dpm)).toLocaleString('id-ID');
-                    if (unitEl) unitEl.textContent = 'PPM';
+                    if (unitEl) unitEl.textContent = isFinal ? 'DPM' : 'PPM';
                     if (subEl) subEl.textContent = `Titik terakhir (${lastValid.label || 'data'})`;
                 } else {
                     if (valEl) valEl.textContent = '-';
-                    if (unitEl) unitEl.textContent = 'PPM';
+                    if (unitEl) unitEl.textContent = isFinal ? 'DPM' : 'PPM';
                     if (subEl) subEl.textContent = 'Data tidak tersedia';
                 }
             }
@@ -1322,7 +1325,7 @@
                     valEl.title = topItem.name;
                 }
                 if (countEl) {
-                    countEl.textContent = `(${Number(topItem.total).toLocaleString('id-ID')} unit)`;
+                    countEl.textContent = `(${Number(topItem.total).toLocaleString('id-ID')} pcs)`;
                 }
                 if (subEl) {
                     const cum = topItem.cumulative_percent !== undefined ? `${Number(topItem.cumulative_percent).toFixed(1)}%` : '';
@@ -1528,7 +1531,7 @@
                         sessionErr.isSessionExpired = true;
                         throw sessionErr;
                     }
-                    throw new Error('Gagal memuat data DPM Pre Assy.');
+                    throw new Error('Gagal memuat data PPM Pre Assy.');
                 }
                 return response.json();
             })
@@ -1545,7 +1548,7 @@
                 setLoadingBadge('loadingDpmPre', 'error');
                 const message = err.isSessionExpired
                     ? 'Sesi berakhir. Muat ulang halaman.'
-                    : 'Gagal memuat data DPM Pre Assy, mencoba lagi pada polling berikutnya.';
+                    : 'Gagal memuat data PPM Pre Assy, mencoba lagi pada polling berikutnya.';
                 if (errorEl && errorMsgEl) {
                     errorMsgEl.innerText = message;
                     errorEl.classList.remove('hidden');
