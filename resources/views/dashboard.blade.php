@@ -1,31 +1,23 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
+@section('title', 'Monitoring Internal Defect')
 
 @section('content')
     <!-- Header Section -->
-    <header class="flex justify-between items-center mb-8">
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-            <h1 class="text-2xl font-black text-gray-900 tracking-tight leading-tight">Dashboard</h1>
-            <p class="text-xs font-semibold text-gray-500 mt-1">Monitoring real-time data defect dan aktivitas sistem.</p>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight leading-tight">Monitoring Internal Defect</h1>
+            <p class="text-xs font-medium text-slate-500 mt-1">Analitik real-time performa proses perakitan kabel body (Wiring Harness).</p>
         </div>
 
-        <div class="flex items-center space-x-6">
-            <!-- Add Account Button -->
-            <a href="{{ route('account.create') }}" class="bg-brand hover:bg-brand-active text-white text-xs font-bold py-2.5 px-4 rounded-xl transition duration-150 shadow-sm shadow-brand/20 flex items-center space-x-1.5 text-center active:scale-95">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                <span>Add Account</span>
-            </a>
-
+        <div class="flex items-center gap-3">
             <!-- Admin Profile Card -->
-            <div class="flex items-center space-x-3 border-l border-border pl-6">
+            <div class="flex items-center space-x-3">
                 <div class="text-right">
-                    <span class="block text-xs font-extrabold text-gray-900">{{ session('user_name', 'Admin QA') }}</span>
-                    <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Administrator</span>
+                    <span class="block text-xs font-extrabold text-slate-900">{{ session('user_name', 'Admin QA') }}</span>
+                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Administrator</span>
                 </div>
-                <div class="w-9 h-9 rounded-xl bg-red-50 text-brand flex items-center justify-center border border-red-100 font-black text-xs">
+                <div class="w-9 h-9 rounded-xl bg-red-50 text-brand flex items-center justify-center border border-red-100 font-black text-xs shadow-2xs">
                     {{ strtoupper(substr(session('user_name', 'A'), 0, 1)) }}
                 </div>
             </div>
@@ -128,449 +120,1800 @@
         </x-metric-card>
     </section>
 
-        <!-- Defect & Inspect Trend Section (Final Assy & Pre Assy Dipisah) -->
+        <!-- 2 Columns Grid: Final Assy (Left) & Pre Assy (Right) - Opsi A -->
         <section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
-            
-            <!-- Card 1: Final Assy Trend -->
-            <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between">
-                <div>
-                    <div class="flex flex-wrap justify-between items-center gap-3 mb-5 pb-3 border-b border-gray-100">
-                        <div>
-                            <div class="flex items-center space-x-2.5">
-                                <span class="w-3 h-3 rounded-lg bg-teal-500 inline-block shadow-sm shadow-teal-500/30"></span>
-                                <h2 class="text-base font-extrabold text-gray-950 tracking-tight">Tren Final Assy</h2>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-0.5">Perbandingan Qty Inspect (Teal) vs Qty Defect (Merah Yazaki)</p>
+            <!-- KOLOM KIRI: FINAL ASSY -->
+            <div class="space-y-6">
+                <!-- Summary Cards Final Assy (Sinkron Filter Mandiri) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Summary DPM Final Assy -->
+                    <div class="bg-white border border-slate-200 border-t-4 border-t-teal-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="summaryTitleDpmFinal">DPM Final Assy</span>
+                            <span class="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200/80" id="summaryPeriodDpmFinal">Memuat...</span>
                         </div>
+                        <div class="mt-2 flex items-baseline space-x-2">
+                            <span class="text-2xl font-black text-slate-900 font-mono tracking-tight tabular-nums" id="summaryValDpmFinal">-</span>
+                            <span class="text-[11px] text-slate-400 font-semibold" id="summaryUnitDpmFinal">DPM</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1 truncate" id="summarySubDpmFinal">Kalkulasi total defect / inspect</p>
+                    </div>
 
-                        <div class="flex items-center space-x-3">
-                            <!-- Period Switcher Final Assy -->
-                            <div class="relative">
-                                <select id="periodFinalAssy" class="appearance-none border border-gray-200 rounded-xl text-xs font-bold text-gray-700 px-3.5 pr-8 py-2 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
-                                    <option value="month">BULAN INI</option>
-                                    <option value="week">MINGGU INI</option>
-                                    <option value="today">HARI INI</option>
-                                </select>
-                                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <!-- Summary Top Defect Final Assy -->
+                    <div class="bg-white border border-slate-200 border-t-4 border-t-teal-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Defect Final</span>
+                            <span class="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200/80" id="summaryPeriodParetoFinal">Memuat...</span>
+                        </div>
+                        <div class="mt-2 flex items-baseline space-x-2 min-w-0">
+                            <span class="text-xl font-black text-slate-900 font-mono tracking-tight truncate flex-1 min-w-0" id="summaryValParetoFinal">-</span>
+                            <span class="text-xs font-bold text-teal-700 font-mono shrink-0" id="summaryCountParetoFinal"></span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1 truncate" id="summarySubParetoFinal">Sub defect peringkat 1</p>
+                    </div>
+                </div>
+
+                <!-- 1. Card: DPM Final Assy -->
+                <div class="bg-white border border-slate-200 border-t-4 border-t-teal-600 rounded-2xl p-5 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] transition-all duration-200">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center space-x-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block shadow-xs"></span>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight">DPM Final Assy</h3>
+                                    <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">Final Assy</span>
                                 </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Defect Per Million tren per periode</p>
                             </div>
-
-                            <!-- Live Badge -->
-                            <span class="flex items-center space-x-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full font-bold shadow-xs">
-                                <span class="relative flex h-2 w-2">
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span id="loadingDpmFinal" class="hidden items-center space-x-1.5 text-[11px] text-teal-800 bg-teal-50 border border-teal-200/80 px-2.5 py-0.5 rounded-full font-bold">
+                                <svg class="animate-spin h-3 w-3 text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span>Memuat...</span>
+                            </span>
+                            <span class="flex items-center space-x-1 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full font-bold shadow-2xs">
+                                <span class="relative flex h-1.5 w-1.5">
                                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                                 </span>
-                                <span>Live</span>
+                                <span>Live (8s)</span>
                             </span>
                         </div>
                     </div>
 
-                    <!-- Mini Summary Cards Final Assy -->
-                    <div class="grid grid-cols-2 gap-3 mb-5">
-                        <div class="bg-teal-50/60 border border-teal-100 rounded-xl p-3.5">
-                            <div class="flex items-center space-x-1.5 mb-1">
-                                <span class="w-2 h-2 rounded-full bg-teal-600"></span>
-                                <span class="text-[10px] font-bold text-teal-800 uppercase tracking-wider">Total Inspect</span>
-                            </div>
-                            <span id="final-summary-inspect" class="text-xl font-extrabold text-teal-950 font-mono tabular-nums leading-none">
-                                {{ number_format($finalAssyChart['total_inspect'], 0, ',', '.') }}
-                            </span>
-                            <span id="final-today-inspect" class="block text-[10px] font-semibold font-mono tabular-nums text-teal-700 mt-1">Hari ini: {{ number_format($finalAssyChart['today_inspect'], 0, ',', '.') }}</span>
-                        </div>
-                        <div class="bg-red-50/60 border border-red-100 rounded-xl p-3.5">
-                            <div class="flex items-center space-x-1.5 mb-1">
-                                <span class="w-2 h-2 rounded-full bg-[#8b0000]"></span>
-                                <span class="text-[10px] font-bold text-[#8b0000] uppercase tracking-wider">Total Defect</span>
-                            </div>
-                            <span id="final-summary-defect" class="text-xl font-extrabold text-[#8b0000] font-mono tabular-nums leading-none">
-                                {{ number_format($finalAssyChart['total_defect'], 0, ',', '.') }}
-                            </span>
-                            <span id="final-today-defect" class="block text-[10px] font-semibold font-mono tabular-nums text-red-700 mt-1">Hari ini: {{ number_format($finalAssyChart['today_defect'], 0, ',', '.') }}</span>
-                        </div>
+                    <!-- Error Banner -->
+                    <div id="errorDpmFinal" class="hidden mt-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700">
+                        <span id="errorMessageDpmFinal">Gagal memuat analitik DPM Final Assy</span>
                     </div>
 
-                    <!-- Canvas for Chart.js Final Assy -->
-                    <div class="relative h-64 w-full">
-                        <canvas id="finalAssyChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card 2: Pre Assy Trend -->
-            <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] transition-all duration-300 flex flex-col justify-between">
-                <div>
-                    <div class="flex flex-wrap justify-between items-center gap-3 mb-5 pb-3 border-b border-gray-100">
+                    <!-- Card Filter Toolbar -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mt-3 mb-4 p-3 bg-slate-50/70 rounded-xl border border-slate-100 items-end">
+                        <!-- Rentang Tanggal -->
                         <div>
-                            <div class="flex items-center space-x-2.5">
-                                <span class="w-3 h-3 rounded-lg bg-teal-500 inline-block shadow-sm shadow-teal-500/30"></span>
-                                <h2 class="text-base font-extrabold text-gray-950 tracking-tight">Tren Pre Assy</h2>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-0.5">Perbandingan Qty Inspect (Teal) vs Qty Defect (Merah Yazaki)</p>
-                        </div>
-
-                        <div class="flex items-center space-x-3">
-                            <!-- Period Switcher Pre Assy -->
+                            <label for="filterDateRangeDpmFinal" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
                             <div class="relative">
-                                <select id="periodPreAssy" class="appearance-none border border-gray-200 rounded-xl text-xs font-bold text-gray-700 px-3.5 pr-8 py-2 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
-                                    <option value="month">BULAN INI</option>
-                                    <option value="week">MINGGU INI</option>
-                                    <option value="today">HARI INI</option>
-                                </select>
-                                <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-gray-400">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                </div>
-                            </div>
-
-                            <!-- Live Badge -->
-                            <span class="flex items-center space-x-1.5 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full font-bold shadow-xs">
-                                <span class="relative flex h-2 w-2">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-3.5 h-3.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </span>
-                                <span>Live</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Mini Summary Cards Pre Assy -->
-                    <div class="grid grid-cols-2 gap-3 mb-5">
-                        <div class="bg-teal-50/60 border border-teal-100 rounded-xl p-3.5">
-                            <div class="flex items-center space-x-1.5 mb-1">
-                                <span class="w-2 h-2 rounded-full bg-teal-600"></span>
-                                <span class="text-[10px] font-bold text-teal-800 uppercase tracking-wider">Total Inspect</span>
+                                <input type="text" id="filterDateRangeDpmFinal" readonly placeholder="Pilih rentang tanggal" class="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 cursor-pointer transition shadow-2xs">
                             </div>
-                            <span id="pre-summary-inspect" class="text-xl font-extrabold text-teal-950 font-mono tabular-nums leading-none">
-                                {{ number_format($preAssyChart['total_inspect'], 0, ',', '.') }}
-                            </span>
-                            <span id="pre-today-inspect" class="block text-[10px] font-semibold font-mono tabular-nums text-teal-700 mt-1">Hari ini: {{ number_format($preAssyChart['today_inspect'], 0, ',', '.') }}</span>
                         </div>
-                        <div class="bg-red-50/60 border border-red-100 rounded-xl p-3.5">
-                            <div class="flex items-center space-x-1.5 mb-1">
-                                <span class="w-2 h-2 rounded-full bg-[#8b0000]"></span>
-                                <span class="text-[10px] font-bold text-[#8b0000] uppercase tracking-wider">Total Defect</span>
+
+                        <!-- Pengelompokan DPM -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pengelompokan</label>
+                            <div class="inline-flex w-full bg-slate-200/70 p-0.5 rounded-lg border border-slate-200" role="group">
+                                <button type="button" data-val="day" class="btn-group-by-dpm-final flex-1 py-1 text-xs font-bold rounded-md transition-all text-center bg-teal-600 text-white shadow-2xs">Hari</button>
+                                <button type="button" data-val="week" class="btn-group-by-dpm-final flex-1 py-1 text-xs font-bold rounded-md transition-all text-center text-slate-600 hover:text-slate-900">Minggu</button>
+                                <button type="button" data-val="month" class="btn-group-by-dpm-final flex-1 py-1 text-xs font-bold rounded-md transition-all text-center text-slate-600 hover:text-slate-900">Bulan</button>
                             </div>
-                            <span id="pre-summary-defect" class="text-xl font-extrabold text-[#8b0000] font-mono tabular-nums leading-none">
-                                {{ number_format($preAssyChart['total_defect'], 0, ',', '.') }}
-                            </span>
-                            <span id="pre-today-defect" class="block text-[10px] font-semibold font-mono tabular-nums text-red-700 mt-1">Hari ini: {{ number_format($preAssyChart['today_defect'], 0, ',', '.') }}</span>
                         </div>
-                    </div>
 
-                    <!-- Canvas for Chart.js Pre Assy -->
-                    <div class="relative h-64 w-full">
-                        <canvas id="preAssyChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-        </section>
-
-        <!-- Recent Defect Section -->
-        <section class="bg-surface border border-border rounded-2xl p-5 sm:p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)]">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
-                <div class="flex items-center space-x-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-brand"></span>
-                    <h2 class="text-base font-extrabold text-gray-950 tracking-tight">Recent Defect</h2>
-                </div>
-                <a href="{{ route('recent_defects.index') }}" class="text-xs font-bold text-brand hover:text-brand-active flex items-center space-x-1 transition-colors">
-                    <span>Lihat Semua</span>
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </a>
-            </div>
-
-            <!-- Responsive Table Container -->
-            <div class="overflow-x-auto pb-2">
-                <table class="w-full min-w-[950px] text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-border bg-gray-50/50">
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3">Waktu</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">User</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Shift</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Ditemukan Oleh</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Assy</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Mobil</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Konveyor</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Pattern</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Defect</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Sub Defect</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center pr-3">Quantity</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recentDefectsBody">
-                        @forelse($recentDefects as $defect)
-                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="{{ $defect->external_id ?? $defect->id }}">
-                                <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium">
-                                    <div class="text-xs leading-normal">
-                                        <span class="block text-gray-900">{{ \Carbon\Carbon::parse($defect->waktu)->translatedFormat('d F Y') }}</span>
-                                        <span class="block text-gray-400 mt-0.5 text-[11px]">{{ \Carbon\Carbon::parse($defect->waktu)->format('H:i:s') }}</span>
+                        <!-- Konveyor + Reset -->
+                        <div class="flex items-center space-x-2">
+                            <div class="flex-1">
+                                <label for="filterConveyorDpmFinal" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Konveyor</label>
+                                <div class="relative">
+                                    <select id="filterConveyorDpmFinal" class="w-full appearance-none border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 px-2.5 pr-7 py-1.5 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 cursor-pointer transition shadow-2xs">
+                                        <option value="all">Semua Konveyor</option>
+                                        @if(isset($finalAssyConveyors))
+                                            @foreach($finalAssyConveyors as $conveyor)
+                                                <option value="{{ $conveyor }}">{{ $conveyor }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                     </div>
-                                </td>
-                                <td class="py-4 text-sm text-gray-900 font-bold px-4">
-                                    {{ $defect->user_name }}
-                                </td>
-                                <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">
-                                    {{ $defect->shift ?? '-' }}
-                                </td>
-                                <td class="py-4 text-xs font-bold px-4 text-center">
-                                    @if($defect->ditemukan_oleh === 'Inspektor')
-                                        <span class="inline-block px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 tracking-wider">
-                                            Inspektor
-                                        </span>
-                                    @elseif($defect->ditemukan_oleh === 'Operator')
-                                        <span class="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">
-                                            Operator
-                                        </span>
-                                    @else
-                                        <span class="text-gray-400 font-normal">-</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-transparent uppercase tracking-wider mb-1 select-none">Aksi</label>
+                                <button type="button" id="btnResetDpmFinal" title="Reset filter DPM Final Assy ke default" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-lg transition-all shadow-2xs flex items-center space-x-1">
+                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    <span>Reset</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Canvas & Empty State -->
+                    <div id="wrapperDpmFinal" class="relative h-72 w-full">
+                        <canvas id="chartDpmFinal"></canvas>
+                    </div>
+                    <div id="emptyDpmFinal" class="hidden flex flex-col items-center justify-center h-72 text-center p-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                        <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <p class="text-xs font-semibold text-slate-600">Tidak ada data pada periode ini</p>
+                        <span class="text-[11px] text-slate-400 mt-0.5">Ubah rentang tanggal atau pilih filter konveyor lain</span>
+                    </div>
+                    <div id="noteDpmFinal" class="hidden mt-2.5 pt-2.5 border-t border-slate-100 space-y-1"></div>
+                </div>
+
+                <!-- 2. Card: Pareto Final Assy -->
+                <div class="bg-white border border-slate-200 border-t-4 border-t-teal-600 rounded-2xl p-5 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] transition-all duration-200">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center space-x-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block shadow-xs"></span>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight">Pareto Sub Defect Final Assy</h3>
+                                    <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">Final Assy</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Total defect & persentase kumulatif per sub defect</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span id="loadingParetoFinal" class="hidden items-center space-x-1.5 text-[11px] text-teal-800 bg-teal-50 border border-teal-200/80 px-2.5 py-0.5 rounded-full font-bold">
+                                <svg class="animate-spin h-3 w-3 text-teal-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span>Memuat...</span>
+                            </span>
+                            <span class="flex items-center space-x-1 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full font-bold shadow-2xs">
+                                <span class="relative flex h-1.5 w-1.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                </span>
+                                <span>Live (8s)</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Error Banner -->
+                    <div id="errorParetoFinal" class="hidden mt-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700">
+                        <span id="errorMessageParetoFinal">Gagal memuat analitik Pareto Final Assy</span>
+                    </div>
+
+                    <!-- Card Filter Toolbar -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3 mb-4 p-3 bg-slate-50/70 rounded-xl border border-slate-100 items-end">
+                        <!-- Rentang Tanggal -->
+                        <div>
+                            <label for="filterDateRangeParetoFinal" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-3.5 h-3.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </span>
+                            <input type="text" id="filterDateRangeParetoFinal" readonly placeholder="Pilih rentang tanggal" class="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 cursor-pointer transition shadow-2xs">
+                        </div>
+                    </div>
+
+                    <!-- Konveyor + Reset -->
+                    <div class="flex items-center space-x-2">
+                        <div class="flex-1">
+                            <label for="filterConveyorParetoFinal" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Konveyor</label>
+                            <div class="relative">
+                                <select id="filterConveyorParetoFinal" class="w-full appearance-none border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 px-2.5 pr-7 py-1.5 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 cursor-pointer transition shadow-2xs">
+                                    <option value="all">Semua Konveyor</option>
+                                    @if(isset($finalAssyConveyors))
+                                        @foreach($finalAssyConveyors as $conveyor)
+                                            <option value="{{ $conveyor }}">{{ $conveyor }}</option>
+                                        @endforeach
                                     @endif
-                                </td>
-                                <td class="py-4 text-sm font-medium px-4">
-                                    @if($defect->jenis_assy === 'Final Assy')
-                                        <x-status-badge type="final-assy">Final Assy</x-status-badge>
-                                    @else
-                                        <x-status-badge type="pre-assy">Pre Assy</x-status-badge>
-                                    @endif
-                                </td>
-                                <td class="py-4 text-sm text-gray-950 font-bold px-4">
-                                    {{ $defect->jenis_mobil ?? '-' }}
-                                </td>
-                                <td class="py-4 text-sm font-bold px-4">
-                                    <span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
-                                        {{ $defect->conveyor }}
-                                    </span>
-                                </td>
-                                <td class="py-4 text-sm font-semibold px-4">
-                                    @if($defect->pattern)
-                                        <span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">
-                                            {{ $defect->pattern }}
-                                        </span>
-                                    @else
-                                        <span class="text-gray-400">-</span>
-                                    @endif
-                                </td>
-                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
-                                    {{ $defect->jenis_defect }}
-                                </td>
-                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">
-                                    {{ $defect->jenis_sub_defect }}
-                                </td>
-                                <td class="py-4 text-sm text-gray-900 font-bold font-mono tabular-nums text-center px-4 pr-2">
-                                    {{ $defect->quantity }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr id="emptyRow">
-                                <td colspan="11" class="py-6 text-center text-sm text-gray-500 font-medium">Tidak ada data defect terbaru.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-transparent uppercase tracking-wider mb-1 select-none">Aksi</label>
+                            <button type="button" id="btnResetParetoFinal" title="Reset filter Pareto Final Assy ke default" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-lg transition-all shadow-2xs flex items-center space-x-1">
+                                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <span>Reset</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canvas & Empty State -->
+                <div id="wrapperParetoFinal" class="relative h-72 w-full">
+                    <canvas id="chartParetoFinal"></canvas>
+                </div>
+                <div id="emptyParetoFinal" class="hidden flex flex-col items-center justify-center h-72 text-center p-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                    <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <p class="text-xs font-semibold text-slate-600">Tidak ada data pada periode ini</p>
+                    <span class="text-[11px] text-slate-400 mt-0.5">Ubah rentang tanggal atau pilih filter konveyor lain</span>
+                </div>
             </div>
-        </section>
+        </div>
 
-    <!-- ChartJS Initialization Script (Final Assy & Pre Assy Dual Metrics) -->
+            <!-- KOLOM KANAN: PRE ASSY -->
+            <div class="space-y-6">
+                <!-- Summary Cards Pre Assy (Sinkron Filter Mandiri) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Summary DPM Pre Assy -->
+                    <div class="bg-white border border-slate-200 border-t-4 border-t-blue-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="summaryTitleDpmPre">PPM Pre Assy</span>
+                            <span class="text-[10px] font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/80" id="summaryPeriodDpmPre">Memuat...</span>
+                        </div>
+                        <div class="mt-2 flex items-baseline space-x-2">
+                            <span class="text-2xl font-black text-slate-900 font-mono tracking-tight tabular-nums" id="summaryValDpmPre">-</span>
+                            <span class="text-[11px] text-slate-400 font-semibold" id="summaryUnitDpmPre">PPM</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1 truncate" id="summarySubDpmPre">Kalkulasi total defect / inspect</p>
+                    </div>
+
+                    <!-- Summary Top Defect Pre Assy -->
+                    <div class="bg-white border border-slate-200 border-t-4 border-t-blue-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Defect Pre</span>
+                            <span class="text-[10px] font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/80" id="summaryPeriodParetoPre">Memuat...</span>
+                        </div>
+                        <div class="mt-2 flex items-baseline space-x-2 min-w-0">
+                            <span class="text-xl font-black text-slate-900 font-mono tracking-tight truncate flex-1 min-w-0" id="summaryValParetoPre">-</span>
+                            <span class="text-xs font-bold text-blue-700 font-mono shrink-0" id="summaryCountParetoPre"></span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1 truncate" id="summarySubParetoPre">Sub defect peringkat 1</p>
+                    </div>
+                </div>
+
+                <!-- 3. Card: DPM Pre Assy -->
+                <div class="bg-white border border-slate-200 border-t-4 border-t-blue-600 rounded-2xl p-5 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] transition-all duration-200">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center space-x-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block shadow-xs"></span>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight">PPM Pre Assy</h3>
+                                    <span class="text-[10px] font-bold text-blue-800 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md">Pre Assy</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Parts Per Million tren per periode</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span id="loadingDpmPre" class="hidden items-center space-x-1.5 text-[11px] text-blue-800 bg-blue-50 border border-blue-200/80 px-2.5 py-0.5 rounded-full font-bold">
+                                <svg class="animate-spin h-3 w-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span>Memuat...</span>
+                            </span>
+                            <span class="flex items-center space-x-1 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full font-bold shadow-2xs">
+                                <span class="relative flex h-1.5 w-1.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                </span>
+                                <span>Live (8s)</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Error Banner -->
+                    <div id="errorDpmPre" class="hidden mt-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700">
+                        <span id="errorMessageDpmPre">Gagal memuat analitik PPM Pre Assy</span>
+                    </div>
+
+                    <!-- Card Filter Toolbar -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mt-3 mb-4 p-3 bg-slate-50/70 rounded-xl border border-slate-100 items-end">
+                        <!-- Rentang Tanggal -->
+                        <div>
+                            <label for="filterDateRangeDpmPre" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                </span>
+                                <input type="text" id="filterDateRangeDpmPre" readonly placeholder="Pilih rentang tanggal" class="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer transition shadow-2xs">
+                            </div>
+                        </div>
+
+                        <!-- Pengelompokan DPM -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pengelompokan</label>
+                            <div class="inline-flex w-full bg-slate-200/70 p-0.5 rounded-lg border border-slate-200" role="group">
+                                <button type="button" data-val="day" class="btn-group-by-dpm-pre flex-1 py-1 text-xs font-bold rounded-md transition-all text-center bg-blue-600 text-white shadow-2xs">Hari</button>
+                                <button type="button" data-val="week" class="btn-group-by-dpm-pre flex-1 py-1 text-xs font-bold rounded-md transition-all text-center text-slate-600 hover:text-slate-900">Minggu</button>
+                                <button type="button" data-val="month" class="btn-group-by-dpm-pre flex-1 py-1 text-xs font-bold rounded-md transition-all text-center text-slate-600 hover:text-slate-900">Bulan</button>
+                            </div>
+                        </div>
+
+                        <!-- Carline + Reset -->
+                        <div class="flex items-center space-x-2">
+                            <div class="flex-1">
+                                <label for="filterCarlineDpmPre" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Carline</label>
+                                <div class="relative">
+                                    <select id="filterCarlineDpmPre" class="w-full appearance-none border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 px-2.5 pr-7 py-1.5 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer transition shadow-2xs">
+                                        <option value="all">Semua Carline</option>
+                                        @if(isset($preAssyCarlines))
+                                            @foreach($preAssyCarlines as $carline)
+                                                <option value="{{ $carline->id }}">{{ $carline->name }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-transparent uppercase tracking-wider mb-1 select-none">Aksi</label>
+                                <button type="button" id="btnResetDpmPre" title="Reset filter PPM Pre Assy ke default" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-lg transition-all shadow-2xs flex items-center space-x-1">
+                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    <span>Reset</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Canvas & Empty State -->
+                    <div id="wrapperDpmPre" class="relative h-72 w-full">
+                        <canvas id="chartDpmPre"></canvas>
+                    </div>
+                    <div id="emptyDpmPre" class="hidden flex flex-col items-center justify-center h-72 text-center p-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                        <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        <p class="text-xs font-semibold text-slate-600">Tidak ada data pada periode ini</p>
+                        <span class="text-[11px] text-slate-400 mt-0.5">Ubah rentang tanggal atau pilih filter carline lain</span>
+                    </div>
+                    <div id="noteDpmPre" class="hidden mt-2.5 pt-2.5 border-t border-slate-100 space-y-1"></div>
+                </div>
+
+                <!-- 4. Card: Pareto Pre Assy -->
+                <div class="bg-white border border-slate-200 border-t-4 border-t-blue-600 rounded-2xl p-5 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.06)] transition-all duration-200">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center space-x-2.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block shadow-xs"></span>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight">Pareto Sub Defect Pre Assy</h3>
+                                    <span class="text-[10px] font-bold text-blue-800 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md">Pre Assy</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Total defect & persentase kumulatif per sub defect</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span id="loadingParetoPre" class="hidden items-center space-x-1.5 text-[11px] text-blue-800 bg-blue-50 border border-blue-200/80 px-2.5 py-0.5 rounded-full font-bold">
+                                <svg class="animate-spin h-3 w-3 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span>Memuat...</span>
+                            </span>
+                            <span class="flex items-center space-x-1 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full font-bold shadow-2xs">
+                                <span class="relative flex h-1.5 w-1.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                </span>
+                                <span>Live (8s)</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Error Banner -->
+                    <div id="errorParetoPre" class="hidden mt-3 p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700">
+                        <span id="errorMessageParetoPre">Gagal memuat analitik Pareto Pre Assy</span>
+                    </div>
+
+                    <!-- Card Filter Toolbar -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3 mb-4 p-3 bg-slate-50/70 rounded-xl border border-slate-100 items-end">
+                        <!-- Rentang Tanggal -->
+                        <div>
+                            <label for="filterDateRangeParetoPre" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </span>
+                            <input type="text" id="filterDateRangeParetoPre" readonly placeholder="Pilih rentang tanggal" class="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer transition shadow-2xs">
+                        </div>
+                    </div>
+
+                    <!-- Carline + Reset -->
+                    <div class="flex items-center space-x-2">
+                        <div class="flex-1">
+                            <label for="filterCarlineParetoPre" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Carline</label>
+                            <div class="relative">
+                                <select id="filterCarlineParetoPre" class="w-full appearance-none border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 px-2.5 pr-7 py-1.5 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer transition shadow-2xs">
+                                    <option value="all">Semua Carline</option>
+                                    @if(isset($preAssyCarlines))
+                                        @foreach($preAssyCarlines as $carline)
+                                            <option value="{{ $carline->id }}">{{ $carline->name }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-transparent uppercase tracking-wider mb-1 select-none">Aksi</label>
+                            <button type="button" id="btnResetParetoPre" title="Reset filter Pareto Pre Assy ke default" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-lg transition-all shadow-2xs flex items-center space-x-1">
+                                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <span>Reset</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canvas & Empty State -->
+                <div id="wrapperParetoPre" class="relative h-72 w-full">
+                    <canvas id="chartParetoPre"></canvas>
+                </div>
+                <div id="emptyParetoPre" class="hidden flex flex-col items-center justify-center h-72 text-center p-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                    <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <p class="text-xs font-semibold text-slate-600">Tidak ada data pada periode ini</p>
+                    <span class="text-[11px] text-slate-400 mt-0.5">Ubah rentang tanggal atau pilih filter carline lain</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Analytics & Real-time Polling Script -->
     <script>
-        let finalChartInstance = null;
-        let preChartInstance = null;
-        let currentFinalAssy = @json($finalAssyChart);
-        let currentPreAssy = @json($preAssyChart);
+    document.addEventListener("DOMContentLoaded", function () {
+        // --- 1. Month Names & Helpers ---
+        const MONTH_NAMES_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-        const labelsToday = [
-            '00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00',
-            '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00',
-            '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
-        ];
-        const labelsWeek = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-        const labelsMonth = ['Tgl 1-5', 'Tgl 6-10', 'Tgl 11-15', 'Tgl 16-20', 'Tgl 21-25', 'Tgl 26+'];
+        function getInitialDates() {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - 30);
+            const pad = n => String(n).padStart(2, '0');
+            const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            return { start: fmt(start), end: fmt(end) };
+        }
 
-        document.addEventListener("DOMContentLoaded", function () {
-            function createAssyChart(canvasId, assyData, periodSelectId) {
-                const canvas = document.getElementById(canvasId);
-                if (!canvas) return null;
-                const ctx = canvas.getContext('2d');
+        function formatPeriodLabel(startStr, endStr) {
+            if (!startStr && !endStr) return 'Semua Periode';
+            const fmt = str => {
+                if (!str) return null;
+                const p = str.split('-');
+                if (p.length === 3) {
+                    const d = parseInt(p[2], 10);
+                    const m = parseInt(p[1], 10) - 1;
+                    const y = p[0];
+                    return { d: String(d).padStart(2, '0'), m: MONTH_NAMES_ID[m] || p[1], y };
+                }
+                return { d: str, m: '', y: '' };
+            };
 
-                const gradInspect = ctx.createLinearGradient(0, 0, 0, canvas.height || 260);
-                gradInspect.addColorStop(0, 'rgba(13, 148, 136, 0.28)');
-                gradInspect.addColorStop(1, 'rgba(13, 148, 136, 0.01)');
+            const s = fmt(startStr);
+            const e = fmt(endStr);
 
-                const gradDefect = ctx.createLinearGradient(0, 0, 0, canvas.height || 260);
-                gradDefect.addColorStop(0, 'rgba(185, 28, 28, 0.32)');
-                gradDefect.addColorStop(1, 'rgba(185, 28, 28, 0.01)');
+            if (s && !e) return `Sejak ${s.d} ${s.m} ${s.y}`.trim();
+            if (!s && e) return `s/d ${e.d} ${e.m} ${e.y}`.trim();
+            if (s && e) {
+                if (s.y === e.y && s.m === e.m && s.d === e.d) {
+                    return `${s.d} ${s.m} ${s.y}`;
+                }
+                if (s.y === e.y) {
+                    return `${s.d} ${s.m} - ${e.d} ${e.m} ${s.y}`;
+                }
+                return `${s.d} ${s.m} ${s.y} - ${e.d} ${e.m} ${e.y}`;
+            }
+            return 'Semua Periode';
+        }
 
-                const chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labelsMonth,
-                        datasets: [
-                            {
-                                label: 'Qty Inspect',
-                                data: assyData.month.inspect,
-                                borderColor: '#0d9488',
-                                backgroundColor: gradInspect,
-                                borderWidth: 2.5,
-                                fill: true,
-                                tension: 0.35,
-                                pointBackgroundColor: '#0d9488',
-                                pointBorderColor: '#ffffff',
-                                pointBorderWidth: 2,
-                                pointRadius: 4,
-                                pointHoverRadius: 6,
-                                pointHoverBorderWidth: 3,
-                                pointHoverBackgroundColor: '#0f766e',
-                            },
-                            {
-                                label: 'Qty Defect',
-                                data: assyData.month.defect,
-                                borderColor: '#b91c1c',
-                                backgroundColor: gradDefect,
-                                borderWidth: 2.5,
-                                fill: true,
-                                tension: 0.35,
-                                pointBackgroundColor: '#8b0000',
-                                pointBorderColor: '#ffffff',
-                                pointBorderWidth: 2,
-                                pointRadius: 4,
-                                pointHoverRadius: 6,
-                                pointHoverBorderWidth: 3,
-                                pointHoverBackgroundColor: '#7f1d1d',
-                            }
-                        ]
+        function formatDpmXLabel(rawLabel, groupBy) {
+            if (!rawLabel || typeof rawLabel !== 'string') return rawLabel || '';
+            const pad = n => String(n).padStart(2, '0');
+
+            if (groupBy === 'month') {
+                const parts = rawLabel.split('-');
+                if (parts.length >= 2) {
+                    const yr = parts[0];
+                    const moIdx = parseInt(parts[1], 10) - 1;
+                    const mo = MONTH_NAMES_ID[moIdx] || parts[1];
+                    return `${mo} ${yr}`;
+                }
+                return rawLabel;
+            }
+
+            if (groupBy === 'week') {
+                const parts = rawLabel.split('-');
+                if (parts.length === 3) {
+                    const y = parseInt(parts[0], 10);
+                    const m = parseInt(parts[1], 10) - 1;
+                    const d = parseInt(parts[2], 10);
+                    const startD = new Date(y, m, d);
+                    const endD = new Date(y, m, d + 6);
+
+                    const startDayStr = pad(startD.getDate());
+                    const endDayStr = pad(endD.getDate());
+                    const startMo = MONTH_NAMES_ID[startD.getMonth()];
+                    const endMo = MONTH_NAMES_ID[endD.getMonth()];
+
+                    if (startD.getMonth() === endD.getMonth()) {
+                        return `${startDayStr}-${endDayStr} ${endMo}`;
+                    } else {
+                        return `${startDayStr} ${startMo}-${endDayStr} ${endMo}`;
+                    }
+                }
+                return rawLabel;
+            }
+
+            // Default 'day': format 'YYYY-MM-DD' -> "05 Okt"
+            const parts = rawLabel.split('-');
+            if (parts.length === 3) {
+                const dayStr = pad(parseInt(parts[2], 10));
+                const moIdx = parseInt(parts[1], 10) - 1;
+                const mo = MONTH_NAMES_ID[moIdx] || parts[1];
+                return `${dayStr} ${mo}`;
+            }
+
+            return rawLabel;
+        }
+
+        // --- 2. Filter States Terpisah per Grafik ---
+        const initDpmFinal = getInitialDates();
+        const filtersDpmFinal = {
+            start_date: initDpmFinal.start,
+            end_date: initDpmFinal.end,
+            group_by: 'day',
+            conveyor: 'all'
+        };
+
+        const initParetoFinal = getInitialDates();
+        const filtersParetoFinal = {
+            start_date: initParetoFinal.start,
+            end_date: initParetoFinal.end,
+            conveyor: 'all'
+        };
+
+        const initDpmPre = getInitialDates();
+        const filtersDpmPre = {
+            start_date: initDpmPre.start,
+            end_date: initDpmPre.end,
+            group_by: 'day',
+            carline_id: 'all'
+        };
+
+        const initParetoPre = getInitialDates();
+        const filtersParetoPre = {
+            start_date: initParetoPre.start,
+            end_date: initParetoPre.end,
+            carline_id: 'all'
+        };
+
+        let abortDpmFinal = null;
+        let abortParetoFinal = null;
+        let abortDpmPre = null;
+        let abortParetoPre = null;
+
+        let debounceDpmFinal = null;
+        let debounceParetoFinal = null;
+        let debounceDpmPre = null;
+        let debounceParetoPre = null;
+
+        let pollingTimer = null;
+
+        // --- 3. Chart Factory ---
+        function createDpmChart(canvasId, accentColor, bgGradientColor, targetColor = '#64748b', metricLabel = 'DPM') {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return null;
+            const ctx = canvas.getContext('2d');
+
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: `${metricLabel} Real`,
+                            data: [],
+                            borderColor: accentColor,
+                            backgroundColor: bgGradientColor,
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.3,
+                            spanGaps: false,
+                            pointBackgroundColor: accentColor,
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            _meta: []
+                        },
+                        {
+                            label: `Target ${metricLabel}`,
+                            data: [],
+                            borderColor: targetColor, // Abu gelap putus-putus
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [6, 4],
+                            fill: false,
+                            tension: 0,
+                            spanGaps: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            hidden: true // Disembunyikan default jika belum ada target DPM / PPM
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top',
-                                align: 'end',
-                                labels: {
-                                    boxWidth: 10,
-                                    boxHeight: 10,
-                                    usePointStyle: true,
-                                    pointStyle: 'circle',
-                                    padding: 16,
-                                    color: '#4b5563',
-                                    font: {
-                                        size: 11,
-                                        weight: '600'
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(17, 24, 39, 0.96)',
-                                titleColor: '#f9fafb',
-                                titleFont: { size: 12, weight: '700' },
-                                bodyColor: '#f3f4f6',
-                                bodyFont: { size: 11, weight: '500' },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                boxWidth: 12,
+                                boxHeight: 4,
+                                usePointStyle: false,
                                 padding: 12,
-                                cornerRadius: 10,
-                                borderColor: 'rgba(255, 255, 255, 0.1)',
-                                borderWidth: 1,
-                                displayColors: true,
-                                boxPadding: 6,
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.dataset.label || '';
-                                        const value = context.parsed.y || 0;
-                                        return `  ${label}: ${value.toLocaleString('id-ID')} unit`;
+                                color: '#475569',
+                                font: { size: 11, weight: '600' },
+                                filter: function(legendItem, chartData) {
+                                    // Sembunyikan label target dari legend jika dataset hidden
+                                    if (legendItem.datasetIndex === 1 && chartData.datasets[1]?.hidden) {
+                                        return false;
                                     }
+                                    return true;
                                 }
                             }
                         },
-                scales: {
-                    x: {
-                        grid: { 
-                            display: false 
-                        },
-                        ticks: {
-                            color: '#6b7280',
-                            font: { size: 11, weight: '600' },
-                            padding: 6
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.96)',
+                            titleColor: '#ffffff',
+                            titleFont: { size: 12, weight: '700' },
+                            bodyColor: '#f1f5f9',
+                            bodyFont: { size: 11, weight: '500' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    if (!tooltipItems.length) return '';
+                                    const item = tooltipItems[0];
+                                    const raw = item.label || '';
+                                    const gb = item.chart?._groupBy || 'day';
+                                    if (gb === 'week') {
+                                        return `Minggu: ${raw}`;
+                                    } else if (gb === 'month') {
+                                        return `Bulan: ${raw}`;
+                                    }
+                                    return `Tanggal: ${raw}`;
+                                },
+                                label: function(context) {
+                                    const hasDataset0 = context.chart.tooltip?.dataPoints?.some(dp => dp.datasetIndex === 0);
+                                    if (hasDataset0 && context.datasetIndex !== 0) {
+                                        return null;
+                                    }
+
+                                    const i = context.dataIndex;
+                                    const meta = context.chart.data.datasets[0]._meta ? context.chart.data.datasets[0]._meta[i] : null;
+                                    const dpmVal = meta ? meta.dpm : (context.datasetIndex === 0 ? context.raw : null);
+                                    const targetVal = meta ? meta.target : (context.datasetIndex === 1 ? context.raw : null);
+
+                                    const dpmStr = (dpmVal !== null && dpmVal !== undefined)
+                                        ? Number(dpmVal).toLocaleString('id-ID')
+                                        : '-';
+                                    const targetStr = (targetVal !== null && targetVal !== undefined && !isNaN(Number(targetVal)))
+                                        ? Number(targetVal).toLocaleString('id-ID')
+                                        : null;
+                                    const defectStr = meta && meta.total_defect !== undefined
+                                        ? Number(meta.total_defect).toLocaleString('id-ID')
+                                        : '0';
+                                    const inspectStr = meta && meta.total_inspect !== undefined
+                                        ? Number(meta.total_inspect).toLocaleString('id-ID')
+                                        : '0';
+
+                                    const currentMetric = context.chart?._metricLabel || metricLabel || 'DPM';
+                                    const lines = [
+                                        `  ${currentMetric} Real: ${dpmStr}`
+                                    ];
+                                    if (targetStr !== null) {
+                                        lines.push(`  Target ${currentMetric}: ${targetStr}`);
+                                        if (dpmVal !== null && Number(dpmVal) > Number(targetVal)) {
+                                            lines.push(`  ⚠️ Status: Melebihi Target`);
+                                        }
+                                    }
+                                    lines.push(`  Total Defect: ${defectStr} pcs`);
+                                    lines.push(`  Total Inspect: ${inspectStr} pcs`);
+                                    return lines;
+                                }
+                            }
                         }
                     },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0,
-                            color: '#6b7280',
-                            font: { size: 11, weight: '600' },
-                            padding: 8
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#475569',
+                                font: { size: 11, weight: '600' },
+                                padding: 6,
+                                callback: function(val, index) {
+                                    const rawLabel = this.chart.data.labels[index];
+                                    return formatDpmXLabel(rawLabel, this.chart._groupBy || 'day');
+                                }
+                            }
                         },
-                        grid: { 
-                            color: '#e5e7eb',
-                            drawBorder: false
-                        },
-                        border: {
-                            dash: [3, 3]
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: metricLabel,
+                                color: '#475569',
+                                font: { size: 10, weight: '700' }
+                            },
+                            ticks: {
+                                precision: 0,
+                                color: '#475569',
+                                font: { size: 11, weight: '600' },
+                                padding: 8,
+                                callback: function(val) {
+                                    return val.toLocaleString('id-ID');
+                                }
+                            },
+                            grid: { color: '#e2e8f0', drawBorder: false },
+                            border: { dash: [3, 3] }
                         }
                     }
                 }
-                    }
-                });
+            });
 
-                const selectEl = document.getElementById(periodSelectId);
-                if (selectEl) {
-                    selectEl.addEventListener('change', function () {
-                        const val = this.value;
-                        const dataObj = (canvasId === 'finalAssyChart') ? currentFinalAssy : currentPreAssy;
-                        if (val === 'today') {
-                            chart.data.labels = labelsToday;
-                            chart.data.datasets[0].data = dataObj.today.inspect;
-                            chart.data.datasets[1].data = dataObj.today.defect;
-                        } else if (val === 'week') {
-                            chart.data.labels = labelsWeek;
-                            chart.data.datasets[0].data = dataObj.week.inspect;
-                            chart.data.datasets[1].data = dataObj.week.defect;
-                        } else {
-                            chart.data.labels = labelsMonth;
-                            chart.data.datasets[0].data = dataObj.month.inspect;
-                            chart.data.datasets[1].data = dataObj.month.defect;
+            chart._groupBy = 'day';
+            chart._metricLabel = metricLabel;
+            return chart;
+        }
+
+        function createParetoChart(canvasId, barColor) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return null;
+            const ctx = canvas.getContext('2d');
+
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: 'Kumulatif %',
+                            data: [],
+                            borderColor: '#d97706',
+                            backgroundColor: '#d97706',
+                            borderWidth: 2,
+                            pointRadius: 3.5,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#d97706',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 1.5,
+                            fill: false,
+                            tension: 0.25,
+                            yAxisID: 'y1',
+                            order: 1
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Total Defect',
+                            data: [],
+                            backgroundColor: barColor,
+                            borderRadius: 4,
+                            maxBarThickness: 44,
+                            yAxisID: 'y',
+                            order: 2
                         }
-                        chart.update();
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            align: 'end',
+                            labels: {
+                                boxWidth: 10,
+                                boxHeight: 10,
+                                usePointStyle: true,
+                                padding: 12,
+                                color: '#475569',
+                                font: { size: 11, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.96)',
+                            titleColor: '#ffffff',
+                            titleFont: { size: 12, weight: '700' },
+                            bodyColor: '#f1f5f9',
+                            bodyFont: { size: 11, weight: '500' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    if (!tooltipItems.length) return '';
+                                    const item = tooltipItems[0];
+                                    const labels = item.chart?.data?.labels;
+                                    return (labels && labels[item.dataIndex]) ? labels[item.dataIndex] : (item.label || '');
+                                },
+                                label: function(context) {
+                                    const val = context.raw || 0;
+                                    if (context.dataset.yAxisID === 'y1') {
+                                        return `  Kumulatif: ${Number(val).toFixed(1)}%`;
+                                    }
+                                    return `  Total Defect: ${Number(val).toLocaleString('id-ID')} pcs`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#475569',
+                                font: { size: 11, weight: '600' },
+                                padding: 6,
+                                callback: function(val, index) {
+                                    const label = this.getLabelForValue(val);
+                                    if (typeof label === 'string' && label.length > 13) {
+                                        return label.substring(0, 13) + '…';
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Defect (pcs)',
+                                color: '#475569',
+                                font: { size: 10, weight: '700' }
+                            },
+                            ticks: {
+                                precision: 0,
+                                color: '#475569',
+                                font: { size: 11, weight: '600' },
+                                padding: 8,
+                                callback: function(val) {
+                                    if (Number.isInteger(val)) {
+                                        return val.toLocaleString('id-ID');
+                                    }
+                                    return '';
+                                }
+                            },
+                            grid: { color: '#e2e8f0', drawBorder: false },
+                            border: { dash: [3, 3] }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            min: 0,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Kumulatif (%)',
+                                color: '#d97706',
+                                font: { size: 10, weight: '700' }
+                            },
+                            grid: { display: false },
+                            ticks: {
+                                color: '#d97706',
+                                font: { size: 10, weight: '600' },
+                                padding: 6,
+                                callback: function(val) {
+                                    return val + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Final Assy (Teal: #0f766e) & Pre Assy (Cobalt Blue: #1d4ed8 / #1e40af)
+        const chartDpmFinal = createDpmChart('chartDpmFinal', '#0f766e', 'rgba(15, 118, 110, 0.08)', '#64748b', 'DPM');
+        const chartParetoFinal = createParetoChart('chartParetoFinal', '#0f766e');
+        const chartDpmPre = createDpmChart('chartDpmPre', '#1d4ed8', 'rgba(29, 78, 216, 0.08)', '#64748b', 'PPM');
+        const chartParetoPre = createParetoChart('chartParetoPre', '#1e40af');
+
+        // Pre Assy specific adjustments
+        if (chartDpmPre) {
+            chartDpmPre.data.datasets[0].spanGaps = true;
+            chartDpmPre.options.scales.y.grace = '10%';
+        }
+        if (chartParetoPre) {
+            chartParetoPre.options.scales.y1.max = 105;
+            chartParetoPre.options.scales.y1.clip = false;
+            chartParetoPre.data.datasets[0].clip = false;
+            chartParetoPre.options.scales.y1.ticks.stepSize = 20;
+            chartParetoPre.options.scales.y1.ticks.callback = function(val) {
+                if (val > 100) return '';
+                return val + '%';
+            };
+        }
+
+        // --- 4. In-Place Update & Empty State Logic ---
+        function updateDpmData(chart, wrapperId, emptyId, trends, groupBy = 'day') {
+            const wrapper = document.getElementById(wrapperId);
+            const emptyEl = document.getElementById(emptyId);
+            const msgEl = emptyEl ? emptyEl.querySelector('p') : null;
+            const noteEl = document.getElementById(wrapperId === 'wrapperDpmFinal' ? 'noteDpmFinal' : 'noteDpmPre');
+
+            const trendList = Array.isArray(trends) ? trends : [];
+            const missingInspectCount = trendList.filter(t => (Number(t.total_defect) || 0) > 0 && (!t.total_inspect || Number(t.total_inspect) === 0)).length;
+            const validDpmCount = trendList.filter(t => t.dpm !== null && t.dpm !== undefined && !isNaN(Number(t.dpm))).length;
+
+            if (trendList.length === 0) {
+                if (msgEl) msgEl.textContent = 'Tidak ada data pada periode ini';
+                if (wrapper) wrapper.classList.add('hidden');
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                if (noteEl) {
+                    noteEl.innerHTML = '';
+                    noteEl.classList.add('hidden');
+                }
+                return;
+            }
+
+            const allDpmNull = trendList.every(t => t.dpm === null || t.dpm === undefined);
+            if (allDpmNull) {
+                if (msgEl) msgEl.textContent = 'Belum ada Quantity Inspect pada periode ini';
+                if (wrapper) wrapper.classList.add('hidden');
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                if (noteEl) {
+                    noteEl.innerHTML = '';
+                    noteEl.classList.add('hidden');
+                }
+                return;
+            }
+
+            if (msgEl) msgEl.textContent = 'Tidak ada data pada periode ini';
+            if (wrapper) wrapper.classList.remove('hidden');
+            if (emptyEl) emptyEl.classList.add('hidden');
+
+            // Render catatan teks kondisi data inspect dan tren
+            if (noteEl) {
+                const notes = [];
+                const mLabel = chart?._metricLabel || 'DPM';
+                if (missingInspectCount > 0) {
+                    notes.push(`${missingInspectCount} periode belum memiliki data inspect, ${mLabel}-nya tidak dapat dihitung.`);
+                }
+                if (validDpmCount === 1) {
+                    notes.push(`Baru 1 titik ${mLabel} valid. Garis tren muncul setelah minimal 2 periode memiliki data inspect.`);
+                }
+
+                if (notes.length > 0) {
+                    noteEl.innerHTML = notes.map(msg => `
+                        <div class="flex items-center space-x-1.5 text-[11px] font-medium text-slate-500">
+                            <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <span>${msg}</span>
+                        </div>
+                    `).join('');
+                    noteEl.classList.remove('hidden');
+                } else {
+                    noteEl.innerHTML = '';
+                    noteEl.classList.add('hidden');
+                }
+            }
+
+            if (chart) {
+                chart._groupBy = groupBy;
+                const baseColor = chart.data.datasets[0].borderColor || '#0f766e';
+                chart.data.labels = trendList.map(t => t.label);
+
+                // Dataset 0: DPM Real
+                chart.data.datasets[0].data = trendList.map(t => t.dpm);
+                chart.data.datasets[0]._meta = trendList;
+
+                // Cek ketersediaan data target DPM
+                const hasAnyTarget = trendList.some(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
+
+                if (hasAnyTarget) {
+                    // Tampilkan garis target (abu gelap putus-putus)
+                    chart.data.datasets[1].data = trendList.map(t => (t.target !== null && t.target !== undefined ? Number(t.target) : null));
+                    chart.data.datasets[1].hidden = false;
+
+                    // Titik spike: Titik merah jika DPM Real melebihi Target
+                    chart.data.datasets[0].pointBackgroundColor = trendList.map(t => {
+                        const hasTarget = t.target !== null && t.target !== undefined;
+                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                        if (hasTarget && hasDpm && Number(t.dpm) > Number(t.target)) {
+                            return '#dc2626'; // Merah spike
+                        }
+                        return baseColor;
+                    });
+
+                    chart.data.datasets[0].pointBorderColor = trendList.map(t => {
+                        const hasTarget = t.target !== null && t.target !== undefined;
+                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                        if (hasTarget && hasDpm && Number(t.dpm) > Number(t.target)) {
+                            return '#991b1b';
+                        }
+                        return '#ffffff';
+                    });
+
+                    chart.data.datasets[0].pointRadius = trendList.map(t => {
+                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                        if (!hasDpm) return 0;
+                        const hasTarget = t.target !== null && t.target !== undefined;
+                        if (hasTarget && Number(t.dpm) > Number(t.target)) {
+                            return validDpmCount === 1 ? 8 : 5;
+                        }
+                        return validDpmCount === 1 ? 7 : 4;
+                    });
+                    chart.data.datasets[0].pointHoverRadius = trendList.map(t => {
+                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                        if (!hasDpm) return 0;
+                        return validDpmCount === 1 ? 9 : 6;
+                    });
+                } else {
+                    // Sembunyikan garis target dan highlight spike sampai data target tersedia
+                    chart.data.datasets[1].data = [];
+                    chart.data.datasets[1].hidden = true;
+                    chart.data.datasets[0].pointBackgroundColor = baseColor;
+                    chart.data.datasets[0].pointBorderColor = '#ffffff';
+                    chart.data.datasets[0].pointRadius = trendList.map(t => {
+                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                        if (!hasDpm) return 0;
+                        return validDpmCount === 1 ? 7 : 4;
+                    });
+                    chart.data.datasets[0].pointHoverRadius = trendList.map(t => {
+                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                        if (!hasDpm) return 0;
+                        return validDpmCount === 1 ? 9 : 6;
                     });
                 }
 
-                return chart;
+                chart.update('none'); // Update in place tanpa flicker
+            }
+        }
+
+        function updateParetoData(chart, wrapperId, emptyId, pareto) {
+            const wrapper = document.getElementById(wrapperId);
+            const emptyEl = document.getElementById(emptyId);
+            const msgEl = emptyEl ? emptyEl.querySelector('p') : null;
+
+            const paretoList = Array.isArray(pareto) ? pareto : [];
+            const hasData = paretoList.length > 0 && paretoList.some(p => (p.total || 0) > 0);
+
+            if (!hasData) {
+                if (msgEl) msgEl.textContent = 'Tidak ada data pada periode ini';
+                if (wrapper) wrapper.classList.add('hidden');
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                return;
             }
 
-            finalChartInstance = createAssyChart('finalAssyChart', currentFinalAssy, 'periodFinalAssy');
-            preChartInstance = createAssyChart('preAssyChart', currentPreAssy, 'periodPreAssy');
+            if (wrapper) wrapper.classList.remove('hidden');
+            if (emptyEl) emptyEl.classList.add('hidden');
+
+            if (chart) {
+                chart.data.labels = paretoList.map(p => p.name);
+                chart.data.datasets[0].data = paretoList.map(p => p.cumulative_percent);
+                chart.data.datasets[1].data = paretoList.map(p => p.total);
+                chart.update('none'); // Update in place tanpa flicker
+            }
+        }
+
+        function updateDpmSummaryCard(type, trends, filters) {
+            const isFinal = type === 'final';
+            const titleEl = document.getElementById(isFinal ? 'summaryTitleDpmFinal' : 'summaryTitleDpmPre');
+            const periodEl = document.getElementById(isFinal ? 'summaryPeriodDpmFinal' : 'summaryPeriodDpmPre');
+            const valEl = document.getElementById(isFinal ? 'summaryValDpmFinal' : 'summaryValDpmPre');
+            const unitEl = document.getElementById(isFinal ? 'summaryUnitDpmFinal' : 'summaryUnitDpmPre');
+            const subEl = document.getElementById(isFinal ? 'summarySubDpmFinal' : 'summarySubDpmPre');
+
+            if (periodEl) {
+                periodEl.textContent = formatPeriodLabel(filters.start_date, filters.end_date);
+            }
+
+            const list = Array.isArray(trends) ? trends : [];
+
+            // Cek ketersediaan data jumlah (total_defect & total_inspect) di dalam respons
+            const hasQuantity = list.length > 0 && list.some(item => item.total_inspect !== undefined && item.total_defect !== undefined);
+
+            if (hasQuantity) {
+                if (titleEl) titleEl.textContent = isFinal ? 'DPM Final Assy' : 'PPM Pre Assy';
+
+                let validDefect = 0;
+                let validInspect = 0;
+                let excludedDefect = 0;
+
+                for (const item of list) {
+                    const insp = Number(item.total_inspect) || 0;
+                    const def = Number(item.total_defect) || 0;
+                    if (insp > 0) {
+                        validDefect += def;
+                        validInspect += insp;
+                    } else if (def > 0) {
+                        excludedDefect += def;
+                    }
+                }
+
+                if (validInspect > 0) {
+                    const dpmCalc = Math.round((validDefect / validInspect) * 1000000);
+                    if (valEl) valEl.textContent = dpmCalc.toLocaleString('id-ID');
+                    if (unitEl) unitEl.textContent = isFinal ? 'DPM' : 'PPM';
+
+                    // Cek target terakhir jika ada
+                    const latestTargetItem = [...list].reverse().find(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
+                    let statusPrefix = '';
+                    if (latestTargetItem) {
+                        const targetVal = Number(latestTargetItem.target);
+                        if (dpmCalc > targetVal) {
+                            statusPrefix = `<span class="text-red-600 font-semibold">⚠️ Melebihi Target (${targetVal.toLocaleString('id-ID')})</span> &bull; `;
+                        } else {
+                            statusPrefix = `<span class="text-emerald-600 font-semibold">✓ Memenuhi Target (${targetVal.toLocaleString('id-ID')})</span> &bull; `;
+                        }
+                    }
+
+                    let subText = `${statusPrefix}${validDefect.toLocaleString('id-ID')} defect / ${validInspect.toLocaleString('id-ID')} inspect (periode valid)`;
+                    if (excludedDefect > 0) {
+                        subText += ` &bull; <span class="text-amber-600 font-medium">${excludedDefect.toLocaleString('id-ID')} defect belum punya data inspect</span>`;
+                    }
+                    if (subEl) subEl.innerHTML = subText;
+                } else {
+                    if (valEl) valEl.textContent = '-';
+                    if (unitEl) unitEl.textContent = isFinal ? 'DPM' : 'PPM';
+                    if (subEl) {
+                        if (excludedDefect > 0) {
+                            subEl.innerHTML = `<span class="text-amber-600 font-medium">0 inspect valid &bull; ${excludedDefect.toLocaleString('id-ID')} defect belum punya data inspect</span>`;
+                        } else {
+                            subEl.textContent = '0 inspect pada periode ini';
+                        }
+                    }
+                }
+            } else {
+                // Data jumlah tidak ada di respons -> pakai label "DPM / PPM terakhir"
+                if (titleEl) titleEl.textContent = isFinal ? 'DPM Terakhir' : 'PPM Terakhir';
+
+                const lastValid = [...list].reverse().find(item => item.dpm !== null && item.dpm !== undefined && !isNaN(Number(item.dpm)));
+                if (lastValid && valEl) {
+                    valEl.textContent = Math.round(Number(lastValid.dpm)).toLocaleString('id-ID');
+                    if (unitEl) unitEl.textContent = isFinal ? 'DPM' : 'PPM';
+                    if (subEl) subEl.textContent = `Titik terakhir (${lastValid.label || 'data'})`;
+                } else {
+                    if (valEl) valEl.textContent = '-';
+                    if (unitEl) unitEl.textContent = isFinal ? 'DPM' : 'PPM';
+                    if (subEl) subEl.textContent = 'Data tidak tersedia';
+                }
+            }
+        }
+
+        function updateParetoSummaryCard(type, pareto, filters) {
+            const isFinal = type === 'final';
+            const periodEl = document.getElementById(isFinal ? 'summaryPeriodParetoFinal' : 'summaryPeriodParetoPre');
+            const valEl = document.getElementById(isFinal ? 'summaryValParetoFinal' : 'summaryValParetoPre');
+            const countEl = document.getElementById(isFinal ? 'summaryCountParetoFinal' : 'summaryCountParetoPre');
+            const subEl = document.getElementById(isFinal ? 'summarySubParetoFinal' : 'summarySubParetoPre');
+
+            if (periodEl) {
+                periodEl.textContent = formatPeriodLabel(filters.start_date, filters.end_date);
+            }
+
+            const list = Array.isArray(pareto) ? pareto : [];
+            const topItem = list.length > 0 && (list[0].total > 0) ? list[0] : null;
+
+            if (topItem) {
+                if (valEl) {
+                    valEl.textContent = topItem.name;
+                    valEl.title = topItem.name;
+                }
+                if (countEl) {
+                    countEl.textContent = `(${Number(topItem.total).toLocaleString('id-ID')} pcs)`;
+                }
+                if (subEl) {
+                    const cum = topItem.cumulative_percent !== undefined ? `${Number(topItem.cumulative_percent).toFixed(1)}%` : '';
+                    subEl.textContent = cum ? `Peringkat 1 (${cum} kumulatif)` : 'Peringkat 1 terbanyak';
+                }
+            } else {
+                if (valEl) {
+                    valEl.textContent = 'Tidak Ada Defect';
+                    valEl.title = '';
+                }
+                if (countEl) countEl.textContent = '';
+                if (subEl) subEl.textContent = 'Nol defect pada periode ini';
+            }
+        }
+
+        // --- Helper Indikator Status Fetch Kartu ---
+        function setLoadingBadge(id, status) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('hidden');
+            if (status === 'loading') {
+                el.className = 'inline-flex items-center space-x-1.5 text-[11px] text-slate-700 bg-slate-100 border border-slate-200/90 px-2.5 py-0.5 rounded-full font-bold transition-all';
+                el.innerHTML = `
+                    <svg class="animate-spin h-3 w-3 text-slate-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>Memuat...</span>
+                `;
+            } else if (status === 'success') {
+                el.className = 'inline-flex items-center space-x-1 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full font-semibold transition-all';
+                el.innerHTML = `
+                    <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span>Selesai</span>
+                `;
+            } else if (status === 'error') {
+                el.className = 'inline-flex items-center space-x-1 text-[11px] text-red-700 bg-red-50 border border-red-200/80 px-2.5 py-0.5 rounded-full font-semibold transition-all';
+                el.innerHTML = `
+                    <svg class="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    <span>Gagal</span>
+                `;
+            }
+        }
+
+        // --- 5. Fetch Functions Terpisah Per Grafik (Isolated Abort & State) ---
+        let isFetchingDpmFinal = false;
+        let isFetchingParetoFinal = false;
+        let isFetchingDpmPre = false;
+        let isFetchingParetoPre = false;
+
+        function fetchDpmFinal(isSilent = false) {
+            if (isSilent && isFetchingDpmFinal) return;
+            if (!isSilent) {
+                if (abortDpmFinal) abortDpmFinal.abort();
+                setLoadingBadge('loadingDpmFinal', 'loading');
+            }
+            abortDpmFinal = new AbortController();
+            isFetchingDpmFinal = true;
+
+            const errorEl = document.getElementById('errorDpmFinal');
+            const errorMsgEl = document.getElementById('errorMessageDpmFinal');
+
+            const params = new URLSearchParams();
+            params.append('assy', 'final');
+            if (filtersDpmFinal.start_date) params.append('start_date', filtersDpmFinal.start_date);
+            if (filtersDpmFinal.end_date) params.append('end_date', filtersDpmFinal.end_date);
+            if (filtersDpmFinal.group_by) params.append('group_by', filtersDpmFinal.group_by);
+            if (filtersDpmFinal.conveyor && filtersDpmFinal.conveyor !== 'all') params.append('conveyor', filtersDpmFinal.conveyor);
+
+            fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
+                signal: abortDpmFinal.signal,
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type') || '';
+                const isJson = contentType.includes('application/json');
+                if (!response.ok || !isJson) {
+                    if (response.redirected || response.status === 401 || response.status === 419 || !isJson) {
+                        const sessionErr = new Error('Sesi berakhir. Muat ulang halaman.');
+                        sessionErr.isSessionExpired = true;
+                        throw sessionErr;
+                    }
+                    throw new Error('Gagal memuat data DPM Final Assy.');
+                }
+                return response.json();
+            })
+            .then(res => {
+                const data = res.dpm_final || [];
+                updateDpmData(chartDpmFinal, 'wrapperDpmFinal', 'emptyDpmFinal', data, filtersDpmFinal.group_by);
+                updateDpmSummaryCard('final', data, filtersDpmFinal);
+                setLoadingBadge('loadingDpmFinal', 'success');
+                if (errorEl) errorEl.classList.add('hidden');
+            })
+            .catch(err => {
+                if (err.name === 'AbortError') return;
+                console.error('[Analytics DPM Final] Error fetch:', err);
+                setLoadingBadge('loadingDpmFinal', 'error');
+                const message = err.isSessionExpired
+                    ? 'Sesi berakhir. Muat ulang halaman.'
+                    : 'Gagal memuat data DPM Final Assy, mencoba lagi pada polling berikutnya.';
+                if (errorEl && errorMsgEl) {
+                    errorMsgEl.innerText = message;
+                    errorEl.classList.remove('hidden');
+                }
+            })
+            .finally(() => {
+                isFetchingDpmFinal = false;
+            });
+        }
+
+        function fetchParetoFinal(isSilent = false) {
+            if (isSilent && isFetchingParetoFinal) return;
+            if (!isSilent) {
+                if (abortParetoFinal) abortParetoFinal.abort();
+                setLoadingBadge('loadingParetoFinal', 'loading');
+            }
+            abortParetoFinal = new AbortController();
+            isFetchingParetoFinal = true;
+
+            const errorEl = document.getElementById('errorParetoFinal');
+            const errorMsgEl = document.getElementById('errorMessageParetoFinal');
+
+            const params = new URLSearchParams();
+            params.append('assy', 'final');
+            if (filtersParetoFinal.start_date) params.append('start_date', filtersParetoFinal.start_date);
+            if (filtersParetoFinal.end_date) params.append('end_date', filtersParetoFinal.end_date);
+            if (filtersParetoFinal.conveyor && filtersParetoFinal.conveyor !== 'all') params.append('conveyor', filtersParetoFinal.conveyor);
+
+            fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
+                signal: abortParetoFinal.signal,
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type') || '';
+                const isJson = contentType.includes('application/json');
+                if (!response.ok || !isJson) {
+                    if (response.redirected || response.status === 401 || response.status === 419 || !isJson) {
+                        const sessionErr = new Error('Sesi berakhir. Muat ulang halaman.');
+                        sessionErr.isSessionExpired = true;
+                        throw sessionErr;
+                    }
+                    throw new Error('Gagal memuat data Pareto Final Assy.');
+                }
+                return response.json();
+            })
+            .then(res => {
+                const data = res.pareto_final || [];
+                updateParetoData(chartParetoFinal, 'wrapperParetoFinal', 'emptyParetoFinal', data);
+                updateParetoSummaryCard('final', data, filtersParetoFinal);
+                setLoadingBadge('loadingParetoFinal', 'success');
+                if (errorEl) errorEl.classList.add('hidden');
+            })
+            .catch(err => {
+                if (err.name === 'AbortError') return;
+                console.error('[Analytics Pareto Final] Error fetch:', err);
+                setLoadingBadge('loadingParetoFinal', 'error');
+                const message = err.isSessionExpired
+                    ? 'Sesi berakhir. Muat ulang halaman.'
+                    : 'Gagal memuat data Pareto Final Assy, mencoba lagi pada polling berikutnya.';
+                if (errorEl && errorMsgEl) {
+                    errorMsgEl.innerText = message;
+                    errorEl.classList.remove('hidden');
+                }
+            })
+            .finally(() => {
+                isFetchingParetoFinal = false;
+            });
+        }
+
+        function fetchDpmPre(isSilent = false) {
+            if (isSilent && isFetchingDpmPre) return;
+            if (!isSilent) {
+                if (abortDpmPre) abortDpmPre.abort();
+                setLoadingBadge('loadingDpmPre', 'loading');
+            }
+            abortDpmPre = new AbortController();
+            isFetchingDpmPre = true;
+
+            const errorEl = document.getElementById('errorDpmPre');
+            const errorMsgEl = document.getElementById('errorMessageDpmPre');
+
+            const params = new URLSearchParams();
+            params.append('assy', 'pre');
+            if (filtersDpmPre.start_date) params.append('start_date', filtersDpmPre.start_date);
+            if (filtersDpmPre.end_date) params.append('end_date', filtersDpmPre.end_date);
+            if (filtersDpmPre.group_by) params.append('group_by', filtersDpmPre.group_by);
+            if (filtersDpmPre.carline_id && filtersDpmPre.carline_id !== 'all') params.append('carline_id', filtersDpmPre.carline_id);
+
+            fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
+                signal: abortDpmPre.signal,
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type') || '';
+                const isJson = contentType.includes('application/json');
+                if (!response.ok || !isJson) {
+                    if (response.redirected || response.status === 401 || response.status === 419 || !isJson) {
+                        const sessionErr = new Error('Sesi berakhir. Muat ulang halaman.');
+                        sessionErr.isSessionExpired = true;
+                        throw sessionErr;
+                    }
+                    throw new Error('Gagal memuat data PPM Pre Assy.');
+                }
+                return response.json();
+            })
+            .then(res => {
+                const data = res.dpm_pre || [];
+                updateDpmData(chartDpmPre, 'wrapperDpmPre', 'emptyDpmPre', data, filtersDpmPre.group_by);
+                updateDpmSummaryCard('pre', data, filtersDpmPre);
+                setLoadingBadge('loadingDpmPre', 'success');
+                if (errorEl) errorEl.classList.add('hidden');
+            })
+            .catch(err => {
+                if (err.name === 'AbortError') return;
+                console.error('[Analytics DPM Pre] Error fetch:', err);
+                setLoadingBadge('loadingDpmPre', 'error');
+                const message = err.isSessionExpired
+                    ? 'Sesi berakhir. Muat ulang halaman.'
+                    : 'Gagal memuat data PPM Pre Assy, mencoba lagi pada polling berikutnya.';
+                if (errorEl && errorMsgEl) {
+                    errorMsgEl.innerText = message;
+                    errorEl.classList.remove('hidden');
+                }
+            })
+            .finally(() => {
+                isFetchingDpmPre = false;
+            });
+        }
+
+        function fetchParetoPre(isSilent = false) {
+            if (isSilent && isFetchingParetoPre) return;
+            if (!isSilent) {
+                if (abortParetoPre) abortParetoPre.abort();
+                setLoadingBadge('loadingParetoPre', 'loading');
+            }
+            abortParetoPre = new AbortController();
+            isFetchingParetoPre = true;
+
+            const errorEl = document.getElementById('errorParetoPre');
+            const errorMsgEl = document.getElementById('errorMessageParetoPre');
+
+            const params = new URLSearchParams();
+            params.append('assy', 'pre');
+            if (filtersParetoPre.start_date) params.append('start_date', filtersParetoPre.start_date);
+            if (filtersParetoPre.end_date) params.append('end_date', filtersParetoPre.end_date);
+            if (filtersParetoPre.carline_id && filtersParetoPre.carline_id !== 'all') params.append('carline_id', filtersParetoPre.carline_id);
+
+            fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
+                signal: abortParetoPre.signal,
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type') || '';
+                const isJson = contentType.includes('application/json');
+                if (!response.ok || !isJson) {
+                    if (response.redirected || response.status === 401 || response.status === 419 || !isJson) {
+                        const sessionErr = new Error('Sesi berakhir. Muat ulang halaman.');
+                        sessionErr.isSessionExpired = true;
+                        throw sessionErr;
+                    }
+                    throw new Error('Gagal memuat data Pareto Pre Assy.');
+                }
+                return response.json();
+            })
+            .then(res => {
+                const data = res.pareto_pre || [];
+                updateParetoData(chartParetoPre, 'wrapperParetoPre', 'emptyParetoPre', data);
+                updateParetoSummaryCard('pre', data, filtersParetoPre);
+                setLoadingBadge('loadingParetoPre', 'success');
+                if (errorEl) errorEl.classList.add('hidden');
+            })
+            .catch(err => {
+                if (err.name === 'AbortError') return;
+                console.error('[Analytics Pareto Pre] Error fetch:', err);
+                setLoadingBadge('loadingParetoPre', 'error');
+                const message = err.isSessionExpired
+                    ? 'Sesi berakhir. Muat ulang halaman.'
+                    : 'Gagal memuat data Pareto Pre Assy, mencoba lagi pada polling berikutnya.';
+                if (errorEl && errorMsgEl) {
+                    errorMsgEl.innerText = message;
+                    errorEl.classList.remove('hidden');
+                }
+            })
+            .finally(() => {
+                isFetchingParetoPre = false;
+            });
+        }
+
+        // --- 6. Trigger Filter Debouncers ---
+        function triggerFilterDpmFinal(debounceMs = 300) {
+            if (debounceDpmFinal) clearTimeout(debounceDpmFinal);
+            if (debounceMs === 0) fetchDpmFinal(false);
+            else debounceDpmFinal = setTimeout(() => fetchDpmFinal(false), debounceMs);
+        }
+
+        function triggerFilterParetoFinal(debounceMs = 300) {
+            if (debounceParetoFinal) clearTimeout(debounceParetoFinal);
+            if (debounceMs === 0) fetchParetoFinal(false);
+            else debounceParetoFinal = setTimeout(() => fetchParetoFinal(false), debounceMs);
+        }
+
+        function triggerFilterDpmPre(debounceMs = 300) {
+            if (debounceDpmPre) clearTimeout(debounceDpmPre);
+            if (debounceMs === 0) fetchDpmPre(false);
+            else debounceDpmPre = setTimeout(() => fetchDpmPre(false), debounceMs);
+        }
+
+        function triggerFilterParetoPre(debounceMs = 300) {
+            if (debounceParetoPre) clearTimeout(debounceParetoPre);
+            if (debounceMs === 0) fetchParetoPre(false);
+            else debounceParetoPre = setTimeout(() => fetchParetoPre(false), debounceMs);
+        }
+
+        // --- 7. Flatpickr & UI Events: DPM Final Assy ---
+        let fpDpmFinal = null;
+        if (window.flatpickr) {
+            fpDpmFinal = window.flatpickr("#filterDateRangeDpmFinal", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                defaultDate: [initDpmFinal.start, initDpmFinal.end],
+                onChange: function (selectedDates) {
+                    if (selectedDates.length === 2) {
+                        const pad = n => String(n).padStart(2, '0');
+                        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                        filtersDpmFinal.start_date = fmt(selectedDates[0]);
+                        filtersDpmFinal.end_date = fmt(selectedDates[1]);
+                        const periodEl = document.getElementById('summaryPeriodDpmFinal');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersDpmFinal.start_date, filtersDpmFinal.end_date);
+                        triggerFilterDpmFinal(300);
+                    } else if (selectedDates.length === 0) {
+                        filtersDpmFinal.start_date = '';
+                        filtersDpmFinal.end_date = '';
+                        const periodEl = document.getElementById('summaryPeriodDpmFinal');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
+                        triggerFilterDpmFinal(300);
+                    }
+                }
+            });
+        }
+
+        const groupButtonsDpmFinal = document.querySelectorAll('.btn-group-by-dpm-final');
+        groupButtonsDpmFinal.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const val = this.dataset.val;
+                if (filtersDpmFinal.group_by === val) return;
+                filtersDpmFinal.group_by = val;
+                groupButtonsDpmFinal.forEach(b => {
+                    b.classList.remove('bg-teal-600', 'text-white', 'shadow-2xs');
+                    b.classList.add('text-slate-600', 'hover:text-slate-900');
+                });
+                this.classList.remove('text-slate-600', 'hover:text-slate-900');
+                this.classList.add('bg-teal-600', 'text-white', 'shadow-2xs');
+                triggerFilterDpmFinal(300);
+            });
         });
-    </script>
 
-    <!-- AJAX Polling Script (8 Detik) Real-time -->
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        let pollingTimer = null;
-
-        function formatDate(dateStr) {
-            if (!dateStr) return '-';
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr;
-            const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-            return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+        const conveyorSelectDpmFinal = document.getElementById('filterConveyorDpmFinal');
+        if (conveyorSelectDpmFinal) {
+            conveyorSelectDpmFinal.addEventListener('change', function () {
+                filtersDpmFinal.conveyor = this.value;
+                triggerFilterDpmFinal(300);
+            });
         }
 
-        function formatTime(dateStr) {
-            if (!dateStr) return '';
-            const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return '';
-            return d.toTimeString().substring(0, 8);
+        const btnResetDpmFinal = document.getElementById('btnResetDpmFinal');
+        if (btnResetDpmFinal) {
+            btnResetDpmFinal.addEventListener('click', function () {
+                const resetDates = getInitialDates();
+                filtersDpmFinal.start_date = resetDates.start;
+                filtersDpmFinal.end_date = resetDates.end;
+                filtersDpmFinal.group_by = 'day';
+                filtersDpmFinal.conveyor = 'all';
+
+                const periodEl = document.getElementById('summaryPeriodDpmFinal');
+                if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
+
+                if (fpDpmFinal) fpDpmFinal.setDate([resetDates.start, resetDates.end], false);
+                if (conveyorSelectDpmFinal) conveyorSelectDpmFinal.value = 'all';
+
+                groupButtonsDpmFinal.forEach(b => {
+                    if (b.dataset.val === 'day') {
+                        b.classList.remove('text-slate-600', 'hover:text-slate-900');
+                        b.classList.add('bg-teal-600', 'text-white', 'shadow-2xs');
+                    } else {
+                        b.classList.remove('bg-teal-600', 'text-white', 'shadow-2xs');
+                        b.classList.add('text-slate-600', 'hover:text-slate-900');
+                    }
+                });
+
+                triggerFilterDpmFinal(0);
+            });
         }
 
+        // --- 8. Flatpickr & UI Events: Pareto Final Assy ---
+        let fpParetoFinal = null;
+        if (window.flatpickr) {
+            fpParetoFinal = window.flatpickr("#filterDateRangeParetoFinal", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                defaultDate: [initParetoFinal.start, initParetoFinal.end],
+                onChange: function (selectedDates) {
+                    if (selectedDates.length === 2) {
+                        const pad = n => String(n).padStart(2, '0');
+                        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                        filtersParetoFinal.start_date = fmt(selectedDates[0]);
+                        filtersParetoFinal.end_date = fmt(selectedDates[1]);
+                        const periodEl = document.getElementById('summaryPeriodParetoFinal');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersParetoFinal.start_date, filtersParetoFinal.end_date);
+                        triggerFilterParetoFinal(300);
+                    } else if (selectedDates.length === 0) {
+                        filtersParetoFinal.start_date = '';
+                        filtersParetoFinal.end_date = '';
+                        const periodEl = document.getElementById('summaryPeriodParetoFinal');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
+                        triggerFilterParetoFinal(300);
+                    }
+                }
+            });
+        }
+
+        const conveyorSelectParetoFinal = document.getElementById('filterConveyorParetoFinal');
+        if (conveyorSelectParetoFinal) {
+            conveyorSelectParetoFinal.addEventListener('change', function () {
+                filtersParetoFinal.conveyor = this.value;
+                triggerFilterParetoFinal(300);
+            });
+        }
+
+        const btnResetParetoFinal = document.getElementById('btnResetParetoFinal');
+        if (btnResetParetoFinal) {
+            btnResetParetoFinal.addEventListener('click', function () {
+                const resetDates = getInitialDates();
+                filtersParetoFinal.start_date = resetDates.start;
+                filtersParetoFinal.end_date = resetDates.end;
+                filtersParetoFinal.conveyor = 'all';
+
+                const periodEl = document.getElementById('summaryPeriodParetoFinal');
+                if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
+
+                if (fpParetoFinal) fpParetoFinal.setDate([resetDates.start, resetDates.end], false);
+                if (conveyorSelectParetoFinal) conveyorSelectParetoFinal.value = 'all';
+
+                triggerFilterParetoFinal(0);
+            });
+        }
+
+        // --- 9. Flatpickr & UI Events: DPM Pre Assy ---
+        let fpDpmPre = null;
+        if (window.flatpickr) {
+            fpDpmPre = window.flatpickr("#filterDateRangeDpmPre", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                defaultDate: [initDpmPre.start, initDpmPre.end],
+                onChange: function (selectedDates) {
+                    if (selectedDates.length === 2) {
+                        const pad = n => String(n).padStart(2, '0');
+                        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                        filtersDpmPre.start_date = fmt(selectedDates[0]);
+                        filtersDpmPre.end_date = fmt(selectedDates[1]);
+                        const periodEl = document.getElementById('summaryPeriodDpmPre');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersDpmPre.start_date, filtersDpmPre.end_date);
+                        triggerFilterDpmPre(300);
+                    } else if (selectedDates.length === 0) {
+                        filtersDpmPre.start_date = '';
+                        filtersDpmPre.end_date = '';
+                        const periodEl = document.getElementById('summaryPeriodDpmPre');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
+                        triggerFilterDpmPre(300);
+                    }
+                }
+            });
+        }
+
+        const groupButtonsDpmPre = document.querySelectorAll('.btn-group-by-dpm-pre');
+        groupButtonsDpmPre.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const val = this.dataset.val;
+                if (filtersDpmPre.group_by === val) return;
+                filtersDpmPre.group_by = val;
+                groupButtonsDpmPre.forEach(b => {
+                    b.classList.remove('bg-blue-600', 'text-white', 'shadow-2xs');
+                    b.classList.add('text-slate-600', 'hover:text-slate-900');
+                });
+                this.classList.remove('text-slate-600', 'hover:text-slate-900');
+                this.classList.add('bg-blue-600', 'text-white', 'shadow-2xs');
+                triggerFilterDpmPre(300);
+            });
+        });
+
+        const carlineSelectDpmPre = document.getElementById('filterCarlineDpmPre');
+        if (carlineSelectDpmPre) {
+            carlineSelectDpmPre.addEventListener('change', function () {
+                filtersDpmPre.carline_id = this.value;
+                triggerFilterDpmPre(300);
+            });
+        }
+
+        const btnResetDpmPre = document.getElementById('btnResetDpmPre');
+        if (btnResetDpmPre) {
+            btnResetDpmPre.addEventListener('click', function () {
+                const resetDates = getInitialDates();
+                filtersDpmPre.start_date = resetDates.start;
+                filtersDpmPre.end_date = resetDates.end;
+                filtersDpmPre.group_by = 'day';
+                filtersDpmPre.carline_id = 'all';
+
+                const periodEl = document.getElementById('summaryPeriodDpmPre');
+                if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
+
+                if (fpDpmPre) fpDpmPre.setDate([resetDates.start, resetDates.end], false);
+                if (carlineSelectDpmPre) carlineSelectDpmPre.value = 'all';
+
+                groupButtonsDpmPre.forEach(b => {
+                    if (b.dataset.val === 'day') {
+                        b.classList.remove('text-slate-600', 'hover:text-slate-900');
+                        b.classList.add('bg-blue-600', 'text-white', 'shadow-2xs');
+                    } else {
+                        b.classList.remove('bg-blue-600', 'text-white', 'shadow-2xs');
+                        b.classList.add('text-slate-600', 'hover:text-slate-900');
+                    }
+                });
+
+                triggerFilterDpmPre(0);
+            });
+        }
+
+        // --- 10. Flatpickr & UI Events: Pareto Pre Assy ---
+        let fpParetoPre = null;
+        if (window.flatpickr) {
+            fpParetoPre = window.flatpickr("#filterDateRangeParetoPre", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                defaultDate: [initParetoPre.start, initParetoPre.end],
+                onChange: function (selectedDates) {
+                    if (selectedDates.length === 2) {
+                        const pad = n => String(n).padStart(2, '0');
+                        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                        filtersParetoPre.start_date = fmt(selectedDates[0]);
+                        filtersParetoPre.end_date = fmt(selectedDates[1]);
+                        const periodEl = document.getElementById('summaryPeriodParetoPre');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersParetoPre.start_date, filtersParetoPre.end_date);
+                        triggerFilterParetoPre(300);
+                    } else if (selectedDates.length === 0) {
+                        filtersParetoPre.start_date = '';
+                        filtersParetoPre.end_date = '';
+                        const periodEl = document.getElementById('summaryPeriodParetoPre');
+                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
+                        triggerFilterParetoPre(300);
+                    }
+                }
+            });
+        }
+
+        const carlineSelectParetoPre = document.getElementById('filterCarlineParetoPre');
+        if (carlineSelectParetoPre) {
+            carlineSelectParetoPre.addEventListener('change', function () {
+                filtersParetoPre.carline_id = this.value;
+                triggerFilterParetoPre(300);
+            });
+        }
+
+        const btnResetParetoPre = document.getElementById('btnResetParetoPre');
+        if (btnResetParetoPre) {
+            btnResetParetoPre.addEventListener('click', function () {
+                const resetDates = getInitialDates();
+                filtersParetoPre.start_date = resetDates.start;
+                filtersParetoPre.end_date = resetDates.end;
+                filtersParetoPre.carline_id = 'all';
+
+                const periodEl = document.getElementById('summaryPeriodParetoPre');
+                if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
+
+                if (fpParetoPre) fpParetoPre.setDate([resetDates.start, resetDates.end], false);
+                if (carlineSelectParetoPre) carlineSelectParetoPre.value = 'all';
+
+                triggerFilterParetoPre(0);
+            });
+        }
+
+        // --- 11. Polling Stats (Real-time Defect & Users) ---
         function flashElement(el) {
             if (!el) return;
             el.classList.remove('poll-updated');
-            void el.offsetWidth; // trigger DOM reflow to restart animation
+            void el.offsetWidth;
             el.classList.add('poll-updated');
         }
 
@@ -617,122 +1960,53 @@
                 .catch(err => console.error('[Polling] Gagal fetch stats:', err));
         }
 
-        function fetchChartsData() {
-            fetch('{{ url("/api/dashboard/charts") }}')
-                .then(r => r.json())
-                .then(res => {
-                    if (!res.success) return;
-
-                    currentFinalAssy = res.finalAssy;
-                    currentPreAssy = res.preAssy;
-
-                    // Update Final Assy Chart
-                    const finalPeriod = document.getElementById('periodFinalAssy') ? document.getElementById('periodFinalAssy').value : 'month';
-                    if (finalChartInstance && currentFinalAssy && currentFinalAssy[finalPeriod]) {
-                        finalChartInstance.data.datasets[0].data = currentFinalAssy[finalPeriod].inspect;
-                        finalChartInstance.data.datasets[1].data = currentFinalAssy[finalPeriod].defect;
-                        finalChartInstance.update('none');
-                    }
-
-                    // Update Pre Assy Chart
-                    const prePeriod = document.getElementById('periodPreAssy') ? document.getElementById('periodPreAssy').value : 'month';
-                    if (preChartInstance && currentPreAssy && currentPreAssy[prePeriod]) {
-                        preChartInstance.data.datasets[0].data = currentPreAssy[prePeriod].inspect;
-                        preChartInstance.data.datasets[1].data = currentPreAssy[prePeriod].defect;
-                        preChartInstance.update('none');
-                    }
-
-                    // Update Mini Summaries
-                    if (currentFinalAssy) {
-                        const elFI = document.getElementById('final-summary-inspect');
-                        if (elFI) elFI.innerText = currentFinalAssy.total_inspect.toLocaleString('id-ID');
-                        const elFD = document.getElementById('final-summary-defect');
-                        if (elFD) elFD.innerText = currentFinalAssy.total_defect.toLocaleString('id-ID');
-                        const elFTI = document.getElementById('final-today-inspect');
-                        if (elFTI) elFTI.innerText = `Hari ini: ${currentFinalAssy.today_inspect.toLocaleString('id-ID')}`;
-                        const elFTD = document.getElementById('final-today-defect');
-                        if (elFTD) elFTD.innerText = `Hari ini: ${currentFinalAssy.today_defect.toLocaleString('id-ID')}`;
-                    }
-
-                    if (currentPreAssy) {
-                        const elPI = document.getElementById('pre-summary-inspect');
-                        if (elPI) elPI.innerText = currentPreAssy.total_inspect.toLocaleString('id-ID');
-                        const elPD = document.getElementById('pre-summary-defect');
-                        if (elPD) elPD.innerText = currentPreAssy.total_defect.toLocaleString('id-ID');
-                        const elPTI = document.getElementById('pre-today-inspect');
-                        if (elPTI) elPTI.innerText = `Hari ini: ${currentPreAssy.today_inspect.toLocaleString('id-ID')}`;
-                        const elPTD = document.getElementById('pre-today-defect');
-                        if (elPTD) elPTD.innerText = `Hari ini: ${currentPreAssy.today_defect.toLocaleString('id-ID')}`;
-                    }
-                })
-                .catch(err => console.error('[Polling] Gagal fetch charts data:', err));
-        }
-
-        function fetchRecentDefects() {
-            fetch('{{ url("/api/dashboard/recent-defects") }}')
-                .then(r => r.json())
-                .then(res => {
-                    if (!res.success || !Array.isArray(res.data)) return;
-                    const tbody = document.getElementById('recentDefectsBody');
-                    if (!tbody) return;
-
-                    if (res.data.length === 0) {
-                        tbody.innerHTML = '<tr id="emptyRow"><td colspan="11" class="py-8 text-center text-xs text-gray-400 font-semibold">Belum ada data defect.</td></tr>';
-                        return;
-                    }
-
-                    let rowsHtml = '';
-                    res.data.forEach(item => {
-                        const waktu = item.waktu || item.created_at;
-                        const jenisAssy = item.jenis_assy || 'Final Assy';
-                        const assyBadge = jenisAssy === 'Final Assy'
-                            ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider uppercase font-mono bg-teal-50 text-final-assy border border-teal-200/80">Final Assy</span>'
-                            : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider uppercase font-mono bg-slate-100 text-pre-assy border border-slate-300/80">Pre Assy</span>';
-                        const patternBadge = item.pattern
-                            ? `<span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.pattern}</span>`
-                            : '<span class="text-gray-400">-</span>';
-                        const ditemukanBadge = item.ditemukan_oleh === 'Inspektor'
-                            ? '<span class="inline-block px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 text-xs font-bold tracking-wider">Inspektor</span>'
-                            : (item.ditemukan_oleh === 'Operator'
-                                ? '<span class="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 text-xs font-bold tracking-wider">Operator</span>'
-                                : '<span class="text-gray-400 font-normal">-</span>');
-
-                        rowsHtml += `
-                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${item.id}">
-                                <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(waktu)}</span></div></td>
-                                <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.user_name || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
-                                <td class="py-4 text-xs font-bold px-4 text-center">${ditemukanBadge}</td>
-                                <td class="py-4 text-sm font-medium px-4">${assyBadge}</td>
-                                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
-                                <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || '-'}</span></td>
-                                <td class="py-4 text-sm font-semibold px-4">${patternBadge}</td>
-                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
-                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_sub_defect || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 font-bold font-mono tabular-nums text-center px-4 pr-2">${item.quantity || 0}</td>
-                            </tr>
-                        `;
-                    });
-
-                    tbody.innerHTML = rowsHtml;
-                })
-                .catch(err => console.error('[Polling] Gagal fetch recent defects:', err));
-        }
-
-        // Initial fetch
-        fetchStats();
-        fetchChartsData();
-        fetchRecentDefects();
-
-        // 8-second polling timer
-        pollingTimer = setInterval(() => {
+        // --- 12. Polling Execution (8s & Tab Inactive Prevention) ---
+        function runPollingCycle() {
+            if (document.hidden) return;
             fetchStats();
-            fetchChartsData();
-            fetchRecentDefects();
-        }, 8000);
+            fetchDpmFinal(true);
+            fetchParetoFinal(true);
+            fetchDpmPre(true);
+            fetchParetoPre(true);
+        }
+
+        // Inisialisasi label periode awal kartu analitik
+        if (document.getElementById('summaryPeriodDpmFinal')) {
+            document.getElementById('summaryPeriodDpmFinal').textContent = formatPeriodLabel(filtersDpmFinal.start_date, filtersDpmFinal.end_date);
+        }
+        if (document.getElementById('summaryPeriodParetoFinal')) {
+            document.getElementById('summaryPeriodParetoFinal').textContent = formatPeriodLabel(filtersParetoFinal.start_date, filtersParetoFinal.end_date);
+        }
+        if (document.getElementById('summaryPeriodDpmPre')) {
+            document.getElementById('summaryPeriodDpmPre').textContent = formatPeriodLabel(filtersDpmPre.start_date, filtersDpmPre.end_date);
+        }
+        if (document.getElementById('summaryPeriodParetoPre')) {
+            document.getElementById('summaryPeriodParetoPre').textContent = formatPeriodLabel(filtersParetoPre.start_date, filtersParetoPre.end_date);
+        }
+
+        // Initial Load
+        fetchStats();
+        fetchDpmFinal();
+        fetchParetoFinal();
+        fetchDpmPre();
+        fetchParetoPre();
+
+        // 8-second interval
+        pollingTimer = setInterval(runPollingCycle, 8000);
+
+        // Resume saat tab kembali aktif
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                runPollingCycle();
+            }
+        });
 
         window.addEventListener('beforeunload', function() {
             if (pollingTimer) clearInterval(pollingTimer);
+            if (abortDpmFinal) abortDpmFinal.abort();
+            if (abortParetoFinal) abortParetoFinal.abort();
+            if (abortDpmPre) abortDpmPre.abort();
+            if (abortParetoPre) abortParetoPre.abort();
         });
     });
     </script>

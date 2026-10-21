@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\Defect;
 use App\Models\User;
+use App\Models\DpmTarget;
 use App\Services\ExternalApiService;
 use Carbon\Carbon;
 
@@ -78,6 +80,16 @@ class DashboardController extends Controller
         $finalAssyChart = $this->buildAssyChartData('Final Assy', $monthRecords, $startOfWeek);
         $preAssyChart = $this->buildAssyChartData('Pre Assy', $monthRecords, $startOfWeek);
 
+        // Opsi dropdown filter untuk Dashboard Analytics
+        $finalAssyConveyors = \App\Models\Carline::whereNotNull('car_type_id')
+            ->distinct()
+            ->orderBy('name')
+            ->pluck('name');
+
+        $preAssyCarlines = \App\Models\Carline::whereNull('car_type_id')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return view('dashboard', compact(
             'totalDefect',
             'defectToday',
@@ -85,7 +97,9 @@ class DashboardController extends Controller
             'totalUsers',
             'recentDefects',
             'finalAssyChart',
-            'preAssyChart'
+            'preAssyChart',
+            'finalAssyConveyors',
+            'preAssyCarlines'
         ));
     }
 
@@ -168,5 +182,220 @@ class DashboardController extends Controller
             'today_inspect' => (int) $todayRecords->sum('inspect_quantity'),
             'today_defect'  => (int) $todayRecords->sum('quantity'),
         ];
+    }
+
+    /**
+     * Endpoint Analytics khusus Admin Dashboard (DPM & Pareto)
+     */
+    public function analytics(Request $request)
+    {
+        $endDate = $request->filled('end_date')
+            ? Carbon::parse($request->input('end_date'))->endOfDay()
+            : Carbon::today()->endOfDay();
+
+        $startDate = $request->filled('start_date')
+            ? Carbon::parse($request->input('start_date'))->startOfDay()
+            : Carbon::today()->subDays(29)->startOfDay();
+
+        if ($startDate->greaterThan($endDate)) {
+            [$startDate, $endDate] = [$endDate->copy()->startOfDay(), $startDate->copy()->endOfDay()];
+        }
+
+        $groupBy = strtolower((string) $request->input('group_by', 'day'));
+        if (!in_array($groupBy, ['day', 'week', 'month'], true)) {
+            $groupBy = 'day';
+        }
+
+        $conveyor = $request->input('conveyor');
+        if ($conveyor === 'all' || $conveyor === '') {
+            $conveyor = null;
+        }
+
+        $carlineId = $request->input('carline_id');
+        if ($carlineId === 'all' || $carlineId === '') {
+            $carlineId = null;
+        }
+
+        $assy = strtolower((string) $request->input('assy'));
+
+        $data = [];
+
+        if ($assy === 'final') {
+            $data['dpm_final'] = $this->buildDpmTrends('Final Assy', $startDate, $endDate, $groupBy, $conveyor, null);
+            $data['pareto_final'] = $this->buildPareto('Final Assy', $startDate, $endDate, $conveyor, null);
+        } elseif ($assy === 'pre') {
+            $data['dpm_pre'] = $this->buildDpmTrends('Pre Assy', $startDate, $endDate, $groupBy, null, $carlineId);
+            $data['pareto_pre'] = $this->buildPareto('Pre Assy', $startDate, $endDate, null, $carlineId);
+        } else {
+            $data['dpm_final'] = $this->buildDpmTrends('Final Assy', $startDate, $endDate, $groupBy, $conveyor, null);
+            $data['pareto_final'] = $this->buildPareto('Final Assy', $startDate, $endDate, $conveyor, null);
+            $data['dpm_pre'] = $this->buildDpmTrends('Pre Assy', $startDate, $endDate, $groupBy, null, $carlineId);
+            $data['pareto_pre'] = $this->buildPareto('Pre Assy', $startDate, $endDate, null, $carlineId);
+        }
+
+        return response()->json($data);
+    }
+
+    /**
+     * Hitung tren DPM agnostik database (agregasi SQL per hari, grouping lanjut di PHP).
+     */
+    private function buildDpmTrends(string $jenisAssy, Carbon $startDate, Carbon $endDate, string $groupBy, ?string $conveyor, $carlineId): array
+    {
+        $query = Defect::query()
+            ->selectRaw('DATE(waktu) as bucket_date, SUM(quantity) as total_defect, SUM(inspect_quantity) as total_inspect')
+            ->whereBetween('waktu', [$startDate, $endDate])
+            ->where('jenis_assy', $jenisAssy);
+
+        if ($jenisAssy === 'Final Assy' && !empty($conveyor)) {
+            $query->where('conveyor', $conveyor);
+        } elseif ($jenisAssy === 'Pre Assy' && !empty($carlineId)) {
+            $query->where('carline_id', $carlineId);
+        }
+
+        $rawRecords = $query->groupBy(DB::raw('DATE(waktu)'))
+            ->orderBy('bucket_date', 'asc')
+            ->get();
+
+        // 1 query untuk mengambil semua target DPM relevan untuk assy ini
+        $targets = DpmTarget::where('jenis_assy', $jenisAssy)
+            ->where('period_start', '<=', $endDate->format('Y-m-d'))
+            ->where('period_end', '>=', $startDate->format('Y-m-d'))
+            ->get();
+
+        $grouped = [];
+
+        foreach ($rawRecords as $rec) {
+            $date = Carbon::parse($rec->bucket_date);
+
+            if ($groupBy === 'week') {
+                $startOfWeek = $date->copy()->startOfWeek(Carbon::MONDAY);
+                $key = $startOfWeek->format('Y-m-d');
+                $label = $startOfWeek->format('Y-m-d');
+            } elseif ($groupBy === 'month') {
+                $key = $date->format('Y-m');
+                $label = $date->format('Y-m');
+            } else {
+                $key = $date->format('Y-m-d');
+                $label = $date->format('Y-m-d');
+            }
+
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = [
+                    'label'        => $label,
+                    'total_defect' => 0,
+                    'total_inspect'=> 0,
+                ];
+            }
+
+            $grouped[$key]['total_defect'] += (int) $rec->total_defect;
+            $grouped[$key]['total_inspect'] += (int) $rec->total_inspect;
+        }
+
+        $points = [];
+        foreach ($grouped as $key => $bucket) {
+            $totalDefect = $bucket['total_defect'];
+            $totalInspect = $bucket['total_inspect'];
+            $dpm = null;
+
+            if ($totalInspect > 0) {
+                $dpm = round(($totalDefect / $totalInspect) * 1000000, 2);
+            }
+
+            // Tentukan tanggal acuan: tanggal paling awal dalam rentang filter yang masuk bucket
+            if ($groupBy === 'week') {
+                $monday = Carbon::parse($key)->startOfDay();
+                $refDate = $monday->lt($startDate) ? $startDate->format('Y-m-d') : $monday->format('Y-m-d');
+            } elseif ($groupBy === 'month') {
+                $firstDay = Carbon::parse($key . '-01')->startOfDay();
+                $refDate = $firstDay->lt($startDate) ? $startDate->format('Y-m-d') : $firstDay->format('Y-m-d');
+            } else {
+                $refDate = $key;
+            }
+
+            // Cocokkan DpmTarget di memori PHP (tanpa query per titik)
+            $targetVal = null;
+            foreach ($targets as $t) {
+                $pStart = $t->period_start instanceof \DateTimeInterface
+                    ? $t->period_start->format('Y-m-d')
+                    : substr((string) $t->period_start, 0, 10);
+                $pEnd = $t->period_end instanceof \DateTimeInterface
+                    ? $t->period_end->format('Y-m-d')
+                    : substr((string) $t->period_end, 0, 10);
+
+                if ($pStart <= $refDate && $pEnd >= $refDate) {
+                    $targetVal = (float) $t->target_dpm;
+                    break;
+                }
+            }
+
+            $points[] = [
+                'label'        => $bucket['label'],
+                'total_defect' => $totalDefect,
+                'total_inspect'=> $totalInspect,
+                'dpm'          => $dpm,
+                'target'       => $targetVal,
+            ];
+        }
+
+        return $points;
+    }
+
+    /**
+     * Hitung data Pareto sub-defect (Top 10 & persentase kumulatif).
+     */
+    private function buildPareto(string $jenisAssy, Carbon $startDate, Carbon $endDate, ?string $conveyor, $carlineId): array
+    {
+        $query = Defect::query()
+            ->select(['jenis_sub_defect', 'quantity'])
+            ->whereBetween('waktu', [$startDate, $endDate])
+            ->where('jenis_assy', $jenisAssy)
+            ->where(function ($q) {
+                $q->whereNull('jenis_defect')->orWhere('jenis_defect', '!=', 'Zero Defect');
+            })
+            ->where('quantity', '>', 0);
+
+        if ($jenisAssy === 'Final Assy' && !empty($conveyor)) {
+            $query->where('conveyor', $conveyor);
+        } elseif ($jenisAssy === 'Pre Assy' && !empty($carlineId)) {
+            $query->where('carline_id', $carlineId);
+        }
+
+        $records = $query->get();
+
+        $subDefectTotals = [];
+        $grandTotal = 0;
+
+        foreach ($records as $r) {
+            $rawName = $r->jenis_sub_defect ?? '-';
+            $normalizedName = trim(strtoupper($rawName));
+            if ($normalizedName === '' || $normalizedName === '-') {
+                $normalizedName = 'LAIN-LAIN';
+            }
+            $qty = (int) $r->quantity;
+
+            if (!isset($subDefectTotals[$normalizedName])) {
+                $subDefectTotals[$normalizedName] = 0;
+            }
+            $subDefectTotals[$normalizedName] += $qty;
+            $grandTotal += $qty;
+        }
+
+        arsort($subDefectTotals);
+
+        $top10 = array_slice($subDefectTotals, 0, 10, true);
+        $pareto = [];
+        $runningSum = 0;
+
+        foreach ($top10 as $name => $total) {
+            $runningSum += $total;
+            $cumPercent = $grandTotal > 0 ? round(($runningSum / $grandTotal) * 100, 2) : 0.0;
+            $pareto[] = [
+                'name'               => $name,
+                'total'              => $total,
+                'cumulative_percent' => $cumPercent,
+            ];
+        }
+
+        return $pareto;
     }
 }

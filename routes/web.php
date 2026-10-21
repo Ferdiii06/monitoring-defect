@@ -46,6 +46,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
     // Protected Admin routes (only accessible by Administrators)
     Route::middleware(['admin'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/analytics', [DashboardController::class, 'analytics'])->name('admin.dashboard.analytics');
 
         // Add Account routes
         Route::get('/add-account', [\App\Http\Controllers\AccountController::class, 'index'])->name('account.create');
@@ -112,6 +113,28 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
             Route::post('/area-ditemukans', [\App\Http\Controllers\AreaDitemukanController::class, 'store'])->name('area_ditemukans.store');
             Route::put('/area-ditemukans/{id}', [\App\Http\Controllers\AreaDitemukanController::class, 'update'])->name('area_ditemukans.update');
             Route::delete('/area-ditemukans/{id}', [\App\Http\Controllers\AreaDitemukanController::class, 'destroy'])->name('area_ditemukans.destroy');
+
+            // Target DPM (DPM Targets)
+            Route::get('/dpm-targets', [\App\Http\Controllers\DpmTargetController::class, 'index'])->name('dpm_targets.index');
+            Route::post('/dpm-targets', [\App\Http\Controllers\DpmTargetController::class, 'store'])->name('dpm_targets.store');
+            Route::put('/dpm-targets/{id}', [\App\Http\Controllers\DpmTargetController::class, 'update'])->name('dpm_targets.update');
+            Route::delete('/dpm-targets/{id}', [\App\Http\Controllers\DpmTargetController::class, 'destroy'])->name('dpm_targets.destroy');
+
+            // Route name alias for kebab-case
+            Route::name('dpm-targets.')->group(function () {
+                Route::get('/dpm_targets', [\App\Http\Controllers\DpmTargetController::class, 'index'])->name('index');
+                Route::post('/dpm_targets', [\App\Http\Controllers\DpmTargetController::class, 'store'])->name('store');
+                Route::put('/dpm_targets/{id}', [\App\Http\Controllers\DpmTargetController::class, 'update'])->name('update');
+                Route::delete('/dpm_targets/{id}', [\App\Http\Controllers\DpmTargetController::class, 'destroy'])->name('destroy');
+            });
+        });
+
+        // Alias for master.dpm-targets.* (without admin. prefix)
+        Route::prefix('master')->name('master.dpm-targets.')->group(function () {
+            Route::get('/dpm-targets/alias', [\App\Http\Controllers\DpmTargetController::class, 'index'])->name('index');
+            Route::post('/dpm-targets/alias', [\App\Http\Controllers\DpmTargetController::class, 'store'])->name('store');
+            Route::put('/dpm-targets/alias/{id}', [\App\Http\Controllers\DpmTargetController::class, 'update'])->name('update');
+            Route::delete('/dpm-targets/alias/{id}', [\App\Http\Controllers\DpmTargetController::class, 'destroy'])->name('destroy');
         });
     });
 });
