@@ -5,23 +5,73 @@
 @endphp
 
 <aside 
+    id="adminSidebar"
     x-data="{ 
+        collapsed: (function() {
+            try {
+                return localStorage.getItem('sidebar_collapsed') === 'true';
+            } catch (e) {
+                return false;
+            }
+        })(),
         reportOpen: {{ $isReportActive ? 'true' : 'false' }},
         riwayatOpen: {{ $isRiwayatActive ? 'true' : 'false' }},
         masterOpen: {{ $isMasterActive ? 'true' : 'false' }},
-        logoutModal: false
+        logoutModal: false,
+        toggleSidebar() {
+            this.collapsed = !this.collapsed;
+            try {
+                localStorage.setItem('sidebar_collapsed', this.collapsed ? 'true' : 'false');
+            } catch (e) {}
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 320);
+        }
     }" 
-    class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between shrink-0 h-full select-none"
+    @transitionend="if ($event.target === $el && $event.propertyName === 'width') { window.dispatchEvent(new Event('resize')); }"
+    class="transition-all duration-300 ease-in-out bg-white flex flex-col justify-between shrink-0 h-full select-none w-64 border-r border-gray-200"
+    :style="collapsed ? 'width:0;border-right-width:0;overflow:hidden' : ''"
 >
-    <div class="overflow-y-auto flex-1 py-1">
-        <!-- Logo Section -->
-        <div class="px-5 py-4 border-b border-gray-100 flex items-center space-x-3">
-            <img class="w-14 h-14 -ml-2 -my-3 object-contain shrink-0 drop-shadow-sm" src="{{ asset('images/logo-yazaki.jpg') }}" alt="Yazaki Logo">
-            <div>
-                <span class="block text-[11px] font-extrabold text-[#8b0000] uppercase tracking-wider leading-none">Report Internal</span>
-                <span class="block text-xs font-black text-gray-900 uppercase tracking-widest mt-1">Defect QA</span>
+    <!-- Floating Open Tab (Fixed) -->
+    <button 
+        id="sidebarOpenBtn"
+        type="button" 
+        x-show="collapsed"
+        x-cloak
+        @click="toggleSidebar()"
+        class="fixed top-6 left-0 z-40 w-5 h-10 rounded-r-lg bg-white border border-l-0 border-gray-200 shadow-sm text-gray-500 hover:text-brand hover:w-6 transition-all flex items-center justify-center cursor-pointer focus:outline-hidden"
+        aria-label="Buka Sidebar"
+        title="Buka Sidebar"
+    >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+    </button>
+
+    <!-- Sidebar Inner Container -->
+    <div class="w-64 flex flex-col justify-between h-full shrink-0">
+        <div class="overflow-y-auto flex-1 py-1">
+            <!-- Logo Section -->
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <img class="w-14 h-14 -ml-2 -my-3 object-contain shrink-0 drop-shadow-sm" src="{{ asset('images/logo-yazaki.jpg') }}" alt="Yazaki Logo">
+                    <div>
+                        <span class="block text-[11px] font-extrabold text-[#8b0000] uppercase tracking-wider leading-none">Report Internal</span>
+                        <span class="block text-xs font-black text-gray-900 uppercase tracking-widest mt-1">Defect QA</span>
+                    </div>
+                </div>
+                <button 
+                    type="button" 
+                    @click="toggleSidebar()"
+                    class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors focus:outline-hidden cursor-pointer"
+                    aria-label="Tutup Sidebar"
+                    title="Tutup Sidebar"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
             </div>
-        </div>
 
         <!-- Navigation Links -->
         <nav class="p-3 space-y-1">
@@ -190,6 +240,7 @@
             <span class="text-[10px] text-gray-400 group-hover:text-brand font-medium">Keluar</span>
         </button>
     </div>
+    </div>
 
     <!-- Modal Konfirmasi Logout Menggunakan Reusable Component confirm-modal -->
     <x-confirm-modal 
@@ -202,3 +253,23 @@
         method="POST"
     />
 </aside>
+
+<script>
+    (function() {
+        try {
+            if (localStorage.getItem('sidebar_collapsed') === 'true') {
+                var s = document.getElementById('adminSidebar');
+                if (s) {
+                    s.style.width = '0';
+                    s.style.borderRightWidth = '0';
+                    s.style.overflow = 'hidden';
+                }
+                var b = document.getElementById('sidebarOpenBtn');
+                if (b) {
+                    b.removeAttribute('x-cloak');
+                    b.style.display = 'flex';
+                }
+            }
+        } catch (e) {}
+    })();
+</script>
