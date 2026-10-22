@@ -112,14 +112,20 @@
                             <!-- Field Stack Details -->
                             <div class="space-y-2.5 text-xs">
                                 <!-- Row 1: Defect & Quantity -->
-                                <div class="flex justify-between items-start">
-                                    <div>
+                                <div class="flex justify-between items-start gap-2">
+                                    <div class="min-w-0">
                                         <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Defect</span>
-                                        <span class="block text-xs font-black text-gray-900 uppercase font-mono mt-0.5">{{ $defect->jenis_defect }}</span>
+                                        <span class="block text-xs font-black text-gray-900 uppercase font-mono mt-0.5 break-words">{{ $defect->jenis_defect }}</span>
                                     </div>
-                                    <div class="text-right">
-                                        <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Jumlah</span>
-                                        <span class="block text-sm font-black text-brand font-mono tabular-nums mt-0.5">{{ $defect->quantity }} Unit</span>
+                                    <div class="text-right shrink-0 space-y-1">
+                                        <div>
+                                            <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-none">Qty Inspect</span>
+                                            <span class="block text-xs font-black text-gray-700 font-mono tabular-nums mt-0.5">{{ $defect->inspect_quantity ?? 0 }} Unit</span>
+                                        </div>
+                                        <div>
+                                            <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-none">Qty Defect</span>
+                                            <span class="block text-xs font-black text-brand font-mono tabular-nums mt-0.5">{{ $defect->quantity }} Unit</span>
+                                        </div>
                                     </div>
                                 </div>
 

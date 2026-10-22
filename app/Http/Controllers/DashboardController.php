@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Defect;
 use App\Models\User;
 use App\Models\DpmTarget;
+use App\Support\ConveyorGroup;
 use App\Services\ExternalApiService;
 use Carbon\Carbon;
 
@@ -80,11 +81,22 @@ class DashboardController extends Controller
         $finalAssyChart = $this->buildAssyChartData('Final Assy', $monthRecords, $startOfWeek);
         $preAssyChart = $this->buildAssyChartData('Pre Assy', $monthRecords, $startOfWeek);
 
-        // Opsi dropdown filter untuk Dashboard Analytics
-        $finalAssyConveyors = \App\Models\Carline::whereNotNull('car_type_id')
+        // Opsi dropdown filter untuk Dashboard Analytics: grup unik dari gabungan master dan defects Final Assy
+        $masterFinalConveyors = \App\Models\Carline::whereNotNull('car_type_id')->pluck('name');
+        $defectFinalConveyors = Defect::where('jenis_assy', 'Final Assy')
+            ->whereNotNull('conveyor')
+            ->where('conveyor', '!=', '')
             ->distinct()
-            ->orderBy('name')
-            ->pluck('name');
+            ->pluck('conveyor');
+
+        $finalAssyConveyors = $masterFinalConveyors->merge($defectFinalConveyors)
+            ->map(fn($name) => ConveyorGroup::of($name))
+            ->filter(fn($g) => $g !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        usort($finalAssyConveyors, 'strnatcasecmp');
 
         $preAssyCarlines = \App\Models\Carline::whereNull('car_type_id')
             ->orderBy('name')
@@ -247,7 +259,12 @@ class DashboardController extends Controller
             ->where('jenis_assy', $jenisAssy);
 
         if ($jenisAssy === 'Final Assy' && !empty($conveyor)) {
-            $query->where('conveyor', $conveyor);
+            $matchingConveyors = $this->getConveyorNamesByGroup($conveyor);
+            if (!empty($matchingConveyors)) {
+                $query->whereIn('conveyor', $matchingConveyors);
+            } else {
+                $query->where('conveyor', $conveyor);
+            }
         } elseif ($jenisAssy === 'Pre Assy' && !empty($carlineId)) {
             $query->where('carline_id', $carlineId);
         }
@@ -355,7 +372,12 @@ class DashboardController extends Controller
             ->where('quantity', '>', 0);
 
         if ($jenisAssy === 'Final Assy' && !empty($conveyor)) {
-            $query->where('conveyor', $conveyor);
+            $matchingConveyors = $this->getConveyorNamesByGroup($conveyor);
+            if (!empty($matchingConveyors)) {
+                $query->whereIn('conveyor', $matchingConveyors);
+            } else {
+                $query->where('conveyor', $conveyor);
+            }
         } elseif ($jenisAssy === 'Pre Assy' && !empty($carlineId)) {
             $query->where('carline_id', $carlineId);
         }
@@ -397,5 +419,24 @@ class DashboardController extends Controller
         }
 
         return $pareto;
+    }
+
+    /**
+     * Cari semua nama konveyor dari gabungan master dan data defects yang memiliki grup yang sama.
+     */
+    protected function getConveyorNamesByGroup(string $groupKey): array
+    {
+        $masterFinalConveyors = \App\Models\Carline::whereNotNull('car_type_id')->pluck('name');
+        $defectFinalConveyors = Defect::where('jenis_assy', 'Final Assy')
+            ->whereNotNull('conveyor')
+            ->where('conveyor', '!=', '')
+            ->distinct()
+            ->pluck('conveyor');
+
+        $allConveyors = $masterFinalConveyors->merge($defectFinalConveyors)->unique();
+
+        return $allConveyors->filter(function ($name) use ($groupKey) {
+            return ConveyorGroup::of($name) === $groupKey;
+        })->values()->all();
     }
 }

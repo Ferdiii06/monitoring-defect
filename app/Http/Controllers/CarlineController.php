@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\CarType;
 use App\Models\Carline;
+use App\Models\Defect;
 
 class CarlineController extends Controller
 {
@@ -52,6 +53,17 @@ class CarlineController extends Controller
     public function destroy($id)
     {
         $carline = Carline::findOrFail($id);
+
+        $isUsed = Defect::where('carline_id', $carline->id)
+            ->orWhere('conveyor', $carline->name)
+            ->exists();
+
+        if ($isUsed) {
+            return redirect()->back()->withErrors([
+                'error' => "Carline/Konveyor '{$carline->name}' tidak dapat dihapus karena masih digunakan di data defect."
+            ]);
+        }
+
         $carline->delete();
 
         return redirect()->route('admin.master.carlines.index')->with('success', 'Carline berhasil dihapus!');

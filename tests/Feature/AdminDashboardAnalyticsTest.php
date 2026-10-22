@@ -6,7 +6,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\Defect;
 use App\Models\Carline;
+use App\Models\CarType;
 use App\Models\DpmTarget;
+use App\Support\ConveyorGroup;
 use Carbon\Carbon;
 
 class AdminDashboardAnalyticsTest extends TestCase
@@ -493,5 +495,165 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertCount(1, $jsonPre['dpm_pre']);
         $this->assertEquals(65.0, $jsonPre['dpm_pre'][0]['target']);
         $this->assertEquals(5, $jsonPre['dpm_pre'][0]['total_defect']);
+    }
+
+    public function test_conveyor_group_c5_combines_multiple_carline_c5_but_c5a_is_separate(): void
+    {
+        $carType = CarType::create(['name' => 'TOYOTA']);
+        Carline::create(['car_type_id' => $carType->id, 'name' => '664W-C5']);
+        Carline::create(['car_type_id' => $carType->id, 'name' => '023J-C5']);
+        Carline::create(['car_type_id' => $carType->id, 'name' => '664W-C5A']);
+
+        // 1. Cek helper ConveyorGroup
+        $this->assertEquals('C5', ConveyorGroup::of('664W-C5'));
+        $this->assertEquals('C5', ConveyorGroup::of('023J-C5'));
+        $this->assertEquals('C5A', ConveyorGroup::of('664W-C5A'));
+
+        // 2. Buat defect untuk 664W-C5, 023J-C5, dan 664W-C5A
+        Defect::create([
+            'waktu'            => Carbon::today()->setTime(8, 0),
+            'user_name'        => 'Operator A',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => '664W-C5',
+            'jenis_defect'     => 'TERMINAL',
+            'jenis_sub_defect' => 'BENT',
+            'quantity'         => 3,
+            'inspect_quantity' => 100,
+        ]);
+
+        Defect::create([
+            'waktu'            => Carbon::today()->setTime(9, 0),
+            'user_name'        => 'Operator B',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => '023J-C5',
+            'jenis_defect'     => 'TERMINAL',
+            'jenis_sub_defect' => 'BENT',
+            'quantity'         => 2,
+            'inspect_quantity' => 100,
+        ]);
+
+        Defect::create([
+            'waktu'            => Carbon::today()->setTime(10, 0),
+            'user_name'        => 'Operator C',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => '664W-C5A',
+            'jenis_defect'     => 'TERMINAL',
+            'jenis_sub_defect' => 'BENT',
+            'quantity'         => 7,
+            'inspect_quantity' => 100,
+        ]);
+
+        // Filter group C5: harus menghasilkan 3 + 2 = 5 defect, 200 inspect (tanpa 664W-C5A)
+        $resC5 = $this->actingAsAdmin()->getJson('/dashboard/analytics?conveyor=C5');
+        $resC5->assertStatus(200);
+        $dpmC5 = $resC5->json('dpm_final');
+        $this->assertEquals(5, $dpmC5[0]['total_defect']);
+        $this->assertEquals(200, $dpmC5[0]['total_inspect']);
+
+        // Filter group C5A: harus hanya 7 defect, 100 inspect
+        $resC5A = $this->actingAsAdmin()->getJson('/dashboard/analytics?conveyor=C5A');
+        $resC5A->assertStatus(200);
+        $dpmC5A = $resC5A->json('dpm_final');
+        $this->assertEquals(7, $dpmC5A[0]['total_defect']);
+        $this->assertEquals(100, $dpmC5A[0]['total_inspect']);
+    }
+
+    public function test_deleted_or_historical_conveyor_appears_in_dropdown_and_is_filterable(): void
+    {
+        // Konveyor DELETED-C99 tidak ada di master Carline
+        Defect::create([
+            'waktu'            => Carbon::today()->setTime(8, 0),
+            'user_name'        => 'Operator A',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => 'DELETED-C99.SPECIAL',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 4,
+            'inspect_quantity' => 200,
+        ]);
+
+        // 1. Cek pada dashboard index: grup 'C99' harus ada di dropdown $finalAssyConveyors
+        $resIndex = $this->actingAsAdmin()->get('/dashboard');
+        $resIndex->assertStatus(200);
+        $resIndex->assertViewHas('finalAssyConveyors', function ($conveyors) {
+            return in_array('C99', (array) $conveyors);
+        });
+
+        // 2. Cek filter analytics dengan conveyor=C99
+        $resAnalytics = $this->actingAsAdmin()->getJson('/dashboard/analytics?conveyor=C99');
+        $resAnalytics->assertStatus(200);
+        $dpm = $resAnalytics->json('dpm_final');
+        $this->assertEquals(4, $dpm[0]['total_defect']);
+        $this->assertEquals(200, $dpm[0]['total_inspect']);
+    }
+
+    public function test_carline_destroy_blocked_when_used_succeeds_when_unused(): void
+    {
+        $carType = CarType::create(['name' => 'TOYOTA']);
+        $usedByConveyor = Carline::create(['car_type_id' => $carType->id, 'name' => 'LINE-USED-CONV']);
+        $usedByCarlineId = Carline::create(['car_type_id' => null, 'name' => 'CARLINE-USED-FK']);
+        $unusedCarline = Carline::create(['car_type_id' => $carType->id, 'name' => 'LINE-UNUSED']);
+
+        // Defect yang menggunakan nama conveyor
+        Defect::create([
+            'waktu'            => Carbon::today(),
+            'user_name'        => 'Operator A',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => 'LINE-USED-CONV',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 1,
+            'inspect_quantity' => 10,
+        ]);
+
+        // Defect yang menggunakan carline_id
+        Defect::create([
+            'waktu'            => Carbon::today(),
+            'user_name'        => 'Operator B',
+            'jenis_assy'       => 'Pre Assy',
+            'carline_id'       => $usedByCarlineId->id,
+            'jenis_defect'     => 'CORE',
+            'jenis_sub_defect' => 'FRAYING',
+            'quantity'         => 1,
+            'inspect_quantity' => 10,
+        ]);
+
+        // 1. Hapus yang dipakai via conveyor -> harus diblokir
+        $res1 = $this->actingAsAdmin()->delete("/master/carlines/{$usedByConveyor->id}");
+        $res1->assertSessionHasErrors('error');
+        $this->assertDatabaseHas('carlines', ['id' => $usedByConveyor->id]);
+
+        // 2. Hapus yang dipakai via carline_id -> harus diblokir
+        $res2 = $this->actingAsAdmin()->delete("/master/carlines/{$usedByCarlineId->id}");
+        $res2->assertSessionHasErrors('error');
+        $this->assertDatabaseHas('carlines', ['id' => $usedByCarlineId->id]);
+
+        // 3. Hapus yang tidak dipakai -> harus berhasil
+        $res3 = $this->actingAsAdmin()->delete("/master/carlines/{$unusedCarline->id}");
+        $res3->assertRedirect(route('admin.master.carlines.index'));
+        $res3->assertSessionHas('success');
+        $this->assertDatabaseMissing('carlines', ['id' => $unusedCarline->id]);
+    }
+
+    public function test_exact_conveyor_match_fallback_still_works(): void
+    {
+        Defect::create([
+            'waktu'            => Carbon::today()->setTime(8, 0),
+            'user_name'        => 'Operator A',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => 'CUSTOM-LEGACY-CONV',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 5,
+            'inspect_quantity' => 150,
+        ]);
+
+        // Request persis dengan nilai nama conveyor lama yang bukan kunci grup
+        $response = $this->actingAsAdmin()->getJson('/dashboard/analytics?conveyor=CUSTOM-LEGACY-CONV');
+        $response->assertStatus(200);
+
+        $dpm = $response->json('dpm_final');
+        $this->assertEquals(5, $dpm[0]['total_defect']);
+        $this->assertEquals(150, $dpm[0]['total_inspect']);
     }
 }
