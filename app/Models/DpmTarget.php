@@ -11,16 +11,23 @@ class DpmTarget extends Model
 
     protected $fillable = [
         'jenis_assy',
+        'carline_id',
         'period_start',
         'period_end',
         'target_dpm',
     ];
 
     protected $casts = [
+        'carline_id'   => 'integer',
         'period_start' => 'date',
         'period_end'   => 'date',
         'target_dpm'   => 'decimal:2',
     ];
+
+    public function carline()
+    {
+        return $this->belongsTo(Carline::class);
+    }
 
     public function setPeriodStartAttribute($value)
     {

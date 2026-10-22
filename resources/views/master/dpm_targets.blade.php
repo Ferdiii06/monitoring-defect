@@ -65,10 +65,24 @@
                     <label for="add_jenis_assy" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
                         Jenis Assy <span class="text-red-500">*</span>
                     </label>
-                    <select id="add_jenis_assy" name="jenis_assy" x-model="addForm.jenis_assy" required
+                    <select id="add_jenis_assy" name="jenis_assy" x-model="addForm.jenis_assy" @change="onAssyChange(addForm)" required
                         class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
                         <option value="Final Assy">Final Assy</option>
                         <option value="Pre Assy">Pre Assy</option>
+                    </select>
+                </div>
+
+                <!-- 1.1 Carline (Opsional, Default Semua Carline) -->
+                <div>
+                    <label for="add_carline_id" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
+                        Carline
+                    </label>
+                    <select id="add_carline_id" name="carline_id" x-model="addForm.carline_id"
+                        class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
+                        <option value="">Semua Carline</option>
+                        <template x-for="c in filteredCarlines(addForm.jenis_assy)" :key="c.id">
+                            <option :value="c.id" x-text="formatCarlineOption(c)"></option>
+                        </template>
                     </select>
                 </div>
 
@@ -169,6 +183,7 @@
                     <thead>
                         <tr class="border-b border-gray-100 bg-gray-50/50">
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3 w-14">No</th>
+                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Carline</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Periode Target</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Durasi</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-right">Target DPM</th>
@@ -179,6 +194,15 @@
                         @forelse ($finalAssyTargets as $index => $target)
                             <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
                                 <td class="py-3.5 text-xs text-gray-500 px-4 pl-3 font-medium">{{ $index + 1 }}</td>
+                                <td class="py-3.5 px-4">
+                                    @if($target->carline)
+                                        <span class="text-xs font-bold text-gray-900 font-mono">{{ $target->carline->name }}</span>
+                                    @else
+                                        <span class="inline-block text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                                            Semua Carline
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="py-3.5 px-4">
                                     <div class="text-xs font-bold text-gray-900 font-mono">
                                         {{ \Carbon\Carbon::parse($target->period_start)->translatedFormat('d M Y') }}
@@ -197,7 +221,7 @@
                                 <td class="py-3.5 text-center px-4 pr-3">
                                     <div class="inline-flex items-center space-x-1.5">
                                         <button type="button"
-                                            @click="openEditModal({{ $target->id }}, '{{ $target->jenis_assy }}', '{{ \Carbon\Carbon::parse($target->period_start)->format('Y-m-d') }}', '{{ \Carbon\Carbon::parse($target->period_end)->format('Y-m-d') }}', '{{ $target->target_dpm }}')"
+                                            @click="openEditModal({{ $target->id }}, '{{ $target->jenis_assy }}', '{{ $target->carline_id ?? '' }}', '{{ \Carbon\Carbon::parse($target->period_start)->format('Y-m-d') }}', '{{ \Carbon\Carbon::parse($target->period_end)->format('Y-m-d') }}', '{{ $target->target_dpm }}')"
                                             class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-semibold transition shadow-2xs">
                                             Edit
                                         </button>
@@ -211,7 +235,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="py-12 text-center text-xs text-gray-400 font-semibold">
+                                <td colspan="6" class="py-12 text-center text-xs text-gray-400 font-semibold">
                                     Belum ada target DPM untuk Final Assy.
                                 </td>
                             </tr>
@@ -226,6 +250,7 @@
                     <thead>
                         <tr class="border-b border-gray-100 bg-gray-50/50">
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3 w-14">No</th>
+                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Carline</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Periode Target</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Durasi</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-right">Target PPM</th>
@@ -236,6 +261,15 @@
                         @forelse ($preAssyTargets as $index => $target)
                             <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
                                 <td class="py-3.5 text-xs text-gray-500 px-4 pl-3 font-medium">{{ $index + 1 }}</td>
+                                <td class="py-3.5 px-4">
+                                    @if($target->carline)
+                                        <span class="text-xs font-bold text-gray-900 font-mono">{{ $target->carline->name }}</span>
+                                    @else
+                                        <span class="inline-block text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                                            Semua Carline
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="py-3.5 px-4">
                                     <div class="text-xs font-bold text-gray-900 font-mono">
                                         {{ \Carbon\Carbon::parse($target->period_start)->translatedFormat('d M Y') }}
@@ -254,7 +288,7 @@
                                 <td class="py-3.5 text-center px-4 pr-3">
                                     <div class="inline-flex items-center space-x-1.5">
                                         <button type="button"
-                                            @click="openEditModal({{ $target->id }}, '{{ $target->jenis_assy }}', '{{ \Carbon\Carbon::parse($target->period_start)->format('Y-m-d') }}', '{{ \Carbon\Carbon::parse($target->period_end)->format('Y-m-d') }}', '{{ $target->target_dpm }}')"
+                                            @click="openEditModal({{ $target->id }}, '{{ $target->jenis_assy }}', '{{ $target->carline_id ?? '' }}', '{{ \Carbon\Carbon::parse($target->period_start)->format('Y-m-d') }}', '{{ \Carbon\Carbon::parse($target->period_end)->format('Y-m-d') }}', '{{ $target->target_dpm }}')"
                                             class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-semibold transition shadow-2xs">
                                             Edit
                                         </button>
@@ -268,7 +302,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="py-12 text-center text-xs text-gray-400 font-semibold">
+                                <td colspan="6" class="py-12 text-center text-xs text-gray-400 font-semibold">
                                     Belum ada target PPM untuk Pre Assy.
                                 </td>
                             </tr>
@@ -303,10 +337,24 @@
                     <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
                         Jenis Assy <span class="text-red-500">*</span>
                     </label>
-                    <select name="jenis_assy" x-model="editForm.jenis_assy" required
+                    <select name="jenis_assy" x-model="editForm.jenis_assy" @change="onAssyChange(editForm)" required
                         class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
                         <option value="Final Assy">Final Assy</option>
                         <option value="Pre Assy">Pre Assy</option>
+                    </select>
+                </div>
+
+                <!-- Carline (Opsional, Default Semua Carline) -->
+                <div>
+                    <label for="edit_carline_id" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
+                        Carline
+                    </label>
+                    <select id="edit_carline_id" name="carline_id" x-model="editForm.carline_id"
+                        class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
+                        <option value="">Semua Carline</option>
+                        <template x-for="c in filteredCarlines(editForm.jenis_assy)" :key="c.id">
+                            <option :value="c.id" x-text="formatCarlineOption(c)"></option>
+                        </template>
                     </select>
                 </div>
 
@@ -391,12 +439,14 @@
 <script>
 function dpmTargetsPage() {
     return {
+        carlines: @json($carlines),
         activeTab: 'Final Assy',
         editModal: false,
         deleteModal: false,
         deleteAction: '',
         addForm: {
             jenis_assy: 'Final Assy',
+            carline_id: '{{ old('carline_id', '') }}',
             period_start: '{{ old('period_start', date('Y-m-01')) }}',
             period_end: '{{ old('period_end', date('Y-m-t')) }}',
             target_dpm: '{{ old('target_dpm', '') }}'
@@ -404,6 +454,7 @@ function dpmTargetsPage() {
         editForm: {
             id: null,
             jenis_assy: 'Final Assy',
+            carline_id: '',
             period_start: '',
             period_end: '',
             target_dpm: ''
@@ -419,9 +470,28 @@ function dpmTargetsPage() {
                 }
             });
         },
-        openEditModal(id, assy, start, end, target) {
+        filteredCarlines(assy) {
+            if (assy === 'Pre Assy') {
+                return this.carlines.filter(c => c.car_type_id === null);
+            }
+            return this.carlines.filter(c => c.car_type_id !== null);
+        },
+        formatCarlineOption(c) {
+            if (c.car_type && c.car_type.name) {
+                return `${c.name} (${c.car_type.name})`;
+            }
+            return c.name;
+        },
+        onAssyChange(targetObj) {
+            const valid = this.filteredCarlines(targetObj.jenis_assy);
+            if (targetObj.carline_id && !valid.some(c => String(c.id) === String(targetObj.carline_id))) {
+                targetObj.carline_id = '';
+            }
+        },
+        openEditModal(id, assy, carlineId, start, end, target) {
             this.editForm.id = id;
             this.editForm.jenis_assy = assy;
+            this.editForm.carline_id = carlineId ? String(carlineId) : '';
             this.editForm.period_start = start;
             this.editForm.period_end = end;
             this.editForm.target_dpm = target;

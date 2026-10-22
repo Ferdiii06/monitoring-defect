@@ -129,7 +129,13 @@
                                     <span class="block text-xs font-semibold text-gray-800 mt-0.5">{{ $defect->jenis_sub_defect }}</span>
                                 </div>
 
-                                <!-- Row 3: Conveyor / Line -->
+                                <!-- Row 3: Quantity Inspect -->
+                                <div>
+                                    <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Quantity Inspect</span>
+                                    <span class="block text-xs font-bold text-gray-900 font-mono tabular-nums mt-0.5">{{ ($defect->inspect_quantity !== null && $defect->inspect_quantity !== '') ? $defect->inspect_quantity . ' Unit' : '-' }}</span>
+                                </div>
+
+                                <!-- Row 4: Conveyor / Line -->
                                 <div class="grid grid-cols-2 gap-2 pt-1 border-t border-gray-50">
                                     <div>
                                         <span class="block text-[10px] font-medium text-gray-400 uppercase">Conveyor/Carline</span>
