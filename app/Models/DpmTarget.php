@@ -11,6 +11,8 @@ class DpmTarget extends Model
 
     protected $fillable = [
         'jenis_assy',
+        'carline_id',
+        'conveyor_group',
         'period_start',
         'period_end',
         'target_dpm',
@@ -20,7 +22,13 @@ class DpmTarget extends Model
         'period_start' => 'date',
         'period_end'   => 'date',
         'target_dpm'   => 'decimal:2',
+        'carline_id'   => 'integer',
     ];
+
+    public function carline()
+    {
+        return $this->belongsTo(Carline::class);
+    }
 
     public function setPeriodStartAttribute($value)
     {
@@ -32,4 +40,3 @@ class DpmTarget extends Model
         $this->attributes['period_end'] = $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : null;
     }
 }
-

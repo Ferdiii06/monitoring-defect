@@ -82,21 +82,7 @@ class DashboardController extends Controller
         $preAssyChart = $this->buildAssyChartData('Pre Assy', $monthRecords, $startOfWeek);
 
         // Opsi dropdown filter untuk Dashboard Analytics: grup unik dari gabungan master dan defects Final Assy
-        $masterFinalConveyors = \App\Models\Carline::whereNotNull('car_type_id')->pluck('name');
-        $defectFinalConveyors = Defect::where('jenis_assy', 'Final Assy')
-            ->whereNotNull('conveyor')
-            ->where('conveyor', '!=', '')
-            ->distinct()
-            ->pluck('conveyor');
-
-        $finalAssyConveyors = $masterFinalConveyors->merge($defectFinalConveyors)
-            ->map(fn($name) => ConveyorGroup::of($name))
-            ->filter(fn($g) => $g !== '')
-            ->unique()
-            ->values()
-            ->all();
-
-        usort($finalAssyConveyors, 'strnatcasecmp');
+        $finalAssyConveyors = ConveyorGroup::availableGroups();
 
         $preAssyCarlines = \App\Models\Carline::whereNull('car_type_id')
             ->orderBy('name')
@@ -253,6 +239,9 @@ class DashboardController extends Controller
      */
     private function buildDpmTrends(string $jenisAssy, Carbon $startDate, Carbon $endDate, string $groupBy, ?string $conveyor, $carlineId): array
     {
+        $conveyorGroup = !empty($conveyor) ? ConveyorGroup::of($conveyor) : null;
+        $isFilterActive = ($jenisAssy === 'Final Assy' && !empty($conveyor)) || ($jenisAssy === 'Pre Assy' && !empty($carlineId));
+
         $query = Defect::query()
             ->selectRaw('DATE(waktu) as bucket_date, SUM(quantity) as total_defect, SUM(inspect_quantity) as total_inspect')
             ->whereBetween('waktu', [$startDate, $endDate])
@@ -331,17 +320,61 @@ class DashboardController extends Controller
 
             // Cocokkan DpmTarget di memori PHP (tanpa query per titik)
             $targetVal = null;
-            foreach ($targets as $t) {
-                $pStart = $t->period_start instanceof \DateTimeInterface
-                    ? $t->period_start->format('Y-m-d')
-                    : substr((string) $t->period_start, 0, 10);
-                $pEnd = $t->period_end instanceof \DateTimeInterface
-                    ? $t->period_end->format('Y-m-d')
-                    : substr((string) $t->period_end, 0, 10);
+            if ($isFilterActive) {
+                // 1. Cari target spesifik terlebih dahulu
+                $specificTarget = $targets->first(function ($t) use ($jenisAssy, $conveyorGroup, $carlineId, $refDate) {
+                    $pStart = $t->period_start instanceof \DateTimeInterface
+                        ? $t->period_start->format('Y-m-d')
+                        : substr((string) $t->period_start, 0, 10);
+                    $pEnd = $t->period_end instanceof \DateTimeInterface
+                        ? $t->period_end->format('Y-m-d')
+                        : substr((string) $t->period_end, 0, 10);
 
-                if ($pStart <= $refDate && $pEnd >= $refDate) {
-                    $targetVal = (float) $t->target_dpm;
-                    break;
+                    if ($pStart > $refDate || $pEnd < $refDate) {
+                        return false;
+                    }
+
+                    if ($jenisAssy === 'Final Assy') {
+                        return $t->conveyor_group === $conveyorGroup;
+                    } else {
+                        return (int) $t->carline_id === (int) $carlineId;
+                    }
+                });
+
+                if ($specificTarget) {
+                    $targetVal = (float) $specificTarget->target_dpm;
+                } else {
+                    // Fallback ke target default (keduanya NULL)
+                    $defaultTarget = $targets->first(function ($t) use ($refDate) {
+                        $pStart = $t->period_start instanceof \DateTimeInterface
+                            ? $t->period_start->format('Y-m-d')
+                            : substr((string) $t->period_start, 0, 10);
+                        $pEnd = $t->period_end instanceof \DateTimeInterface
+                            ? $t->period_end->format('Y-m-d')
+                            : substr((string) $t->period_end, 0, 10);
+
+                        return $pStart <= $refDate && $pEnd >= $refDate && $t->carline_id === null && $t->conveyor_group === null;
+                    });
+
+                    if ($defaultTarget) {
+                        $targetVal = (float) $defaultTarget->target_dpm;
+                    }
+                }
+            } else {
+                // Filter = "semua" (tanpa filter spesifik): HANYA gunakan target default
+                $defaultTarget = $targets->first(function ($t) use ($refDate) {
+                    $pStart = $t->period_start instanceof \DateTimeInterface
+                        ? $t->period_start->format('Y-m-d')
+                        : substr((string) $t->period_start, 0, 10);
+                    $pEnd = $t->period_end instanceof \DateTimeInterface
+                        ? $t->period_end->format('Y-m-d')
+                        : substr((string) $t->period_end, 0, 10);
+
+                    return $pStart <= $refDate && $pEnd >= $refDate && $t->carline_id === null && $t->conveyor_group === null;
+                });
+
+                if ($defaultTarget) {
+                    $targetVal = (float) $defaultTarget->target_dpm;
                 }
             }
 
@@ -426,17 +459,6 @@ class DashboardController extends Controller
      */
     protected function getConveyorNamesByGroup(string $groupKey): array
     {
-        $masterFinalConveyors = \App\Models\Carline::whereNotNull('car_type_id')->pluck('name');
-        $defectFinalConveyors = Defect::where('jenis_assy', 'Final Assy')
-            ->whereNotNull('conveyor')
-            ->where('conveyor', '!=', '')
-            ->distinct()
-            ->pluck('conveyor');
-
-        $allConveyors = $masterFinalConveyors->merge($defectFinalConveyors)->unique();
-
-        return $allConveyors->filter(function ($name) use ($groupKey) {
-            return ConveyorGroup::of($name) === $groupKey;
-        })->values()->all();
+        return ConveyorGroup::resolveNamesForGroup($groupKey);
     }
 }

@@ -65,11 +65,40 @@
                     <label for="add_jenis_assy" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
                         Jenis Assy <span class="text-red-500">*</span>
                     </label>
-                    <select id="add_jenis_assy" name="jenis_assy" x-model="addForm.jenis_assy" required
+                    <select id="add_jenis_assy" name="jenis_assy" x-model="addForm.jenis_assy" @change="watchJenisAssy(addForm)" required
                         class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
                         <option value="Final Assy">Final Assy</option>
                         <option value="Pre Assy">Pre Assy</option>
                     </select>
+                </div>
+
+                <!-- 1b. Konveyor / Carline Scope -->
+                <div x-show="addForm.jenis_assy === 'Final Assy'">
+                    <label for="add_conveyor_group" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
+                        Konveyor <span class="text-gray-400 font-normal normal-case">(Opsional)</span>
+                    </label>
+                    <select id="add_conveyor_group" name="conveyor_group" x-model="addForm.conveyor_group" :disabled="addForm.jenis_assy !== 'Final Assy'"
+                        class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
+                        <option value="">Semua / Default</option>
+                        @foreach ($finalAssyConveyors as $conv)
+                            <option value="{{ $conv }}">{{ $conv }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-[10px] font-medium text-gray-400 mt-1">Kosongkan untuk target default seluruh konveyor Final Assy.</p>
+                </div>
+
+                <div x-show="addForm.jenis_assy === 'Pre Assy'" x-cloak>
+                    <label for="add_carline_id" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
+                        Carline <span class="text-gray-400 font-normal normal-case">(Opsional)</span>
+                    </label>
+                    <select id="add_carline_id" name="carline_id" x-model="addForm.carline_id" :disabled="addForm.jenis_assy !== 'Pre Assy'"
+                        class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
+                        <option value="">Semua / Default</option>
+                        @foreach ($preAssyCarlines as $carline)
+                            <option value="{{ $carline->id }}">{{ $carline->name }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-[10px] font-medium text-gray-400 mt-1">Kosongkan untuk target default seluruh carline Pre Assy.</p>
                 </div>
 
                 <!-- 2. Rentang Tanggal (Mulai & Akhir) -->
@@ -168,7 +197,8 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-gray-100 bg-gray-50/50">
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3 w-14">No</th>
+                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3 w-12">No</th>
+                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Konveyor</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Periode Target</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Durasi</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-right">Target DPM</th>
@@ -179,6 +209,17 @@
                         @forelse ($finalAssyTargets as $index => $target)
                             <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
                                 <td class="py-3.5 text-xs text-gray-500 px-4 pl-3 font-medium">{{ $index + 1 }}</td>
+                                <td class="py-3.5 px-4">
+                                    @if ($target->conveyor_group)
+                                        <span class="inline-block bg-teal-50 text-teal-800 border border-teal-200/80 text-xs font-bold font-mono px-2.5 py-0.5 rounded-lg">
+                                            {{ $target->conveyor_group }}
+                                        </span>
+                                    @else
+                                        <span class="inline-block bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded-lg">
+                                            Semua (Default)
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="py-3.5 px-4">
                                     <div class="text-xs font-bold text-gray-900 font-mono">
                                         {{ \Carbon\Carbon::parse($target->period_start)->translatedFormat('d M Y') }}
@@ -197,7 +238,7 @@
                                 <td class="py-3.5 text-center px-4 pr-3">
                                     <div class="inline-flex items-center space-x-1.5">
                                         <button type="button"
-                                            @click="openEditModal({{ $target->id }}, '{{ $target->jenis_assy }}', '{{ \Carbon\Carbon::parse($target->period_start)->format('Y-m-d') }}', '{{ \Carbon\Carbon::parse($target->period_end)->format('Y-m-d') }}', '{{ $target->target_dpm }}')"
+                                            @click="openEditModal({{ $target->id }}, '{{ $target->jenis_assy }}', '{{ \Carbon\Carbon::parse($target->period_start)->format('Y-m-d') }}', '{{ \Carbon\Carbon::parse($target->period_end)->format('Y-m-d') }}', '{{ $target->target_dpm }}', '', '{{ $target->conveyor_group ?? '' }}')"
                                             class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-semibold transition shadow-2xs">
                                             Edit
                                         </button>
@@ -211,7 +252,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="py-12 text-center text-xs text-gray-400 font-semibold">
+                                <td colspan="6" class="py-12 text-center text-xs text-gray-400 font-semibold">
                                     Belum ada target DPM untuk Final Assy.
                                 </td>
                             </tr>
@@ -225,7 +266,8 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-gray-100 bg-gray-50/50">
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3 w-14">No</th>
+                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3 w-12">No</th>
+                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Carline</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Periode Target</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Durasi</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-right">Target PPM</th>
@@ -236,6 +278,17 @@
                         @forelse ($preAssyTargets as $index => $target)
                             <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors">
                                 <td class="py-3.5 text-xs text-gray-500 px-4 pl-3 font-medium">{{ $index + 1 }}</td>
+                                <td class="py-3.5 px-4">
+                                    @if ($target->carline)
+                                        <span class="inline-block bg-sky-50 text-sky-800 border border-sky-200/80 text-xs font-bold font-mono px-2.5 py-0.5 rounded-lg">
+                                            {{ $target->carline->name }}
+                                        </span>
+                                    @else
+                                        <span class="inline-block bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded-lg">
+                                            Semua (Default)
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="py-3.5 px-4">
                                     <div class="text-xs font-bold text-gray-900 font-mono">
                                         {{ \Carbon\Carbon::parse($target->period_start)->translatedFormat('d M Y') }}
@@ -254,7 +307,7 @@
                                 <td class="py-3.5 text-center px-4 pr-3">
                                     <div class="inline-flex items-center space-x-1.5">
                                         <button type="button"
-                                            @click="openEditModal({{ $target->id }}, '{{ $target->jenis_assy }}', '{{ \Carbon\Carbon::parse($target->period_start)->format('Y-m-d') }}', '{{ \Carbon\Carbon::parse($target->period_end)->format('Y-m-d') }}', '{{ $target->target_dpm }}')"
+                                            @click="openEditModal({{ $target->id }}, '{{ $target->jenis_assy }}', '{{ \Carbon\Carbon::parse($target->period_start)->format('Y-m-d') }}', '{{ \Carbon\Carbon::parse($target->period_end)->format('Y-m-d') }}', '{{ $target->target_dpm }}', '{{ $target->carline_id ?? '' }}', '')"
                                             class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-semibold transition shadow-2xs">
                                             Edit
                                         </button>
@@ -268,7 +321,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="py-12 text-center text-xs text-gray-400 font-semibold">
+                                <td colspan="6" class="py-12 text-center text-xs text-gray-400 font-semibold">
                                     Belum ada target PPM untuk Pre Assy.
                                 </td>
                             </tr>
@@ -303,11 +356,40 @@
                     <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
                         Jenis Assy <span class="text-red-500">*</span>
                     </label>
-                    <select name="jenis_assy" x-model="editForm.jenis_assy" required
+                    <select name="jenis_assy" x-model="editForm.jenis_assy" @change="watchJenisAssy(editForm)" required
                         class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
                         <option value="Final Assy">Final Assy</option>
                         <option value="Pre Assy">Pre Assy</option>
                     </select>
+                </div>
+
+                <!-- Konveyor / Carline Scope (Edit) -->
+                <div x-show="editForm.jenis_assy === 'Final Assy'">
+                    <label for="edit_conveyor_group" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
+                        Konveyor <span class="text-gray-400 font-normal normal-case">(Opsional)</span>
+                    </label>
+                    <select id="edit_conveyor_group" name="conveyor_group" x-model="editForm.conveyor_group" :disabled="editForm.jenis_assy !== 'Final Assy'"
+                        class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
+                        <option value="">Semua / Default</option>
+                        @foreach ($finalAssyConveyors as $conv)
+                            <option value="{{ $conv }}">{{ $conv }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-[10px] font-medium text-gray-400 mt-1">Kosongkan untuk target default seluruh konveyor Final Assy.</p>
+                </div>
+
+                <div x-show="editForm.jenis_assy === 'Pre Assy'" x-cloak>
+                    <label for="edit_carline_id" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
+                        Carline <span class="text-gray-400 font-normal normal-case">(Opsional)</span>
+                    </label>
+                    <select id="edit_carline_id" name="carline_id" x-model="editForm.carline_id" :disabled="editForm.jenis_assy !== 'Pre Assy'"
+                        class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
+                        <option value="">Semua / Default</option>
+                        @foreach ($preAssyCarlines as $carline)
+                            <option value="{{ $carline->id }}">{{ $carline->name }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-[10px] font-medium text-gray-400 mt-1">Kosongkan untuk target default seluruh carline Pre Assy.</p>
                 </div>
 
                 <!-- Rentang Tanggal -->
@@ -397,6 +479,8 @@ function dpmTargetsPage() {
         deleteAction: '',
         addForm: {
             jenis_assy: 'Final Assy',
+            conveyor_group: '{{ old('conveyor_group', '') }}',
+            carline_id: '{{ old('carline_id', '') }}',
             period_start: '{{ old('period_start', date('Y-m-01')) }}',
             period_end: '{{ old('period_end', date('Y-m-t')) }}',
             target_dpm: '{{ old('target_dpm', '') }}'
@@ -404,6 +488,8 @@ function dpmTargetsPage() {
         editForm: {
             id: null,
             jenis_assy: 'Final Assy',
+            conveyor_group: '',
+            carline_id: '',
             period_start: '',
             period_end: '',
             target_dpm: ''
@@ -419,12 +505,21 @@ function dpmTargetsPage() {
                 }
             });
         },
-        openEditModal(id, assy, start, end, target) {
+        watchJenisAssy(form) {
+            if (form.jenis_assy === 'Final Assy') {
+                form.carline_id = '';
+            } else {
+                form.conveyor_group = '';
+            }
+        },
+        openEditModal(id, assy, start, end, target, carlineId = '', conveyorGroup = '') {
             this.editForm.id = id;
             this.editForm.jenis_assy = assy;
             this.editForm.period_start = start;
             this.editForm.period_end = end;
             this.editForm.target_dpm = target;
+            this.editForm.carline_id = carlineId || '';
+            this.editForm.conveyor_group = conveyorGroup || '';
             this.editModal = true;
         },
         confirmDelete(actionUrl) {

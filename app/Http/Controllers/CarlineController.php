@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\CarType;
 use App\Models\Carline;
 use App\Models\Defect;
+use App\Models\DpmTarget;
 
 class CarlineController extends Controller
 {
@@ -54,13 +55,21 @@ class CarlineController extends Controller
     {
         $carline = Carline::findOrFail($id);
 
-        $isUsed = Defect::where('carline_id', $carline->id)
+        $isUsedInDefect = Defect::where('carline_id', $carline->id)
             ->orWhere('conveyor', $carline->name)
             ->exists();
 
-        if ($isUsed) {
+        if ($isUsedInDefect) {
             return redirect()->back()->withErrors([
                 'error' => "Carline/Konveyor '{$carline->name}' tidak dapat dihapus karena masih digunakan di data defect."
+            ]);
+        }
+
+        $isUsedInTarget = DpmTarget::where('carline_id', $carline->id)->exists();
+
+        if ($isUsedInTarget) {
+            return redirect()->back()->withErrors([
+                'error' => "Carline/Konveyor '{$carline->name}' tidak dapat dihapus karena masih digunakan di target DPM/PPM."
             ]);
         }
 

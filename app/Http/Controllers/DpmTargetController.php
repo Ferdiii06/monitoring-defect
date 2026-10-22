@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\DpmTarget;
+use App\Models\Carline;
+use App\Support\ConveyorGroup;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 
@@ -16,10 +18,21 @@ class DpmTargetController extends Controller
             ->get();
 
         $preAssyTargets = DpmTarget::where('jenis_assy', 'Pre Assy')
+            ->with('carline')
             ->orderBy('period_start', 'desc')
             ->get();
 
-        return view('master.dpm_targets', compact('finalAssyTargets', 'preAssyTargets'));
+        $finalAssyConveyors = ConveyorGroup::availableGroups();
+        $preAssyCarlines = Carline::whereNull('car_type_id')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('master.dpm_targets', compact(
+            'finalAssyTargets',
+            'preAssyTargets',
+            'finalAssyConveyors',
+            'preAssyCarlines'
+        ));
     }
 
     public function store(Request $request)
@@ -55,6 +68,12 @@ class DpmTargetController extends Controller
 
     protected function validateDpmTarget(Request $request, ?int $ignoreId = null): array
     {
+        $rawCarlineId = $request->input('carline_id');
+        $carlineId = ($rawCarlineId !== '' && $rawCarlineId !== null) ? (int) $rawCarlineId : null;
+
+        $rawConveyorGroup = $request->input('conveyor_group');
+        $conveyorGroup = ($rawConveyorGroup !== '' && $rawConveyorGroup !== null) ? trim((string) $rawConveyorGroup) : null;
+
         $validator = Validator::make($request->all(), [
             'jenis_assy'   => 'required|string|in:Final Assy,Pre Assy',
             'period_start' => 'required|date',
@@ -73,7 +92,7 @@ class DpmTargetController extends Controller
             'target_dpm.min'             => 'Target DPM tidak boleh bernilai negatif.',
         ]);
 
-        $validator->after(function ($validator) use ($request, $ignoreId) {
+        $validator->after(function ($validator) use ($request, $ignoreId, $carlineId, $conveyorGroup) {
             $jenisAssy = $request->input('jenis_assy');
             $start = $request->input('period_start');
             $end = $request->input('period_end');
@@ -86,22 +105,73 @@ class DpmTargetController extends Controller
                 return;
             }
 
-            $conflicting = DpmTarget::where('jenis_assy', $jenisAssy)
+            // Cross validation per jenis assy
+            if ($jenisAssy === 'Final Assy') {
+                if ($carlineId !== null) {
+                    $validator->errors()->add('carline_id', 'Carline tidak boleh diisi untuk Final Assy.');
+                    return;
+                }
+                if ($conveyorGroup !== null && !in_array($conveyorGroup, ConveyorGroup::availableGroups(), true)) {
+                    $validator->errors()->add('conveyor_group', 'Grup konveyor tidak valid.');
+                    return;
+                }
+            } elseif ($jenisAssy === 'Pre Assy') {
+                if ($conveyorGroup !== null) {
+                    $validator->errors()->add('conveyor_group', 'Grup konveyor tidak boleh diisi untuk Pre Assy.');
+                    return;
+                }
+                if ($carlineId !== null) {
+                    $isValidCarline = Carline::whereNull('car_type_id')->where('id', $carlineId)->exists();
+                    if (!$isValidCarline) {
+                        $validator->errors()->add('carline_id', 'Carline tidak valid untuk Pre Assy.');
+                        return;
+                    }
+                }
+            }
+
+            // Overlap check per (jenis_assy, carline_id, conveyor_group)
+            $conflictingQuery = DpmTarget::where('jenis_assy', $jenisAssy)
                 ->where('period_start', '<=', $end)
                 ->where('period_end', '>=', $start)
-                ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
-                ->first();
+                ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId));
+
+            if ($carlineId !== null) {
+                $conflictingQuery->where('carline_id', $carlineId);
+            } else {
+                $conflictingQuery->whereNull('carline_id');
+            }
+
+            if ($conveyorGroup !== null) {
+                $conflictingQuery->where('conveyor_group', $conveyorGroup);
+            } else {
+                $conflictingQuery->whereNull('conveyor_group');
+            }
+
+            $conflicting = $conflictingQuery->with('carline')->first();
 
             if ($conflicting) {
                 $startFmt = Carbon::parse($conflicting->period_start)->translatedFormat('d M Y');
                 $endFmt = Carbon::parse($conflicting->period_end)->translatedFormat('d M Y');
+                $scopeLabel = $conveyorGroup
+                    ? " (Konveyor {$conveyorGroup})"
+                    : ($conflicting->carline ? " (Carline {$conflicting->carline->name})" : " (Default)");
+
                 $validator->errors()->add(
                     'period_start',
-                    "Rentang tanggal bertabrakan dengan target {$conflicting->jenis_assy} yang sudah ada ({$startFmt} s/d {$endFmt})."
+                    "Rentang tanggal bertabrakan dengan target {$conflicting->jenis_assy}{$scopeLabel} yang sudah ada ({$startFmt} s/d {$endFmt})."
                 );
             }
         });
 
-        return $validator->validate();
+        $validated = $validator->validate();
+
+        return [
+            'jenis_assy'     => $validated['jenis_assy'],
+            'period_start'   => $validated['period_start'],
+            'period_end'     => $validated['period_end'],
+            'target_dpm'     => $validated['target_dpm'],
+            'carline_id'     => $carlineId,
+            'conveyor_group' => $conveyorGroup,
+        ];
     }
 }

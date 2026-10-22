@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\DpmTarget;
+use App\Models\Carline;
+use App\Models\CarType;
 
 class AdminDpmTargetTest extends TestCase
 {
@@ -172,5 +174,130 @@ class AdminDpmTargetTest extends TestCase
         $this->assertDatabaseMissing('dpm_targets', [
             'id' => $target->id,
         ]);
+    }
+
+    public function test_cross_validation_rejects_carline_id_for_final_assy_and_conveyor_group_for_pre_assy(): void
+    {
+        $carType = CarType::create(['name' => 'TOYOTA']);
+        $carline = Carline::create(['car_type_id' => null, 'name' => 'PRE-CARLINE-1']);
+        Carline::create(['car_type_id' => $carType->id, 'name' => '664W-C5']);
+
+        // 1. Final Assy dengan carline_id harus DITOLAK
+        $response1 = $this->actingAsAdmin()->post('/master/dpm-targets', [
+            'jenis_assy'   => 'Final Assy',
+            'carline_id'   => $carline->id,
+            'period_start' => '2026-05-01',
+            'period_end'   => '2026-05-31',
+            'target_dpm'   => '10.00',
+        ]);
+        $response1->assertSessionHasErrors(['carline_id']);
+
+        // 2. Pre Assy dengan conveyor_group harus DITOLAK
+        $response2 = $this->actingAsAdmin()->post('/master/dpm-targets', [
+            'jenis_assy'     => 'Pre Assy',
+            'conveyor_group' => 'C5',
+            'period_start'   => '2026-05-01',
+            'period_end'     => '2026-05-31',
+            'target_dpm'     => '15.00',
+        ]);
+        $response2->assertSessionHasErrors(['conveyor_group']);
+    }
+
+    public function test_specific_target_does_not_conflict_with_default_target_in_same_period(): void
+    {
+        $carType = CarType::create(['name' => 'TOYOTA']);
+        Carline::create(['car_type_id' => $carType->id, 'name' => '664W-C5']);
+
+        // 1. Buat target default Final Assy (carline_id = null, conveyor_group = null)
+        DpmTarget::create([
+            'jenis_assy'     => 'Final Assy',
+            'carline_id'     => null,
+            'conveyor_group' => null,
+            'period_start'   => '2026-06-01',
+            'period_end'     => '2026-06-30',
+            'target_dpm'     => 50.00,
+        ]);
+
+        // 2. Buat target spesifik Final Assy untuk konveyor C5 pada periode yang sama persis -> Harus BERHASIL
+        $response = $this->actingAsAdmin()->post('/master/dpm-targets', [
+            'jenis_assy'     => 'Final Assy',
+            'conveyor_group' => 'C5',
+            'period_start'   => '2026-06-01',
+            'period_end'     => '2026-06-30',
+            'target_dpm'     => 25.00,
+        ]);
+
+        $response->assertRedirect(route('admin.master.dpm_targets.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('dpm_targets', [
+            'jenis_assy'     => 'Final Assy',
+            'conveyor_group' => 'C5',
+            'target_dpm'     => 25.00,
+        ]);
+    }
+
+    public function test_specific_target_for_conveyor_a_conflicts_with_conveyor_a_but_not_conveyor_b(): void
+    {
+        $carType = CarType::create(['name' => 'TOYOTA']);
+        Carline::create(['car_type_id' => $carType->id, 'name' => '664W-C5']);
+        Carline::create(['car_type_id' => $carType->id, 'name' => '664W-C9']);
+
+        // 1. Target spesifik C5: 1 Juli s/d 31 Juli
+        DpmTarget::create([
+            'jenis_assy'     => 'Final Assy',
+            'conveyor_group' => 'C5',
+            'period_start'   => '2026-07-01',
+            'period_end'     => '2026-07-31',
+            'target_dpm'     => 20.00,
+        ]);
+
+        // 2. Buat target C5 overlap (15 Juli - 15 Agustus) -> Harus GAGAL
+        $responseConflict = $this->actingAsAdmin()->post('/master/dpm-targets', [
+            'jenis_assy'     => 'Final Assy',
+            'conveyor_group' => 'C5',
+            'period_start'   => '2026-07-15',
+            'period_end'     => '2026-08-15',
+            'target_dpm'     => 22.00,
+        ]);
+        $responseConflict->assertSessionHasErrors(['period_start']);
+
+        // 3. Buat target C9 overlap (15 Juli - 15 Agustus) -> Harus BERHASIL (tidak saling memblokir)
+        $responseAllowed = $this->actingAsAdmin()->post('/master/dpm-targets', [
+            'jenis_assy'     => 'Final Assy',
+            'conveyor_group' => 'C9',
+            'period_start'   => '2026-07-15',
+            'period_end'     => '2026-08-15',
+            'target_dpm'     => 30.00,
+        ]);
+        $responseAllowed->assertRedirect(route('admin.master.dpm_targets.index'));
+        $responseAllowed->assertSessionHas('success');
+
+        $this->assertDatabaseHas('dpm_targets', [
+            'jenis_assy'     => 'Final Assy',
+            'conveyor_group' => 'C9',
+            'target_dpm'     => 30.00,
+        ]);
+    }
+
+    public function test_carline_destroy_blocked_when_used_in_dpm_targets(): void
+    {
+        $carline = Carline::create([
+            'car_type_id' => null,
+            'name'        => 'PRE-CARLINE-TARGETED',
+        ]);
+
+        DpmTarget::create([
+            'jenis_assy'   => 'Pre Assy',
+            'carline_id'   => $carline->id,
+            'period_start' => '2026-08-01',
+            'period_end'   => '2026-08-31',
+            'target_dpm'   => 40.00,
+        ]);
+
+        // Hapus carline yang terikat di DpmTarget -> Harus DITOLAK
+        $response = $this->actingAsAdmin()->delete("/master/carlines/{$carline->id}");
+        $response->assertSessionHasErrors(['error']);
+        $this->assertDatabaseHas('carlines', ['id' => $carline->id]);
     }
 }

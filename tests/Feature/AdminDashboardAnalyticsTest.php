@@ -656,4 +656,135 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertEquals(5, $dpm[0]['total_defect']);
         $this->assertEquals(150, $dpm[0]['total_inspect']);
     }
+
+    public function test_analytics_dpm_target_resolution_specific_fallback_and_default_only_when_all(): void
+    {
+        $carType = CarType::create(['name' => 'TOYOTA']);
+        Carline::create(['car_type_id' => $carType->id, 'name' => '664W-C5']);
+        Carline::create(['car_type_id' => $carType->id, 'name' => '664W-C9']);
+
+        $preCarline1 = Carline::create(['car_type_id' => null, 'name' => 'PRE-CARLINE-1']);
+        $preCarline2 = Carline::create(['car_type_id' => null, 'name' => 'PRE-CARLINE-2']);
+
+        // Targets:
+        // Final Assy: default = 50.0, spesifik C5 = 25.0 (C9 tidak punya target spesifik)
+        DpmTarget::create([
+            'jenis_assy'     => 'Final Assy',
+            'carline_id'     => null,
+            'conveyor_group' => null,
+            'period_start'   => '2026-05-01',
+            'period_end'     => '2026-05-31',
+            'target_dpm'     => 50.00,
+        ]);
+        DpmTarget::create([
+            'jenis_assy'     => 'Final Assy',
+            'carline_id'     => null,
+            'conveyor_group' => 'C5',
+            'period_start'   => '2026-05-01',
+            'period_end'     => '2026-05-31',
+            'target_dpm'     => 25.00,
+        ]);
+
+        // Pre Assy: default = 100.0, spesifik PRE-CARLINE-1 = 75.0 (PRE-CARLINE-2 tidak punya target spesifik)
+        DpmTarget::create([
+            'jenis_assy'     => 'Pre Assy',
+            'carline_id'     => null,
+            'conveyor_group' => null,
+            'period_start'   => '2026-05-01',
+            'period_end'     => '2026-05-31',
+            'target_dpm'     => 100.00,
+        ]);
+        DpmTarget::create([
+            'jenis_assy'     => 'Pre Assy',
+            'carline_id'     => $preCarline1->id,
+            'conveyor_group' => null,
+            'period_start'   => '2026-05-01',
+            'period_end'     => '2026-05-31',
+            'target_dpm'     => 75.00,
+        ]);
+
+        // Defect data:
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-05-10 08:00:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => '664W-C5',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 2,
+            'inspect_quantity' => 1000,
+        ]);
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-05-10 09:00:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => '664W-C9',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 3,
+            'inspect_quantity' => 1000,
+        ]);
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-05-10 08:30:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Pre Assy',
+            'carline_id'       => $preCarline1->id,
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'WIRE',
+            'quantity'         => 1,
+            'inspect_quantity' => 500,
+        ]);
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-05-10 09:30:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Pre Assy',
+            'carline_id'       => $preCarline2->id,
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'WIRE',
+            'quantity'         => 2,
+            'inspect_quantity' => 500,
+        ]);
+
+        // 1. Final Assy saat filter conveyor=C5 aktif -> pakai target spesifik C5 (25.0)
+        $resC5 = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&conveyor=C5');
+        $resC5->assertStatus(200);
+        $dpmC5 = $resC5->json('dpm_final');
+        $this->assertCount(1, $dpmC5);
+        $this->assertEquals(25.0, $dpmC5[0]['target']);
+
+        // 2. Final Assy saat filter conveyor=C9 aktif -> fallback ke target default (50.0)
+        $resC9 = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&conveyor=C9');
+        $resC9->assertStatus(200);
+        $dpmC9 = $resC9->json('dpm_final');
+        $this->assertCount(1, $dpmC9);
+        $this->assertEquals(50.0, $dpmC9[0]['target']);
+
+        // 3. Final Assy saat filter conveyor=all (semua konveyor) -> HANYA pakai target default (50.0)
+        $resAllFinal = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&conveyor=all');
+        $resAllFinal->assertStatus(200);
+        $dpmAllFinal = $resAllFinal->json('dpm_final');
+        $this->assertCount(1, $dpmAllFinal);
+        $this->assertEquals(50.0, $dpmAllFinal[0]['target']);
+
+        // 4. Pre Assy saat filter carline_id spesifik aktif -> pakai target spesifik PRE-CARLINE-1 (75.0)
+        $resPre1 = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&carline_id=' . $preCarline1->id);
+        $resPre1->assertStatus(200);
+        $dpmPre1 = $resPre1->json('dpm_pre');
+        $this->assertCount(1, $dpmPre1);
+        $this->assertEquals(75.0, $dpmPre1[0]['target']);
+
+        // 5. Pre Assy saat filter carline_id=PRE-CARLINE-2 aktif -> fallback ke default (100.0)
+        $resPre2 = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&carline_id=' . $preCarline2->id);
+        $resPre2->assertStatus(200);
+        $dpmPre2 = $resPre2->json('dpm_pre');
+        $this->assertCount(1, $dpmPre2);
+        $this->assertEquals(100.0, $dpmPre2[0]['target']);
+
+        // 6. Pre Assy saat filter carline_id=all -> HANYA pakai target default (100.0)
+        $resAllPre = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&carline_id=all');
+        $resAllPre->assertStatus(200);
+        $dpmAllPre = $resAllPre->json('dpm_pre');
+        $this->assertCount(1, $dpmAllPre);
+        $this->assertEquals(100.0, $dpmAllPre[0]['target']);
+    }
 }

@@ -2,6 +2,9 @@
 
 namespace App\Support;
 
+use App\Models\Carline;
+use App\Models\Defect;
+
 class ConveyorGroup
 {
     /**
@@ -32,5 +35,52 @@ class ConveyorGroup
         $afterDashBeforeDot = explode('.', $afterDash, 2)[0];
 
         return trim($afterDashBeforeDot);
+    }
+
+    /**
+     * Dapatkan semua kode grup konveyor unik dari gabungan master carline Final Assy dan data defects.
+     *
+     * @return array<string>
+     */
+    public static function availableGroups(): array
+    {
+        $masterFinalConveyors = Carline::whereNotNull('car_type_id')->pluck('name');
+        $defectFinalConveyors = Defect::where('jenis_assy', 'Final Assy')
+            ->whereNotNull('conveyor')
+            ->where('conveyor', '!=', '')
+            ->distinct()
+            ->pluck('conveyor');
+
+        $groups = $masterFinalConveyors->merge($defectFinalConveyors)
+            ->map(fn($name) => static::of($name))
+            ->filter(fn($g) => $g !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        usort($groups, 'strnatcasecmp');
+
+        return $groups;
+    }
+
+    /**
+     * Cari semua nama konveyor dari gabungan master dan data defects yang memiliki grup yang sama.
+     *
+     * @return array<string>
+     */
+    public static function resolveNamesForGroup(string $groupKey): array
+    {
+        $masterFinalConveyors = Carline::whereNotNull('car_type_id')->pluck('name');
+        $defectFinalConveyors = Defect::where('jenis_assy', 'Final Assy')
+            ->whereNotNull('conveyor')
+            ->where('conveyor', '!=', '')
+            ->distinct()
+            ->pluck('conveyor');
+
+        $allConveyors = $masterFinalConveyors->merge($defectFinalConveyors)->unique();
+
+        return $allConveyors->filter(function ($name) use ($groupKey) {
+            return static::of($name) === $groupKey;
+        })->values()->all();
     }
 }
