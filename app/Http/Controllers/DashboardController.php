@@ -268,33 +268,68 @@ class DashboardController extends Controller
             ->where('period_end', '>=', $startDate->format('Y-m-d'))
             ->get();
 
+        // Bentuk daftar bucket lengkap dari startDate sampai endDate secara kronologis
         $grouped = [];
 
+        if ($groupBy === 'week') {
+            $curr = $startDate->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
+            $last = $endDate->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
+            while ($curr->lte($last)) {
+                $key = $curr->format('Y-m-d');
+                $grouped[$key] = [
+                    'label'         => $key,
+                    'total_defect'  => 0,
+                    'total_inspect' => 0,
+                ];
+                $curr->addWeek();
+            }
+        } elseif ($groupBy === 'month') {
+            $curr = $startDate->copy()->startOfMonth()->startOfDay();
+            $last = $endDate->copy()->startOfMonth()->startOfDay();
+            while ($curr->lte($last)) {
+                $key = $curr->format('Y-m');
+                $grouped[$key] = [
+                    'label'         => $key,
+                    'total_defect'  => 0,
+                    'total_inspect' => 0,
+                ];
+                $curr->addMonthNoOverflow();
+            }
+        } else {
+            $curr = $startDate->copy()->startOfDay();
+            $last = $endDate->copy()->startOfDay();
+            while ($curr->lte($last)) {
+                $key = $curr->format('Y-m-d');
+                $grouped[$key] = [
+                    'label'         => $key,
+                    'total_defect'  => 0,
+                    'total_inspect' => 0,
+                ];
+                $curr->addDay();
+            }
+        }
+
+        // Agregasikan data defect aktual ke dalam bucket yang sesuai
         foreach ($rawRecords as $rec) {
             $date = Carbon::parse($rec->bucket_date);
 
             if ($groupBy === 'week') {
-                $startOfWeek = $date->copy()->startOfWeek(Carbon::MONDAY);
-                $key = $startOfWeek->format('Y-m-d');
-                $label = $startOfWeek->format('Y-m-d');
+                $key = $date->copy()->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
             } elseif ($groupBy === 'month') {
                 $key = $date->format('Y-m');
-                $label = $date->format('Y-m');
             } else {
                 $key = $date->format('Y-m-d');
-                $label = $date->format('Y-m-d');
             }
 
-            if (!isset($grouped[$key])) {
-                $grouped[$key] = [
-                    'label'        => $label,
-                    'total_defect' => 0,
-                    'total_inspect'=> 0,
-                ];
+            if (isset($grouped[$key])) {
+                $grouped[$key]['total_defect'] += (int) $rec->total_defect;
+                $grouped[$key]['total_inspect'] += (int) $rec->total_inspect;
             }
+        }
 
-            $grouped[$key]['total_defect'] += (int) $rec->total_defect;
-            $grouped[$key]['total_inspect'] += (int) $rec->total_inspect;
+        // Batasi jumlah bucket maksimal 400 (ambil 400 bucket terakhir jika rentang melebihi batas)
+        if (count($grouped) > 400) {
+            $grouped = array_slice($grouped, -400, null, true);
         }
 
         $points = [];
@@ -307,75 +342,97 @@ class DashboardController extends Controller
                 $dpm = round(($totalDefect / $totalInspect) * 1000000, 2);
             }
 
-            // Tentukan tanggal acuan: tanggal paling awal dalam rentang filter yang masuk bucket
+            // Tentukan tanggal acuan dan batas rentang bucket (dibatasi rentang filter)
             if ($groupBy === 'week') {
                 $monday = Carbon::parse($key)->startOfDay();
+                $sunday = $monday->copy()->endOfWeek(Carbon::SUNDAY)->startOfDay();
                 $refDate = $monday->lt($startDate) ? $startDate->format('Y-m-d') : $monday->format('Y-m-d');
+                $bucketStart = $refDate;
+                $bucketEnd = $sunday->gt($endDate) ? $endDate->format('Y-m-d') : $sunday->format('Y-m-d');
             } elseif ($groupBy === 'month') {
                 $firstDay = Carbon::parse($key . '-01')->startOfDay();
+                $lastDay = $firstDay->copy()->endOfMonth()->startOfDay();
                 $refDate = $firstDay->lt($startDate) ? $startDate->format('Y-m-d') : $firstDay->format('Y-m-d');
+                $bucketStart = $refDate;
+                $bucketEnd = $lastDay->gt($endDate) ? $endDate->format('Y-m-d') : $lastDay->format('Y-m-d');
             } else {
                 $refDate = $key;
+                $bucketStart = $key;
+                $bucketEnd = $key;
             }
 
-            // Cocokkan DpmTarget di memori PHP (tanpa query per titik)
-            $targetVal = null;
-            if ($isFilterActive) {
-                // 1. Cari target spesifik terlebih dahulu
-                $specificTarget = $targets->first(function ($t) use ($jenisAssy, $conveyorGroup, $carlineId, $refDate) {
-                    $pStart = $t->period_start instanceof \DateTimeInterface
-                        ? $t->period_start->format('Y-m-d')
-                        : substr((string) $t->period_start, 0, 10);
-                    $pEnd = $t->period_end instanceof \DateTimeInterface
-                        ? $t->period_end->format('Y-m-d')
-                        : substr((string) $t->period_end, 0, 10);
+            // Helper untuk mengekstrak format tanggal target
+            $extractDates = function ($t) {
+                $pStart = $t->period_start instanceof \DateTimeInterface
+                    ? $t->period_start->format('Y-m-d')
+                    : substr((string) $t->period_start, 0, 10);
+                $pEnd = $t->period_end instanceof \DateTimeInterface
+                    ? $t->period_end->format('Y-m-d')
+                    : substr((string) $t->period_end, 0, 10);
+                return [$pStart, $pEnd];
+            };
 
-                    if ($pStart > $refDate || $pEnd < $refDate) {
-                        return false;
-                    }
-
+            // Helper untuk mencocokkan scope target (spesifik vs default)
+            $matchesScope = function ($t, bool $isSpecific) use ($jenisAssy, $conveyorGroup, $carlineId) {
+                if ($isSpecific) {
                     if ($jenisAssy === 'Final Assy') {
                         return $t->conveyor_group === $conveyorGroup;
                     } else {
                         return (int) $t->carline_id === (int) $carlineId;
                     }
-                });
+                }
+                return $t->carline_id === null && $t->conveyor_group === null;
+            };
 
-                if ($specificTarget) {
-                    $targetVal = (float) $specificTarget->target_dpm;
-                } else {
-                    // Fallback ke target default (keduanya NULL)
-                    $defaultTarget = $targets->first(function ($t) use ($refDate) {
-                        $pStart = $t->period_start instanceof \DateTimeInterface
-                            ? $t->period_start->format('Y-m-d')
-                            : substr((string) $t->period_start, 0, 10);
-                        $pEnd = $t->period_end instanceof \DateTimeInterface
-                            ? $t->period_end->format('Y-m-d')
-                            : substr((string) $t->period_end, 0, 10);
-
-                        return $pStart <= $refDate && $pEnd >= $refDate && $t->carline_id === null && $t->conveyor_group === null;
-                    });
-
-                    if ($defaultTarget) {
-                        $targetVal = (float) $defaultTarget->target_dpm;
+            // 1. Coba pencocokan lama (target yang mencakup $refDate)
+            $findTargetAtRefDate = function (bool $isSpecific) use ($targets, $extractDates, $matchesScope, $refDate) {
+                return $targets->first(function ($t) use ($extractDates, $matchesScope, $isSpecific, $refDate) {
+                    if (!$matchesScope($t, $isSpecific)) {
+                        return false;
                     }
+                    [$pStart, $pEnd] = $extractDates($t);
+                    return $pStart <= $refDate && $pEnd >= $refDate;
+                });
+            };
+
+            // 2. Jika tidak ada di mode week/month: cari target yang beririsan dengan rentang bucket.
+            //    Jika ada lebih dari satu, pilih yang period_start paling akhir.
+            $findTargetIntersecting = function (bool $isSpecific) use ($targets, $extractDates, $matchesScope, $bucketStart, $bucketEnd) {
+                return $targets->filter(function ($t) use ($extractDates, $matchesScope, $isSpecific, $bucketStart, $bucketEnd) {
+                    if (!$matchesScope($t, $isSpecific)) {
+                        return false;
+                    }
+                    [$pStart, $pEnd] = $extractDates($t);
+                    return $pStart <= $bucketEnd && $pEnd >= $bucketStart;
+                })->sortByDesc(function ($t) use ($extractDates) {
+                    [$pStart] = $extractDates($t);
+                    return $pStart;
+                })->first();
+            };
+
+            // Cocokkan DpmTarget di memori PHP (tanpa query per titik)
+            $targetVal = null;
+            $matchedTarget = null;
+
+            if ($isFilterActive) {
+                // 1. Coba pencocokan lama: spesifik mencakup $refDate, lalu default mencakup $refDate
+                $matchedTarget = $findTargetAtRefDate(true) ?: $findTargetAtRefDate(false);
+
+                // 2. Jika tidak ada dan bukan mode 'day', cari yang beririsan dengan bucket
+                if (!$matchedTarget && $groupBy !== 'day') {
+                    $matchedTarget = $findTargetIntersecting(true) ?: $findTargetIntersecting(false);
                 }
             } else {
                 // Filter = "semua" (tanpa filter spesifik): HANYA gunakan target default
-                $defaultTarget = $targets->first(function ($t) use ($refDate) {
-                    $pStart = $t->period_start instanceof \DateTimeInterface
-                        ? $t->period_start->format('Y-m-d')
-                        : substr((string) $t->period_start, 0, 10);
-                    $pEnd = $t->period_end instanceof \DateTimeInterface
-                        ? $t->period_end->format('Y-m-d')
-                        : substr((string) $t->period_end, 0, 10);
+                $matchedTarget = $findTargetAtRefDate(false);
 
-                    return $pStart <= $refDate && $pEnd >= $refDate && $t->carline_id === null && $t->conveyor_group === null;
-                });
-
-                if ($defaultTarget) {
-                    $targetVal = (float) $defaultTarget->target_dpm;
+                if (!$matchedTarget && $groupBy !== 'day') {
+                    $matchedTarget = $findTargetIntersecting(false);
                 }
+            }
+
+            if ($matchedTarget) {
+                $targetVal = (float) $matchedTarget->target_dpm;
             }
 
             $points[] = [

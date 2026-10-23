@@ -193,13 +193,19 @@
                     <!-- Card Filter Toolbar -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mt-3 mb-4 p-3 bg-slate-50/70 rounded-xl border border-slate-100 items-end">
                         <!-- Rentang Tanggal -->
-                        <div>
-                            <label for="filterDateRangeDpmFinal" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-3.5 h-3.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                </span>
-                                <input type="text" id="filterDateRangeDpmFinal" readonly placeholder="Pilih rentang tanggal" class="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 cursor-pointer transition shadow-2xs">
+                        <div class="min-w-0">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="min-w-0">
+                                    <span class="block text-[9px] font-semibold text-slate-400 mb-0.5">Mulai</span>
+                                    <input type="date" id="filterStartDateDpmFinal"
+                                        class="w-full border border-gray-200 rounded-xl px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition shadow-xs">
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="block text-[9px] font-semibold text-slate-400 mb-0.5">Selesai</span>
+                                    <input type="date" id="filterEndDateDpmFinal"
+                                        class="w-full border border-gray-200 rounded-xl px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition shadow-xs">
+                                </div>
                             </div>
                         </div>
 
@@ -293,15 +299,21 @@
                     <!-- Card Filter Toolbar -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3 mb-4 p-3 bg-slate-50/70 rounded-xl border border-slate-100 items-end">
                         <!-- Rentang Tanggal -->
-                        <div>
-                            <label for="filterDateRangeParetoFinal" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-3.5 h-3.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            </span>
-                            <input type="text" id="filterDateRangeParetoFinal" readonly placeholder="Pilih rentang tanggal" class="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 cursor-pointer transition shadow-2xs">
+                        <div class="min-w-0">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="min-w-0">
+                                    <span class="block text-[9px] font-semibold text-slate-400 mb-0.5">Mulai</span>
+                                    <input type="date" id="filterStartDateParetoFinal"
+                                        class="w-full border border-gray-200 rounded-xl px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition shadow-xs">
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="block text-[9px] font-semibold text-slate-400 mb-0.5">Selesai</span>
+                                    <input type="date" id="filterEndDateParetoFinal"
+                                        class="w-full border border-gray-200 rounded-xl px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-600 transition shadow-xs">
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
                     <!-- Konveyor + Reset -->
                     <div class="flex items-center space-x-2">
@@ -414,13 +426,19 @@
                     <!-- Card Filter Toolbar -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mt-3 mb-4 p-3 bg-slate-50/70 rounded-xl border border-slate-100 items-end">
                         <!-- Rentang Tanggal -->
-                        <div>
-                            <label for="filterDateRangeDpmPre" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                </span>
-                                <input type="text" id="filterDateRangeDpmPre" readonly placeholder="Pilih rentang tanggal" class="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer transition shadow-2xs">
+                        <div class="min-w-0">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="min-w-0">
+                                    <span class="block text-[9px] font-semibold text-slate-400 mb-0.5">Mulai</span>
+                                    <input type="date" id="filterStartDateDpmPre"
+                                        class="w-full border border-gray-200 rounded-xl px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs">
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="block text-[9px] font-semibold text-slate-400 mb-0.5">Selesai</span>
+                                    <input type="date" id="filterEndDateDpmPre"
+                                        class="w-full border border-gray-200 rounded-xl px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs">
+                                </div>
                             </div>
                         </div>
 
@@ -514,15 +532,21 @@
                     <!-- Card Filter Toolbar -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3 mb-4 p-3 bg-slate-50/70 rounded-xl border border-slate-100 items-end">
                         <!-- Rentang Tanggal -->
-                        <div>
-                            <label for="filterDateRangeParetoPre" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            </span>
-                            <input type="text" id="filterDateRangeParetoPre" readonly placeholder="Pilih rentang tanggal" class="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-white hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer transition shadow-2xs">
+                        <div class="min-w-0">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Rentang Tanggal</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="min-w-0">
+                                    <span class="block text-[9px] font-semibold text-slate-400 mb-0.5">Mulai</span>
+                                    <input type="date" id="filterStartDateParetoPre"
+                                        class="w-full border border-gray-200 rounded-xl px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs">
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="block text-[9px] font-semibold text-slate-400 mb-0.5">Selesai</span>
+                                    <input type="date" id="filterEndDateParetoPre"
+                                        class="w-full border border-gray-200 rounded-xl px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition shadow-xs">
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
                     <!-- Carline + Reset -->
                     <div class="flex items-center space-x-2">
@@ -723,7 +747,7 @@
                             borderWidth: 2.5,
                             fill: true,
                             tension: 0.3,
-                            spanGaps: false,
+                            spanGaps: true,
                             pointBackgroundColor: accentColor,
                             pointBorderColor: '#ffffff',
                             pointBorderWidth: 2,
@@ -807,7 +831,11 @@
                                     const i = context.dataIndex;
                                     const meta = context.chart.data.datasets[0]._meta ? context.chart.data.datasets[0]._meta[i] : null;
                                     const dpmVal = meta ? meta.dpm : (context.datasetIndex === 0 ? context.raw : null);
-                                    const targetVal = meta ? meta.target : (context.datasetIndex === 1 ? context.raw : null);
+                                    const targetVal = (meta && meta.target !== undefined && meta.target !== null)
+                                        ? meta.target
+                                        : (context.chart.data.datasets[1]?.data && context.chart.data.datasets[1].data[i] !== undefined && context.chart.data.datasets[1].data[i] !== null
+                                            ? context.chart.data.datasets[1].data[i]
+                                            : (context.datasetIndex === 1 ? context.raw : null));
 
                                     const dpmStr = (dpmVal !== null && dpmVal !== undefined)
                                         ? Number(dpmVal).toLocaleString('id-ID')
@@ -1079,8 +1107,9 @@
                 return;
             }
 
+            const hasAnyTarget = trendList.some(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
             const allDpmNull = trendList.every(t => t.dpm === null || t.dpm === undefined);
-            if (allDpmNull) {
+            if (allDpmNull && !hasAnyTarget) {
                 if (msgEl) msgEl.textContent = 'Belum ada Quantity Inspect pada periode ini';
                 if (wrapper) wrapper.classList.add('hidden');
                 if (emptyEl) emptyEl.classList.remove('hidden');
@@ -1104,6 +1133,8 @@
                 }
                 if (validDpmCount === 1) {
                     notes.push(`Baru 1 titik ${mLabel} valid. Garis tren muncul setelah minimal 2 periode memiliki data inspect.`);
+                } else if (validDpmCount === 0 && hasAnyTarget) {
+                    notes.push(`Belum ada data ${mLabel} real pada periode ini. Menampilkan garis target.`);
                 }
 
                 if (notes.length > 0) {
@@ -1133,11 +1164,31 @@
 
                 // Cek ketersediaan data target DPM
                 const hasAnyTarget = trendList.some(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
+                const validTargetPoints = trendList.filter(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
+                const validTargetCount = validTargetPoints.length;
+                const targetColor = chart.data.datasets[1].borderColor || '#64748b';
 
                 if (hasAnyTarget) {
                     // Tampilkan garis target (abu gelap putus-putus)
                     chart.data.datasets[1].data = trendList.map(t => (t.target !== null && t.target !== undefined ? Number(t.target) : null));
                     chart.data.datasets[1].hidden = false;
+
+                    // Saat jumlah titik data target hanya 1, garis target tidak tergambar karena pointRadius: 0.
+                    // Gunakan pointStyle 'line' dengan pointRadius cukup lebar (20) dan warna sama dengan garis target.
+                    // Saat titik >= 2 perilaku lama tetap (pointRadius 0, garis putus-putus).
+                    if (validTargetCount === 1) {
+                        chart.data.datasets[1].pointStyle = 'line';
+                        chart.data.datasets[1].pointRadius = trendList.map(t => (t.target !== null && t.target !== undefined && !isNaN(Number(t.target)) ? 20 : 0));
+                        chart.data.datasets[1].pointHoverRadius = trendList.map(t => (t.target !== null && t.target !== undefined && !isNaN(Number(t.target)) ? 22 : 0));
+                        chart.data.datasets[1].pointBorderColor = targetColor;
+                        chart.data.datasets[1].pointBorderWidth = 3;
+                        chart.data.datasets[1].pointBackgroundColor = targetColor;
+                    } else {
+                        chart.data.datasets[1].pointStyle = 'circle';
+                        chart.data.datasets[1].pointRadius = 0;
+                        chart.data.datasets[1].pointHoverRadius = 0;
+                        chart.data.datasets[1].pointBorderWidth = 0;
+                    }
 
                     // Titik spike: Titik merah jika DPM Real melebihi Target
                     chart.data.datasets[0].pointBackgroundColor = trendList.map(t => {
@@ -1176,6 +1227,10 @@
                     // Sembunyikan garis target dan highlight spike sampai data target tersedia
                     chart.data.datasets[1].data = [];
                     chart.data.datasets[1].hidden = true;
+                    chart.data.datasets[1].pointStyle = 'circle';
+                    chart.data.datasets[1].pointRadius = 0;
+                    chart.data.datasets[1].pointHoverRadius = 0;
+                    chart.data.datasets[1].pointBorderWidth = 0;
                     chart.data.datasets[0].pointBackgroundColor = baseColor;
                     chart.data.datasets[0].pointBorderColor = '#ffffff';
                     chart.data.datasets[0].pointRadius = trendList.map(t => {
@@ -1260,8 +1315,9 @@
                     if (valEl) valEl.textContent = dpmCalc.toLocaleString('id-ID');
                     if (unitEl) unitEl.textContent = isFinal ? 'DPM' : 'PPM';
 
-                    // Cek target terakhir jika ada
-                    const latestTargetItem = [...list].reverse().find(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
+                    // Cek target terakhir dari periode yang memiliki data inspect (fallback ke target terakhir di list)
+                    const targetFromValidPeriod = [...list].reverse().find(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)) && (Number(t.total_inspect) || 0) > 0);
+                    const latestTargetItem = targetFromValidPeriod || [...list].reverse().find(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
                     let statusPrefix = '';
                     if (latestTargetItem) {
                         const targetVal = Number(latestTargetItem.target);
@@ -1643,32 +1699,75 @@
             else debounceParetoPre = setTimeout(() => fetchParetoPre(false), debounceMs);
         }
 
-        // --- 7. Flatpickr & UI Events: DPM Final Assy ---
-        let fpDpmFinal = null;
-        if (window.flatpickr) {
-            fpDpmFinal = window.flatpickr("#filterDateRangeDpmFinal", {
-                mode: "range",
-                dateFormat: "Y-m-d",
-                defaultDate: [initDpmFinal.start, initDpmFinal.end],
-                onChange: function (selectedDates) {
-                    if (selectedDates.length === 2) {
-                        const pad = n => String(n).padStart(2, '0');
-                        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-                        filtersDpmFinal.start_date = fmt(selectedDates[0]);
-                        filtersDpmFinal.end_date = fmt(selectedDates[1]);
-                        const periodEl = document.getElementById('summaryPeriodDpmFinal');
-                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersDpmFinal.start_date, filtersDpmFinal.end_date);
-                        triggerFilterDpmFinal(300);
-                    } else if (selectedDates.length === 0) {
-                        filtersDpmFinal.start_date = '';
-                        filtersDpmFinal.end_date = '';
-                        const periodEl = document.getElementById('summaryPeriodDpmFinal');
-                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
-                        triggerFilterDpmFinal(300);
-                    }
+        // Helper untuk memasang event listener dan validasi native dual date picker (<input type="date">)
+        function setupDateRangeFilter({
+            startInputId,
+            endInputId,
+            periodElId,
+            filters,
+            initialDates,
+            triggerFn
+        }) {
+            const startEl = document.getElementById(startInputId);
+            const endEl = document.getElementById(endInputId);
+            const periodEl = periodElId ? document.getElementById(periodElId) : null;
+            if (!startEl || !endEl) return;
+
+            // 4. Nilai awal diisi ke kedua input, format Y-m-d
+            if (initialDates && initialDates.start && initialDates.end) {
+                startEl.value = initialDates.start;
+                endEl.value = initialDates.end;
+                startEl.max = initialDates.end;
+                endEl.min = initialDates.start;
+            }
+
+            function handleChange() {
+                const sVal = startEl.value ? startEl.value.trim() : '';
+                const eVal = endEl.value ? endEl.value.trim() : '';
+
+                // 3. Pasang atribut min/max supaya Mulai tidak bisa melewati Selesai dan sebaliknya
+                if (sVal) {
+                    endEl.min = sVal;
+                } else {
+                    endEl.removeAttribute('min');
                 }
-            });
+
+                if (eVal) {
+                    startEl.max = eVal;
+                } else {
+                    startEl.removeAttribute('max');
+                }
+
+                // 2. Fetch dipicu hanya jika KEDUANYA terisi dan Selesai >= Mulai,
+                //    atau KEDUANYA kosong (kembali ke default). Jika salah satu saja terisi, jangan fetch.
+                if (sVal && eVal) {
+                    if (eVal >= sVal) {
+                        filters.start_date = sVal;
+                        filters.end_date = eVal;
+                        if (periodEl) periodEl.textContent = formatPeriodLabel(filters.start_date, filters.end_date);
+                        triggerFn(300);
+                    }
+                } else if (!sVal && !eVal) {
+                    filters.start_date = '';
+                    filters.end_date = '';
+                    if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
+                    triggerFn(300);
+                }
+            }
+
+            startEl.addEventListener('change', handleChange);
+            endEl.addEventListener('change', handleChange);
         }
+
+        // --- 7. UI Events: DPM Final Assy ---
+        setupDateRangeFilter({
+            startInputId: 'filterStartDateDpmFinal',
+            endInputId: 'filterEndDateDpmFinal',
+            periodElId: 'summaryPeriodDpmFinal',
+            filters: filtersDpmFinal,
+            initialDates: initDpmFinal,
+            triggerFn: triggerFilterDpmFinal
+        });
 
         const groupButtonsDpmFinal = document.querySelectorAll('.btn-group-by-dpm-final');
         groupButtonsDpmFinal.forEach(btn => {
@@ -1703,10 +1802,18 @@
                 filtersDpmFinal.group_by = 'day';
                 filtersDpmFinal.conveyor = 'all';
 
+                const startEl = document.getElementById('filterStartDateDpmFinal');
+                const endEl = document.getElementById('filterEndDateDpmFinal');
+                if (startEl && endEl) {
+                    startEl.value = resetDates.start;
+                    endEl.value = resetDates.end;
+                    startEl.max = resetDates.end;
+                    endEl.min = resetDates.start;
+                }
+
                 const periodEl = document.getElementById('summaryPeriodDpmFinal');
                 if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
 
-                if (fpDpmFinal) fpDpmFinal.setDate([resetDates.start, resetDates.end], false);
                 if (conveyorSelectDpmFinal) conveyorSelectDpmFinal.value = 'all';
 
                 groupButtonsDpmFinal.forEach(b => {
@@ -1723,32 +1830,15 @@
             });
         }
 
-        // --- 8. Flatpickr & UI Events: Pareto Final Assy ---
-        let fpParetoFinal = null;
-        if (window.flatpickr) {
-            fpParetoFinal = window.flatpickr("#filterDateRangeParetoFinal", {
-                mode: "range",
-                dateFormat: "Y-m-d",
-                defaultDate: [initParetoFinal.start, initParetoFinal.end],
-                onChange: function (selectedDates) {
-                    if (selectedDates.length === 2) {
-                        const pad = n => String(n).padStart(2, '0');
-                        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-                        filtersParetoFinal.start_date = fmt(selectedDates[0]);
-                        filtersParetoFinal.end_date = fmt(selectedDates[1]);
-                        const periodEl = document.getElementById('summaryPeriodParetoFinal');
-                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersParetoFinal.start_date, filtersParetoFinal.end_date);
-                        triggerFilterParetoFinal(300);
-                    } else if (selectedDates.length === 0) {
-                        filtersParetoFinal.start_date = '';
-                        filtersParetoFinal.end_date = '';
-                        const periodEl = document.getElementById('summaryPeriodParetoFinal');
-                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
-                        triggerFilterParetoFinal(300);
-                    }
-                }
-            });
-        }
+        // --- 8. UI Events: Pareto Final Assy ---
+        setupDateRangeFilter({
+            startInputId: 'filterStartDateParetoFinal',
+            endInputId: 'filterEndDateParetoFinal',
+            periodElId: 'summaryPeriodParetoFinal',
+            filters: filtersParetoFinal,
+            initialDates: initParetoFinal,
+            triggerFn: triggerFilterParetoFinal
+        });
 
         const conveyorSelectParetoFinal = document.getElementById('filterConveyorParetoFinal');
         if (conveyorSelectParetoFinal) {
@@ -1766,42 +1856,33 @@
                 filtersParetoFinal.end_date = resetDates.end;
                 filtersParetoFinal.conveyor = 'all';
 
+                const startEl = document.getElementById('filterStartDateParetoFinal');
+                const endEl = document.getElementById('filterEndDateParetoFinal');
+                if (startEl && endEl) {
+                    startEl.value = resetDates.start;
+                    endEl.value = resetDates.end;
+                    startEl.max = resetDates.end;
+                    endEl.min = resetDates.start;
+                }
+
                 const periodEl = document.getElementById('summaryPeriodParetoFinal');
                 if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
 
-                if (fpParetoFinal) fpParetoFinal.setDate([resetDates.start, resetDates.end], false);
                 if (conveyorSelectParetoFinal) conveyorSelectParetoFinal.value = 'all';
 
                 triggerFilterParetoFinal(0);
             });
         }
 
-        // --- 9. Flatpickr & UI Events: DPM Pre Assy ---
-        let fpDpmPre = null;
-        if (window.flatpickr) {
-            fpDpmPre = window.flatpickr("#filterDateRangeDpmPre", {
-                mode: "range",
-                dateFormat: "Y-m-d",
-                defaultDate: [initDpmPre.start, initDpmPre.end],
-                onChange: function (selectedDates) {
-                    if (selectedDates.length === 2) {
-                        const pad = n => String(n).padStart(2, '0');
-                        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-                        filtersDpmPre.start_date = fmt(selectedDates[0]);
-                        filtersDpmPre.end_date = fmt(selectedDates[1]);
-                        const periodEl = document.getElementById('summaryPeriodDpmPre');
-                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersDpmPre.start_date, filtersDpmPre.end_date);
-                        triggerFilterDpmPre(300);
-                    } else if (selectedDates.length === 0) {
-                        filtersDpmPre.start_date = '';
-                        filtersDpmPre.end_date = '';
-                        const periodEl = document.getElementById('summaryPeriodDpmPre');
-                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
-                        triggerFilterDpmPre(300);
-                    }
-                }
-            });
-        }
+        // --- 9. UI Events: DPM Pre Assy ---
+        setupDateRangeFilter({
+            startInputId: 'filterStartDateDpmPre',
+            endInputId: 'filterEndDateDpmPre',
+            periodElId: 'summaryPeriodDpmPre',
+            filters: filtersDpmPre,
+            initialDates: initDpmPre,
+            triggerFn: triggerFilterDpmPre
+        });
 
         const groupButtonsDpmPre = document.querySelectorAll('.btn-group-by-dpm-pre');
         groupButtonsDpmPre.forEach(btn => {
@@ -1836,10 +1917,18 @@
                 filtersDpmPre.group_by = 'day';
                 filtersDpmPre.carline_id = 'all';
 
+                const startEl = document.getElementById('filterStartDateDpmPre');
+                const endEl = document.getElementById('filterEndDateDpmPre');
+                if (startEl && endEl) {
+                    startEl.value = resetDates.start;
+                    endEl.value = resetDates.end;
+                    startEl.max = resetDates.end;
+                    endEl.min = resetDates.start;
+                }
+
                 const periodEl = document.getElementById('summaryPeriodDpmPre');
                 if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
 
-                if (fpDpmPre) fpDpmPre.setDate([resetDates.start, resetDates.end], false);
                 if (carlineSelectDpmPre) carlineSelectDpmPre.value = 'all';
 
                 groupButtonsDpmPre.forEach(b => {
@@ -1856,32 +1945,15 @@
             });
         }
 
-        // --- 10. Flatpickr & UI Events: Pareto Pre Assy ---
-        let fpParetoPre = null;
-        if (window.flatpickr) {
-            fpParetoPre = window.flatpickr("#filterDateRangeParetoPre", {
-                mode: "range",
-                dateFormat: "Y-m-d",
-                defaultDate: [initParetoPre.start, initParetoPre.end],
-                onChange: function (selectedDates) {
-                    if (selectedDates.length === 2) {
-                        const pad = n => String(n).padStart(2, '0');
-                        const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-                        filtersParetoPre.start_date = fmt(selectedDates[0]);
-                        filtersParetoPre.end_date = fmt(selectedDates[1]);
-                        const periodEl = document.getElementById('summaryPeriodParetoPre');
-                        if (periodEl) periodEl.textContent = formatPeriodLabel(filtersParetoPre.start_date, filtersParetoPre.end_date);
-                        triggerFilterParetoPre(300);
-                    } else if (selectedDates.length === 0) {
-                        filtersParetoPre.start_date = '';
-                        filtersParetoPre.end_date = '';
-                        const periodEl = document.getElementById('summaryPeriodParetoPre');
-                        if (periodEl) periodEl.textContent = formatPeriodLabel('', '');
-                        triggerFilterParetoPre(300);
-                    }
-                }
-            });
-        }
+        // --- 10. UI Events: Pareto Pre Assy ---
+        setupDateRangeFilter({
+            startInputId: 'filterStartDateParetoPre',
+            endInputId: 'filterEndDateParetoPre',
+            periodElId: 'summaryPeriodParetoPre',
+            filters: filtersParetoPre,
+            initialDates: initParetoPre,
+            triggerFn: triggerFilterParetoPre
+        });
 
         const carlineSelectParetoPre = document.getElementById('filterCarlineParetoPre');
         if (carlineSelectParetoPre) {
@@ -1899,10 +1971,18 @@
                 filtersParetoPre.end_date = resetDates.end;
                 filtersParetoPre.carline_id = 'all';
 
+                const startEl = document.getElementById('filterStartDateParetoPre');
+                const endEl = document.getElementById('filterEndDateParetoPre');
+                if (startEl && endEl) {
+                    startEl.value = resetDates.start;
+                    endEl.value = resetDates.end;
+                    startEl.max = resetDates.end;
+                    endEl.min = resetDates.start;
+                }
+
                 const periodEl = document.getElementById('summaryPeriodParetoPre');
                 if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
 
-                if (fpParetoPre) fpParetoPre.setDate([resetDates.start, resetDates.end], false);
                 if (carlineSelectParetoPre) carlineSelectParetoPre.value = 'all';
 
                 triggerFilterParetoPre(0);

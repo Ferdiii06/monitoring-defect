@@ -86,7 +86,9 @@ class AdminDashboardAnalyticsTest extends TestCase
             'inspect_quantity' => 0,
         ]);
 
-        $response = $this->actingAsAdmin()->getJson('/dashboard/analytics?group_by=day');
+        $startDate = Carbon::today()->subDays(1)->format('Y-m-d');
+        $endDate = Carbon::today()->format('Y-m-d');
+        $response = $this->actingAsAdmin()->getJson("/dashboard/analytics?group_by=day&start_date={$startDate}&end_date={$endDate}");
 
         $response->assertStatus(200);
         $dpmFinal = $response->json('dpm_final');
@@ -134,7 +136,9 @@ class AdminDashboardAnalyticsTest extends TestCase
             'inspect_quantity' => 3000,
         ]);
 
-        $response = $this->actingAsAdmin()->getJson('/dashboard/analytics?group_by=week');
+        $startDateWeek = $monday->format('Y-m-d');
+        $endDateWeek = $monday->copy()->endOfWeek(Carbon::SUNDAY)->format('Y-m-d');
+        $response = $this->actingAsAdmin()->getJson("/dashboard/analytics?group_by=week&start_date={$startDateWeek}&end_date={$endDateWeek}");
 
         $response->assertStatus(200);
         $dpmFinal = $response->json('dpm_final');
@@ -147,7 +151,9 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertNotEquals(666.67, $dpmFinal[0]['dpm']);
 
         // Uji group_by=month juga
-        $responseMonth = $this->actingAsAdmin()->getJson('/dashboard/analytics?group_by=month');
+        $startDateMonth = $monday->copy()->startOfMonth()->format('Y-m-d');
+        $endDateMonth = $monday->copy()->endOfMonth()->format('Y-m-d');
+        $responseMonth = $this->actingAsAdmin()->getJson("/dashboard/analytics?group_by=month&start_date={$startDateMonth}&end_date={$endDateMonth}");
         $responseMonth->assertStatus(200);
         $dpmMonth = $responseMonth->json('dpm_final');
         $this->assertCount(1, $dpmMonth);
@@ -278,7 +284,8 @@ class AdminDashboardAnalyticsTest extends TestCase
         ]);
 
         // 1. Filter conveyor = CONV-ALPHA: Final Assy harus hanya 10, Pre Assy tetap lengkap (5 + 15 = 20)
-        $response1 = $this->actingAsAdmin()->getJson('/dashboard/analytics?conveyor=CONV-ALPHA');
+        $todayStr = Carbon::today()->format('Y-m-d');
+        $response1 = $this->actingAsAdmin()->getJson("/dashboard/analytics?conveyor=CONV-ALPHA&start_date={$todayStr}&end_date={$todayStr}");
         $response1->assertStatus(200);
 
         $dpmFinal1 = $response1->json('dpm_final');
@@ -291,7 +298,7 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertEquals(2000, $dpmPre1[0]['total_inspect']);
 
         // 2. Filter carline_id = $carline1->id: Pre Assy harus hanya 5, Final Assy tetap lengkap (10 + 20 = 30)
-        $response2 = $this->actingAsAdmin()->getJson('/dashboard/analytics?carline_id=' . $carline1->id);
+        $response2 = $this->actingAsAdmin()->getJson("/dashboard/analytics?carline_id={$carline1->id}&start_date={$todayStr}&end_date={$todayStr}");
         $response2->assertStatus(200);
 
         $dpmFinal2 = $response2->json('dpm_final');
@@ -395,28 +402,33 @@ class AdminDashboardAnalyticsTest extends TestCase
         $dpmFinal = $response->json('dpm_final');
         $dpmPre = $response->json('dpm_pre');
 
-        $this->assertCount(3, $dpmFinal);
+        $this->assertCount(41, $dpmFinal);
         // Titik 1 Final Assy (10 Jan 2026): target = 50.0
-        $this->assertEquals('2026-01-10', $dpmFinal[0]['label']);
-        $this->assertEquals(50.0, $dpmFinal[0]['target']);
+        $point1 = collect($dpmFinal)->firstWhere('label', '2026-01-10');
+        $this->assertNotNull($point1);
+        $this->assertEquals(50.0, $point1['target']);
 
         // Titik 2 Final Assy (20 Jan 2026): target = 30.0 (perpindahan target menghasilkan nilai berbeda)
-        $this->assertEquals('2026-01-20', $dpmFinal[1]['label']);
-        $this->assertEquals(30.0, $dpmFinal[1]['target']);
+        $point2 = collect($dpmFinal)->firstWhere('label', '2026-01-20');
+        $this->assertNotNull($point2);
+        $this->assertEquals(30.0, $point2['target']);
 
         // Titik 3 Final Assy (05 Feb 2026): di luar target = null
-        $this->assertEquals('2026-02-05', $dpmFinal[2]['label']);
-        $this->assertNull($dpmFinal[2]['target']);
+        $point3 = collect($dpmFinal)->firstWhere('label', '2026-02-05');
+        $this->assertNotNull($point3);
+        $this->assertNull($point3['target']);
 
         // Pre Assy:
-        $this->assertCount(2, $dpmPre);
+        $this->assertCount(41, $dpmPre);
         // Titik 1 Pre Assy (10 Jan 2026): target = 80.0 (isolasi target jenis_assy)
-        $this->assertEquals('2026-01-10', $dpmPre[0]['label']);
-        $this->assertEquals(80.0, $dpmPre[0]['target']);
+        $pointPre1 = collect($dpmPre)->firstWhere('label', '2026-01-10');
+        $this->assertNotNull($pointPre1);
+        $this->assertEquals(80.0, $pointPre1['target']);
 
         // Titik 2 Pre Assy (20 Jan 2026): target = null (tidak bocor dari Final Assy 30.0)
-        $this->assertEquals('2026-01-20', $dpmPre[1]['label']);
-        $this->assertNull($dpmPre[1]['target']);
+        $pointPre2 = collect($dpmPre)->firstWhere('label', '2026-01-20');
+        $this->assertNotNull($pointPre2);
+        $this->assertNull($pointPre2['target']);
     }
 
     public function test_analytics_with_assy_parameter(): void
@@ -475,9 +487,11 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertArrayNotHasKey('pareto_pre', $jsonFinal);
 
         // Key target tetap ada dan benar
-        $this->assertCount(1, $jsonFinal['dpm_final']);
-        $this->assertEquals(45.0, $jsonFinal['dpm_final'][0]['target']);
-        $this->assertEquals(3, $jsonFinal['dpm_final'][0]['total_defect']);
+        $this->assertCount(31, $jsonFinal['dpm_final']);
+        $pointFinal = collect($jsonFinal['dpm_final'])->firstWhere('label', '2026-03-10');
+        $this->assertNotNull($pointFinal);
+        $this->assertEquals(45.0, $pointFinal['target']);
+        $this->assertEquals(3, $pointFinal['total_defect']);
 
         // 2. Uji assy=pre:
         // Kirim conveyor=CONV-NONEXISTENT (filter silang yang harus diabaikan oleh Pre Assy)
@@ -492,9 +506,11 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertArrayNotHasKey('pareto_final', $jsonPre);
 
         // Key target tetap ada dan benar
-        $this->assertCount(1, $jsonPre['dpm_pre']);
-        $this->assertEquals(65.0, $jsonPre['dpm_pre'][0]['target']);
-        $this->assertEquals(5, $jsonPre['dpm_pre'][0]['total_defect']);
+        $this->assertCount(31, $jsonPre['dpm_pre']);
+        $pointPre = collect($jsonPre['dpm_pre'])->firstWhere('label', '2026-03-10');
+        $this->assertNotNull($pointPre);
+        $this->assertEquals(65.0, $pointPre['target']);
+        $this->assertEquals(5, $pointPre['total_defect']);
     }
 
     public function test_conveyor_group_c5_combines_multiple_carline_c5_but_c5a_is_separate(): void
@@ -544,14 +560,15 @@ class AdminDashboardAnalyticsTest extends TestCase
         ]);
 
         // Filter group C5: harus menghasilkan 3 + 2 = 5 defect, 200 inspect (tanpa 664W-C5A)
-        $resC5 = $this->actingAsAdmin()->getJson('/dashboard/analytics?conveyor=C5');
+        $todayStr = Carbon::today()->format('Y-m-d');
+        $resC5 = $this->actingAsAdmin()->getJson("/dashboard/analytics?conveyor=C5&start_date={$todayStr}&end_date={$todayStr}");
         $resC5->assertStatus(200);
         $dpmC5 = $resC5->json('dpm_final');
         $this->assertEquals(5, $dpmC5[0]['total_defect']);
         $this->assertEquals(200, $dpmC5[0]['total_inspect']);
 
         // Filter group C5A: harus hanya 7 defect, 100 inspect
-        $resC5A = $this->actingAsAdmin()->getJson('/dashboard/analytics?conveyor=C5A');
+        $resC5A = $this->actingAsAdmin()->getJson("/dashboard/analytics?conveyor=C5A&start_date={$todayStr}&end_date={$todayStr}");
         $resC5A->assertStatus(200);
         $dpmC5A = $resC5A->json('dpm_final');
         $this->assertEquals(7, $dpmC5A[0]['total_defect']);
@@ -580,7 +597,8 @@ class AdminDashboardAnalyticsTest extends TestCase
         });
 
         // 2. Cek filter analytics dengan conveyor=C99
-        $resAnalytics = $this->actingAsAdmin()->getJson('/dashboard/analytics?conveyor=C99');
+        $todayStr = Carbon::today()->format('Y-m-d');
+        $resAnalytics = $this->actingAsAdmin()->getJson("/dashboard/analytics?conveyor=C99&start_date={$todayStr}&end_date={$todayStr}");
         $resAnalytics->assertStatus(200);
         $dpm = $resAnalytics->json('dpm_final');
         $this->assertEquals(4, $dpm[0]['total_defect']);
@@ -649,7 +667,8 @@ class AdminDashboardAnalyticsTest extends TestCase
         ]);
 
         // Request persis dengan nilai nama conveyor lama yang bukan kunci grup
-        $response = $this->actingAsAdmin()->getJson('/dashboard/analytics?conveyor=CUSTOM-LEGACY-CONV');
+        $todayStr = Carbon::today()->format('Y-m-d');
+        $response = $this->actingAsAdmin()->getJson("/dashboard/analytics?conveyor=CUSTOM-LEGACY-CONV&start_date={$todayStr}&end_date={$todayStr}");
         $response->assertStatus(200);
 
         $dpm = $response->json('dpm_final');
@@ -749,42 +768,219 @@ class AdminDashboardAnalyticsTest extends TestCase
         $resC5 = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&conveyor=C5');
         $resC5->assertStatus(200);
         $dpmC5 = $resC5->json('dpm_final');
-        $this->assertCount(1, $dpmC5);
-        $this->assertEquals(25.0, $dpmC5[0]['target']);
+        $this->assertCount(31, $dpmC5);
+        $this->assertEquals(25.0, collect($dpmC5)->firstWhere('label', '2026-05-10')['target']);
 
         // 2. Final Assy saat filter conveyor=C9 aktif -> fallback ke target default (50.0)
         $resC9 = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&conveyor=C9');
         $resC9->assertStatus(200);
         $dpmC9 = $resC9->json('dpm_final');
-        $this->assertCount(1, $dpmC9);
-        $this->assertEquals(50.0, $dpmC9[0]['target']);
+        $this->assertCount(31, $dpmC9);
+        $this->assertEquals(50.0, collect($dpmC9)->firstWhere('label', '2026-05-10')['target']);
 
         // 3. Final Assy saat filter conveyor=all (semua konveyor) -> HANYA pakai target default (50.0)
         $resAllFinal = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&conveyor=all');
         $resAllFinal->assertStatus(200);
         $dpmAllFinal = $resAllFinal->json('dpm_final');
-        $this->assertCount(1, $dpmAllFinal);
-        $this->assertEquals(50.0, $dpmAllFinal[0]['target']);
+        $this->assertCount(31, $dpmAllFinal);
+        $this->assertEquals(50.0, collect($dpmAllFinal)->firstWhere('label', '2026-05-10')['target']);
 
         // 4. Pre Assy saat filter carline_id spesifik aktif -> pakai target spesifik PRE-CARLINE-1 (75.0)
         $resPre1 = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&carline_id=' . $preCarline1->id);
         $resPre1->assertStatus(200);
         $dpmPre1 = $resPre1->json('dpm_pre');
-        $this->assertCount(1, $dpmPre1);
-        $this->assertEquals(75.0, $dpmPre1[0]['target']);
+        $this->assertCount(31, $dpmPre1);
+        $this->assertEquals(75.0, collect($dpmPre1)->firstWhere('label', '2026-05-10')['target']);
 
         // 5. Pre Assy saat filter carline_id=PRE-CARLINE-2 aktif -> fallback ke default (100.0)
         $resPre2 = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&carline_id=' . $preCarline2->id);
         $resPre2->assertStatus(200);
         $dpmPre2 = $resPre2->json('dpm_pre');
-        $this->assertCount(1, $dpmPre2);
-        $this->assertEquals(100.0, $dpmPre2[0]['target']);
+        $this->assertCount(31, $dpmPre2);
+        $this->assertEquals(100.0, collect($dpmPre2)->firstWhere('label', '2026-05-10')['target']);
 
         // 6. Pre Assy saat filter carline_id=all -> HANYA pakai target default (100.0)
         $resAllPre = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-05-01&end_date=2026-05-31&group_by=day&carline_id=all');
         $resAllPre->assertStatus(200);
         $dpmAllPre = $resAllPre->json('dpm_pre');
-        $this->assertCount(1, $dpmAllPre);
-        $this->assertEquals(100.0, $dpmAllPre[0]['target']);
+        $this->assertCount(31, $dpmAllPre);
+        $this->assertEquals(100.0, collect($dpmAllPre)->firstWhere('label', '2026-05-10')['target']);
+    }
+
+    public function test_month_mode_with_future_empty_months_retains_buckets_with_null_dpm_and_matched_target(): void
+    {
+        // Target Oktober (50.0) dan target November-Desember (35.0)
+        DpmTarget::create([
+            'jenis_assy'   => 'Final Assy',
+            'period_start' => '2026-10-01',
+            'period_end'   => '2026-10-31',
+            'target_dpm'   => 50.00,
+        ]);
+        DpmTarget::create([
+            'jenis_assy'   => 'Final Assy',
+            'period_start' => '2026-11-01',
+            'period_end'   => '2026-12-31',
+            'target_dpm'   => 35.00,
+        ]);
+
+        // Defect data HANYA di bulan Oktober 2026
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-10-15 10:00:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 5,
+            'inspect_quantity' => 1000,
+        ]);
+
+        // Request mode month untuk rentang Okt - Des (3 bulan)
+        $response = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-10-01&end_date=2026-12-31&group_by=month&assy=final');
+        $response->assertStatus(200);
+
+        $dpmFinal = $response->json('dpm_final');
+        $this->assertCount(3, $dpmFinal);
+
+        // Bulan Oktober: memiliki data defect dan inspect
+        $this->assertEquals('2026-10', $dpmFinal[0]['label']);
+        $this->assertEquals(5, $dpmFinal[0]['total_defect']);
+        $this->assertEquals(1000, $dpmFinal[0]['total_inspect']);
+        $this->assertEquals(5000.0, $dpmFinal[0]['dpm']);
+        $this->assertEquals(50.0, $dpmFinal[0]['target']);
+
+        // Bulan November (kosong): total_defect = 0, total_inspect = 0, dpm = null, target = 35.0
+        $this->assertEquals('2026-11', $dpmFinal[1]['label']);
+        $this->assertEquals(0, $dpmFinal[1]['total_defect']);
+        $this->assertEquals(0, $dpmFinal[1]['total_inspect']);
+        $this->assertNull($dpmFinal[1]['dpm']);
+        $this->assertEquals(35.0, $dpmFinal[1]['target']);
+
+        // Bulan Desember (kosong): total_defect = 0, total_inspect = 0, dpm = null, target = 35.0
+        $this->assertEquals('2026-12', $dpmFinal[2]['label']);
+        $this->assertEquals(0, $dpmFinal[2]['total_defect']);
+        $this->assertEquals(0, $dpmFinal[2]['total_inspect']);
+        $this->assertNull($dpmFinal[2]['dpm']);
+        $this->assertEquals(35.0, $dpmFinal[2]['target']);
+    }
+
+    public function test_day_and_week_modes_include_empty_buckets_in_chronological_order(): void
+    {
+        // Defect hanya di hari ke-2 (2026-06-02)
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-06-02 09:00:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'DAMAGE',
+            'jenis_sub_defect' => 'PIN',
+            'quantity'         => 2,
+            'inspect_quantity' => 500,
+        ]);
+
+        // 1. Mode Day (5 hari: 2026-06-01 s/d 2026-06-05)
+        $resDay = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-06-01&end_date=2026-06-05&group_by=day&assy=final');
+        $resDay->assertStatus(200);
+        $dpmDay = $resDay->json('dpm_final');
+
+        $this->assertCount(5, $dpmDay);
+        $labelsDay = array_column($dpmDay, 'label');
+        $this->assertEquals(['2026-06-01', '2026-06-02', '2026-06-03', '2026-06-04', '2026-06-05'], $labelsDay);
+
+        $this->assertNull($dpmDay[0]['dpm']);
+        $this->assertEquals(4000.0, $dpmDay[1]['dpm']);
+        $this->assertNull($dpmDay[2]['dpm']);
+        $this->assertNull($dpmDay[3]['dpm']);
+        $this->assertNull($dpmDay[4]['dpm']);
+
+        // 2. Mode Week (3 minggu berurutan: Senin 2026-06-01, 2026-06-08, 2026-06-15)
+        $resWeek = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-06-01&end_date=2026-06-21&group_by=week&assy=final');
+        $resWeek->assertStatus(200);
+        $dpmWeek = $resWeek->json('dpm_final');
+
+        $this->assertCount(3, $dpmWeek);
+        $labelsWeek = array_column($dpmWeek, 'label');
+        $this->assertEquals(['2026-06-01', '2026-06-08', '2026-06-15'], $labelsWeek);
+
+        // Minggu 1 ada data, minggu 2 dan 3 kosong
+        $this->assertEquals(4000.0, $dpmWeek[0]['dpm']);
+        $this->assertNull($dpmWeek[1]['dpm']);
+        $this->assertNull($dpmWeek[2]['dpm']);
+    }
+
+    public function test_mid_period_target_matches_in_month_and_week_modes(): void
+    {
+        // Target mulai di tengah bulan (15-30 November 2026)
+        DpmTarget::create([
+            'jenis_assy'   => 'Final Assy',
+            'period_start' => '2026-11-15',
+            'period_end'   => '2026-11-30',
+            'target_dpm'   => 42.00,
+        ]);
+
+        // Target mulai di tengah minggu (Rabu 2026-11-18 s/d Minggu 2026-11-22)
+        DpmTarget::create([
+            'jenis_assy'   => 'Pre Assy',
+            'period_start' => '2026-11-18',
+            'period_end'   => '2026-11-22',
+            'target_dpm'   => 77.00,
+        ]);
+
+        // Uji mode month untuk Final Assy
+        $resMonth = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-11-01&end_date=2026-11-30&group_by=month&assy=final');
+        $resMonth->assertStatus(200);
+        $dpmMonth = $resMonth->json('dpm_final');
+        $this->assertCount(1, $dpmMonth);
+        $this->assertEquals('2026-11', $dpmMonth[0]['label']);
+        $this->assertEquals(42.0, $dpmMonth[0]['target']);
+
+        // Uji mode week untuk Pre Assy (minggu mulai Senin 2026-11-16)
+        $resWeek = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-11-16&end_date=2026-11-22&group_by=week&assy=pre');
+        $resWeek->assertStatus(200);
+        $dpmWeek = $resWeek->json('dpm_pre');
+        $this->assertCount(1, $dpmWeek);
+        $this->assertEquals('2026-11-16', $dpmWeek[0]['label']);
+        $this->assertEquals(77.0, $dpmWeek[0]['target']);
+    }
+
+    public function test_bucket_with_inspect_greater_than_zero_and_zero_defect_yields_zero_dpm(): void
+    {
+        Defect::create([
+            'waktu'            => Carbon::parse('2026-08-10 10:00:00'),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'Zero Defect',
+            'jenis_sub_defect' => '-',
+            'quantity'         => 0,
+            'inspect_quantity' => 500,
+        ]);
+
+        $res = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2026-08-10&end_date=2026-08-10&group_by=day&assy=final');
+        $res->assertStatus(200);
+
+        $dpmFinal = $res->json('dpm_final');
+        $this->assertCount(1, $dpmFinal);
+        $this->assertEquals(0, $dpmFinal[0]['total_defect']);
+        $this->assertEquals(500, $dpmFinal[0]['total_inspect']);
+        // dpm harus numeric 0, BUKAN null
+        $this->assertNotNull($dpmFinal[0]['dpm']);
+        $this->assertEquals(0.0, $dpmFinal[0]['dpm']);
+    }
+
+    public function test_very_long_date_range_does_not_exceed_400_buckets_cap(): void
+    {
+        // Rentang 500 hari: 2024-01-01 s/d 2025-05-14
+        $res = $this->actingAsAdmin()->getJson('/dashboard/analytics?start_date=2024-01-01&end_date=2025-05-14&group_by=day&assy=final');
+        $res->assertStatus(200);
+
+        $dpmFinal = $res->json('dpm_final');
+        $this->assertCount(400, $dpmFinal);
+
+        // Memastikan bucket terakhir adalah batas akhir rentang
+        $this->assertEquals('2025-05-14', end($dpmFinal)['label']);
+
+        // Memastikan kronologis
+        $labels = array_column($dpmFinal, 'label');
+        $sortedLabels = $labels;
+        sort($sortedLabels);
+        $this->assertEquals($sortedLabels, $labels);
     }
 }
