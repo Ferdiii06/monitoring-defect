@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('dpm_targets', function (Blueprint $table) {
-            $table->foreignId('carline_id')->nullable()->after('jenis_assy')->constrained('carlines')->restrictOnDelete();
-            $table->string('conveyor_group', 50)->nullable()->after('carline_id');
+            if (!Schema::hasColumn('dpm_targets', 'carline_id')) {
+                $table->foreignId('carline_id')->nullable()->after('jenis_assy')->constrained('carlines')->restrictOnDelete();
+            }
+            if (!Schema::hasColumn('dpm_targets', 'conveyor_group')) {
+                $table->string('conveyor_group', 50)->nullable()->after('carline_id');
+            }
         });
     }
 
@@ -23,8 +27,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('dpm_targets', function (Blueprint $table) {
-            $table->dropForeign(['carline_id']);
-            $table->dropColumn(['carline_id', 'conveyor_group']);
+            if (Schema::hasColumn('dpm_targets', 'carline_id')) {
+                $table->dropForeign(['carline_id']);
+                $table->dropColumn('carline_id');
+            }
+            if (Schema::hasColumn('dpm_targets', 'conveyor_group')) {
+                $table->dropColumn('conveyor_group');
+            }
         });
     }
 };
