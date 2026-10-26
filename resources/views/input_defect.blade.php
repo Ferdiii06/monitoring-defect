@@ -687,6 +687,7 @@
                         time_24hr: true,
                         dateFormat: 'H:i',
                         allowInput: true,
+                        disableMobile: true,
                         defaultDate: this.form.jam,
                         onChange: (selectedDates, dateStr) => {
                             this.form.jam = dateStr;
