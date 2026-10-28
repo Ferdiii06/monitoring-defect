@@ -9,7 +9,13 @@ class AreaDitemukan extends Model
 {
     use HasFactory;
 
+    public const TIPE_INTERNAL_DEFECT = 'internal_defect';
+    public const TIPE_REWORK = 'rework';
+
     protected $table = 'area_ditemukans';
 
-    protected $fillable = ['name'];
+    protected $fillable = [
+        'name',
+        'tipe',
+    ];
 }

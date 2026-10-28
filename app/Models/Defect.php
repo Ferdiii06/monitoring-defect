@@ -37,6 +37,23 @@ class Defect extends Model
         'final_inspect_type_id',
         'defect_type_id',
         'sub_defect_type_id',
+        // Kolom Rework (Batch 1)
+        'waktu_in',
+        'waktu_out',
+        'durasi_rework_menit',
+        'status_rework',
+        'kanban_assy',
+        'nameplate_lama',
+        'nameplate_baru',
+        'no_defective_tag',
+        'status_4m',
+        'posisi_detail_rework',
+        'fc_h',
+        'fc_w',
+        'rc_h',
+        'rc_w',
+        'no_box',
+        'ujung',
     ];
 
     protected $casts = [
@@ -48,6 +65,9 @@ class Defect extends Model
         'final_inspect_type_id'    => 'integer',
         'defect_type_id'           => 'integer',
         'sub_defect_type_id'       => 'integer',
+        'waktu_in'                 => 'datetime',
+        'waktu_out'                => 'datetime',
+        'durasi_rework_menit'      => 'integer',
     ];
 
     // --- Relasi ke master data baru ---
