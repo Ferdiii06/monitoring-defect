@@ -392,6 +392,47 @@
                     <p class="text-xs font-semibold text-slate-600">Tidak ada data pada periode ini</p>
                     <span class="text-[11px] text-slate-400 mt-0.5">Ubah rentang tanggal atau pilih filter konveyor lain</span>
                 </div>
+                <!-- Hint Klik Interaktif -->
+                <div class="mt-2 text-center">
+                    <span class="inline-flex items-center space-x-1 text-[10px] font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200/60 cursor-default">
+                        <svg class="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                        <span>Klik batang sub defect untuk melihat Top 5 Konveyor</span>
+                    </span>
+                </div>
+
+                <!-- Drilldown Sub-Panel (Opsi B: Muncul di Bawah Grafik Pareto) -->
+                <div id="drilldownWrapperParetoFinal" class="hidden mt-4 pt-3.5 border-t border-slate-200/80 bg-slate-50/80 rounded-xl p-3.5 transition-all">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/60">
+                        <div class="flex items-center space-x-2 min-w-0 flex-1">
+                            <span class="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
+                            <div class="min-w-0">
+                                <div class="flex items-center space-x-1.5 flex-wrap">
+                                    <span class="text-xs font-extrabold text-slate-900 tracking-tight" id="drilldownTitleParetoFinal">Top 5 Konveyor</span>
+                                    <span class="text-[10px] font-mono font-bold text-teal-800 bg-teal-100/70 border border-teal-200 px-1.5 py-0.5 rounded truncate max-w-[200px]" id="drilldownBadgeParetoFinal">-</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-medium">Berdasarkan total kasus sub defect yang dipilih</span>
+                            </div>
+                        </div>
+                        <button type="button" id="btnCloseDrilldownParetoFinal" class="text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-200 px-2 py-1 rounded-lg transition-colors flex items-center space-x-1 shrink-0 cursor-pointer" title="Tutup Breakdown">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            <span>Tutup</span>
+                        </button>
+                    </div>
+
+                    <!-- Loading & Empty state -->
+                    <div id="drilldownLoadingParetoFinal" class="hidden py-6 text-center text-xs font-semibold text-teal-700">
+                        <svg class="animate-spin inline-block h-4 w-4 text-teal-600 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        <span>Memuat breakdown konveyor...</span>
+                    </div>
+                    <div id="drilldownEmptyParetoFinal" class="hidden py-6 text-center text-xs font-medium text-slate-400 italic">
+                        Tidak ada data konveyor untuk sub defect ini
+                    </div>
+
+                    <!-- Canvas Drilldown -->
+                    <div id="drilldownCanvasWrapParetoFinal" class="relative h-44 w-full">
+                        <canvas id="chartDrilldownParetoFinal"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -624,6 +665,47 @@
                     <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                     <p class="text-xs font-semibold text-slate-600" id="emptyMsgParetoPre">Tidak ada data pada periode ini</p>
                     <span class="text-[11px] text-slate-400 mt-0.5" id="emptySubParetoPre">Ubah rentang tanggal atau pilih filter carline lain</span>
+                </div>
+                <!-- Hint Klik Interaktif -->
+                <div class="mt-2 text-center">
+                    <span class="inline-flex items-center space-x-1 text-[10px] font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200/60 cursor-default">
+                        <svg class="w-3 h-3 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                        <span>Klik batang sub defect untuk melihat Top 5 Carline</span>
+                    </span>
+                </div>
+
+                <!-- Drilldown Sub-Panel (Opsi B: Muncul di Bawah Grafik Pareto) -->
+                <div id="drilldownWrapperParetoPre" class="hidden mt-4 pt-3.5 border-t border-slate-200/80 bg-slate-50/80 rounded-xl p-3.5 transition-all">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/60">
+                        <div class="flex items-center space-x-2 min-w-0 flex-1">
+                            <span class="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
+                            <div class="min-w-0">
+                                <div class="flex items-center space-x-1.5 flex-wrap">
+                                    <span class="text-xs font-extrabold text-slate-900 tracking-tight" id="drilldownTitleParetoPre">Top 5 Carline</span>
+                                    <span class="text-[10px] font-mono font-bold text-blue-800 bg-blue-100/70 border border-blue-200 px-1.5 py-0.5 rounded truncate max-w-[200px]" id="drilldownBadgeParetoPre">-</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-medium">Berdasarkan total kasus sub defect yang dipilih</span>
+                            </div>
+                        </div>
+                        <button type="button" id="btnCloseDrilldownParetoPre" class="text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-200 px-2 py-1 rounded-lg transition-colors flex items-center space-x-1 shrink-0 cursor-pointer" title="Tutup Breakdown">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            <span>Tutup</span>
+                        </button>
+                    </div>
+
+                    <!-- Loading & Empty state -->
+                    <div id="drilldownLoadingParetoPre" class="hidden py-6 text-center text-xs font-semibold text-blue-700">
+                        <svg class="animate-spin inline-block h-4 w-4 text-blue-600 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                        <span>Memuat breakdown carline...</span>
+                    </div>
+                    <div id="drilldownEmptyParetoPre" class="hidden py-6 text-center text-xs font-medium text-slate-400 italic">
+                        Tidak ada data carline untuk sub defect ini
+                    </div>
+
+                    <!-- Canvas Drilldown -->
+                    <div id="drilldownCanvasWrapParetoPre" class="relative h-44 w-full">
+                        <canvas id="chartDrilldownParetoPre"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1272,6 +1354,16 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onHover: function(event, elements) {
+                        event.native.target.style.cursor = (elements && elements.length > 0) ? 'pointer' : 'default';
+                    },
+                    onClick: function(event, elements) {
+                        if (!elements || elements.length === 0) return;
+                        const el = elements[0];
+                        const label = this.data.labels[el.index];
+                        if (!label) return;
+                        triggerParetoDrilldown(canvasId, label);
+                    },
                     interaction: {
                         mode: 'index',
                         intersect: false
@@ -1404,6 +1496,9 @@
         const chartParetoFinal = createParetoChart('chartParetoFinal', '#0f766e');
         const chartDpmPre = createDpmChart('chartDpmPre', '#1d4ed8', 'rgba(29, 78, 216, 0.08)', '#64748b', 'PPM');
         const chartParetoPre = createParetoChart('chartParetoPre', '#1e40af');
+
+        let chartDrilldownParetoFinal = null;
+        let chartDrilldownParetoPre = null;
 
         // Pre Assy specific adjustments
         if (chartDpmPre) {
@@ -2807,12 +2902,169 @@
             }
         });
 
+        // --- Pareto Drilldown Handler ---
+        function triggerParetoDrilldown(canvasId, subDefectName) {
+            const isPre = (canvasId === 'chartParetoPre');
+            const targetType = isPre ? 'Pre' : 'Final';
+            const jenisAssy = isPre ? 'Pre Assy' : (currentMode === 'all' ? 'all' : 'Final Assy');
+            const filters = isPre ? filtersParetoPre : filtersParetoFinal;
+            const barColor = isPre ? '#2563eb' : (currentMode === 'rework' ? '#d97706' : '#0f766e');
+
+            const wrapper = document.getElementById(`drilldownWrapperPareto${targetType}`);
+            const badge = document.getElementById(`drilldownBadgePareto${targetType}`);
+            const loading = document.getElementById(`drilldownLoadingPareto${targetType}`);
+            const empty = document.getElementById(`drilldownEmptyPareto${targetType}`);
+            const canvasWrap = document.getElementById(`drilldownCanvasWrapPareto${targetType}`);
+            const canvas = document.getElementById(`chartDrilldownPareto${targetType}`);
+
+            if (!wrapper) return;
+
+            wrapper.classList.remove('hidden');
+            if (badge) badge.textContent = subDefectName;
+            if (loading) loading.classList.remove('hidden');
+            if (empty) empty.classList.add('hidden');
+            if (canvasWrap) canvasWrap.classList.add('hidden');
+
+            const params = new URLSearchParams({
+                sub_defect: subDefectName,
+                start_date: filters.start_date || '',
+                end_date: filters.end_date || '',
+                mode: currentMode,
+                jenis_assy: jenisAssy
+            });
+
+            fetch(`/dashboard/pareto-drilldown?${params.toString()}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.json();
+            })
+            .then(data => {
+                if (loading) loading.classList.add('hidden');
+                const items = data.items || [];
+
+                if (items.length === 0) {
+                    if (empty) {
+                        empty.textContent = isPre ? 'Tidak ada data carline untuk sub defect ini' : 'Tidak ada data konveyor untuk sub defect ini';
+                        empty.classList.remove('hidden');
+                    }
+                    return;
+                }
+
+                if (canvasWrap) canvasWrap.classList.remove('hidden');
+
+                let currentChart = isPre ? chartDrilldownParetoPre : chartDrilldownParetoFinal;
+                if (currentChart) {
+                    currentChart.destroy();
+                }
+
+                const ctx = canvas.getContext('2d');
+                const newChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: items.map(i => i.name),
+                        datasets: [{
+                            label: 'Total Defect',
+                            data: items.map(i => i.total),
+                            backgroundColor: barColor,
+                            borderRadius: 6,
+                            maxBarThickness: 22,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                titleFont: { size: 11, weight: '700' },
+                                bodyFont: { size: 11, weight: '500' },
+                                cornerRadius: 6,
+                                padding: 8,
+                                callbacks: {
+                                    label: function(ctx) {
+                                        return `  Total Kasus: ${Number(ctx.raw).toLocaleString('id-ID')} pcs`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: '#f1f5f9' },
+                                ticks: { precision: 0, font: { size: 10, weight: '600' }, color: '#64748b' }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: {
+                                    font: { size: 11, weight: '700' },
+                                    color: '#1e293b',
+                                    callback: function(val, index) {
+                                        const raw = this.chart.data.labels[index];
+                                        return (typeof raw === 'string' && raw.length > 24) ? raw.substring(0, 24) + '…' : raw;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                if (isPre) {
+                    chartDrilldownParetoPre = newChart;
+                } else {
+                    chartDrilldownParetoFinal = newChart;
+                }
+
+                wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            })
+            .catch(err => {
+                console.error('[Pareto Drilldown] Error:', err);
+                if (loading) loading.classList.add('hidden');
+                if (empty) {
+                    empty.textContent = 'Gagal memuat data breakdown.';
+                    empty.classList.remove('hidden');
+                }
+            });
+        }
+
+        const btnCloseFinal = document.getElementById('btnCloseDrilldownParetoFinal');
+        if (btnCloseFinal) {
+            btnCloseFinal.addEventListener('click', function() {
+                const wrapper = document.getElementById('drilldownWrapperParetoFinal');
+                if (wrapper) wrapper.classList.add('hidden');
+                if (chartDrilldownParetoFinal) {
+                    chartDrilldownParetoFinal.destroy();
+                    chartDrilldownParetoFinal = null;
+                }
+            });
+        }
+
+        const btnClosePre = document.getElementById('btnCloseDrilldownParetoPre');
+        if (btnClosePre) {
+            btnClosePre.addEventListener('click', function() {
+                const wrapper = document.getElementById('drilldownWrapperParetoPre');
+                if (wrapper) wrapper.classList.add('hidden');
+                if (chartDrilldownParetoPre) {
+                    chartDrilldownParetoPre.destroy();
+                    chartDrilldownParetoPre = null;
+                }
+            });
+        }
+
         window.addEventListener('beforeunload', function() {
             if (pollingTimer) clearInterval(pollingTimer);
             if (chartDpmFinal) chartDpmFinal.destroy();
             if (chartParetoFinal) chartParetoFinal.destroy();
             if (chartDpmPre) chartDpmPre.destroy();
             if (chartParetoPre) chartParetoPre.destroy();
+            if (chartDrilldownParetoFinal) chartDrilldownParetoFinal.destroy();
+            if (chartDrilldownParetoPre) chartDrilldownParetoPre.destroy();
             if (abortDpmFinal) abortDpmFinal.abort();
             if (abortParetoFinal) abortParetoFinal.abort();
             if (abortDpmPre) abortDpmPre.abort();

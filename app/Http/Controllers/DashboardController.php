@@ -264,6 +264,109 @@ class DashboardController extends Controller
     }
 
     /**
+     * Endpoint Drilldown Pareto: Top 5 Konveyor / Carline untuk Sub Defect tertentu.
+     */
+    public function paretoDrilldown(Request $request)
+    {
+        $subDefect = trim((string) $request->input('sub_defect', ''));
+        if ($subDefect === '') {
+            return response()->json([
+                'sub_defect' => '',
+                'metric'     => 'conveyor',
+                'items'      => [],
+            ]);
+        }
+
+        $endDate = $request->filled('end_date')
+            ? Carbon::parse($request->input('end_date'))->endOfDay()
+            : Carbon::today()->endOfDay();
+
+        $startDate = $request->filled('start_date')
+            ? Carbon::parse($request->input('start_date'))->startOfDay()
+            : Carbon::today()->subDays(29)->startOfDay();
+
+        if ($startDate->greaterThan($endDate)) {
+            [$startDate, $endDate] = [$endDate->copy()->startOfDay(), $startDate->copy()->endOfDay()];
+        }
+
+        $mode = strtolower((string) $request->input('mode', 'internal'));
+        if (!in_array($mode, ['all', 'internal', 'rework'], true)) {
+            $mode = 'internal';
+        }
+
+        $jenisAssy = (string) $request->input('jenis_assy', 'Final Assy');
+
+        $query = Defect::query()
+            ->whereBetween('waktu', [$startDate, $endDate])
+            ->where(function ($q) {
+                $q->whereNull('jenis_defect')->orWhere('jenis_defect', '!=', 'Zero Defect');
+            })
+            ->where('quantity', '>', 0);
+
+        if ($jenisAssy === 'Pre Assy') {
+            $query->where('jenis_assy', 'Pre Assy')
+                  ->byDashboardMode($mode, 'Pre Assy');
+        } elseif ($jenisAssy === 'Final Assy') {
+            $query->where('jenis_assy', 'Final Assy')
+                  ->byDashboardMode($mode, 'Final Assy');
+        } else {
+            $query->byDashboardMode($mode);
+        }
+
+        // Filter sub defect name (case-insensitive & trimmed)
+        $query->where(function ($q) use ($subDefect) {
+            $q->where('jenis_sub_defect', $subDefect)
+              ->orWhereRaw('UPPER(TRIM(jenis_sub_defect)) = ?', [strtoupper($subDefect)]);
+        });
+
+        if ($jenisAssy === 'Pre Assy') {
+            $defects = $query->with('carline:id,name')->select(['id', 'carline_id', 'quantity'])->get();
+            $totals = [];
+            foreach ($defects as $d) {
+                $carlineName = $d->carline?->name ?: 'Tanpa Carline';
+                $totals[$carlineName] = ($totals[$carlineName] ?? 0) + (int) $d->quantity;
+            }
+            arsort($totals);
+            $top5 = array_slice($totals, 0, 5, true);
+
+            $items = [];
+            foreach ($top5 as $name => $total) {
+                $items[] = ['name' => $name, 'total' => $total];
+            }
+
+            return response()->json([
+                'sub_defect' => $subDefect,
+                'metric'     => 'carline',
+                'items'      => $items,
+            ]);
+        }
+
+        // Final Assy, Rework, or Gabungan -> Conveyor breakdown
+        $defects = $query->select(['conveyor', 'area_ditemukan', 'quantity'])->get();
+        $totals = [];
+        foreach ($defects as $d) {
+            $conveyorName = trim((string) $d->conveyor);
+            if ($conveyorName === '' || $conveyorName === '-') {
+                $conveyorName = filled($d->area_ditemukan) ? $d->area_ditemukan : 'Tanpa Konveyor';
+            }
+            $totals[$conveyorName] = ($totals[$conveyorName] ?? 0) + (int) $d->quantity;
+        }
+        arsort($totals);
+        $top5 = array_slice($totals, 0, 5, true);
+
+        $items = [];
+        foreach ($top5 as $name => $total) {
+            $items[] = ['name' => $name, 'total' => $total];
+        }
+
+        return response()->json([
+            'sub_defect' => $subDefect,
+            'metric'     => 'conveyor',
+            'items'      => $items,
+        ]);
+    }
+
+    /**
      * Hitung tren DPM agnostik database (agregasi SQL per hari, grouping lanjut di PHP).
      */
     private function buildDpmTrends(string $jenisAssy, Carbon $startDate, Carbon $endDate, string $groupBy, ?string $conveyor, $carlineId, string $mode = 'internal'): array

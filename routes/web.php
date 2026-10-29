@@ -63,6 +63,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
     Route::middleware(['admin'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/analytics', [DashboardController::class, 'analytics'])->name('admin.dashboard.analytics');
+        Route::get('/dashboard/pareto-drilldown', [DashboardController::class, 'paretoDrilldown'])->name('admin.dashboard.pareto_drilldown');
 
         // Add Account routes
         Route::get('/add-account', [\App\Http\Controllers\AccountController::class, 'index'])->name('account.create');
