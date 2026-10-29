@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use App\Support\RoleRouteHelper;
 
 class AuthController extends Controller
 {
@@ -41,7 +42,7 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
-            return redirect()->route('operator.home');
+            return RoleRouteHelper::redirectForRole('User');
 
         } elseif ($role === 'rework') {
             $credentials = $request->validate([
@@ -69,7 +70,7 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
-            return redirect()->route('operator.home');
+            return RoleRouteHelper::redirectForRole('Rework');
 
         } else {
             $credentials = $request->validate([
@@ -95,7 +96,7 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
-            return redirect()->intended(route('dashboard'));
+            return redirect()->route('dashboard');
         }
     }
 

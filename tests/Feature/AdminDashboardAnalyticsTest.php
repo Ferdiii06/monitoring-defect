@@ -29,7 +29,7 @@ class AdminDashboardAnalyticsTest extends TestCase
         return $this->withSession([
             'logged_in' => true,
             'user_name' => 'Operator 1',
-            'user_role' => 'Operator',
+            'user_role' => 'User',
         ]);
     }
 

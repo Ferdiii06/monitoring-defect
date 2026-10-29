@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Support\RoleRouteHelper;
 
 class EnsureIsOperator
 {
@@ -13,8 +14,12 @@ class EnsureIsOperator
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!in_array(session('user_role'), ['User', 'Rework'], true)) {
-            return redirect()->route('dashboard');
+        if (!session('logged_in')) {
+            return RoleRouteHelper::redirectForRole(null);
+        }
+
+        if (session('user_role') !== 'User') {
+            return RoleRouteHelper::redirectForRole();
         }
 
         return $next($request);

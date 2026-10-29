@@ -3,13 +3,13 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ReworkController;
+use App\Support\RoleRouteHelper;
 
 // Login view (guest redirect checked inline)
 Route::get('/', function () {
     if (session('logged_in')) {
-        return session('user_role') === 'Administrator'
-            ? redirect()->route('dashboard')
-            : redirect()->route('operator.home');
+        return RoleRouteHelper::redirectForRole();
     }
     return view('login');
 })->name('login');
@@ -17,9 +17,7 @@ Route::get('/', function () {
 // Handle GET /login to prevent 404 or method not allowed
 Route::get('/login', function () {
     if (session('logged_in')) {
-        return session('user_role') === 'Administrator'
-            ? redirect()->route('dashboard')
-            : redirect()->route('operator.home');
+        return RoleRouteHelper::redirectForRole();
     }
     return redirect()->route('login');
 });
@@ -40,6 +38,11 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
         Route::get('/input-defect/{id}/edit', [\App\Http\Controllers\ReportController::class, 'editInputDefect'])->name('input_defect.edit');
         Route::put('/input-defect/{id}', [\App\Http\Controllers\ReportController::class, 'updateInputDefect'])->name('input_defect.update');
         Route::delete('/input-defect/{id}', [\App\Http\Controllers\ReportController::class, 'destroyInputDefect'])->name('input_defect.destroy');
+    });
+
+    // Protected Rework routes (only accessible by Rework role)
+    Route::middleware(['rework'])->prefix('rework')->name('rework.')->group(function () {
+        Route::get('/', [ReworkController::class, 'index'])->name('index');
     });
 
 

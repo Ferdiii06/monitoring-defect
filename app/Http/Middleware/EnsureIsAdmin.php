@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Support\RoleRouteHelper;
 
 class EnsureIsAdmin
 {
@@ -13,8 +14,12 @@ class EnsureIsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if (!session('logged_in')) {
+            return RoleRouteHelper::redirectForRole(null);
+        }
+
         if (session('user_role') !== 'Administrator') {
-            return redirect()->route('operator.home');
+            return RoleRouteHelper::redirectForRole();
         }
 
         return $next($request);
