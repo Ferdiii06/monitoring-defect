@@ -1882,5 +1882,16 @@ class AdminDashboardAnalyticsTest extends TestCase
         $resInternal->assertSee('Pareto Sub Defect Final Assy');
         $resInternal->assertSee('PPM Pre Assy');
         $resInternal->assertSee('Pareto Sub Defect Pre Assy');
+
+        // 3. Mode rework di halaman /dashboard?mode=rework: Pre Assy disembunyikan, Final Assy span 2
+        $resRework = $this->actingAsAdmin()->get('/dashboard?mode=rework');
+        $resRework->assertStatus(200);
+
+        $htmlRew = $resRework->getContent();
+        $this->assertMatchesRegularExpression('/id="columnPreAssy"[^>]*class="[^"]*hidden[^"]*"/', $htmlRew);
+        $this->assertMatchesRegularExpression('/id="columnFinalAssy"[^>]*class="[^"]*xl:col-span-2[^"]*"/', $htmlRew);
+
+        $resRework->assertSee('Tren Rework Final Assy');
+        $resRework->assertSee('Pareto Sub Defect Rework Final Assy');
     }
 }

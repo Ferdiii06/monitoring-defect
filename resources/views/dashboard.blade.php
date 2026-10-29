@@ -161,7 +161,7 @@
         <!-- 2 Columns Grid: Final Assy (Left) & Pre Assy (Right) - Opsi A -->
         <section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8" id="analyticsGridContainer">
             <!-- KOLOM KIRI: FINAL ASSY -->
-            <div id="columnFinalAssy" class="space-y-6 {{ ($currentMode ?? 'internal') === 'all' ? 'xl:col-span-2' : '' }}">
+            <div id="columnFinalAssy" class="space-y-6 {{ in_array(($currentMode ?? 'internal'), ['all', 'rework'], true) ? 'xl:col-span-2' : '' }}">
                 <!-- Summary Cards Final Assy (Sinkron Filter Mandiri) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Summary DPM Final Assy -->
@@ -396,7 +396,7 @@
         </div>
 
             <!-- KOLOM KANAN: PRE ASSY -->
-            <div id="columnPreAssy" class="space-y-6 {{ ($currentMode ?? 'internal') === 'all' ? 'hidden' : '' }}">
+            <div id="columnPreAssy" class="space-y-6 {{ in_array(($currentMode ?? 'internal'), ['all', 'rework'], true) ? 'hidden' : '' }}">
                 <!-- Summary Cards Pre Assy (Sinkron Filter Mandiri) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Summary DPM Pre Assy -->
@@ -764,8 +764,8 @@
                 if (badgeParetoFinal) badgeParetoFinal.textContent = 'Final Assy';
                 if (summaryTitleDpm) summaryTitleDpm.textContent = 'Defect Rework';
                 if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Defect Rework';
-                if (colPre) colPre.classList.remove('hidden');
-                if (colFinal) colFinal.classList.remove('xl:col-span-2');
+                if (colPre) colPre.classList.add('hidden');
+                if (colFinal) colFinal.classList.add('xl:col-span-2');
             } else {
                 if (titleDpmFinal) titleDpmFinal.textContent = 'DPM Final Assy';
                 if (subDpmFinal) subDpmFinal.textContent = 'Defect Per Million tren per periode';
@@ -839,7 +839,7 @@
             fetchStats();
             fetchDpmFinal(false);
             fetchParetoFinal(false);
-            if (currentMode !== 'all') {
+            if (currentMode === 'internal') {
                 fetchDpmPre(false);
                 fetchParetoPre(false);
             }
@@ -2747,7 +2747,7 @@
             fetchStats();
             fetchDpmFinal(true);
             fetchParetoFinal(true);
-            if (currentMode !== 'all') {
+            if (currentMode === 'internal') {
                 fetchDpmPre(true);
                 fetchParetoPre(true);
             }
@@ -2774,7 +2774,7 @@
         fetchStats();
         fetchDpmFinal();
         fetchParetoFinal();
-        if (currentMode !== 'all') {
+        if (currentMode === 'internal') {
             fetchDpmPre();
             fetchParetoPre();
         }
