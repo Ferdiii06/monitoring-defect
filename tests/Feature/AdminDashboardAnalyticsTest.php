@@ -1624,4 +1624,38 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertEquals($resStatsNoMode->json('totalDefect'), $resStatsInternal->json('totalDefect'));
         $this->assertEquals($resStatsNoMode->json('defectToday'), $resStatsInternal->json('defectToday'));
     }
+
+    public function test_dashboard_renders_toggle_mode_ui_with_active_states(): void
+    {
+        // 1. Default (Internal)
+        $resDef = $this->actingAsAdmin()->get('/dashboard');
+        $resDef->assertStatus(200);
+        $resDef->assertSee('id="btnModeAll"', false);
+        $resDef->assertSee('id="btnModeInternal"', false);
+        $resDef->assertSee('id="btnModeRework"', false);
+        $resDef->assertSee('Gabungan');
+        $resDef->assertSee('Internal Defect');
+        $resDef->assertSee('Rework');
+
+        $htmlDef = $resDef->getContent();
+        $this->assertMatchesRegularExpression('/id="btnModeInternal"[^>]*aria-pressed="true"/', $htmlDef);
+        $this->assertMatchesRegularExpression('/id="btnModeAll"[^>]*aria-pressed="false"/', $htmlDef);
+        $this->assertMatchesRegularExpression('/id="btnModeRework"[^>]*aria-pressed="false"/', $htmlDef);
+
+        // 2. Mode Rework
+        $resRework = $this->actingAsAdmin()->get('/dashboard?mode=rework');
+        $resRework->assertStatus(200);
+        $htmlRework = $resRework->getContent();
+        $this->assertMatchesRegularExpression('/id="btnModeRework"[^>]*aria-pressed="true"/', $htmlRework);
+        $this->assertMatchesRegularExpression('/id="btnModeInternal"[^>]*aria-pressed="false"/', $htmlRework);
+        $this->assertMatchesRegularExpression('/id="btnModeAll"[^>]*aria-pressed="false"/', $htmlRework);
+
+        // 3. Mode All
+        $resAll = $this->actingAsAdmin()->get('/dashboard?mode=all');
+        $resAll->assertStatus(200);
+        $htmlAll = $resAll->getContent();
+        $this->assertMatchesRegularExpression('/id="btnModeAll"[^>]*aria-pressed="true"/', $htmlAll);
+        $this->assertMatchesRegularExpression('/id="btnModeInternal"[^>]*aria-pressed="false"/', $htmlAll);
+        $this->assertMatchesRegularExpression('/id="btnModeRework"[^>]*aria-pressed="false"/', $htmlAll);
+    }
 }

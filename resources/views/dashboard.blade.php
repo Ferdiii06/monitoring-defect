@@ -4,15 +4,53 @@
 
 @section('content')
     <!-- Header Section -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <header class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight leading-tight">Monitoring Internal Defect</h1>
             <p class="text-xs font-medium text-slate-500 mt-1">Analitik real-time performa proses perakitan kabel body (Wiring Harness).</p>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between xl:justify-end gap-3.5">
+            <!-- Mode Switcher Segmented Control (Gabungan, Internal, Rework) -->
+            <div class="w-full sm:w-auto" role="region" aria-label="Mode Data Dashboard">
+                <div class="inline-flex w-full sm:w-auto items-center p-1 bg-slate-200/70 border border-slate-200 rounded-xl shadow-2xs gap-1" role="tablist" aria-label="Mode Data">
+                    <button type="button"
+                        id="btnModeAll"
+                        data-mode="all"
+                        role="tab"
+                        aria-pressed="{{ ($currentMode ?? 'internal') === 'all' ? 'true' : 'false' }}"
+                        aria-selected="{{ ($currentMode ?? 'internal') === 'all' ? 'true' : 'false' }}"
+                        class="btn-dashboard-mode flex-1 sm:flex-initial min-h-[40px] px-3.5 py-2 text-xs rounded-lg transition-all duration-150 inline-flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500/30 border {{ ($currentMode ?? 'internal') === 'all' ? 'bg-white text-slate-900 shadow-xs border-slate-200/80 font-extrabold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent font-bold' }}">
+                        <span class="mode-dot w-2 h-2 rounded-full transition-colors {{ ($currentMode ?? 'internal') === 'all' ? 'bg-indigo-600' : 'bg-slate-300' }}"></span>
+                        <span>Gabungan</span>
+                    </button>
+
+                    <button type="button"
+                        id="btnModeInternal"
+                        data-mode="internal"
+                        role="tab"
+                        aria-pressed="{{ ($currentMode ?? 'internal') === 'internal' ? 'true' : 'false' }}"
+                        aria-selected="{{ ($currentMode ?? 'internal') === 'internal' ? 'true' : 'false' }}"
+                        class="btn-dashboard-mode flex-1 sm:flex-initial min-h-[40px] px-3.5 py-2 text-xs rounded-lg transition-all duration-150 inline-flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500/30 border {{ ($currentMode ?? 'internal') === 'internal' ? 'bg-white text-slate-900 shadow-xs border-slate-200/80 font-extrabold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent font-bold' }}">
+                        <span class="mode-dot w-2 h-2 rounded-full transition-colors {{ ($currentMode ?? 'internal') === 'internal' ? 'bg-teal-600' : 'bg-slate-300' }}"></span>
+                        <span>Internal Defect</span>
+                    </button>
+
+                    <button type="button"
+                        id="btnModeRework"
+                        data-mode="rework"
+                        role="tab"
+                        aria-pressed="{{ ($currentMode ?? 'internal') === 'rework' ? 'true' : 'false' }}"
+                        aria-selected="{{ ($currentMode ?? 'internal') === 'rework' ? 'true' : 'false' }}"
+                        class="btn-dashboard-mode flex-1 sm:flex-initial min-h-[40px] px-3.5 py-2 text-xs rounded-lg transition-all duration-150 inline-flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-teal-500/30 border {{ ($currentMode ?? 'internal') === 'rework' ? 'bg-white text-slate-900 shadow-xs border-slate-200/80 font-extrabold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 border-transparent font-bold' }}">
+                        <span class="mode-dot w-2 h-2 rounded-full transition-colors {{ ($currentMode ?? 'internal') === 'rework' ? 'bg-amber-600' : 'bg-slate-300' }}"></span>
+                        <span>Rework</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Admin Profile Card -->
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-3 shrink-0 self-end sm:self-auto">
                 <div class="text-right">
                     <span class="block text-xs font-extrabold text-slate-900">{{ session('user_name', 'Admin QA') }}</span>
                     <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Administrator</span>
@@ -595,9 +633,75 @@
         // Dashboard Mode ('all', 'internal', 'rework')
         const validModes = ['all', 'internal', 'rework'];
         const urlMode = new URLSearchParams(window.location.search).get('mode');
-        const currentMode = validModes.includes(urlMode)
+        let currentMode = validModes.includes(urlMode)
             ? urlMode
             : (validModes.includes('{{ $currentMode ?? "internal" }}') ? '{{ $currentMode ?? "internal" }}' : 'internal');
+
+        function updateModeToggleUI(activeMode) {
+            document.querySelectorAll('.btn-dashboard-mode').forEach(btn => {
+                const btnMode = btn.getAttribute('data-mode');
+                const isSelected = (btnMode === activeMode);
+                const dot = btn.querySelector('.mode-dot');
+
+                btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+                btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+
+                if (isSelected) {
+                    btn.classList.add('bg-white', 'text-slate-900', 'shadow-xs', 'border-slate-200/80', 'font-extrabold');
+                    btn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-200/50', 'border-transparent', 'font-bold');
+                    if (dot) {
+                        dot.classList.remove('bg-slate-300');
+                        if (btnMode === 'all') dot.classList.add('bg-indigo-600');
+                        else if (btnMode === 'internal') dot.classList.add('bg-teal-600');
+                        else if (btnMode === 'rework') dot.classList.add('bg-amber-600');
+                    }
+                } else {
+                    btn.classList.remove('bg-white', 'text-slate-900', 'shadow-xs', 'border-slate-200/80', 'font-extrabold');
+                    btn.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-200/50', 'border-transparent', 'font-bold');
+                    if (dot) {
+                        dot.classList.remove('bg-indigo-600', 'bg-teal-600', 'bg-amber-600');
+                        dot.classList.add('bg-slate-300');
+                    }
+                }
+            });
+        }
+
+        function setDashboardMode(newMode, shouldPushState = true) {
+            if (!validModes.includes(newMode)) return;
+            if (newMode === currentMode) return;
+
+            currentMode = newMode;
+            updateModeToggleUI(currentMode);
+
+            if (shouldPushState) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('mode', currentMode);
+                window.history.pushState({ mode: currentMode }, '', url.toString());
+            }
+
+            // Muat ulang data feed dengan mode baru
+            fetchStats();
+            fetchDpmFinal(false);
+            fetchParetoFinal(false);
+            fetchDpmPre(false);
+            fetchParetoPre(false);
+        }
+
+        document.querySelectorAll('.btn-dashboard-mode').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const newMode = this.getAttribute('data-mode');
+                setDashboardMode(newMode, true);
+            });
+        });
+
+        window.addEventListener('popstate', function () {
+            const params = new URLSearchParams(window.location.search);
+            const modeFromUrl = params.get('mode') || 'internal';
+            const targetMode = validModes.includes(modeFromUrl) ? modeFromUrl : 'internal';
+            if (targetMode !== currentMode) {
+                setDashboardMode(targetMode, false);
+            }
+        });
 
         // --- 1. Month Names & Helpers ---
         const MONTH_NAMES_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
