@@ -1689,5 +1689,8 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertStringContainsString('Rework tidak tersedia untuk Pre Assy', $html);
         $this->assertStringContainsString('DPM rework menyusul', $html);
         $this->assertStringContainsString('DPM gabungan menyusul', $html);
+        $this->assertStringContainsString("currentMode !== 'rework' && filtersDpmFinal.conveyor", $html);
+        $this->assertStringContainsString("currentMode !== 'rework' && filtersParetoFinal.conveyor", $html);
+        $this->assertStringContainsString('Chart.getChart(canvas)', $html);
     }
 }

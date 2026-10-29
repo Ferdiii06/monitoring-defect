@@ -662,12 +662,16 @@
             const warningIcon = `<svg class="w-3.5 h-3.5 text-amber-500 shrink-0 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
 
             if (mode === 'rework') {
+                filtersDpmFinal.conveyor = 'all';
+                filtersParetoFinal.conveyor = 'all';
                 if (convDpm) {
+                    convDpm.value = 'all';
                     convDpm.disabled = true;
                     convDpm.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
                     convDpm.classList.remove('bg-white', 'cursor-pointer');
                 }
                 if (convPareto) {
+                    convPareto.value = 'all';
                     convPareto.disabled = true;
                     convPareto.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
                     convPareto.classList.remove('bg-white', 'cursor-pointer');
@@ -791,6 +795,16 @@
         function setDashboardMode(newMode, shouldPushState = true) {
             if (!validModes.includes(newMode)) return;
             if (newMode === currentMode) return;
+
+            // Reset konveyor saat masuk ke mode rework atau kembali dari mode rework
+            if (newMode === 'rework' || currentMode === 'rework') {
+                filtersDpmFinal.conveyor = 'all';
+                filtersParetoFinal.conveyor = 'all';
+                const convDpm = document.getElementById('filterConveyorDpmFinal');
+                const convPareto = document.getElementById('filterConveyorParetoFinal');
+                if (convDpm) convDpm.value = 'all';
+                if (convPareto) convPareto.value = 'all';
+            }
 
             currentMode = newMode;
             updateModeToggleUI(currentMode);
@@ -966,6 +980,10 @@
         function createDpmChart(canvasId, accentColor, bgGradientColor, targetColor = '#64748b', metricLabel = 'DPM') {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return null;
+            const existingChart = Chart.getChart(canvas);
+            if (existingChart) {
+                existingChart.destroy();
+            }
             const ctx = canvas.getContext('2d');
 
             const chart = new Chart(ctx, {
@@ -1172,6 +1190,10 @@
         function createParetoChart(canvasId, barColor) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) return null;
+            const existingChart = Chart.getChart(canvas);
+            if (existingChart) {
+                existingChart.destroy();
+            }
             const ctx = canvas.getContext('2d');
 
             return new Chart(ctx, {
@@ -2087,7 +2109,7 @@
             if (filtersDpmFinal.start_date) params.append('start_date', filtersDpmFinal.start_date);
             if (filtersDpmFinal.end_date) params.append('end_date', filtersDpmFinal.end_date);
             if (filtersDpmFinal.group_by) params.append('group_by', filtersDpmFinal.group_by);
-            if (filtersDpmFinal.conveyor && filtersDpmFinal.conveyor !== 'all') params.append('conveyor', filtersDpmFinal.conveyor);
+            if (currentMode !== 'rework' && filtersDpmFinal.conveyor && filtersDpmFinal.conveyor !== 'all') params.append('conveyor', filtersDpmFinal.conveyor);
             if (currentMode) params.append('mode', currentMode);
 
             fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
@@ -2150,7 +2172,7 @@
             params.append('assy', 'final');
             if (filtersParetoFinal.start_date) params.append('start_date', filtersParetoFinal.start_date);
             if (filtersParetoFinal.end_date) params.append('end_date', filtersParetoFinal.end_date);
-            if (filtersParetoFinal.conveyor && filtersParetoFinal.conveyor !== 'all') params.append('conveyor', filtersParetoFinal.conveyor);
+            if (currentMode !== 'rework' && filtersParetoFinal.conveyor && filtersParetoFinal.conveyor !== 'all') params.append('conveyor', filtersParetoFinal.conveyor);
             if (currentMode) params.append('mode', currentMode);
 
             fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
@@ -2744,6 +2766,10 @@
 
         window.addEventListener('beforeunload', function() {
             if (pollingTimer) clearInterval(pollingTimer);
+            if (chartDpmFinal) chartDpmFinal.destroy();
+            if (chartParetoFinal) chartParetoFinal.destroy();
+            if (chartDpmPre) chartDpmPre.destroy();
+            if (chartParetoPre) chartParetoPre.destroy();
             if (abortDpmFinal) abortDpmFinal.abort();
             if (abortParetoFinal) abortParetoFinal.abort();
             if (abortDpmPre) abortDpmPre.abort();
