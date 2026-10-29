@@ -199,8 +199,8 @@
                             <span class="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block shadow-xs"></span>
                             <div>
                                 <div class="flex items-center space-x-2">
-                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Tren Defect (Gabungan)' : (($currentMode ?? 'internal') === 'rework' ? 'Tren Rework Final Assy' : 'DPM Final Assy') }}</h3>
-                                    <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md" id="cardBadgeDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Gabungan' : 'Final Assy' }}</span>
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Tren Defect (Gabungan)' : (($currentMode ?? 'internal') === 'rework' ? 'Grafik DPM Rework' : 'DPM Final Assy') }}</h3>
+                                    <span class="text-[10px] font-bold {{ ($currentMode ?? 'internal') === 'rework' ? 'text-amber-800 bg-amber-50 border border-amber-200/80' : 'text-teal-800 bg-teal-50 border border-teal-200/80' }} px-2 py-0.5 rounded-md" id="cardBadgeDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Gabungan' : (($currentMode ?? 'internal') === 'rework' ? 'DPM Rework' : 'Final Assy') }}</span>
                                 </div>
                                 <p class="text-xs text-slate-500 mt-0.5" id="cardSubDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Jumlah defect tren per periode' : (($currentMode ?? 'internal') === 'rework' ? 'Jumlah defect & harness dirework per periode' : 'Defect Per Million tren per periode') }}</p>
                             </div>
@@ -306,8 +306,8 @@
                             <span class="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block shadow-xs"></span>
                             <div>
                                 <div class="flex items-center space-x-2">
-                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleParetoFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Pareto Defect (Gabungan)' : (($currentMode ?? 'internal') === 'rework' ? 'Pareto Sub Defect Rework Final Assy' : 'Pareto Sub Defect Final Assy') }}</h3>
-                                    <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md" id="cardBadgeParetoFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Gabungan' : 'Final Assy' }}</span>
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleParetoFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Pareto Defect (Gabungan)' : (($currentMode ?? 'internal') === 'rework' ? 'Grafik Pareto Rework' : 'Pareto Sub Defect Final Assy') }}</h3>
+                                    <span class="text-[10px] font-bold {{ ($currentMode ?? 'internal') === 'rework' ? 'text-amber-800 bg-amber-50 border border-amber-200/80' : 'text-teal-800 bg-teal-50 border border-teal-200/80' }} px-2 py-0.5 rounded-md" id="cardBadgeParetoFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Gabungan' : (($currentMode ?? 'internal') === 'rework' ? 'Pareto Rework' : 'Final Assy') }}</span>
                                 </div>
                                 <p class="text-xs text-slate-500 mt-0.5" id="cardSubParetoFinal">{{ ($currentMode ?? 'internal') === 'rework' ? 'Defect rework & persentase kumulatif per sub defect' : 'Total defect & persentase kumulatif per sub defect' }}</p>
                             </div>
@@ -747,21 +747,33 @@
             if (mode === 'all') {
                 if (titleDpmFinal) titleDpmFinal.textContent = 'Tren Defect (Gabungan)';
                 if (subDpmFinal) subDpmFinal.textContent = 'Jumlah defect tren per periode';
-                if (badgeDpmFinal) badgeDpmFinal.textContent = 'Gabungan';
+                if (badgeDpmFinal) {
+                    badgeDpmFinal.textContent = 'Gabungan';
+                    badgeDpmFinal.className = 'text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md';
+                }
                 if (titleParetoFinal) titleParetoFinal.textContent = 'Pareto Defect (Gabungan)';
                 if (subParetoFinal) subParetoFinal.textContent = 'Total defect & persentase kumulatif per sub defect';
-                if (badgeParetoFinal) badgeParetoFinal.textContent = 'Gabungan';
+                if (badgeParetoFinal) {
+                    badgeParetoFinal.textContent = 'Gabungan';
+                    badgeParetoFinal.className = 'text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md';
+                }
                 if (summaryTitleDpm) summaryTitleDpm.textContent = 'Total Defect (Gabungan)';
                 if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Defect (Gabungan)';
                 if (colPre) colPre.classList.add('hidden');
                 if (colFinal) colFinal.classList.add('xl:col-span-2');
             } else if (mode === 'rework') {
-                if (titleDpmFinal) titleDpmFinal.textContent = 'Tren Rework Final Assy';
+                if (titleDpmFinal) titleDpmFinal.textContent = 'Grafik DPM Rework';
                 if (subDpmFinal) subDpmFinal.textContent = 'Jumlah defect & harness dirework per periode';
-                if (badgeDpmFinal) badgeDpmFinal.textContent = 'Final Assy';
-                if (titleParetoFinal) titleParetoFinal.textContent = 'Pareto Sub Defect Rework Final Assy';
+                if (badgeDpmFinal) {
+                    badgeDpmFinal.textContent = 'DPM Rework';
+                    badgeDpmFinal.className = 'text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md';
+                }
+                if (titleParetoFinal) titleParetoFinal.textContent = 'Grafik Pareto Rework';
                 if (subParetoFinal) subParetoFinal.textContent = 'Defect rework & persentase kumulatif per sub defect';
-                if (badgeParetoFinal) badgeParetoFinal.textContent = 'Final Assy';
+                if (badgeParetoFinal) {
+                    badgeParetoFinal.textContent = 'Pareto Rework';
+                    badgeParetoFinal.className = 'text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md';
+                }
                 if (summaryTitleDpm) summaryTitleDpm.textContent = 'Defect Rework';
                 if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Defect Rework';
                 if (colPre) colPre.classList.add('hidden');
@@ -769,10 +781,16 @@
             } else {
                 if (titleDpmFinal) titleDpmFinal.textContent = 'DPM Final Assy';
                 if (subDpmFinal) subDpmFinal.textContent = 'Defect Per Million tren per periode';
-                if (badgeDpmFinal) badgeDpmFinal.textContent = 'Final Assy';
+                if (badgeDpmFinal) {
+                    badgeDpmFinal.textContent = 'Final Assy';
+                    badgeDpmFinal.className = 'text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md';
+                }
                 if (titleParetoFinal) titleParetoFinal.textContent = 'Pareto Sub Defect Final Assy';
                 if (subParetoFinal) subParetoFinal.textContent = 'Total defect & persentase kumulatif per sub defect';
-                if (badgeParetoFinal) badgeParetoFinal.textContent = 'Final Assy';
+                if (badgeParetoFinal) {
+                    badgeParetoFinal.textContent = 'Final Assy';
+                    badgeParetoFinal.className = 'text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md';
+                }
                 if (summaryTitleDpm) summaryTitleDpm.textContent = 'DPM Final Assy';
                 if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Defect Final';
                 if (colPre) colPre.classList.remove('hidden');

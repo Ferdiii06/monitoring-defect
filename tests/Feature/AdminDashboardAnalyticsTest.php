@@ -1891,7 +1891,9 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertMatchesRegularExpression('/id="columnPreAssy"[^>]*class="[^"]*hidden[^"]*"/', $htmlRew);
         $this->assertMatchesRegularExpression('/id="columnFinalAssy"[^>]*class="[^"]*xl:col-span-2[^"]*"/', $htmlRew);
 
-        $resRework->assertSee('Tren Rework Final Assy');
-        $resRework->assertSee('Pareto Sub Defect Rework Final Assy');
+        $resRework->assertSee('Grafik DPM Rework');
+        $resRework->assertSee('Grafik Pareto Rework');
+        $resRework->assertSee('DPM Rework');
+        $resRework->assertSee('Pareto Rework');
     }
 }
