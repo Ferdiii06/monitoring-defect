@@ -18,7 +18,7 @@ class EnsureIsRework
             return RoleRouteHelper::redirectForRole(null);
         }
 
-        if (session('user_role') !== 'Rework') {
+        if (!in_array(session('user_role'), ['Rework', 'Administrator'], true)) {
             return RoleRouteHelper::redirectForRole();
         }
 

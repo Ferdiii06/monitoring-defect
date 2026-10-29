@@ -78,107 +78,109 @@
                 </div>
             @endif
 
-            <!-- Section: Form Mulai Rework (In) -->
-            <section class="space-y-4 pt-1">
-                <div class="flex items-center justify-between pb-2 border-b border-border">
-                    <div>
-                        <h2 class="text-base font-extrabold text-gray-900 tracking-tight flex items-center space-x-2">
-                            <span class="w-2.5 h-2.5 rounded-full bg-brand"></span>
+            @if(!$isAdmin)
+                <!-- Section: Form Mulai Rework (In) - Hanya untuk role Rework -->
+                <section class="space-y-4 pt-1">
+                    <div class="flex items-center justify-between pb-2 border-b border-border">
+                        <div>
+                            <h2 class="text-base font-extrabold text-gray-900 tracking-tight flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-brand"></span>
+                                <span>Mulai Rework (In)</span>
+                            </h2>
+                            <p class="text-[11px] text-gray-400 font-semibold mt-0.5">Scan / masukkan identitas harness untuk mulai rework</p>
+                        </div>
+                    </div>
+
+                    <form id="rework_form" action="{{ route('rework.store_in') }}" method="POST" class="space-y-4">
+                        @csrf
+
+                        <!-- Field 1: Kanban Assy -->
+                        <div class="space-y-1.5">
+                            <label for="kanban_assy" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                Kanban Assy <span class="text-brand">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text"
+                                       id="kanban_assy"
+                                       name="kanban_assy"
+                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                                       placeholder="Scan / ketik Kanban Assy"
+                                       value="{{ old('kanban_assy') }}"
+                                       autofocus
+                                       autocomplete="off"
+                                       required>
+                                <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Field 2: Nameplate -->
+                        <div class="space-y-1.5">
+                            <label for="nameplate" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                Nameplate (NP) <span class="text-brand">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text"
+                                       id="nameplate"
+                                       name="nameplate"
+                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 uppercase focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                                       placeholder="Scan / ketik Nameplate"
+                                       value="{{ old('nameplate') }}"
+                                       autocomplete="off"
+                                       required>
+                                <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Field 3: Defect Search -->
+                        <div class="space-y-1.5">
+                            <label for="defect_search" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                Defect (Kode / Nama) <span class="text-brand">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text"
+                                       id="defect_search"
+                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                                       placeholder="Ketik kode (1A) / nama defect"
+                                       autocomplete="off">
+                                <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
+
+                                <!-- Autocomplete Dropdown List -->
+                                <div id="dropdown_results"
+                                     class="hidden absolute top-full left-0 right-0 bg-white border border-border rounded-xl shadow-xl mt-1.5 overflow-hidden z-50 max-h-56 overflow-y-auto divide-y divide-gray-100">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Selected Defect Chips -->
+                        <div class="space-y-1.5">
+                            <span class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider">Defect Terpilih:</span>
+                            <div id="selected_defects_container" class="space-y-2"></div>
+                        </div>
+
+                        <!-- Submit Button (Primary Yazaki Brand) -->
+                        <button type="submit"
+                                class="w-full min-h-[50px] bg-brand hover:bg-brand-active text-white rounded-2xl p-3.5 text-base font-extrabold flex items-center justify-center space-x-2 shadow-sm shadow-brand/20 active:scale-95 transition-all cursor-pointer touch-manipulation">
+                            <svg class="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
                             <span>Mulai Rework (In)</span>
-                        </h2>
-                        <p class="text-[11px] text-gray-400 font-semibold mt-0.5">Scan / masukkan identitas harness untuk mulai rework</p>
-                    </div>
-                </div>
-
-                <form id="rework_form" action="{{ route('rework.store_in') }}" method="POST" class="space-y-4">
-                    @csrf
-
-                    <!-- Field 1: Kanban Assy -->
-                    <div class="space-y-1.5">
-                        <label for="kanban_assy" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                            Kanban Assy <span class="text-brand">*</span>
-                        </label>
-                        <div class="relative">
-                            <input type="text"
-                                   id="kanban_assy"
-                                   name="kanban_assy"
-                                   class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
-                                   placeholder="Scan / ketik Kanban Assy"
-                                   value="{{ old('kanban_assy') }}"
-                                   autofocus
-                                   autocomplete="off"
-                                   required>
-                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Field 2: Nameplate -->
-                    <div class="space-y-1.5">
-                        <label for="nameplate" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                            Nameplate (NP) <span class="text-brand">*</span>
-                        </label>
-                        <div class="relative">
-                            <input type="text"
-                                   id="nameplate"
-                                   name="nameplate"
-                                   class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 uppercase focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
-                                   placeholder="Scan / ketik Nameplate"
-                                   value="{{ old('nameplate') }}"
-                                   autocomplete="off"
-                                   required>
-                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Field 3: Defect Search -->
-                    <div class="space-y-1.5">
-                        <label for="defect_search" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                            Defect (Kode / Nama) <span class="text-brand">*</span>
-                        </label>
-                        <div class="relative">
-                            <input type="text"
-                                   id="defect_search"
-                                   class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
-                                   placeholder="Ketik kode (1A) / nama defect"
-                                   autocomplete="off">
-                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                            </div>
-
-                            <!-- Autocomplete Dropdown List -->
-                            <div id="dropdown_results"
-                                 class="hidden absolute top-full left-0 right-0 bg-white border border-border rounded-xl shadow-xl mt-1.5 overflow-hidden z-50 max-h-56 overflow-y-auto divide-y divide-gray-100">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Selected Defect Chips -->
-                    <div class="space-y-1.5">
-                        <span class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider">Defect Terpilih:</span>
-                        <div id="selected_defects_container" class="space-y-2"></div>
-                    </div>
-
-                    <!-- Submit Button (Primary Yazaki Brand) -->
-                    <button type="submit"
-                            class="w-full min-h-[50px] bg-brand hover:bg-brand-active text-white rounded-2xl p-3.5 text-base font-extrabold flex items-center justify-center space-x-2 shadow-sm shadow-brand/20 active:scale-95 transition-all cursor-pointer touch-manipulation">
-                        <svg class="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>Mulai Rework (In)</span>
-                    </button>
-                </form>
-            </section>
+                        </button>
+                    </form>
+                </section>
+            @endif
 
             <!-- Section: Riwayat Rework -->
             <section class="space-y-3.5 pt-2 border-t border-border">
@@ -207,6 +209,11 @@
                                         <span class="text-xs font-bold font-mono text-gray-500 block">
                                             NP: {{ $first->nameplate_lama ?? '-' }}
                                         </span>
+                                        @if($isAdmin)
+                                            <span class="text-[11px] font-semibold text-gray-600 block mt-0.5">
+                                                Pembuat: <strong class="text-brand">{{ $first->user_name }}</strong> (Shift {{ $first->shift ?? '-' }})
+                                            </span>
+                                        @endif
                                     </div>
 
                                     <div class="shrink-0">
@@ -275,19 +282,31 @@
                                     </div>
                                 </div>
 
-                                <!-- Out Action Button (Only for Berjalan) -->
-                                @if($first->status_rework === 'Berjalan')
-                                    <form action="{{ route('rework.store_out', $groupId) }}" method="POST" onsubmit="return confirm('Selesaikan rework untuk harness ini?');" class="pt-1">
-                                        @csrf
-                                        <button type="submit"
-                                                class="w-full min-h-[48px] bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-2 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer touch-manipulation">
-                                            <svg class="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
-                                            </svg>
-                                            <span>Selesai (Out)</span>
-                                        </button>
-                                    </form>
-                                @endif
+                                <!-- Action Buttons: Edit & Selesai (Out) -->
+                                <div class="pt-1 flex items-center gap-2">
+                                    <!-- Tombol Edit (Untuk Pemilik & Administrator) -->
+                                    <a href="{{ route('rework.edit', $groupId) }}"
+                                       class="{{ (!$isAdmin && $first->status_rework === 'Berjalan') ? 'flex-1' : 'w-full' }} min-h-[48px] bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-800 font-extrabold text-sm rounded-xl flex items-center justify-center space-x-1.5 border border-gray-300 transition-all cursor-pointer touch-manipulation">
+                                        <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                        </svg>
+                                        <span>Edit</span>
+                                    </a>
+
+                                    <!-- Tombol Out (Hanya untuk Rework berstatus Berjalan) -->
+                                    @if(!$isAdmin && $first->status_rework === 'Berjalan')
+                                        <form action="{{ route('rework.store_out', $groupId) }}" method="POST" onsubmit="return confirm('Selesaikan rework untuk harness ini?');" class="flex-1">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="w-full min-h-[48px] bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer touch-manipulation">
+                                                <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                                <span>Selesai (Out)</span>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
 
                                 <!-- Group UUID for Traceability and Audit -->
                                 <div class="text-[10px] font-mono text-gray-400 pt-1 border-t border-gray-100/60 truncate">
@@ -318,6 +337,11 @@
 @push('scripts')
 <script>
     (function() {
+        const reworkForm = document.getElementById('rework_form');
+        if (!reworkForm) {
+            return;
+        }
+
         const finalAssyDefects = @json($finalAssySubDefects);
         let selectedDefects = [];
 
@@ -339,23 +363,26 @@
         const defectSearch = document.getElementById('defect_search');
         const dropdown = document.getElementById('dropdown_results');
         const chipsContainer = document.getElementById('selected_defects_container');
-        const reworkForm = document.getElementById('rework_form');
 
         // 1. Enter on Kanban input moves focus to Nameplate
-        kanbanInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                npInput.focus();
-            }
-        });
+        if (kanbanInput) {
+            kanbanInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (npInput) npInput.focus();
+                }
+            });
+        }
 
         // 2. Enter on Nameplate input moves focus to Defect Search
-        npInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                defectSearch.focus();
-            }
-        });
+        if (npInput) {
+            npInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (defectSearch) defectSearch.focus();
+                }
+            });
+        }
 
         // Render chips
         function renderChips() {
@@ -456,6 +483,16 @@
         }
 
         function addDefect(item) {
+            // Prevent duplicate sub defect in same harness
+            const exists = selectedDefects.some(function(d) { return d.id == item.id; });
+            if (exists) {
+                alert('Defect ini sudah dipilih.');
+                dropdown.classList.add('hidden');
+                defectSearch.value = '';
+                defectSearch.focus();
+                return;
+            }
+
             selectedDefects.push(item);
             renderChips();
             defectSearch.value = '';
@@ -463,30 +500,32 @@
             defectSearch.focus();
         }
 
-        defectSearch.addEventListener('input', function() {
-            const filtered = getFiltered(this.value);
-            showDropdown(filtered);
-        });
+        if (defectSearch) {
+            defectSearch.addEventListener('input', function() {
+                const filtered = getFiltered(this.value);
+                showDropdown(filtered);
+            });
 
-        defectSearch.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const val = this.value.trim().toLowerCase();
-                if (!val) return;
+            defectSearch.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const val = this.value.trim().toLowerCase();
+                    if (!val) return;
 
-                const filtered = getFiltered(val);
-                if (filtered.length > 0) {
-                    const exact = filtered.find(function(d) {
-                        return (d.code || '').toLowerCase() === val;
-                    });
-                    addDefect(exact || filtered[0]);
+                    const filtered = getFiltered(val);
+                    if (filtered.length > 0) {
+                        const exact = filtered.find(function(d) {
+                            return (d.code || '').toLowerCase() === val;
+                        });
+                        addDefect(exact || filtered[0]);
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // Close dropdown if clicked outside
         document.addEventListener('click', function(e) {
-            if (!defectSearch.contains(e.target) && !dropdown.contains(e.target)) {
+            if (dropdown && defectSearch && !defectSearch.contains(e.target) && !dropdown.contains(e.target)) {
                 dropdown.classList.add('hidden');
             }
         });
@@ -496,7 +535,7 @@
             if (selectedDefects.length === 0) {
                 e.preventDefault();
                 alert('Minimal satu defect harus dipilih.');
-                defectSearch.focus();
+                if (defectSearch) defectSearch.focus();
             }
         });
     })();

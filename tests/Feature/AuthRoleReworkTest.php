@@ -247,7 +247,9 @@ class AuthRoleReworkTest extends TestCase
             'user_role' => 'Administrator',
         ])->get('/rework');
 
-        $response->assertRedirect(route('dashboard'));
+        // Dalam mode terbatas, Administrator dapat melihat /rework tanpa form In
+        $response->assertStatus(200);
+        $response->assertDontSee('Mulai Rework (In)');
     }
 
     public function test_rework_bisa_logout(): void
