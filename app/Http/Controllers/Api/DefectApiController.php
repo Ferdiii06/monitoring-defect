@@ -95,9 +95,12 @@ class DefectApiController extends Controller
     /**
      * Get updated dashboard statistics.
      */
-    public function getStats()
+    public function getStats(Request $request)
     {
         try {
+            $mode = $request->query('mode', 'internal');
+            $currentMode = in_array($mode, ['all', 'internal', 'rework'], true) ? $mode : 'internal';
+
             $totalUsers = 0;
             $activeUsers = 0;
 
@@ -150,8 +153,8 @@ class DefectApiController extends Controller
             }
 
             return response()->json([
-                'totalDefect' => (int) \App\Models\Defect::sum('quantity'),
-                'defectToday' => (int) \App\Models\Defect::whereDate('waktu', Carbon::today())->sum('quantity'),
+                'totalDefect' => (int) \App\Models\Defect::byDashboardMode($currentMode)->sum('quantity'),
+                'defectToday' => (int) \App\Models\Defect::byDashboardMode($currentMode)->whereDate('waktu', Carbon::today())->sum('quantity'),
                 'activeUsers' => (int) $activeUsers,
                 'totalUsers'  => (int) $totalUsers,
             ]);

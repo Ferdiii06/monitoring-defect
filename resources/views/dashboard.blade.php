@@ -592,6 +592,13 @@
     <!-- Dashboard Analytics & Real-time Polling Script -->
     <script>
     document.addEventListener("DOMContentLoaded", function () {
+        // Dashboard Mode ('all', 'internal', 'rework')
+        const validModes = ['all', 'internal', 'rework'];
+        const urlMode = new URLSearchParams(window.location.search).get('mode');
+        const currentMode = validModes.includes(urlMode)
+            ? urlMode
+            : (validModes.includes('{{ $currentMode ?? "internal" }}') ? '{{ $currentMode ?? "internal" }}' : 'internal');
+
         // --- 1. Month Names & Helpers ---
         const MONTH_NAMES_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
@@ -1454,6 +1461,7 @@
             if (filtersDpmFinal.end_date) params.append('end_date', filtersDpmFinal.end_date);
             if (filtersDpmFinal.group_by) params.append('group_by', filtersDpmFinal.group_by);
             if (filtersDpmFinal.conveyor && filtersDpmFinal.conveyor !== 'all') params.append('conveyor', filtersDpmFinal.conveyor);
+            if (currentMode) params.append('mode', currentMode);
 
             fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
                 signal: abortDpmFinal.signal,
@@ -1513,6 +1521,7 @@
             if (filtersParetoFinal.start_date) params.append('start_date', filtersParetoFinal.start_date);
             if (filtersParetoFinal.end_date) params.append('end_date', filtersParetoFinal.end_date);
             if (filtersParetoFinal.conveyor && filtersParetoFinal.conveyor !== 'all') params.append('conveyor', filtersParetoFinal.conveyor);
+            if (currentMode) params.append('mode', currentMode);
 
             fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
                 signal: abortParetoFinal.signal,
@@ -1573,6 +1582,7 @@
             if (filtersDpmPre.end_date) params.append('end_date', filtersDpmPre.end_date);
             if (filtersDpmPre.group_by) params.append('group_by', filtersDpmPre.group_by);
             if (filtersDpmPre.carline_id && filtersDpmPre.carline_id !== 'all') params.append('carline_id', filtersDpmPre.carline_id);
+            if (currentMode) params.append('mode', currentMode);
 
             fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
                 signal: abortDpmPre.signal,
@@ -1632,6 +1642,7 @@
             if (filtersParetoPre.start_date) params.append('start_date', filtersParetoPre.start_date);
             if (filtersParetoPre.end_date) params.append('end_date', filtersParetoPre.end_date);
             if (filtersParetoPre.carline_id && filtersParetoPre.carline_id !== 'all') params.append('carline_id', filtersParetoPre.carline_id);
+            if (currentMode) params.append('mode', currentMode);
 
             fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
                 signal: abortParetoPre.signal,
@@ -1998,7 +2009,7 @@
         }
 
         function fetchStats() {
-            fetch('{{ url("/api/dashboard/stats") }}')
+            fetch(`{{ url("/api/dashboard/stats") }}?mode=${encodeURIComponent(currentMode)}`)
                 .then(r => r.json())
                 .then(stats => {
                     const totalEl = document.getElementById('stat-total-defect');
