@@ -30,7 +30,7 @@
 </head>
 <body class="bg-canvas text-gray-800 min-h-screen py-4 sm:py-6 px-3 sm:px-4 flex justify-center items-start antialiased touch-manipulation">
 
-    <div class="w-full max-w-md flex flex-col justify-start">
+    <div class="w-full @yield('container_class', 'max-w-md') flex flex-col justify-start transition-all">
         @yield('content')
     </div>
 

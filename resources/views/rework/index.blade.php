@@ -2,6 +2,8 @@
 
 @section('title', 'Rework')
 
+@section('container_class', 'max-w-md md:max-w-4xl lg:max-w-5xl')
+
 @section('content')
 <div class="w-full">
 
@@ -91,58 +93,61 @@
                         </div>
                     </div>
 
-                    <form id="rework_form" action="{{ route('rework.store_in') }}" method="POST" class="space-y-4">
+                    <form id="rework_form" action="{{ route('rework.store_in') }}" method="POST" class="space-y-4 sm:space-y-5">
                         @csrf
 
-                        <!-- Field 1: Kanban Assy -->
-                        <div class="space-y-1.5">
-                            <label for="kanban_assy" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                                Kanban Assy <span class="text-brand">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text"
-                                       id="kanban_assy"
-                                       name="kanban_assy"
-                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
-                                       placeholder="Scan / ketik Kanban Assy"
-                                       value="{{ old('kanban_assy') }}"
-                                       autofocus
-                                       autocomplete="off"
-                                       required>
-                                <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
-                                    </svg>
+                        <!-- Baris 1: Identitas Harness (Kanban Assy & Nameplate) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                            <!-- Field 1: Kanban Assy -->
+                            <div class="space-y-1.5">
+                                <label for="kanban_assy" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    Kanban Assy <span class="text-brand">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="text"
+                                           id="kanban_assy"
+                                           name="kanban_assy"
+                                           class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                                           placeholder="Scan / ketik Kanban Assy"
+                                           value="{{ old('kanban_assy') }}"
+                                           autofocus
+                                           autocomplete="off"
+                                           required>
+                                    <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Field 2: Nameplate -->
+                            <div class="space-y-1.5">
+                                <label for="nameplate" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    Nameplate (NP) <span class="text-brand">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="text"
+                                           id="nameplate"
+                                           name="nameplate"
+                                           class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 uppercase focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                                           placeholder="Scan / ketik Nameplate"
+                                           value="{{ old('nameplate') }}"
+                                           autocomplete="off"
+                                           required>
+                                    <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                        </svg>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Field 2: Nameplate -->
-                        <div class="space-y-1.5">
-                            <label for="nameplate" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                                Nameplate (NP) <span class="text-brand">*</span>
-                            </label>
-                            <div class="relative">
-                                <input type="text"
-                                       id="nameplate"
-                                       name="nameplate"
-                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 uppercase focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
-                                       placeholder="Scan / ketik Nameplate"
-                                       value="{{ old('nameplate') }}"
-                                       autocomplete="off"
-                                       required>
-                                <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Grid Kolom Tambahan (Sesuai Sistem Rework) -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
+                        <!-- Baris 2: Tracking & Status (No Defective Tag, #End, 4M, Shift) -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                             <!-- No Defective Tag -->
-                            <div class="space-y-1.5 sm:col-span-1">
+                            <div class="space-y-1.5">
                                 <label for="no_defective_tag" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
                                     No Defective Tag
                                 </label>
@@ -156,7 +161,7 @@
                             </div>
 
                             <!-- #End -->
-                            <div class="space-y-1.5 sm:col-span-1">
+                            <div class="space-y-1.5">
                                 <label for="ujung" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
                                     #End
                                 </label>
@@ -170,7 +175,7 @@
                             </div>
 
                             <!-- 4M Change Status -->
-                            <div class="space-y-1.5 sm:col-span-1">
+                            <div class="space-y-1.5">
                                 <label for="status_4m" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
                                     4M Change Status
                                 </label>
@@ -182,96 +187,8 @@
                                 </select>
                             </div>
 
-                            <!-- Area Ditemukan -->
-                            <div class="space-y-1.5 sm:col-span-1">
-                                <label for="area_ditemukan" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                                    Area Ditemukan
-                                </label>
-                                <select id="area_ditemukan"
-                                        name="area_ditemukan"
-                                        class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
-                                    @if(isset($areas) && $areas->isNotEmpty())
-                                        @foreach($areas as $area)
-                                            <option value="{{ $area->name }}" {{ old('area_ditemukan') === $area->name ? 'selected' : '' }}>
-                                                {{ $area->name }} ({{ $area->tipe === 'rework' ? 'Rework' : 'Internal' }})
-                                            </option>
-                                        @endforeach
-                                    @else
-                                        <option value="">Default Area Rework</option>
-                                    @endif
-                                </select>
-                            </div>
-
-                            <!-- Posisi & Detail Rework -->
-                            <div class="space-y-1.5 sm:col-span-2 lg:col-span-4">
-                                <label for="posisi_detail_rework" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                                    Posisi &amp; Detail Rework
-                                </label>
-                                <input type="text"
-                                       id="posisi_detail_rework"
-                                       name="posisi_detail_rework"
-                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
-                                       placeholder="Posisi dan detail rework harness"
-                                       value="{{ old('posisi_detail_rework') }}"
-                                       autocomplete="off">
-                            </div>
-
-                            <!-- Crimp Measurements (F C/H, F C/W, R C/H, R C/W) -->
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:col-span-2">
-                                <div class="space-y-1">
-                                    <label for="fc_h" class="block text-[10px] font-bold text-gray-600 uppercase">F C/H</label>
-                                    <input type="text"
-                                           id="fc_h"
-                                           name="fc_h"
-                                           value="{{ old('fc_h') }}"
-                                           placeholder="F C/H"
-                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
-                                </div>
-                                <div class="space-y-1">
-                                    <label for="fc_w" class="block text-[10px] font-bold text-gray-600 uppercase">F C/W</label>
-                                    <input type="text"
-                                           id="fc_w"
-                                           name="fc_w"
-                                           value="{{ old('fc_w') }}"
-                                           placeholder="F C/W"
-                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
-                                </div>
-                                <div class="space-y-1">
-                                    <label for="rc_h" class="block text-[10px] font-bold text-gray-600 uppercase">R C/H</label>
-                                    <input type="text"
-                                           id="rc_h"
-                                           name="rc_h"
-                                           value="{{ old('rc_h') }}"
-                                           placeholder="R C/H"
-                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
-                                </div>
-                                <div class="space-y-1">
-                                    <label for="rc_w" class="block text-[10px] font-bold text-gray-600 uppercase">R C/W</label>
-                                    <input type="text"
-                                           id="rc_w"
-                                           name="rc_w"
-                                           value="{{ old('rc_w') }}"
-                                           placeholder="R C/W"
-                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
-                                </div>
-                            </div>
-
-                            <!-- Carton Box -->
-                            <div class="space-y-1.5 sm:col-span-1">
-                                <label for="no_box" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                                    Carton Box (No BOX)
-                                </label>
-                                <input type="text"
-                                       id="no_box"
-                                       name="no_box"
-                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
-                                       placeholder="No Carton Box"
-                                       value="{{ old('no_box') }}"
-                                       autocomplete="off">
-                            </div>
-
                             <!-- Shift -->
-                            <div class="space-y-1.5 sm:col-span-1">
+                            <div class="space-y-1.5">
                                 <label for="shift" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
                                     Shift
                                 </label>
@@ -291,7 +208,105 @@
                             </div>
                         </div>
 
-                        <!-- Field 3: Defect Search -->
+                        <!-- Baris 3: Area Ditemukan & Carton Box -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                            <!-- Area Ditemukan -->
+                            <div class="space-y-1.5">
+                                <label for="area_ditemukan" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    Area Ditemukan
+                                </label>
+                                <select id="area_ditemukan"
+                                        name="area_ditemukan"
+                                        class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
+                                    @if(isset($areas) && $areas->isNotEmpty())
+                                        @foreach($areas as $area)
+                                            <option value="{{ $area->name }}" {{ old('area_ditemukan') === $area->name ? 'selected' : '' }}>
+                                                {{ $area->name }} ({{ $area->tipe === 'rework' ? 'Rework' : 'Internal' }})
+                                            </option>
+                                        @endforeach
+                                    @else
+                                        <option value="">Default Area Rework</option>
+                                    @endif
+                                </select>
+                            </div>
+
+                            <!-- Carton Box -->
+                            <div class="space-y-1.5">
+                                <label for="no_box" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    Carton Box (No BOX)
+                                </label>
+                                <input type="text"
+                                       id="no_box"
+                                       name="no_box"
+                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                                       placeholder="No Carton Box"
+                                       value="{{ old('no_box') }}"
+                                       autocomplete="off">
+                            </div>
+                        </div>
+
+                        <!-- Baris 4: Posisi & Detail Rework -->
+                        <div class="space-y-1.5">
+                            <label for="posisi_detail_rework" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                Posisi &amp; Detail Rework
+                            </label>
+                            <input type="text"
+                                   id="posisi_detail_rework"
+                                   name="posisi_detail_rework"
+                                   class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                                   placeholder="Posisi dan detail rework harness"
+                                   value="{{ old('posisi_detail_rework') }}"
+                                   autocomplete="off">
+                        </div>
+
+                        <!-- Baris 5: Pengukuran Crimp (Opsional) -->
+                        <div class="bg-gray-50/70 border border-border/80 rounded-2xl p-3.5 sm:p-4 space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <span class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                                    Pengukuran Crimp (Opsional / Jika Ada)
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                                <div class="space-y-1">
+                                    <label for="fc_h" class="block text-[10px] font-bold text-gray-600 uppercase">F C/H</label>
+                                    <input type="text"
+                                           id="fc_h"
+                                           name="fc_h"
+                                           value="{{ old('fc_h') }}"
+                                           placeholder="F C/H"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
+                                </div>
+                                <div class="space-y-1">
+                                    <label for="fc_w" class="block text-[10px] font-bold text-gray-600 uppercase">F C/W</label>
+                                    <input type="text"
+                                           id="fc_w"
+                                           name="fc_w"
+                                           value="{{ old('fc_w') }}"
+                                           placeholder="F C/W"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
+                                </div>
+                                <div class="space-y-1">
+                                    <label for="rc_h" class="block text-[10px] font-bold text-gray-600 uppercase">R C/H</label>
+                                    <input type="text"
+                                           id="rc_h"
+                                           name="rc_h"
+                                           value="{{ old('rc_h') }}"
+                                           placeholder="R C/H"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
+                                </div>
+                                <div class="space-y-1">
+                                    <label for="rc_w" class="block text-[10px] font-bold text-gray-600 uppercase">R C/W</label>
+                                    <input type="text"
+                                           id="rc_w"
+                                           name="rc_w"
+                                           value="{{ old('rc_w') }}"
+                                           placeholder="R C/W"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-3 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Baris 6: Field Defect Search -->
                         <div class="space-y-1.5">
                             <label for="defect_search" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
                                 Defect (Kode / Nama) <span class="text-brand">*</span>
@@ -341,7 +356,7 @@
                     <span class="text-[11px] font-mono text-gray-400 font-bold">Terbaru di Atas</span>
                 </div>
 
-                <div class="space-y-3.5">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
                     @forelse($paginatedGroups as $groupItem)
                         @php
                             $groupId = $groupItem->rework_group_id;
@@ -350,7 +365,7 @@
                         @endphp
 
                         @if($first)
-                            <div class="border border-border rounded-2xl p-4 sm:p-5 bg-surface space-y-3 relative shadow-[0_2px_12px_-2px_rgba(0,0,0,0.03)] hover:border-gray-300 transition-colors">
+                            <div class="border border-border rounded-2xl p-4 sm:p-5 bg-surface space-y-3 relative shadow-[0_2px_12px_-2px_rgba(0,0,0,0.03)] hover:border-gray-300 transition-colors flex flex-col justify-between">
                                 
                                 <!-- Header Card: Kanban, Status Badge & Edit Icon -->
                                 <div class="flex justify-between items-start gap-2 pb-2.5 border-b border-gray-100">
