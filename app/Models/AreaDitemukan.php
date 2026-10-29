@@ -18,4 +18,18 @@ class AreaDitemukan extends Model
         'name',
         'tipe',
     ];
+
+    /**
+     * Ambil nama area bertipe rework secara deterministik (urutan ID terkecil).
+     */
+    public static function getDefaultReworkAreaName(): ?string
+    {
+        $tipeRework = defined(static::class . '::TIPE_REWORK')
+            ? static::TIPE_REWORK
+            : 'rework';
+
+        return static::where('tipe', $tipeRework)
+            ->orderBy('id', 'asc')
+            ->value('name');
+    }
 }

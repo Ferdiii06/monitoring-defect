@@ -117,13 +117,7 @@ class ReworkController extends Controller
         }
 
         // Master area rework check: must exist before inserting defects
-        $tipeRework = defined(AreaDitemukan::class . '::TIPE_REWORK')
-            ? AreaDitemukan::TIPE_REWORK
-            : 'rework';
-
-        $reworkArea = AreaDitemukan::where('tipe', $tipeRework)
-            ->orderBy('id', 'asc')
-            ->value('name');
+        $reworkArea = AreaDitemukan::getDefaultReworkAreaName();
 
         if (!$reworkArea) {
             return back()
@@ -250,7 +244,9 @@ class ReworkController extends Controller
             ];
         })->values();
 
-        return view('rework.edit', compact('defects', 'first', 'groupId', 'finalAssySubDefects', 'currentDefects', 'isAdmin'));
+        $returnUrl = $isAdmin ? $this->sanitizeAdminReturnUrl($request->input('return_url')) : null;
+
+        return view('rework.edit', compact('defects', 'first', 'groupId', 'finalAssySubDefects', 'currentDefects', 'isAdmin', 'returnUrl'));
     }
 
     /**
@@ -312,7 +308,17 @@ class ReworkController extends Controller
             }
         }
 
-        DB::transaction(function () use ($existingDefects, $groupId, $validated, $subDefects, $first) {
+        // Resolusi area rework deterministik (template atau master dengan ID terkecil)
+        $reworkArea = $first->area_ditemukan ?: AreaDitemukan::getDefaultReworkAreaName();
+        if (!$reworkArea) {
+            return back()
+                ->withErrors([
+                    'area_ditemukan' => 'Area bertipe Rework belum diatur. Hubungi admin untuk menambahkannya di Master Data > Area Ditemukan.',
+                ])
+                ->withInput();
+        }
+
+        DB::transaction(function () use ($existingDefects, $groupId, $validated, $subDefects, $first, $reworkArea) {
             $kanban = $validated['kanban_assy'];
             $nameplate = $validated['nameplate'];
             $newSubIds = array_map('intval', $validated['sub_defect_ids']);
@@ -336,6 +342,7 @@ class ReworkController extends Controller
                     $existingBySubId[$keepSubId]->update([
                         'kanban_assy'    => $kanban,
                         'nameplate_lama' => $nameplate,
+                        'area_ditemukan' => $existingBySubId[$keepSubId]->area_ditemukan ?: $reworkArea,
                     ]);
                 }
             }
@@ -366,13 +373,64 @@ class ReworkController extends Controller
                     'sub_defect_type_id'   => $sub->id,
                     'jenis_defect'         => $sub->defectType?->name,
                     'jenis_sub_defect'     => $sub->name,
-                    'area_ditemukan'       => $template->area_ditemukan,
+                    'area_ditemukan'       => $reworkArea,
                     'conveyor'             => $template->conveyor,
                     'carline_id'           => $template->carline_id,
                 ]);
             }
         });
 
+        $returnUrl = $isAdmin ? $this->sanitizeAdminReturnUrl($request->input('return_url')) : null;
+
+        if ($isAdmin) {
+            if ($returnUrl) {
+                return redirect()->to($returnUrl)->with('success', 'Riwayat rework harness berhasil diperbarui.');
+            }
+            return redirect()->route('admin.rework_history.index')->with('success', 'Riwayat rework harness berhasil diperbarui.');
+        }
+
         return redirect()->route('rework.index')->with('success', 'Riwayat rework harness berhasil diperbarui.');
+    }
+
+    /**
+     * Validate and sanitize return_url parameter for administrator.
+     * Only accepts relative path strictly starting with '/admin/rework-history' (no scheme, no //, no host).
+     */
+    protected function sanitizeAdminReturnUrl(?string $returnUrl): ?string
+    {
+        if ($returnUrl === null || trim($returnUrl) === '') {
+            return null;
+        }
+
+        $trimmed = trim($returnUrl);
+
+        // Reject absolute URLs with schemes (e.g. http:, https:, javascript:, data:)
+        if (preg_match('#^[a-zA-Z][a-zA-Z0-9+.-]*:#', $trimmed)) {
+            return null;
+        }
+
+        // Reject protocol-relative '//' or Windows '\\'
+        if (str_starts_with($trimmed, '//') || str_starts_with($trimmed, '\\\\') || str_starts_with($trimmed, '/\\') || str_starts_with($trimmed, '\\/')) {
+            return null;
+        }
+
+        // Must be a relative path strictly starting with '/admin/rework-history'
+        if (!str_starts_with($trimmed, '/admin/rework-history')) {
+            return null;
+        }
+
+        // Must be exactly '/admin/rework-history', or followed by '?' or '/'
+        $after = substr($trimmed, strlen('/admin/rework-history'));
+        if ($after !== '' && !str_starts_with($after, '?') && !str_starts_with($after, '/')) {
+            return null;
+        }
+
+        // Double check with parse_url that no host or scheme is present
+        $parsed = parse_url($trimmed);
+        if ($parsed === false || isset($parsed['scheme']) || isset($parsed['host'])) {
+            return null;
+        }
+
+        return $trimmed;
     }
 }

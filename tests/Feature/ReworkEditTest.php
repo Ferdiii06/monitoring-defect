@@ -13,6 +13,16 @@ class ReworkEditTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        AreaDitemukan::create([
+            'name' => 'AREA REWORK TEST',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+    }
+
     private function createFinalAssyDefect(string $typeName, string $subName, string $code): SubDefectType
     {
         $defectType = DefectType::firstOrCreate(
@@ -381,7 +391,7 @@ class ReworkEditTest extends TestCase
             'nameplate'      => 'NP-BY-ADMIN',
             'sub_defect_ids' => [$sub2->id],
         ]);
-        $resPut->assertRedirect(route('rework.index'));
+        $resPut->assertRedirect(route('admin.rework_history.index'));
         $resPut->assertSessionHas('success');
 
         $updated = Defect::where('rework_group_id', $groupId)->first();
