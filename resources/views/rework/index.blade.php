@@ -200,23 +200,23 @@
                         @if($first)
                             <div class="border border-border rounded-2xl p-4 sm:p-5 bg-surface space-y-3 relative shadow-[0_2px_12px_-2px_rgba(0,0,0,0.03)] hover:border-gray-300 transition-colors">
                                 
-                                <!-- Header Card: Kanban & Status Badge -->
+                                <!-- Header Card: Kanban, Status Badge & Edit Icon -->
                                 <div class="flex justify-between items-start gap-2 pb-2.5 border-b border-gray-100">
-                                    <div class="space-y-0.5 min-w-0">
+                                    <div class="space-y-0.5 min-w-0 flex-1">
                                         <span class="text-base font-black text-gray-900 tracking-tight block truncate">
                                             {{ $first->kanban_assy ?? '-' }}
                                         </span>
-                                        <span class="text-xs font-bold font-mono text-gray-500 block">
+                                        <span class="text-xs font-bold font-mono text-gray-500 block truncate">
                                             NP: {{ $first->nameplate_lama ?? '-' }}
                                         </span>
                                         @if($isAdmin)
-                                            <span class="text-[11px] font-semibold text-gray-600 block mt-0.5">
+                                            <span class="text-[11px] font-semibold text-gray-600 block mt-0.5 truncate">
                                                 Pembuat: <strong class="text-brand">{{ $first->user_name }}</strong> (Shift {{ $first->shift ?? '-' }})
                                             </span>
                                         @endif
                                     </div>
 
-                                    <div class="shrink-0">
+                                    <div class="shrink-0 flex items-center space-x-1 -mr-2 -mt-2">
                                         @if($first->status_rework === 'Selesai')
                                             <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -228,6 +228,16 @@
                                                 <span>Berjalan</span>
                                             </span>
                                         @endif
+
+                                        <!-- Edit Icon Button (Pola Internal Defect) -->
+                                        <a href="{{ route('rework.edit', $groupId) }}"
+                                           title="Edit"
+                                           aria-label="Edit rework"
+                                           class="text-brand hover:text-brand-active hover:bg-red-50 active:bg-red-100 active:scale-95 transition-all p-3 rounded-xl min-w-[48px] min-h-[48px] flex items-center justify-center touch-manipulation cursor-pointer shrink-0">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                            </svg>
+                                        </a>
                                     </div>
                                 </div>
 
@@ -282,20 +292,10 @@
                                     </div>
                                 </div>
 
-                                <!-- Action Buttons: Edit & Selesai (Out) -->
-                                <div class="pt-1 flex items-center gap-2">
-                                    <!-- Tombol Edit (Untuk Pemilik & Administrator) -->
-                                    <a href="{{ route('rework.edit', $groupId) }}"
-                                       class="{{ (!$isAdmin && $first->status_rework === 'Berjalan') ? 'flex-1' : 'w-full' }} min-h-[48px] bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-800 font-extrabold text-sm rounded-xl flex items-center justify-center space-x-1.5 border border-gray-300 transition-all cursor-pointer touch-manipulation">
-                                        <svg class="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                                        </svg>
-                                        <span>Edit</span>
-                                    </a>
-
-                                    <!-- Tombol Out (Hanya untuk Rework berstatus Berjalan) -->
-                                    @if(!$isAdmin && $first->status_rework === 'Berjalan')
-                                        <form action="{{ route('rework.store_out', $groupId) }}" method="POST" onsubmit="return confirm('Selesaikan rework untuk harness ini?');" class="flex-1">
+                                <!-- Tombol Out (Hanya untuk Rework berstatus Berjalan) -->
+                                @if(!$isAdmin && $first->status_rework === 'Berjalan')
+                                    <div class="pt-1">
+                                        <form action="{{ route('rework.store_out', $groupId) }}" method="POST" onsubmit="return confirm('Selesaikan rework untuk harness ini?');" class="w-full">
                                             @csrf
                                             <button type="submit"
                                                     class="w-full min-h-[48px] bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer touch-manipulation">
@@ -305,11 +305,11 @@
                                                 <span>Selesai (Out)</span>
                                             </button>
                                         </form>
-                                    @endif
-                                </div>
+                                    </div>
+                                @endif
 
-                                <!-- Group UUID for Traceability and Audit -->
-                                <div class="text-[10px] font-mono text-gray-400 pt-1 border-t border-gray-100/60 truncate">
+                                <!-- Group UUID for Traceability and Audit (Hidden from visual UI) -->
+                                <div class="hidden" aria-hidden="true">
                                     Group: {{ $groupId }}
                                 </div>
                             </div>
