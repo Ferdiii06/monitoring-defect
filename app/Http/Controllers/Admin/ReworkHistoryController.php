@@ -65,9 +65,10 @@ class ReworkHistoryController extends Controller
         // 2. Search NP (Nameplate Lama) & Kanban Assy Filter
         $search = trim((string) $request->input('search', ''));
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('nameplate_lama', 'like', "%{$search}%")
-                  ->orWhere('kanban_assy', 'like', "%{$search}%");
+            $searchTerm = '%' . mb_strtolower($search, 'UTF-8') . '%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereRaw('LOWER(nameplate_lama) LIKE ?', [$searchTerm])
+                  ->orWhereRaw('LOWER(kanban_assy) LIKE ?', [$searchTerm]);
             });
         }
 
