@@ -232,7 +232,7 @@
 
                             <!-- Aksi (Edit) -->
                             <td class="py-4 text-center px-4 pr-3 align-top">
-                                <a href="{{ route('rework.edit', array_merge(['groupId' => $groupId], request()->query() ? ['return_url' => request()->fullUrl()] : [])) }}"
+                                <a href="{{ route('rework.edit', array_merge(['groupId' => $groupId], request()->query() ? ['return_url' => request()->getRequestUri()] : [])) }}"
                                    title="Edit Riwayat Harness"
                                    class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer">
                                     <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

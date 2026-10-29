@@ -257,8 +257,8 @@ class AdminReworkHistoryTest extends TestCase
             'quantity'            => 1,
         ]);
 
-        // 1. Admin opens edit form for harness owned by reworkA
-        $returnUrl = url('/admin/rework-history?search=BEFORE');
+        // 1. Admin opens edit form for harness owned by reworkA with relative return_url
+        $returnUrl = '/admin/rework-history?search=BEFORE';
         $responseGet = $this->actingAsAdmin()->get(route('rework.edit', ['groupId' => $groupId, 'return_url' => $returnUrl]));
         $responseGet->assertStatus(200);
         $responseGet->assertSee('KB-BEFORE');
@@ -282,6 +282,193 @@ class AdminReworkHistoryTest extends TestCase
         $this->assertEquals('reworkA', $updated->user_name);
         $this->assertEquals($reworkArea->name, $updated->area_ditemukan);
         $this->assertNotNull($updated->area_ditemukan);
+    }
+
+    public function test_invalid_return_url_ignored_and_falls_back_to_admin_history(): void
+    {
+        $reworkArea = AreaDitemukan::create([
+            'name' => 'REWORK AREA 1',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+
+        $defectType = DefectType::create([
+            'name' => 'WIRING',
+            'type' => 'Final Assy',
+        ]);
+
+        $subDefect = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+        ]);
+
+        $groupId = (string) Str::uuid();
+        Defect::create([
+            'rework_group_id'     => $groupId,
+            'waktu'               => now(),
+            'waktu_in'            => now(),
+            'status_rework'       => 'Berjalan',
+            'kanban_assy'         => 'KB-TEST-URL',
+            'nameplate_lama'      => 'NP-TEST-URL',
+            'user_name'           => 'reworkA',
+            'shift'               => '1A',
+            'jenis_assy'          => 'Final Assy',
+            'jenis_defect'        => $defectType->name,
+            'jenis_sub_defect'    => $subDefect->name,
+            'sub_defect_type_id'  => $subDefect->id,
+            'area_ditemukan'      => $reworkArea->name,
+            'quantity'            => 1,
+        ]);
+
+        $invalidUrls = [
+            'https://contoh.com',
+            '//contoh.com',
+            'http://contoh.com/phishing',
+            'javascript:alert(1)',
+            '\\\\contoh.com',
+            '/admin/rework-history-fake',
+        ];
+
+        foreach ($invalidUrls as $invalidUrl) {
+            // 1. GET edit with invalid return_url -> view does not render invalidUrl as back link or hidden input
+            $resGet = $this->actingAsAdmin()->get(route('rework.edit', ['groupId' => $groupId, 'return_url' => $invalidUrl]));
+            $resGet->assertStatus(200);
+            $resGet->assertDontSee($invalidUrl, false);
+            $resGet->assertSee(route('admin.rework_history.index'));
+
+            // 2. PUT update with invalid return_url -> redirect falls back to route admin.rework_history.index
+            $resPut = $this->actingAsAdmin()->put(route('rework.update', $groupId), [
+                'kanban_assy'    => 'KB-TEST-URL',
+                'nameplate'      => 'NP-TEST-URL',
+                'sub_defect_ids' => [$subDefect->id],
+                'return_url'     => $invalidUrl,
+            ]);
+            $resPut->assertRedirect(route('admin.rework_history.index'));
+        }
+    }
+
+    public function test_update_adds_defect_with_deterministic_rework_area_id_terkecil(): void
+    {
+        // Two rework areas with different IDs
+        $areaBesar = AreaDitemukan::create([
+            'name' => 'AREA_REWORK_BESAR',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+
+        $areaKecil = AreaDitemukan::create([
+            'name' => 'AREA_REWORK_KECIL',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+
+        // Ensure $areaKecil has smaller id
+        if ($areaKecil->id > $areaBesar->id) {
+            $temp = $areaKecil;
+            $areaKecil = $areaBesar;
+            $areaBesar = $temp;
+        }
+
+        $defectType = DefectType::create([
+            'name' => 'WIRING',
+            'type' => 'Final Assy',
+        ]);
+
+        $subDefect1 = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+        ]);
+
+        $subDefect2 = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.B - SHORT CIRCUIT',
+        ]);
+
+        // Legacy harness without area_ditemukan (null)
+        $groupId = (string) Str::uuid();
+        Defect::create([
+            'rework_group_id'     => $groupId,
+            'waktu'               => now(),
+            'waktu_in'            => now(),
+            'status_rework'       => 'Berjalan',
+            'kanban_assy'         => 'KB-DETERM',
+            'nameplate_lama'      => 'NP-DETERM',
+            'user_name'           => 'reworkA',
+            'shift'               => '1A',
+            'jenis_assy'          => 'Final Assy',
+            'jenis_defect'        => $defectType->name,
+            'jenis_sub_defect'    => $subDefect1->name,
+            'sub_defect_type_id'  => $subDefect1->id,
+            'area_ditemukan'      => null,
+            'quantity'            => 1,
+        ]);
+
+        // Update adding a second defect
+        $resPut = $this->actingAsAdmin()->put(route('rework.update', $groupId), [
+            'kanban_assy'    => 'KB-DETERM',
+            'nameplate'      => 'NP-DETERM',
+            'sub_defect_ids' => [$subDefect1->id, $subDefect2->id],
+        ]);
+        $resPut->assertRedirect(route('admin.rework_history.index'));
+
+        $defects = Defect::where('rework_group_id', $groupId)->orderBy('id')->get();
+        $this->assertCount(2, $defects);
+        foreach ($defects as $d) {
+            $this->assertNotNull($d->area_ditemukan);
+            $this->assertEquals($areaKecil->name, $d->area_ditemukan);
+        }
+    }
+
+    public function test_update_fails_when_template_has_no_area_and_master_rework_area_empty(): void
+    {
+        // Delete all rework areas
+        AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->delete();
+
+        $defectType = DefectType::create([
+            'name' => 'WIRING',
+            'type' => 'Final Assy',
+        ]);
+
+        $subDefect1 = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+        ]);
+
+        $subDefect2 = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.B - SHORT CIRCUIT',
+        ]);
+
+        $groupId = (string) Str::uuid();
+        Defect::create([
+            'rework_group_id'     => $groupId,
+            'waktu'               => now(),
+            'waktu_in'            => now(),
+            'status_rework'       => 'Berjalan',
+            'kanban_assy'         => 'KB-NO-AREA',
+            'nameplate_lama'      => 'NP-NO-AREA',
+            'user_name'           => 'reworkA',
+            'shift'               => '1A',
+            'jenis_assy'          => 'Final Assy',
+            'jenis_defect'        => $defectType->name,
+            'jenis_sub_defect'    => $subDefect1->name,
+            'sub_defect_type_id'  => $subDefect1->id,
+            'area_ditemukan'      => null,
+            'quantity'            => 1,
+        ]);
+
+        $initialCount = Defect::where('rework_group_id', $groupId)->count();
+
+        // Update with new defect must fail and store NO new row
+        $resPut = $this->actingAsAdmin()->put(route('rework.update', $groupId), [
+            'kanban_assy'    => 'KB-NO-AREA',
+            'nameplate'      => 'NP-NO-AREA',
+            'sub_defect_ids' => [$subDefect1->id, $subDefect2->id],
+        ]);
+
+        $resPut->assertSessionHasErrors([
+            'area_ditemukan' => 'Area bertipe Rework belum diatur. Hubungi admin untuk menambahkannya di Master Data > Area Ditemukan.',
+        ]);
+
+        // Verifikasi tidak ada baris baru tersimpan
+        $this->assertEquals($initialCount, Defect::where('rework_group_id', $groupId)->count());
     }
 
     public function test_rework_operator_cannot_edit_harness_owned_by_another_operator(): void

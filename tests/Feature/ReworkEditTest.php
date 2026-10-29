@@ -13,6 +13,16 @@ class ReworkEditTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        AreaDitemukan::create([
+            'name' => 'AREA REWORK TEST',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+    }
+
     private function createFinalAssyDefect(string $typeName, string $subName, string $code): SubDefectType
     {
         $defectType = DefectType::firstOrCreate(
