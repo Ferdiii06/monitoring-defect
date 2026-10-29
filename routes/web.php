@@ -3,23 +3,30 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ReworkController;
+use App\Support\RoleRouteHelper;
 
 // Login view (guest redirect checked inline)
-Route::get('/', function () {
+Route::get('/', function (\Illuminate\Http\Request $request) {
     if (session('logged_in')) {
-        return session('user_role') === 'Administrator'
-            ? redirect()->route('dashboard')
-            : redirect()->route('operator.home');
+        if (in_array(session('user_role'), ['Administrator', 'User', 'Rework'], true)) {
+            return RoleRouteHelper::redirectForRole();
+        }
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
     }
     return view('login');
 })->name('login');
 
 // Handle GET /login to prevent 404 or method not allowed
-Route::get('/login', function () {
+Route::get('/login', function (\Illuminate\Http\Request $request) {
     if (session('logged_in')) {
-        return session('user_role') === 'Administrator'
-            ? redirect()->route('dashboard')
-            : redirect()->route('operator.home');
+        if (in_array(session('user_role'), ['Administrator', 'User', 'Rework'], true)) {
+            return RoleRouteHelper::redirectForRole();
+        }
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return view('login');
     }
     return redirect()->route('login');
 });
@@ -40,6 +47,11 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
         Route::get('/input-defect/{id}/edit', [\App\Http\Controllers\ReportController::class, 'editInputDefect'])->name('input_defect.edit');
         Route::put('/input-defect/{id}', [\App\Http\Controllers\ReportController::class, 'updateInputDefect'])->name('input_defect.update');
         Route::delete('/input-defect/{id}', [\App\Http\Controllers\ReportController::class, 'destroyInputDefect'])->name('input_defect.destroy');
+    });
+
+    // Protected Rework routes (only accessible by Rework role)
+    Route::middleware(['rework'])->prefix('rework')->name('rework.')->group(function () {
+        Route::get('/', [ReworkController::class, 'index'])->name('index');
     });
 
 
@@ -94,6 +106,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
             Route::put('/defect-types/{id}', [\App\Http\Controllers\DefectTypeController::class, 'update'])->name('defect_types.update');
             Route::delete('/defect-types/{id}', [\App\Http\Controllers\DefectTypeController::class, 'destroy'])->name('defect_types.destroy');
             Route::post('/defect-types/{defectTypeId}/sub', [\App\Http\Controllers\DefectTypeController::class, 'storeSub'])->name('defect_types.sub.store');
+            Route::put('/defect-types/sub/{id}', [\App\Http\Controllers\DefectTypeController::class, 'updateSub'])->name('defect_types.sub.update');
             Route::delete('/defect-types/sub/{id}', [\App\Http\Controllers\DefectTypeController::class, 'destroySub'])->name('defect_types.sub.destroy');
 
             // Inspect Process Types

@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin'    => \App\Http\Middleware\EnsureIsAdmin::class,
             'operator' => \App\Http\Middleware\EnsureIsOperator::class,
+            'rework'   => \App\Http\Middleware\EnsureIsRework::class,
         ]);
     })
 

@@ -54,6 +54,7 @@ class Defect extends Model
         'rc_w',
         'no_box',
         'ujung',
+        'rework_group_id',
     ];
 
     protected $casts = [
