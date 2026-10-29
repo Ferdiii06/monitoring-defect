@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AreaDitemukan;
+use App\Models\CarType;
+use App\Models\Carline;
 use App\Models\Defect;
 use App\Models\SubDefectType;
 use App\Support\RoleRouteHelper;
@@ -12,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ReworkController extends Controller
 {
@@ -48,7 +51,7 @@ class ReworkController extends Controller
         $defectsByGroup = collect();
         if (!empty($groupIds)) {
             $defectsByGroup = Defect::whereIn('rework_group_id', $groupIds)
-                ->with(['defectType', 'subDefectType'])
+                ->with(['defectType', 'subDefectType', 'carline.carType'])
                 ->orderByDesc('waktu_in')
                 ->orderBy('id')
                 ->get()
@@ -65,8 +68,9 @@ class ReworkController extends Controller
             ->get();
 
         $areas = AreaDitemukan::orderBy('name')->get();
+        $carTypes = CarType::with(['carlines' => fn($q) => $q->orderBy('name')])->orderBy('name')->get();
 
-        return view('rework.index', compact('paginatedGroups', 'defectsByGroup', 'finalAssySubDefects', 'isAdmin', 'areas'));
+        return view('rework.index', compact('paginatedGroups', 'defectsByGroup', 'finalAssySubDefects', 'isAdmin', 'areas', 'carTypes'));
     }
 
     /**
@@ -142,6 +146,8 @@ class ReworkController extends Controller
                 ->withInput();
         }
 
+        [$resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil] = $this->resolveConveyorAndCarline($request);
+
         $groupId = (string) Str::uuid();
         $now = now();
         $userName = session('user_name');
@@ -158,7 +164,7 @@ class ReworkController extends Controller
                 'waktu'                => $now,
                 'waktu_in'             => $now,
                 'waktu_out'            => null,
-                'status_rework'        => 'Berjalan',
+                'status_rework'        => 'OPEN',
                 'kanban_assy'          => $validated['kanban_assy'],
                 'nameplate_lama'       => $validated['nameplate'],
                 'nameplate_baru'       => null,
@@ -180,8 +186,9 @@ class ReworkController extends Controller
                 'sub_defect_type_id'   => $sub->id,
                 'jenis_defect'         => $sub->defectType?->name,
                 'jenis_sub_defect'     => $sub->name,
-                'conveyor'             => null,
-                'carline_id'           => null,
+                'conveyor'             => $resolvedConveyor,
+                'carline_id'           => $resolvedCarlineId,
+                'jenis_mobil'          => $resolvedJenisMobil,
             ]);
         }
 
@@ -210,7 +217,7 @@ class ReworkController extends Controller
         }
 
         // Group yang sudah selesai tidak bisa di-Out ulang
-        if ($defects->first()->status_rework === 'Selesai') {
+        if (in_array($defects->first()->status_rework, ['Selesai', 'CLOSE'], true)) {
             return redirect()->route('rework.index')->with('error', 'Harness ini sudah selesai di-rework.');
         }
 
@@ -220,7 +227,7 @@ class ReworkController extends Controller
 
         Defect::where('rework_group_id', $groupId)->update([
             'waktu_out'           => $waktuOut,
-            'status_rework'       => 'Selesai',
+            'status_rework'       => 'CLOSE',
             'durasi_rework_menit' => $durasiMenit,
         ]);
 
@@ -234,7 +241,7 @@ class ReworkController extends Controller
     public function edit(Request $request, string $groupId)
     {
         $defects = Defect::where('rework_group_id', $groupId)
-            ->with(['defectType', 'subDefectType'])
+            ->with(['defectType', 'subDefectType', 'carline.carType'])
             ->orderBy('id')
             ->get();
 
@@ -270,8 +277,9 @@ class ReworkController extends Controller
 
         $returnUrl = $isAdmin ? $this->sanitizeAdminReturnUrl($request->input('return_url')) : null;
         $areas = AreaDitemukan::orderBy('name')->get();
+        $carTypes = CarType::with(['carlines' => fn($q) => $q->orderBy('name')])->orderBy('name')->get();
 
-        return view('rework.edit', compact('defects', 'first', 'groupId', 'finalAssySubDefects', 'currentDefects', 'isAdmin', 'returnUrl', 'areas'));
+        return view('rework.edit', compact('defects', 'first', 'groupId', 'finalAssySubDefects', 'currentDefects', 'isAdmin', 'returnUrl', 'areas', 'carTypes'));
     }
 
     /**
@@ -358,7 +366,16 @@ class ReworkController extends Controller
                 ->withInput();
         }
 
-        DB::transaction(function () use ($existingDefects, $groupId, $validated, $subDefects, $first, $reworkArea, $request) {
+        $hasConveyorOrCarlineInput = $request->has('conveyor') || $request->has('carline') || $request->has('carline_id') || $request->has('jenis_mobil');
+        if ($hasConveyorOrCarlineInput) {
+            [$resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil] = $this->resolveConveyorAndCarline($request);
+        } else {
+            $resolvedConveyor = $first->conveyor;
+            $resolvedCarlineId = $first->carline_id;
+            $resolvedJenisMobil = $first->jenis_mobil;
+        }
+
+        DB::transaction(function () use ($existingDefects, $groupId, $validated, $subDefects, $first, $reworkArea, $request, $resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil) {
             $kanban = $validated['kanban_assy'];
             $nameplate = $validated['nameplate'];
             $newSubIds = array_map('intval', $validated['sub_defect_ids']);
@@ -382,6 +399,9 @@ class ReworkController extends Controller
                 'rc_w'                 => $request->has('rc_w') ? ($request->input('rc_w') ?: null) : $template->rc_w,
                 'no_box'               => $request->has('no_box') ? ($request->input('no_box') ?: null) : $template->no_box,
                 'shift'                => $request->has('shift') ? ($request->input('shift') ?: $template->shift) : $template->shift,
+                'conveyor'             => $resolvedConveyor,
+                'carline_id'           => $resolvedCarlineId,
+                'jenis_mobil'          => $resolvedJenisMobil,
             ];
 
             // 1. Defect yang dihapus (ada di existing tapi tidak ada di newSubIds)
@@ -422,8 +442,6 @@ class ReworkController extends Controller
                     'sub_defect_type_id'   => $sub->id,
                     'jenis_defect'         => $sub->defectType?->name,
                     'jenis_sub_defect'     => $sub->name,
-                    'conveyor'             => $template->conveyor,
-                    'carline_id'           => $template->carline_id,
                 ]));
             }
         });
@@ -480,5 +498,86 @@ class ReworkController extends Controller
         }
 
         return $trimmed;
+    }
+
+    /**
+     * Resolve and validate conveyor and carline selection.
+     * Returns an array with [conveyor, carline_id, jenis_mobil] or throws ValidationException.
+     *
+     * @return array{0: ?string, 1: ?int, 2: ?string}
+     * @throws ValidationException
+     */
+    protected function resolveConveyorAndCarline(Request $request): array
+    {
+        $rawConveyor = $request->input('conveyor');
+        $rawCarline = $request->input('carline') ?: $request->input('jenis_mobil');
+        $rawCarlineId = $request->input('carline_id');
+
+        $conveyor = filled($rawConveyor) ? trim((string) $rawConveyor) : null;
+        $carline = filled($rawCarline) ? trim((string) $rawCarline) : null;
+        $carlineId = filled($rawCarlineId) ? (int) $rawCarlineId : null;
+
+        // Jika tidak ada satu pun yang diisi
+        if ($conveyor === null && $carline === null && $carlineId === null) {
+            return [null, null, null];
+        }
+
+        // Jika carline_id diisi langsung
+        if ($carlineId !== null) {
+            $carlineRecord = Carline::with('carType')->find($carlineId);
+            if (!$carlineRecord || $carlineRecord->car_type_id === null) {
+                throw ValidationException::withMessages([
+                    'carline_id' => 'Carline / Konveyor yang dipilih tidak valid untuk Final Assy.',
+                ]);
+            }
+            if ($conveyor !== null && $carlineRecord->name !== $conveyor) {
+                throw ValidationException::withMessages([
+                    'conveyor' => 'Konveyor tidak sesuai dengan Carline yang dipilih.',
+                ]);
+            }
+            if ($carline !== null && $carlineRecord->carType?->name !== $carline) {
+                throw ValidationException::withMessages([
+                    'carline' => 'Carline tidak sesuai dengan Konveyor yang dipilih.',
+                ]);
+            }
+            return [$carlineRecord->name, $carlineRecord->id, $carlineRecord->carType?->name];
+        }
+
+        // Jika conveyor diisi
+        if ($conveyor !== null) {
+            $carlineQuery = Carline::whereNotNull('car_type_id')->where('name', $conveyor)->with('carType');
+            if ($carline !== null) {
+                $carlineQuery->whereHas('carType', function ($q) use ($carline) {
+                    $q->where('name', $carline);
+                });
+            }
+            $carlineRecord = $carlineQuery->first();
+
+            if (!$carlineRecord) {
+                if ($carline !== null) {
+                    throw ValidationException::withMessages([
+                        'conveyor' => 'Konveyor tidak sesuai dengan Carline yang dipilih.',
+                    ]);
+                }
+                throw ValidationException::withMessages([
+                    'conveyor' => 'Konveyor tidak valid untuk Final Assy.',
+                ]);
+            }
+
+            return [$carlineRecord->name, $carlineRecord->id, $carlineRecord->carType?->name];
+        }
+
+        // Jika hanya carline yang diisi (tanpa conveyor)
+        if ($carline !== null) {
+            $carTypeExists = CarType::where('name', $carline)->exists();
+            if (!$carTypeExists) {
+                throw ValidationException::withMessages([
+                    'carline' => 'Carline yang dipilih tidak valid.',
+                ]);
+            }
+            return [null, null, $carline];
+        }
+
+        return [null, null, null];
     }
 }

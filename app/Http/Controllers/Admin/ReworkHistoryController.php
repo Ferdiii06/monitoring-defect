@@ -72,10 +72,12 @@ class ReworkHistoryController extends Controller
             });
         }
 
-        // 3. Status Filter (Berjalan / Selesai / all)
-        $selectedStatus = (string) $request->input('status', 'all');
-        if (in_array($selectedStatus, ['Berjalan', 'Selesai'], true)) {
-            $query->where('status_rework', $selectedStatus);
+        // 3. Status Filter (OPEN / CLOSE / all, backward-compatible dengan Berjalan / Selesai)
+        $selectedStatus = strtoupper((string) $request->input('status', 'all'));
+        if ($selectedStatus === 'OPEN' || $selectedStatus === 'BERJALAN') {
+            $query->whereIn('status_rework', ['OPEN', 'Berjalan']);
+        } elseif ($selectedStatus === 'CLOSE' || $selectedStatus === 'SELESAI') {
+            $query->whereIn('status_rework', ['CLOSE', 'Selesai']);
         }
 
         return $query;
@@ -111,7 +113,7 @@ class ReworkHistoryController extends Controller
         $defectsByGroup = collect();
         if (!empty($groupIds)) {
             $defectsByGroup = Defect::whereIn('rework_group_id', $groupIds)
-                ->with(['defectType', 'subDefectType'])
+                ->with(['defectType', 'subDefectType', 'carline.carType'])
                 ->orderByDesc('waktu_in')
                 ->orderBy('id')
                 ->get()

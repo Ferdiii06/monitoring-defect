@@ -33,15 +33,15 @@
             <div class="bg-gray-50/80 rounded-2xl p-4 border border-gray-200/80 space-y-2 text-xs">
                 <div class="flex justify-between items-center pb-2 border-b border-gray-200">
                     <span class="text-gray-500 font-bold uppercase tracking-wider text-[10px]">Informasi Rework (Terkunci)</span>
-                    @if($first->status_rework === 'Selesai')
+                    @if(in_array($first->status_rework, ['Selesai', 'CLOSE'], true))
                         <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            <span>Selesai</span>
+                            <span>CLOSE</span>
                         </span>
                     @else
                         <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                            <span>Berjalan</span>
+                            <span>OPEN</span>
                         </span>
                     @endif
                 </div>
@@ -57,7 +57,7 @@
                         <span class="font-mono font-bold text-gray-900">{{ $first->waktu_in ? \Carbon\Carbon::parse($first->waktu_in)->format('d/m/Y H:i') : '-' }}</span>
                     </div>
 
-                    @if($first->status_rework === 'Selesai')
+                    @if(in_array($first->status_rework, ['Selesai', 'CLOSE'], true))
                         <div>
                             <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Waktu Out</span>
                             <span class="font-mono font-bold text-gray-900">{{ $first->waktu_out ? \Carbon\Carbon::parse($first->waktu_out)->format('d/m/Y H:i') : '-' }}</span>
@@ -175,6 +175,42 @@
                                 </svg>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Baris 1.5: Carline & Conveyor (Opsional) -->
+                @php
+                    $initialCarline = old('carline', $first->jenis_mobil ?: ($first->carline?->carType?->name ?: ''));
+                    $initialConveyor = old('conveyor', $first->conveyor ?: ($first->carline?->name ?: ''));
+                @endphp
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                    <!-- Field: Carline -->
+                    <div class="space-y-1.5">
+                        <label for="carline" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                            Carline <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
+                        </label>
+                        <select id="carline"
+                                name="carline"
+                                class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
+                            <option value="">Pilih Carline (Opsional)...</option>
+                            @foreach($carTypes ?? [] as $ct)
+                                <option value="{{ $ct->name }}" {{ $initialCarline === $ct->name ? 'selected' : '' }}>
+                                    {{ $ct->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Field: Conveyor -->
+                    <div class="space-y-1.5">
+                        <label for="conveyor" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                            Konveyor <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
+                        </label>
+                        <select id="conveyor"
+                                name="conveyor"
+                                class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
+                            <option value="">Pilih Konveyor (Opsional)...</option>
+                        </select>
                     </div>
                 </div>
 
@@ -429,6 +465,49 @@
         const dropdown = document.getElementById('dropdown_results');
         const chipsContainer = document.getElementById('selected_defects_container');
         const reworkEditForm = document.getElementById('rework_edit_form');
+
+        // Cascading dropdown Carline -> Konveyor (Opsional)
+        const conveyorMap = @json($carTypes ? $carTypes->mapWithKeys(fn($ct) => [$ct->name => $ct->carlines->pluck('name')]) : []);
+        const carlineSelect = document.getElementById('carline');
+        const conveyorSelect = document.getElementById('conveyor');
+        const initialConveyor = @json($initialConveyor ?? '');
+
+        function updateConveyors(selectedCarline, preselectedConveyor = '') {
+            if (!conveyorSelect) return;
+            conveyorSelect.innerHTML = '';
+
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+
+            if (!selectedCarline || !conveyorMap[selectedCarline]) {
+                defaultOpt.textContent = 'Pilih Carline Terlebih Dahulu';
+                conveyorSelect.appendChild(defaultOpt);
+                conveyorSelect.disabled = true;
+                return;
+            }
+
+            defaultOpt.textContent = 'Pilih Konveyor (Opsional)...';
+            conveyorSelect.appendChild(defaultOpt);
+            conveyorSelect.disabled = false;
+
+            const conveyors = conveyorMap[selectedCarline] || [];
+            conveyors.forEach(function(conv) {
+                const opt = document.createElement('option');
+                opt.value = conv;
+                opt.textContent = conv;
+                if (preselectedConveyor && conv === preselectedConveyor) {
+                    opt.selected = true;
+                }
+                conveyorSelect.appendChild(opt);
+            });
+        }
+
+        if (carlineSelect) {
+            carlineSelect.addEventListener('change', function() {
+                updateConveyors(this.value, '');
+            });
+            updateConveyors(carlineSelect.value, initialConveyor);
+        }
 
         // 1. Enter on Kanban input moves focus to Nameplate
         kanbanInput.addEventListener('keydown', function(e) {

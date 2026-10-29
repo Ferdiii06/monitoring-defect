@@ -162,7 +162,7 @@ class AdminReworkHistoryTest extends TestCase
         $response->assertSee('NP-TEST-888');
         $response->assertSee('rework_operator_1');
         $response->assertSee('30 menit');
-        $response->assertSee('Selesai');
+        $response->assertSee('CLOSE');
 
         // Both defects rendered under the same row with code and name
         $response->assertSee('[1A]');
@@ -706,15 +706,15 @@ class AdminReworkHistoryTest extends TestCase
 
         $mapped = $export->map($rows->first());
         $this->assertEquals($groupId, $mapped[1]);
-        $this->assertEquals('Berjalan', $mapped[4]);
+        $this->assertEquals('OPEN', $mapped[4]);
         $this->assertEquals('KB-EXPORT-TEST', $mapped[6]);
         $this->assertEquals('NP-EXPORT-TEST', $mapped[7]);
-        $this->assertEquals($reworkArea->name, $mapped[12]);
-        $this->assertEquals('rework_exp_user', $mapped[19]);
-        $this->assertEquals('1A', $mapped[20]);
-        $this->assertEquals('1A', $mapped[21]); // code derived
-        $this->assertEquals('TERMINAL DEFECT', $mapped[22]);
-        $this->assertEquals('1.A - TERMINAL BENGKOK', $mapped[23]);
-        $this->assertEquals(1, $mapped[24]);
+        $this->assertEquals($reworkArea->name, $mapped[14]);
+        $this->assertEquals('rework_exp_user', $mapped[21]);
+        $this->assertEquals('1A', $mapped[22]);
+        $this->assertEquals('1A', $mapped[23]); // code derived
+        $this->assertEquals('TERMINAL DEFECT', $mapped[24]);
+        $this->assertEquals('1.A - TERMINAL BENGKOK', $mapped[25]);
+        $this->assertEquals(1, $mapped[26]);
     }
 }

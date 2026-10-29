@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\AreaDitemukan;
+use App\Models\CarType;
+use App\Models\Carline;
 use App\Models\Defect;
 use App\Models\DefectType;
 use App\Models\SubDefectType;
@@ -533,5 +535,74 @@ class ReworkEditTest extends TestCase
             'sub_defect_ids' => [$sub1->id],
         ]);
         $resNoNp->assertSessionHasErrors(['nameplate']);
+    }
+
+    public function test_edit_conveyor_dan_carline_tersimpan_di_database(): void
+    {
+        $sub1 = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
+        $carTypeToyota = CarType::create(['name' => 'TOYOTA']);
+        $carTypeMazda = CarType::create(['name' => 'MAZDA']);
+
+        $conveyorToyota = Carline::create([
+            'car_type_id' => $carTypeToyota->id,
+            'name'        => '664W-C5',
+        ]);
+        $conveyorMazda = Carline::create([
+            'car_type_id' => $carTypeMazda->id,
+            'name'        => 'J72A-12B.LHD',
+        ]);
+
+        $groupId = (string) \Illuminate\Support\Str::uuid();
+        $defect = Defect::create([
+            'rework_group_id'     => $groupId,
+            'waktu'               => now(),
+            'waktu_in'            => now(),
+            'status_rework'       => 'OPEN',
+            'kanban_assy'         => 'KB-ORIGINAL',
+            'nameplate_lama'      => 'NP-ORIGINAL',
+            'user_name'           => 'reworkA',
+            'shift'               => '1A',
+            'jenis_assy'          => 'Final Assy',
+            'quantity'            => 1,
+            'defect_type_id'      => $sub1->defect_type_id,
+            'sub_defect_type_id'  => $sub1->id,
+            'jenis_defect'        => 'WIRING',
+            'jenis_sub_defect'    => $sub1->name,
+            'conveyor'            => $conveyorToyota->name,
+            'carline_id'          => $conveyorToyota->id,
+            'jenis_mobil'         => 'TOYOTA',
+        ]);
+
+        $session = [
+            'logged_in'     => true,
+            'user_name'     => 'reworkA',
+            'user_role'     => 'Rework',
+            'current_shift' => '1A',
+        ];
+
+        // 1. Update ke carline MAZDA dan konveyor J72A-12B.LHD
+        $response = $this->withSession($session)->put(route('rework.update', $groupId), [
+            'kanban_assy'    => 'KB-ORIGINAL-EDITED',
+            'nameplate'      => 'NP-ORIGINAL',
+            'sub_defect_ids' => [$sub1->id],
+            'carline'        => 'MAZDA',
+            'conveyor'       => 'J72A-12B.LHD',
+        ]);
+
+        $response->assertRedirect(route('rework.index'));
+        $updated = Defect::where('rework_group_id', $groupId)->first();
+        $this->assertEquals('J72A-12B.LHD', $updated->conveyor);
+        $this->assertEquals($conveyorMazda->id, $updated->carline_id);
+        $this->assertEquals('MAZDA', $updated->jenis_mobil);
+
+        // 2. Update dengan kombinasi tidak valid (carline TOYOTA tapi konveyor MAZDA)
+        $resInvalid = $this->withSession($session)->put(route('rework.update', $groupId), [
+            'kanban_assy'    => 'KB-ORIGINAL-EDITED',
+            'nameplate'      => 'NP-ORIGINAL',
+            'sub_defect_ids' => [$sub1->id],
+            'carline'        => 'TOYOTA',
+            'conveyor'       => 'J72A-12B.LHD',
+        ]);
+        $resInvalid->assertSessionHasErrors(['conveyor']);
     }
 }

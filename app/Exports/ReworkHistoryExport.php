@@ -13,6 +13,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
@@ -28,15 +29,20 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
 
     public function styles(Worksheet $sheet)
     {
+        $lastColumn = Coordinate::stringFromColumnIndex(count($this->headings()));
+
         return [
             1 => ['font' => ['bold' => true]],
+            "A1:{$lastColumn}1" => [
+                'font' => ['bold' => true],
+            ],
         ];
     }
 
     public function query()
     {
         return ReworkHistoryController::baseQuery($this->request)
-            ->with(['defectType', 'subDefectType'])
+            ->with(['defectType', 'subDefectType', 'carline.carType'])
             ->orderByDesc(DB::raw('COALESCE(waktu_in, waktu)'))
             ->orderBy('rework_group_id')
             ->orderBy('id');
@@ -54,6 +60,8 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             'Kanban Assy',
             'No Nameplate Lama',
             'No Nameplate Baru',
+            'Carline',
+            'Conveyor',
             'No Defective Tag',
             '#End',
             '4M Status',
@@ -77,17 +85,22 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
     {
         $code = $row->subDefectType?->code ?? SubDefectHelper::deriveCode($row->jenis_sub_defect) ?? '-';
         $waktuIn = $row->waktu_in ?? $row->waktu;
+        $status = in_array($row->status_rework, ['Selesai', 'CLOSE'], true) ? 'CLOSE' : 'OPEN';
+        $carline = $row->jenis_mobil ?: ($row->carline?->carType?->name ?: $row->carline?->name) ?: '-';
+        $conveyor = $row->conveyor ?: ($row->carline?->name) ?: '-';
 
         return [
             $row->id,
             $row->rework_group_id ?? '-',
             $waktuIn ? Carbon::parse($waktuIn)->format('Y-m-d H:i:s') : '-',
             $row->waktu_out ? Carbon::parse($row->waktu_out)->format('Y-m-d H:i:s') : '-',
-            $row->status_rework ?? 'Berjalan',
+            $status,
             $row->durasi_rework_menit !== null ? $row->durasi_rework_menit : '-',
             $row->kanban_assy ?? '-',
             $row->nameplate_lama ?? '-',
             $row->nameplate_baru ?? '-',
+            $carline,
+            $conveyor,
             $row->no_defective_tag ?? '-',
             $row->ujung ?? '-',
             $row->status_4m ?? 'NO',

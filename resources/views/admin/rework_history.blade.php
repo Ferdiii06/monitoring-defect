@@ -54,8 +54,8 @@
                             onchange="this.form.submit()"
                             class="w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
                         <option value="all" {{ $selectedStatus === 'all' ? 'selected' : '' }}>Semua Status</option>
-                        <option value="Berjalan" {{ $selectedStatus === 'Berjalan' ? 'selected' : '' }}>Berjalan</option>
-                        <option value="Selesai" {{ $selectedStatus === 'Selesai' ? 'selected' : '' }}>Selesai</option>
+                        <option value="OPEN" {{ strtoupper($selectedStatus) === 'OPEN' ? 'selected' : '' }}>OPEN</option>
+                        <option value="CLOSE" {{ strtoupper($selectedStatus) === 'CLOSE' ? 'selected' : '' }}>CLOSE</option>
                     </select>
                     <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000]">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -137,7 +137,7 @@
                                             {{ $first?->waktu_in ? \Carbon\Carbon::parse($first->waktu_in)->format('d/m/Y H:i') : ($first?->waktu ? \Carbon\Carbon::parse($first->waktu)->format('d/m/Y H:i') : '-') }}
                                         </span>
                                     </div>
-                                    @if($first?->status_rework === 'Selesai' && $first?->waktu_out)
+                                    @if(in_array($first?->status_rework, ['Selesai', 'CLOSE'], true) && $first?->waktu_out)
                                         <div class="pt-0.5 border-t border-gray-100">
                                             <span class="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Out:</span>
                                             <span class="font-extrabold text-gray-900 font-mono text-[11px]">
@@ -150,22 +150,22 @@
 
                             <!-- Status Badge -->
                             <td class="py-4 text-xs font-bold px-4 text-center align-top">
-                                @if(($first?->status_rework ?? '') === 'Selesai')
+                                @if(in_array($first?->status_rework, ['Selesai', 'CLOSE'], true))
                                     <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                        <span>Selesai</span>
+                                        <span>CLOSE</span>
                                     </span>
                                 @else
                                     <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                        <span>Berjalan</span>
+                                        <span>OPEN</span>
                                     </span>
                                 @endif
                             </td>
 
                             <!-- Durasi -->
                             <td class="py-4 text-xs font-bold px-4 align-top">
-                                @if(($first?->status_rework ?? '') === 'Selesai')
+                                @if(in_array($first?->status_rework, ['Selesai', 'CLOSE'], true))
                                     <span class="text-emerald-700 font-mono">
                                         {{ $first?->durasi_rework_menit ?? 0 }} menit
                                     </span>
@@ -185,6 +185,29 @@
                                     <span class="block text-xs font-bold font-mono text-gray-500">
                                         NP: {{ $first?->nameplate_lama ?? '-' }}
                                     </span>
+                                    @if(filled($first?->nameplate_baru))
+                                        <span class="block text-xs font-bold font-mono text-emerald-700">
+                                            NP Baru: {{ $first?->nameplate_baru }}
+                                        </span>
+                                    @endif
+                                    @php
+                                        $carlineDisplay = $first?->jenis_mobil ?: ($first?->carline?->carType?->name ?: $first?->carline?->name);
+                                        $conveyorDisplay = $first?->conveyor ?: ($first?->carline?->name);
+                                    @endphp
+                                    @if(filled($carlineDisplay) || filled($conveyorDisplay))
+                                        <div class="pt-1 flex flex-wrap gap-1">
+                                            @if(filled($carlineDisplay))
+                                                <span class="inline-block bg-gray-100 text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                                    Carline: {{ $carlineDisplay }}
+                                                </span>
+                                            @endif
+                                            @if(filled($conveyorDisplay))
+                                                <span class="inline-block bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                                    Conv: {{ $conveyorDisplay }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </div>
                             </td>
 
