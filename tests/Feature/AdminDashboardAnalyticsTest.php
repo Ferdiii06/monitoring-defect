@@ -1896,4 +1896,69 @@ class AdminDashboardAnalyticsTest extends TestCase
         $resRework->assertSee('DPM Rework');
         $resRework->assertSee('Pareto Rework');
     }
+
+    public function test_admin_can_drilldown_pareto_final_assy_conveyor(): void
+    {
+        $today = Carbon::today()->format('Y-m-d');
+        Defect::create([
+            'user_name' => 'Operator 1',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Final Assy',
+            'jenis_sub_defect' => 'CROSS CIRCUIT',
+            'conveyor' => 'CV-01',
+            'quantity' => 10,
+        ]);
+        Defect::create([
+            'user_name' => 'Operator 1',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Final Assy',
+            'jenis_sub_defect' => 'CROSS CIRCUIT',
+            'conveyor' => 'CV-02',
+            'quantity' => 5,
+        ]);
+
+        $res = $this->actingAsAdmin()->getJson("/dashboard/pareto-drilldown?sub_defect=CROSS CIRCUIT&start_date={$today}&end_date={$today}&jenis_assy=Final Assy");
+        $res->assertStatus(200);
+        $res->assertJsonStructure(['sub_defect', 'metric', 'items']);
+        $this->assertEquals('conveyor', $res->json('metric'));
+        $this->assertCount(2, $res->json('items'));
+        $this->assertEquals('CV-01', $res->json('items.0.name'));
+        $this->assertEquals(10, $res->json('items.0.total'));
+    }
+
+    public function test_admin_can_drilldown_pareto_pre_assy_carline(): void
+    {
+        $today = Carbon::today()->format('Y-m-d');
+        $carlineA = Carline::create(['name' => 'CARLINE-ALPHA']);
+        $carlineB = Carline::create(['name' => 'CARLINE-BETA']);
+
+        Defect::create([
+            'user_name' => 'Operator 1',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Pre Assy',
+            'jenis_sub_defect' => 'TERMINAL BENGKOK',
+            'carline_id' => $carlineA->id,
+            'quantity' => 8,
+        ]);
+        Defect::create([
+            'user_name' => 'Operator 1',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Pre Assy',
+            'jenis_sub_defect' => 'TERMINAL BENGKOK',
+            'carline_id' => $carlineB->id,
+            'quantity' => 4,
+        ]);
+
+        $res = $this->actingAsAdmin()->getJson("/dashboard/pareto-drilldown?sub_defect=TERMINAL BENGKOK&start_date={$today}&end_date={$today}&jenis_assy=Pre Assy");
+        $res->assertStatus(200);
+        $res->assertJsonStructure(['sub_defect', 'metric', 'items']);
+        $this->assertEquals('carline', $res->json('metric'));
+        $this->assertCount(2, $res->json('items'));
+        $this->assertEquals('CARLINE-ALPHA', $res->json('items.0.name'));
+        $this->assertEquals(8, $res->json('items.0.total'));
+    }
 }
