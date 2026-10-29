@@ -6,6 +6,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Defect;
+use App\Models\DefectType;
+use App\Models\SubDefectType;
 use App\Support\SubDefectHelper;
 
 class AuthRoleReworkTest extends TestCase
@@ -572,5 +574,88 @@ class AuthRoleReworkTest extends TestCase
             'role' => 'Rework',
             'pin'  => '654321',
         ]);
+    }
+
+    public function test_hook_sub_defect_type_mengubah_kode_saat_nama_diubah(): void
+    {
+        $defectType = DefectType::create([
+            'name' => 'NEW CATEGORY',
+            'type' => 'Final Assy',
+        ]);
+
+        $sub = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '12.A - X',
+        ]);
+
+        $this->assertEquals('12A', $sub->code);
+
+        $sub->update(['name' => '12.B - X']);
+        $sub->refresh();
+
+        $this->assertEquals('12B', $sub->code);
+    }
+
+    public function test_store_sub_menolak_kode_turunan_yang_duplikat(): void
+    {
+        $defectType1 = DefectType::create([
+            'name' => 'FINAL CAT 1',
+            'type' => 'Final Assy',
+        ]);
+
+        $defectType2 = DefectType::create([
+            'name' => 'FINAL CAT 2',
+            'type' => 'Final Assy',
+        ]);
+
+        // Sub defect 1 punya kode 1A
+        SubDefectType::create([
+            'defect_type_id' => $defectType1->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+            'code'           => '1A',
+        ]);
+
+        $adminSession = [
+            'logged_in' => true,
+            'user_name' => 'Admin QA',
+            'user_role' => 'Administrator',
+        ];
+
+        // Coba tambah sub defect baru di Final Assy dengan kode turunan yang sama (1A)
+        $response = $this->withSession($adminSession)->post("/master/defect-types/{$defectType2->id}/sub", [
+            'name' => '1.A - ANOTHER DEFECT',
+        ]);
+
+        $response->assertSessionHasErrors(['name']);
+        $this->assertDatabaseMissing('sub_defect_types', [
+            'name' => '1.A - ANOTHER DEFECT',
+        ]);
+    }
+
+    public function test_sesi_dengan_role_tak_dikenal_tidak_menyebabkan_loop_redirect(): void
+    {
+        // 1. Kunjungi '/' dengan role tak dikenal
+        $resRoot = $this->withSession([
+            'logged_in' => true,
+            'user_name' => 'AlienUser',
+            'user_role' => 'UnknownRole',
+        ])->get('/');
+
+        // Harus render login (200), sesi dibersihkan, bukan 302 loop
+        $resRoot->assertStatus(200);
+        $resRoot->assertSee('Login - Sistem Monitoring Defect');
+        $this->assertNull(session('logged_in'));
+
+        // 2. Kunjungi '/login' dengan role tak dikenal
+        $resLogin = $this->withSession([
+            'logged_in' => true,
+            'user_name' => 'AlienUser',
+            'user_role' => 'UnknownRole',
+        ])->get('/login');
+
+        // Harus render login (200), sesi dibersihkan, bukan 302 loop
+        $resLogin->assertStatus(200);
+        $resLogin->assertSee('Login - Sistem Monitoring Defect');
+        $this->assertNull(session('logged_in'));
     }
 }

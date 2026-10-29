@@ -66,12 +66,62 @@ class DefectTypeController extends Controller
             'name' => 'required|string|max:255',
         ]);
 
+        $derivedCode = SubDefectHelper::deriveCode($validated['name']);
+
+        if ($defectType->type === 'Final Assy' && $derivedCode !== null) {
+            $duplicateExists = SubDefectType::whereHas('defectType', function ($query) {
+                    $query->where('type', 'Final Assy');
+                })
+                ->where('code', $derivedCode)
+                ->exists();
+
+            if ($duplicateExists) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'name' => "Kode sub defect '{$derivedCode}' sudah digunakan oleh sub defect Final Assy lain.",
+                ]);
+            }
+        }
+
         $defectType->subDefectTypes()->create([
             'name' => $validated['name'],
-            'code' => SubDefectHelper::deriveCode($validated['name']),
+            'code' => $derivedCode,
         ]);
 
         return redirect()->route('admin.master.defect_types.index', ['type' => $defectType->type])->with('success', 'Sub-Defect Type berhasil ditambahkan!');
+    }
+
+    public function updateSub(Request $request, $id)
+    {
+        $sub = SubDefectType::with('defectType')->findOrFail($id);
+        $defectType = $sub->defectType;
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $derivedCode = SubDefectHelper::deriveCode($validated['name']);
+
+        if ($defectType && $defectType->type === 'Final Assy' && $derivedCode !== null) {
+            $duplicateExists = SubDefectType::whereHas('defectType', function ($query) {
+                    $query->where('type', 'Final Assy');
+                })
+                ->where('code', $derivedCode)
+                ->where('id', '!=', $sub->id)
+                ->exists();
+
+            if ($duplicateExists) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'name' => "Kode sub defect '{$derivedCode}' sudah digunakan oleh sub defect Final Assy lain.",
+                ]);
+            }
+        }
+
+        $sub->update([
+            'name' => $validated['name'],
+            'code' => $derivedCode,
+        ]);
+
+        return redirect()->route('admin.master.defect_types.index', ['type' => $defectType->type ?? null])->with('success', 'Sub-Defect Type berhasil diperbarui!');
     }
 
     public function destroySub($id)
