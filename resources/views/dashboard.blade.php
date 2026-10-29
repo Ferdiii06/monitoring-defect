@@ -159,15 +159,15 @@
     </section>
 
         <!-- 2 Columns Grid: Final Assy (Left) & Pre Assy (Right) - Opsi A -->
-        <section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+        <section class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8" id="analyticsGridContainer">
             <!-- KOLOM KIRI: FINAL ASSY -->
-            <div class="space-y-6">
+            <div id="columnFinalAssy" class="space-y-6 {{ ($currentMode ?? 'internal') === 'all' ? 'xl:col-span-2' : '' }}">
                 <!-- Summary Cards Final Assy (Sinkron Filter Mandiri) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Summary DPM Final Assy -->
                     <div class="bg-white border border-slate-200 border-t-4 border-t-teal-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
                         <div class="flex items-center justify-between">
-                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="summaryTitleDpmFinal">DPM Final Assy</span>
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="summaryTitleDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Total Defect (Gabungan)' : (($currentMode ?? 'internal') === 'rework' ? 'Defect Rework' : 'DPM Final Assy') }}</span>
                             <span class="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200/80" id="summaryPeriodDpmFinal">Memuat...</span>
                         </div>
                         <div class="mt-2 flex items-baseline space-x-2">
@@ -180,7 +180,7 @@
                     <!-- Summary Top Defect Final Assy -->
                     <div class="bg-white border border-slate-200 border-t-4 border-t-teal-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
                         <div class="flex items-center justify-between">
-                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Defect Final</span>
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="summaryTitleParetoFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Top Defect (Gabungan)' : (($currentMode ?? 'internal') === 'rework' ? 'Top Defect Rework' : 'Top Defect Final') }}</span>
                             <span class="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200/80" id="summaryPeriodParetoFinal">Memuat...</span>
                         </div>
                         <div class="mt-2 flex items-baseline space-x-2 min-w-0">
@@ -199,10 +199,10 @@
                             <span class="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block shadow-xs"></span>
                             <div>
                                 <div class="flex items-center space-x-2">
-                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleDpmFinal">DPM Final Assy</h3>
-                                    <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">Final Assy</span>
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Tren Defect (Gabungan)' : (($currentMode ?? 'internal') === 'rework' ? 'Tren Rework Final Assy' : 'DPM Final Assy') }}</h3>
+                                    <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md" id="cardBadgeDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Gabungan' : 'Final Assy' }}</span>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-0.5" id="cardSubDpmFinal">Defect Per Million tren per periode</p>
+                                <p class="text-xs text-slate-500 mt-0.5" id="cardSubDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Jumlah defect tren per periode' : (($currentMode ?? 'internal') === 'rework' ? 'Jumlah defect & harness dirework per periode' : 'Defect Per Million tren per periode') }}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -306,10 +306,10 @@
                             <span class="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block shadow-xs"></span>
                             <div>
                                 <div class="flex items-center space-x-2">
-                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleParetoFinal">Pareto Sub Defect Final Assy</h3>
-                                    <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">Final Assy</span>
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleParetoFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Pareto Defect (Gabungan)' : (($currentMode ?? 'internal') === 'rework' ? 'Pareto Sub Defect Rework Final Assy' : 'Pareto Sub Defect Final Assy') }}</h3>
+                                    <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md" id="cardBadgeParetoFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Gabungan' : 'Final Assy' }}</span>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-0.5" id="cardSubParetoFinal">Total defect & persentase kumulatif per sub defect</p>
+                                <p class="text-xs text-slate-500 mt-0.5" id="cardSubParetoFinal">{{ ($currentMode ?? 'internal') === 'rework' ? 'Defect rework & persentase kumulatif per sub defect' : 'Total defect & persentase kumulatif per sub defect' }}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -396,7 +396,7 @@
         </div>
 
             <!-- KOLOM KANAN: PRE ASSY -->
-            <div class="space-y-6">
+            <div id="columnPreAssy" class="space-y-6 {{ ($currentMode ?? 'internal') === 'all' ? 'hidden' : '' }}">
                 <!-- Summary Cards Pre Assy (Sinkron Filter Mandiri) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Summary DPM Pre Assy -->
@@ -686,34 +686,29 @@
                     noticePareto.classList.remove('hidden');
                 }
             } else if (mode === 'all') {
+                filtersDpmFinal.conveyor = 'all';
+                filtersParetoFinal.conveyor = 'all';
                 if (convDpm) {
-                    convDpm.disabled = false;
-                    convDpm.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
-                    convDpm.classList.add('bg-white', 'cursor-pointer');
+                    convDpm.value = 'all';
+                    convDpm.disabled = true;
+                    convDpm.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
+                    convDpm.classList.remove('bg-white', 'cursor-pointer');
                 }
                 if (convPareto) {
-                    convPareto.disabled = false;
-                    convPareto.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
-                    convPareto.classList.add('bg-white', 'cursor-pointer');
+                    convPareto.value = 'all';
+                    convPareto.disabled = true;
+                    convPareto.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
+                    convPareto.classList.remove('bg-white', 'cursor-pointer');
                 }
-                const warnText = `${warningIcon}<span>Baris rework belum punya konveyor dan tidak ikut terfilter</span>`;
+                const infoText = `<svg class="w-3.5 h-3.5 text-slate-500 shrink-0 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>Filter konveyor dan carline tersedia di mode Internal Defect</span>`;
+                // Catatan: Baris rework belum punya konveyor dan tidak ikut terfilter
                 if (noticeDpm) {
-                    if (filtersDpmFinal.conveyor && filtersDpmFinal.conveyor !== 'all') {
-                        noticeDpm.innerHTML = warnText;
-                        noticeDpm.classList.remove('hidden');
-                    } else {
-                        noticeDpm.innerHTML = '';
-                        noticeDpm.classList.add('hidden');
-                    }
+                    noticeDpm.innerHTML = infoText;
+                    noticeDpm.classList.remove('hidden');
                 }
                 if (noticePareto) {
-                    if (filtersParetoFinal.conveyor && filtersParetoFinal.conveyor !== 'all') {
-                        noticePareto.innerHTML = warnText;
-                        noticePareto.classList.remove('hidden');
-                    } else {
-                        noticePareto.innerHTML = '';
-                        noticePareto.classList.add('hidden');
-                    }
+                    noticePareto.innerHTML = infoText;
+                    noticePareto.classList.remove('hidden');
                 }
             } else {
                 if (convDpm) {
@@ -740,24 +735,48 @@
         function updateModeVisuals(mode) {
             const titleDpmFinal = document.getElementById('cardTitleDpmFinal');
             const subDpmFinal = document.getElementById('cardSubDpmFinal');
+            const badgeDpmFinal = document.getElementById('cardBadgeDpmFinal');
             const titleParetoFinal = document.getElementById('cardTitleParetoFinal');
             const subParetoFinal = document.getElementById('cardSubParetoFinal');
+            const badgeParetoFinal = document.getElementById('cardBadgeParetoFinal');
+            const summaryTitleDpm = document.getElementById('summaryTitleDpmFinal');
+            const summaryTitlePareto = document.getElementById('summaryTitleParetoFinal');
+            const colPre = document.getElementById('columnPreAssy');
+            const colFinal = document.getElementById('columnFinalAssy');
 
-            if (mode === 'rework') {
+            if (mode === 'all') {
+                if (titleDpmFinal) titleDpmFinal.textContent = 'Tren Defect (Gabungan)';
+                if (subDpmFinal) subDpmFinal.textContent = 'Jumlah defect tren per periode';
+                if (badgeDpmFinal) badgeDpmFinal.textContent = 'Gabungan';
+                if (titleParetoFinal) titleParetoFinal.textContent = 'Pareto Defect (Gabungan)';
+                if (subParetoFinal) subParetoFinal.textContent = 'Total defect & persentase kumulatif per sub defect';
+                if (badgeParetoFinal) badgeParetoFinal.textContent = 'Gabungan';
+                if (summaryTitleDpm) summaryTitleDpm.textContent = 'Total Defect (Gabungan)';
+                if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Defect (Gabungan)';
+                if (colPre) colPre.classList.add('hidden');
+                if (colFinal) colFinal.classList.add('xl:col-span-2');
+            } else if (mode === 'rework') {
                 if (titleDpmFinal) titleDpmFinal.textContent = 'Tren Rework Final Assy';
                 if (subDpmFinal) subDpmFinal.textContent = 'Jumlah defect & harness dirework per periode';
+                if (badgeDpmFinal) badgeDpmFinal.textContent = 'Final Assy';
                 if (titleParetoFinal) titleParetoFinal.textContent = 'Pareto Sub Defect Rework Final Assy';
                 if (subParetoFinal) subParetoFinal.textContent = 'Defect rework & persentase kumulatif per sub defect';
-            } else if (mode === 'all') {
-                if (titleDpmFinal) titleDpmFinal.textContent = 'Tren Defect Final Assy (Gabungan)';
-                if (subDpmFinal) subDpmFinal.textContent = 'Perbandingan jumlah Internal Defect & Rework per periode';
-                if (titleParetoFinal) titleParetoFinal.textContent = 'Pareto Sub Defect Final Assy (Gabungan)';
-                if (subParetoFinal) subParetoFinal.textContent = 'Total defect gabungan (stacked) & persentase kumulatif';
+                if (badgeParetoFinal) badgeParetoFinal.textContent = 'Final Assy';
+                if (summaryTitleDpm) summaryTitleDpm.textContent = 'Defect Rework';
+                if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Defect Rework';
+                if (colPre) colPre.classList.remove('hidden');
+                if (colFinal) colFinal.classList.remove('xl:col-span-2');
             } else {
                 if (titleDpmFinal) titleDpmFinal.textContent = 'DPM Final Assy';
                 if (subDpmFinal) subDpmFinal.textContent = 'Defect Per Million tren per periode';
+                if (badgeDpmFinal) badgeDpmFinal.textContent = 'Final Assy';
                 if (titleParetoFinal) titleParetoFinal.textContent = 'Pareto Sub Defect Final Assy';
                 if (subParetoFinal) subParetoFinal.textContent = 'Total defect & persentase kumulatif per sub defect';
+                if (badgeParetoFinal) badgeParetoFinal.textContent = 'Final Assy';
+                if (summaryTitleDpm) summaryTitleDpm.textContent = 'DPM Final Assy';
+                if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Defect Final';
+                if (colPre) colPre.classList.remove('hidden');
+                if (colFinal) colFinal.classList.remove('xl:col-span-2');
             }
 
             updateConveyorFilterUI(mode);
@@ -796,8 +815,8 @@
             if (!validModes.includes(newMode)) return;
             if (newMode === currentMode) return;
 
-            // Reset konveyor saat masuk ke mode rework atau kembali dari mode rework
-            if (newMode === 'rework' || currentMode === 'rework') {
+            // Reset konveyor saat masuk ke mode rework/all atau kembali dari mode rework/all
+            if (newMode === 'rework' || newMode === 'all' || currentMode === 'rework' || currentMode === 'all') {
                 filtersDpmFinal.conveyor = 'all';
                 filtersParetoFinal.conveyor = 'all';
                 const convDpm = document.getElementById('filterConveyorDpmFinal');
@@ -820,8 +839,10 @@
             fetchStats();
             fetchDpmFinal(false);
             fetchParetoFinal(false);
-            fetchDpmPre(false);
-            fetchParetoPre(false);
+            if (currentMode !== 'all') {
+                fetchDpmPre(false);
+                fetchParetoPre(false);
+            }
         }
 
         document.querySelectorAll('.btn-dashboard-mode').forEach(btn => {
@@ -1914,7 +1935,7 @@
             }
 
             if (isFinal && mode === 'all') {
-                if (titleEl) titleEl.textContent = 'Defect Final Assy';
+                if (titleEl) titleEl.textContent = 'Total Defect (Gabungan)';
                 const intDef = list.reduce((sum, t) => sum + (Number(t.total_defect_internal !== undefined ? t.total_defect_internal : t.total_defect) || 0), 0);
                 const rewDef = list.reduce((sum, t) => sum + (Number(t.total_defect_rework) || 0), 0);
                 const combinedDef = intDef + rewDef;
@@ -2109,7 +2130,7 @@
             if (filtersDpmFinal.start_date) params.append('start_date', filtersDpmFinal.start_date);
             if (filtersDpmFinal.end_date) params.append('end_date', filtersDpmFinal.end_date);
             if (filtersDpmFinal.group_by) params.append('group_by', filtersDpmFinal.group_by);
-            if (currentMode !== 'rework' && filtersDpmFinal.conveyor && filtersDpmFinal.conveyor !== 'all') params.append('conveyor', filtersDpmFinal.conveyor);
+            if (currentMode !== 'rework' && filtersDpmFinal.conveyor && filtersDpmFinal.conveyor !== 'all' && currentMode !== 'all') params.append('conveyor', filtersDpmFinal.conveyor);
             if (currentMode) params.append('mode', currentMode);
 
             fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
@@ -2172,7 +2193,7 @@
             params.append('assy', 'final');
             if (filtersParetoFinal.start_date) params.append('start_date', filtersParetoFinal.start_date);
             if (filtersParetoFinal.end_date) params.append('end_date', filtersParetoFinal.end_date);
-            if (currentMode !== 'rework' && filtersParetoFinal.conveyor && filtersParetoFinal.conveyor !== 'all') params.append('conveyor', filtersParetoFinal.conveyor);
+            if (currentMode !== 'rework' && filtersParetoFinal.conveyor && filtersParetoFinal.conveyor !== 'all' && currentMode !== 'all') params.append('conveyor', filtersParetoFinal.conveyor);
             if (currentMode) params.append('mode', currentMode);
 
             fetch(`{{ route('admin.dashboard.analytics') }}?${params.toString()}`, {
@@ -2726,8 +2747,10 @@
             fetchStats();
             fetchDpmFinal(true);
             fetchParetoFinal(true);
-            fetchDpmPre(true);
-            fetchParetoPre(true);
+            if (currentMode !== 'all') {
+                fetchDpmPre(true);
+                fetchParetoPre(true);
+            }
         }
 
         // Inisialisasi label periode awal kartu analitik
@@ -2751,8 +2774,10 @@
         fetchStats();
         fetchDpmFinal();
         fetchParetoFinal();
-        fetchDpmPre();
-        fetchParetoPre();
+        if (currentMode !== 'all') {
+            fetchDpmPre();
+            fetchParetoPre();
+        }
 
         // 8-second interval
         pollingTimer = setInterval(runPollingCycle, 8000);

@@ -234,7 +234,20 @@ class DashboardController extends Controller
 
         $data = [];
 
-        if ($assy === 'final') {
+        if ($mode === 'all' || $assy === 'all' || $assy === 'combined') {
+            $combinedTrends = $this->buildDpmTrendsCombined($startDate, $endDate, $groupBy);
+            $combinedPareto = $this->buildParetoCombined($startDate, $endDate);
+
+            $data['dpm_combined'] = $combinedTrends;
+            $data['pareto_combined'] = $combinedPareto;
+            $data['dpm_final'] = $combinedTrends;
+            $data['pareto_final'] = $combinedPareto;
+
+            if ($assy === 'pre') {
+                $data['dpm_pre'] = $this->buildDpmTrends('Pre Assy', $startDate, $endDate, $groupBy, null, $carlineId, $mode);
+                $data['pareto_pre'] = $this->buildPareto('Pre Assy', $startDate, $endDate, null, $carlineId, $mode);
+            }
+        } elseif ($assy === 'final') {
             $data['dpm_final'] = $this->buildDpmTrends('Final Assy', $startDate, $endDate, $groupBy, $conveyor, null, $mode);
             $data['pareto_final'] = $this->buildPareto('Final Assy', $startDate, $endDate, $conveyor, null, $mode);
         } elseif ($assy === 'pre') {
@@ -568,6 +581,208 @@ class DashboardController extends Controller
             $qty = (int) $r->quantity;
 
             $isRework = (!empty($reworkAreaNames) && in_array($r->area_ditemukan, $reworkAreaNames, true));
+
+            if (!isset($subDefectTotals[$normalizedName])) {
+                $subDefectTotals[$normalizedName] = 0;
+                $subDefectInternal[$normalizedName] = 0;
+                $subDefectRework[$normalizedName] = 0;
+            }
+
+            if ($isRework) {
+                $subDefectRework[$normalizedName] += $qty;
+            } else {
+                $subDefectInternal[$normalizedName] += $qty;
+            }
+
+            $subDefectTotals[$normalizedName] += $qty;
+            $grandTotal += $qty;
+        }
+
+        arsort($subDefectTotals);
+
+        $top10 = array_slice($subDefectTotals, 0, 10, true);
+        $pareto = [];
+        $runningSum = 0;
+
+        foreach ($top10 as $name => $total) {
+            $runningSum += $total;
+            $cumPercent = $grandTotal > 0 ? round(($runningSum / $grandTotal) * 100, 2) : 0.0;
+            $pareto[] = [
+                'name'               => $name,
+                'total'              => $total,
+                'cumulative_percent' => $cumPercent,
+                'internal_qty'       => $subDefectInternal[$name] ?? 0,
+                'rework_qty'         => $subDefectRework[$name] ?? 0,
+            ];
+        }
+
+        return $pareto;
+    }
+
+    /**
+     * Hitung tren defect gabungan (Pre Assy + Final Assy, internal + rework).
+     * Dua seri terpisah pada sumbu jumlah defect, tanpa DPM dan tanpa target (null).
+     */
+    private function buildDpmTrendsCombined(Carbon $startDate, Carbon $endDate, string $groupBy): array
+    {
+        $rawInternal = Defect::query()
+            ->whereBetween('waktu', [$startDate, $endDate])
+            ->byDashboardMode('internal')
+            ->selectRaw('DATE(waktu) as bucket_date, SUM(quantity) as total_defect, SUM(inspect_quantity) as total_inspect')
+            ->groupBy(DB::raw('DATE(waktu)'))
+            ->orderBy('bucket_date', 'asc')
+            ->get();
+
+        $rawRework = Defect::query()
+            ->whereBetween('waktu', [$startDate, $endDate])
+            ->byDashboardMode('rework')
+            ->selectRaw('DATE(waktu) as bucket_date, SUM(quantity) as total_defect, COUNT(DISTINCT rework_group_id) as total_harness')
+            ->groupBy(DB::raw('DATE(waktu)'))
+            ->orderBy('bucket_date', 'asc')
+            ->get();
+
+        $grouped = [];
+
+        if ($groupBy === 'week') {
+            $curr = $startDate->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
+            $last = $endDate->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
+            while ($curr->lte($last)) {
+                $key = $curr->format('Y-m-d');
+                $grouped[$key] = [
+                    'label'                 => $key,
+                    'total_defect'          => 0,
+                    'total_inspect'         => 0,
+                    'total_defect_internal' => 0,
+                    'total_defect_rework'   => 0,
+                    'total_harness_rework'  => 0,
+                ];
+                $curr->addWeek();
+            }
+        } elseif ($groupBy === 'month') {
+            $curr = $startDate->copy()->startOfMonth()->startOfDay();
+            $last = $endDate->copy()->startOfMonth()->startOfDay();
+            while ($curr->lte($last)) {
+                $key = $curr->format('Y-m');
+                $grouped[$key] = [
+                    'label'                 => $key,
+                    'total_defect'          => 0,
+                    'total_inspect'         => 0,
+                    'total_defect_internal' => 0,
+                    'total_defect_rework'   => 0,
+                    'total_harness_rework'  => 0,
+                ];
+                $curr->addMonthNoOverflow();
+            }
+        } else {
+            $curr = $startDate->copy()->startOfDay();
+            $last = $endDate->copy()->startOfDay();
+            while ($curr->lte($last)) {
+                $key = $curr->format('Y-m-d');
+                $grouped[$key] = [
+                    'label'                 => $key,
+                    'total_defect'          => 0,
+                    'total_inspect'         => 0,
+                    'total_defect_internal' => 0,
+                    'total_defect_rework'   => 0,
+                    'total_harness_rework'  => 0,
+                ];
+                $curr->addDay();
+            }
+        }
+
+        foreach ($rawInternal as $rec) {
+            $date = Carbon::parse($rec->bucket_date);
+
+            if ($groupBy === 'week') {
+                $key = $date->copy()->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
+            } elseif ($groupBy === 'month') {
+                $key = $date->format('Y-m');
+            } else {
+                $key = $date->format('Y-m-d');
+            }
+
+            if (isset($grouped[$key])) {
+                $grouped[$key]['total_defect_internal'] += (int) $rec->total_defect;
+                $grouped[$key]['total_inspect'] += (int) $rec->total_inspect;
+            }
+        }
+
+        foreach ($rawRework as $rec) {
+            $date = Carbon::parse($rec->bucket_date);
+
+            if ($groupBy === 'week') {
+                $key = $date->copy()->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
+            } elseif ($groupBy === 'month') {
+                $key = $date->format('Y-m');
+            } else {
+                $key = $date->format('Y-m-d');
+            }
+
+            if (isset($grouped[$key])) {
+                $grouped[$key]['total_defect_rework'] += (int) $rec->total_defect;
+                $grouped[$key]['total_harness_rework'] += (int) $rec->total_harness;
+            }
+        }
+
+        if (count($grouped) > 400) {
+            $grouped = array_slice($grouped, -400, null, true);
+        }
+
+        $points = [];
+        foreach ($grouped as $bucket) {
+            $defInternal = $bucket['total_defect_internal'];
+            $defRework = $bucket['total_defect_rework'];
+            $harnessRework = $bucket['total_harness_rework'];
+            $totalInspect = $bucket['total_inspect'];
+            $totalDefect = $defInternal + $defRework;
+
+            $points[] = [
+                'label'                 => $bucket['label'],
+                'total_defect'          => $totalDefect,
+                'total_inspect'         => $totalInspect,
+                'dpm'                   => null,
+                'target'                => null,
+                'total_defect_internal' => $defInternal,
+                'total_defect_rework'   => $defRework,
+                'total_harness_rework'  => $harnessRework,
+            ];
+        }
+
+        return $points;
+    }
+
+    /**
+     * Hitung data Pareto sub-defect gabungan (Pre Assy + Final Assy, Top 10 & persentase kumulatif).
+     */
+    private function buildParetoCombined(Carbon $startDate, Carbon $endDate): array
+    {
+        $reworkAreaNames = Defect::getReworkAreaNames();
+
+        $query = Defect::query()
+            ->select(['jenis_sub_defect', 'quantity', 'area_ditemukan', 'jenis_assy'])
+            ->byDashboardMode('all')
+            ->whereBetween('waktu', [$startDate, $endDate])
+            ->where(function ($q) {
+                $q->whereNull('jenis_defect')->orWhere('jenis_defect', '!=', 'Zero Defect');
+            })
+            ->where('quantity', '>', 0);
+
+        $records = $query->get();
+
+        $subDefectTotals = [];
+        $subDefectInternal = [];
+        $subDefectRework = [];
+        $grandTotal = 0;
+
+        foreach ($records as $r) {
+            $rawName = $r->jenis_sub_defect ?? '-';
+            $normalizedName = trim(strtoupper($rawName));
+            if ($normalizedName === '' || $normalizedName === '-') {
+                $normalizedName = 'LAIN-LAIN';
+            }
+            $qty = (int) $r->quantity;
+
+            $isRework = ($r->jenis_assy === 'Final Assy' && !empty($reworkAreaNames) && in_array($r->area_ditemukan, $reworkAreaNames, true));
 
             if (!isset($subDefectTotals[$normalizedName])) {
                 $subDefectTotals[$normalizedName] = 0;
