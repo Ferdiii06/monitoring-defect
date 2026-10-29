@@ -499,4 +499,81 @@ class ReworkFormTest extends TestCase
             $this->assertEquals('NP-POST-EDIT', $d->nameplate_lama);
         }
     }
+
+    public function test_rework_in_dan_update_dengan_seluruh_field_baru_tersimpan_di_database(): void
+    {
+        $area = AreaDitemukan::create([
+            'name' => 'OFFLINE_AREA',
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
+
+        $session = [
+            'logged_in'     => true,
+            'user_name'     => 'reworkA',
+            'user_role'     => 'Rework',
+            'current_shift' => '1A',
+        ];
+
+        // 1. Submit store_in with all legacy fields
+        $responseIn = $this->withSession($session)->post(route('rework.store_in'), [
+            'kanban_assy'          => 'KB-FULL-001',
+            'nameplate'            => 'NP-OLD-001',
+            'sub_defect_ids'       => [$sub->id],
+            'no_defective_tag'     => 'TAG-9999',
+            'ujung'                => 'END-1',
+            'status_4m'            => 'YES',
+            'area_ditemukan'       => 'OFFLINE_AREA',
+            'posisi_detail_rework' => 'Konektor A pin 3',
+            'fc_h'                 => '1.25',
+            'fc_w'                 => '2.10',
+            'rc_h'                 => '1.30',
+            'rc_w'                 => '2.20',
+            'no_box'               => 'BOX-517',
+            'shift'                => '2B',
+        ]);
+
+        $responseIn->assertRedirect(route('rework.index'));
+        $defect = Defect::where('kanban_assy', 'KB-FULL-001')->first();
+        $this->assertNotNull($defect);
+        $this->assertEquals('TAG-9999', $defect->no_defective_tag);
+        $this->assertEquals('END-1', $defect->ujung);
+        $this->assertEquals('YES', $defect->status_4m);
+        $this->assertEquals('OFFLINE_AREA', $defect->area_ditemukan);
+        $this->assertEquals('Konektor A pin 3', $defect->posisi_detail_rework);
+        $this->assertEquals('1.25', $defect->fc_h);
+        $this->assertEquals('2.10', $defect->fc_w);
+        $this->assertEquals('1.30', $defect->rc_h);
+        $this->assertEquals('2.20', $defect->rc_w);
+        $this->assertEquals('BOX-517', $defect->no_box);
+        $this->assertEquals('2B', $defect->shift);
+
+        // 2. Submit update with NP Baru
+        $groupId = $defect->rework_group_id;
+        $responsePut = $this->withSession($session)->put(route('rework.update', $groupId), [
+            'kanban_assy'          => 'KB-FULL-001-UPDATED',
+            'nameplate'            => 'NP-OLD-001',
+            'nameplate_baru'       => 'NP-NEW-002',
+            'sub_defect_ids'       => [$sub->id],
+            'no_defective_tag'     => 'TAG-8888',
+            'ujung'                => 'END-2',
+            'status_4m'            => 'NO',
+            'area_ditemukan'       => 'OFFLINE_AREA',
+            'posisi_detail_rework' => 'Konektor B pin 4',
+            'no_box'               => 'BOX-3638',
+            'shift'                => '3A',
+        ]);
+
+        $responsePut->assertRedirect(route('rework.index'));
+        $updated = Defect::where('rework_group_id', $groupId)->first();
+        $this->assertEquals('KB-FULL-001-UPDATED', $updated->kanban_assy);
+        $this->assertEquals('NP-NEW-002', $updated->nameplate_baru);
+        $this->assertEquals('TAG-8888', $updated->no_defective_tag);
+        $this->assertEquals('END-2', $updated->ujung);
+        $this->assertEquals('NO', $updated->status_4m);
+        $this->assertEquals('Konektor B pin 4', $updated->posisi_detail_rework);
+        $this->assertEquals('BOX-3638', $updated->no_box);
+        $this->assertEquals('3A', $updated->shift);
+    }
 }

@@ -64,7 +64,9 @@ class ReworkController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('rework.index', compact('paginatedGroups', 'defectsByGroup', 'finalAssySubDefects', 'isAdmin'));
+        $areas = AreaDitemukan::orderBy('name')->get();
+
+        return view('rework.index', compact('paginatedGroups', 'defectsByGroup', 'finalAssySubDefects', 'isAdmin', 'areas'));
     }
 
     /**
@@ -83,10 +85,21 @@ class ReworkController extends Controller
         ]);
 
         $validated = $request->validate([
-            'kanban_assy'      => 'required|string|max:255',
-            'nameplate'        => 'required|string|max:255',
-            'sub_defect_ids'   => 'required|array|min:1',
-            'sub_defect_ids.*' => 'required|integer|exists:sub_defect_types,id',
+            'kanban_assy'          => 'required|string|max:255',
+            'nameplate'            => 'required|string|max:255',
+            'sub_defect_ids'       => 'required|array|min:1',
+            'sub_defect_ids.*'     => 'required|integer|exists:sub_defect_types,id',
+            'no_defective_tag'     => 'nullable|string|max:255',
+            'ujung'                => 'nullable|string|max:255',
+            'status_4m'            => 'nullable|string|max:50',
+            'area_ditemukan'       => 'nullable|string|max:255',
+            'posisi_detail_rework' => 'nullable|string',
+            'fc_h'                 => 'nullable|string|max:255',
+            'fc_w'                 => 'nullable|string|max:255',
+            'rc_h'                 => 'nullable|string|max:255',
+            'rc_w'                 => 'nullable|string|max:255',
+            'no_box'               => 'nullable|string|max:255',
+            'shift'                => 'nullable|string|max:50',
         ], [
             'kanban_assy.required'    => 'Kanban Assy wajib diisi.',
             'nameplate.required'      => 'Nameplate wajib diisi.',
@@ -116,8 +129,10 @@ class ReworkController extends Controller
             }
         }
 
-        // Master area rework check: must exist before inserting defects
-        $reworkArea = AreaDitemukan::getDefaultReworkAreaName();
+        // Master area rework check: gunakan area yang dipilih jika ada, fallback ke default rework area
+        $reworkArea = $request->filled('area_ditemukan')
+            ? trim((string) $request->input('area_ditemukan'))
+            : AreaDitemukan::getDefaultReworkAreaName();
 
         if (!$reworkArea) {
             return back()
@@ -130,7 +145,7 @@ class ReworkController extends Controller
         $groupId = (string) Str::uuid();
         $now = now();
         $userName = session('user_name');
-        $shift = session('current_shift', '1A');
+        $shift = $request->filled('shift') ? $request->input('shift') : session('current_shift', '1A');
 
         foreach ($validated['sub_defect_ids'] as $subDefectId) {
             $sub = $subDefects->get($subDefectId);
@@ -147,6 +162,16 @@ class ReworkController extends Controller
                 'kanban_assy'          => $validated['kanban_assy'],
                 'nameplate_lama'       => $validated['nameplate'],
                 'nameplate_baru'       => null,
+                'no_defective_tag'     => $request->input('no_defective_tag') ?: null,
+                'ujung'                => $request->input('ujung') ?: null,
+                'status_4m'            => $request->input('status_4m') ?: 'NO',
+                'area_ditemukan'       => $reworkArea,
+                'posisi_detail_rework' => $request->input('posisi_detail_rework') ?: null,
+                'fc_h'                 => $request->input('fc_h') ?: null,
+                'fc_w'                 => $request->input('fc_w') ?: null,
+                'rc_h'                 => $request->input('rc_h') ?: null,
+                'rc_w'                 => $request->input('rc_w') ?: null,
+                'no_box'               => $request->input('no_box') ?: null,
                 'user_name'            => $userName,
                 'shift'                => $shift,
                 'jenis_assy'           => 'Final Assy',
@@ -155,7 +180,6 @@ class ReworkController extends Controller
                 'sub_defect_type_id'   => $sub->id,
                 'jenis_defect'         => $sub->defectType?->name,
                 'jenis_sub_defect'     => $sub->name,
-                'area_ditemukan'       => $reworkArea,
                 'conveyor'             => null,
                 'carline_id'           => null,
             ]);
@@ -245,8 +269,9 @@ class ReworkController extends Controller
         })->values();
 
         $returnUrl = $isAdmin ? $this->sanitizeAdminReturnUrl($request->input('return_url')) : null;
+        $areas = AreaDitemukan::orderBy('name')->get();
 
-        return view('rework.edit', compact('defects', 'first', 'groupId', 'finalAssySubDefects', 'currentDefects', 'isAdmin', 'returnUrl'));
+        return view('rework.edit', compact('defects', 'first', 'groupId', 'finalAssySubDefects', 'currentDefects', 'isAdmin', 'returnUrl', 'areas'));
     }
 
     /**
@@ -275,10 +300,22 @@ class ReworkController extends Controller
         ]);
 
         $validated = $request->validate([
-            'kanban_assy'      => 'required|string|max:255',
-            'nameplate'        => 'required|string|max:255',
-            'sub_defect_ids'   => 'required|array|min:1',
-            'sub_defect_ids.*' => 'required|integer|exists:sub_defect_types,id',
+            'kanban_assy'          => 'required|string|max:255',
+            'nameplate'            => 'required|string|max:255',
+            'sub_defect_ids'       => 'required|array|min:1',
+            'sub_defect_ids.*'     => 'required|integer|exists:sub_defect_types,id',
+            'nameplate_baru'       => 'nullable|string|max:255',
+            'no_defective_tag'     => 'nullable|string|max:255',
+            'ujung'                => 'nullable|string|max:255',
+            'status_4m'            => 'nullable|string|max:50',
+            'area_ditemukan'       => 'nullable|string|max:255',
+            'posisi_detail_rework' => 'nullable|string',
+            'fc_h'                 => 'nullable|string|max:255',
+            'fc_w'                 => 'nullable|string|max:255',
+            'rc_h'                 => 'nullable|string|max:255',
+            'rc_w'                 => 'nullable|string|max:255',
+            'no_box'               => 'nullable|string|max:255',
+            'shift'                => 'nullable|string|max:50',
         ], [
             'kanban_assy.required'    => 'Kanban Assy wajib diisi.',
             'nameplate.required'      => 'Nameplate wajib diisi.',
@@ -308,8 +345,11 @@ class ReworkController extends Controller
             }
         }
 
-        // Resolusi area rework deterministik (template atau master dengan ID terkecil)
-        $reworkArea = $first->area_ditemukan ?: AreaDitemukan::getDefaultReworkAreaName();
+        // Resolusi area rework deterministik: dari input jika filled, atau first area_ditemukan, atau default rework area
+        $reworkArea = $request->filled('area_ditemukan')
+            ? trim((string) $request->input('area_ditemukan'))
+            : ($first->area_ditemukan ?: AreaDitemukan::getDefaultReworkAreaName());
+
         if (!$reworkArea) {
             return back()
                 ->withErrors([
@@ -318,7 +358,7 @@ class ReworkController extends Controller
                 ->withInput();
         }
 
-        DB::transaction(function () use ($existingDefects, $groupId, $validated, $subDefects, $first, $reworkArea) {
+        DB::transaction(function () use ($existingDefects, $groupId, $validated, $subDefects, $first, $reworkArea, $request) {
             $kanban = $validated['kanban_assy'];
             $nameplate = $validated['nameplate'];
             $newSubIds = array_map('intval', $validated['sub_defect_ids']);
@@ -326,6 +366,23 @@ class ReworkController extends Controller
             $template = $first;
             $existingBySubId = $existingDefects->keyBy('sub_defect_type_id');
             $existingSubIds = $existingBySubId->keys()->map(fn($k) => (int) $k)->all();
+
+            $sharedUpdates = [
+                'kanban_assy'          => $kanban,
+                'nameplate_lama'       => $nameplate,
+                'area_ditemukan'       => $reworkArea,
+                'nameplate_baru'       => $request->has('nameplate_baru') ? ($request->input('nameplate_baru') ?: null) : $template->nameplate_baru,
+                'no_defective_tag'     => $request->has('no_defective_tag') ? ($request->input('no_defective_tag') ?: null) : $template->no_defective_tag,
+                'ujung'                => $request->has('ujung') ? ($request->input('ujung') ?: null) : $template->ujung,
+                'status_4m'            => $request->has('status_4m') ? ($request->input('status_4m') ?: 'NO') : ($template->status_4m ?: 'NO'),
+                'posisi_detail_rework' => $request->has('posisi_detail_rework') ? ($request->input('posisi_detail_rework') ?: null) : $template->posisi_detail_rework,
+                'fc_h'                 => $request->has('fc_h') ? ($request->input('fc_h') ?: null) : $template->fc_h,
+                'fc_w'                 => $request->has('fc_w') ? ($request->input('fc_w') ?: null) : $template->fc_w,
+                'rc_h'                 => $request->has('rc_h') ? ($request->input('rc_h') ?: null) : $template->rc_h,
+                'rc_w'                 => $request->has('rc_w') ? ($request->input('rc_w') ?: null) : $template->rc_w,
+                'no_box'               => $request->has('no_box') ? ($request->input('no_box') ?: null) : $template->no_box,
+                'shift'                => $request->has('shift') ? ($request->input('shift') ?: $template->shift) : $template->shift,
+            ];
 
             // 1. Defect yang dihapus (ada di existing tapi tidak ada di newSubIds)
             $toDeleteSubIds = array_diff($existingSubIds, $newSubIds);
@@ -339,11 +396,7 @@ class ReworkController extends Controller
             $toKeepSubIds = array_intersect($existingSubIds, $newSubIds);
             foreach ($toKeepSubIds as $keepSubId) {
                 if (isset($existingBySubId[$keepSubId])) {
-                    $existingBySubId[$keepSubId]->update([
-                        'kanban_assy'    => $kanban,
-                        'nameplate_lama' => $nameplate,
-                        'area_ditemukan' => $existingBySubId[$keepSubId]->area_ditemukan ?: $reworkArea,
-                    ]);
+                    $existingBySubId[$keepSubId]->update($sharedUpdates);
                 }
             }
 
@@ -355,28 +408,23 @@ class ReworkController extends Controller
                     continue;
                 }
 
-                Defect::create([
+                Defect::create(array_merge($sharedUpdates, [
                     'rework_group_id'      => $groupId,
                     'waktu'                => $template->waktu,
                     'waktu_in'             => $template->waktu_in,
                     'waktu_out'            => $template->waktu_out,
                     'durasi_rework_menit'  => $template->durasi_rework_menit,
                     'status_rework'        => $template->status_rework,
-                    'kanban_assy'          => $kanban,
-                    'nameplate_lama'       => $nameplate,
-                    'nameplate_baru'       => $template->nameplate_baru,
                     'user_name'            => $template->user_name, // Akun pembuat tetap pemilik asli
-                    'shift'                => $template->shift,
                     'jenis_assy'           => 'Final Assy',
                     'quantity'             => 1,
                     'defect_type_id'       => $sub->defect_type_id,
                     'sub_defect_type_id'   => $sub->id,
                     'jenis_defect'         => $sub->defectType?->name,
                     'jenis_sub_defect'     => $sub->name,
-                    'area_ditemukan'       => $reworkArea,
                     'conveyor'             => $template->conveyor,
                     'carline_id'           => $template->carline_id,
-                ]);
+                ]));
             }
         });
 
