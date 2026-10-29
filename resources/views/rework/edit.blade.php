@@ -65,7 +65,7 @@
                     @endif
                 </div>
 
-                <div class="text-[10px] font-mono text-gray-400 pt-1 border-t border-gray-200 truncate">
+                <div class="hidden" aria-hidden="true">
                     Group: {{ $groupId }}
                 </div>
             </div>
