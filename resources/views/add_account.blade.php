@@ -29,7 +29,7 @@
         <header class="flex justify-between items-center mb-8">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 leading-tight">Add Account</h1>
-                <p class="text-sm text-gray-500 mt-1">Kelola data pengguna sistem (Administrator dan Operator).</p>
+                <p class="text-sm text-gray-500 mt-1">Kelola data pengguna sistem (Administrator, Operator, dan Rework).</p>
             </div>
             
             <div class="flex items-center space-x-6">
@@ -91,19 +91,20 @@
                             class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
                             <option value="Administrator">Administrator</option>
                             <option value="User">User</option>
+                            <option value="Rework">Rework</option>
                         </select>
                     </div>
 
                     <div>
                         <label for="pin" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">PIN <span class="text-red-500">*</span></label>
                         <div class="relative">
-                            <input type="password" id="pin" name="pin" :placeholder="createRole === 'User' ? 'PIN 6 digit' : 'Min. 4 karakter'" :maxlength="createRole === 'User' ? 6 : 20" required
+                            <input type="password" id="pin" name="pin" :placeholder="createRole === 'Administrator' ? 'Min. 4 karakter' : 'PIN 6 digit'" :maxlength="createRole === 'Administrator' ? 20 : 6" required
                                 class="w-full border border-gray-200 rounded-lg p-3 pr-10 text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
                             <button type="button" onclick="togglePinVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
                                 <svg id="eyeIcon" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                             </button>
                         </div>
-                        <p class="text-[11px] text-gray-400 mt-1" x-text="createRole === 'User' ? 'Wajib 6 digit angka untuk operator.' : 'Minimal 4 karakter untuk administrator.'"></p>
+                        <p class="text-[11px] text-gray-400 mt-1" x-text="createRole === 'Administrator' ? 'Minimal 4 karakter untuk administrator.' : 'Wajib 6 digit angka untuk operator dan rework.'"></p>
                     </div>
 
                     <button type="submit" class="w-full bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold py-3 rounded-lg transition duration-200 shadow-sm flex items-center justify-center space-x-2">
@@ -141,6 +142,10 @@
                                             @if($user->role === 'Administrator')
                                                 <span class="inline-block bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-0.5 rounded-full font-bold">
                                                     Administrator
+                                                </span>
+                                            @elseif($user->role === 'Rework')
+                                                <span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full font-bold">
+                                                    Rework
                                                 </span>
                                             @else
                                                 <span class="inline-block bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-full font-bold">
@@ -208,12 +213,13 @@
                         class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700">
                         <option value="Administrator">Administrator</option>
                         <option value="User">User</option>
+                        <option value="Rework">Rework</option>
                     </select>
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">PIN Baru <span class="text-xs text-gray-400 font-normal">(Kosongkan jika tidak diubah)</span></label>
-                    <input type="password" name="pin" x-model="editPin" :placeholder="editRole === 'User' ? '6 digit angka (opsional)' : 'Min. 4 karakter (opsional)'"
+                    <input type="password" name="pin" x-model="editPin" :placeholder="editRole === 'Administrator' ? 'Min. 4 karakter (opsional)' : '6 digit angka (opsional)'" :maxlength="editRole === 'Administrator' ? 20 : 6"
                         class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
                 </div>
 

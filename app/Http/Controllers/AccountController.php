@@ -33,7 +33,7 @@ class AccountController extends Controller
 
         $pinRule = $request->role === 'Administrator'
             ? 'required|string|min:4'
-            : 'required|string|size:6';
+            : 'required|digits:6';
 
         $request->validate([
             'name' => 'required|string|max:255|unique:users,name',
@@ -70,14 +70,21 @@ class AccountController extends Controller
 
         $user = User::findOrFail($id);
 
-        $pinRule = $request->role === 'Administrator'
-            ? 'nullable|string|min:4'
-            : 'nullable|string|size:6';
+        $isNonAdmin = in_array($request->role, ['User', 'Rework'], true);
+        $oldPinIsSixDigits = is_string($user->pin) && preg_match('/^\d{6}$/', (string) $user->pin) === 1;
+
+        if ($request->role === 'Administrator') {
+            $pinRule = 'nullable|string|min:4';
+        } elseif ($request->role !== $user->role && $isNonAdmin && !$oldPinIsSixDigits) {
+            $pinRule = 'required|digits:6';
+        } else {
+            $pinRule = 'nullable|digits:6';
+        }
 
         $request->validate([
             'name' => 'required|string|max:255|unique:users,name,' . $id,
             'pin'  => $pinRule,
-            'role' => 'required|string|in:Administrator,User',
+            'role' => 'required|string|in:Administrator,User,Rework',
         ]);
 
         $updateData = [

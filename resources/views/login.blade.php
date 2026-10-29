@@ -162,10 +162,12 @@
 
     <!-- Offline Vanilla JS Logic -->
     <script>
-        let currentRole = '{{ old('login_type', 'user') }}';
+        const allowedRoles = ['user', 'rework', 'admin'];
+        const initialRole = '{{ old('login_type', 'user') }}';
+        let currentRole = allowedRoles.includes(initialRole) ? initialRole : 'user';
 
         function setRole(role) {
-            currentRole = role;
+            currentRole = allowedRoles.includes(role) ? role : 'user';
 
             const loginTypeInput = document.getElementById('login_type');
             const roleSubtitle = document.getElementById('role-subtitle');
@@ -274,10 +276,16 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        function initLoginPage() {
             setRole(currentRole);
             updateShiftStyle();
-        });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initLoginPage);
+        } else {
+            initLoginPage();
+        }
     </script>
 </body>
 </html>

@@ -13,7 +13,7 @@ class EnsureIsOperator
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!in_array(session('user_role'), ['User', 'Rework'])) {
+        if (!in_array(session('user_role'), ['User', 'Rework'], true)) {
             return redirect()->route('dashboard');
         }
 
