@@ -139,6 +139,158 @@
                             </div>
                         </div>
 
+                        <!-- Grid Kolom Tambahan (Sesuai Sistem Rework) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-1">
+                            <!-- No Defective Tag -->
+                            <div class="space-y-1.5 sm:col-span-1">
+                                <label for="no_defective_tag" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    No Defective Tag
+                                </label>
+                                <input type="text"
+                                       id="no_defective_tag"
+                                       name="no_defective_tag"
+                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                                       placeholder="No Defective Tag"
+                                       value="{{ old('no_defective_tag') }}"
+                                       autocomplete="off">
+                            </div>
+
+                            <!-- #End -->
+                            <div class="space-y-1.5 sm:col-span-1">
+                                <label for="ujung" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    #End
+                                </label>
+                                <input type="text"
+                                       id="ujung"
+                                       name="ujung"
+                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                                       placeholder="#End"
+                                       value="{{ old('ujung') }}"
+                                       autocomplete="off">
+                            </div>
+
+                            <!-- 4M Change Status -->
+                            <div class="space-y-1.5 sm:col-span-1">
+                                <label for="status_4m" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    4M Change Status
+                                </label>
+                                <select id="status_4m"
+                                        name="status_4m"
+                                        class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
+                                    <option value="NO" {{ old('status_4m', 'NO') === 'NO' ? 'selected' : '' }}>NO</option>
+                                    <option value="YES" {{ old('status_4m') === 'YES' ? 'selected' : '' }}>YES</option>
+                                </select>
+                            </div>
+
+                            <!-- Area Ditemukan -->
+                            <div class="space-y-1.5 sm:col-span-1">
+                                <label for="area_ditemukan" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    Area Ditemukan
+                                </label>
+                                <select id="area_ditemukan"
+                                        name="area_ditemukan"
+                                        class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
+                                    @if(isset($areas) && $areas->isNotEmpty())
+                                        @foreach($areas as $area)
+                                            <option value="{{ $area->name }}" {{ old('area_ditemukan') === $area->name ? 'selected' : '' }}>
+                                                {{ $area->name }} ({{ $area->tipe === 'rework' ? 'Rework' : 'Internal' }})
+                                            </option>
+                                        @endforeach
+                                    @else
+                                        <option value="">Default Area Rework</option>
+                                    @endif
+                                </select>
+                            </div>
+
+                            <!-- Posisi & Detail Rework -->
+                            <div class="space-y-1.5 sm:col-span-2 lg:col-span-4">
+                                <label for="posisi_detail_rework" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    Posisi &amp; Detail Rework
+                                </label>
+                                <input type="text"
+                                       id="posisi_detail_rework"
+                                       name="posisi_detail_rework"
+                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                                       placeholder="Posisi dan detail rework harness"
+                                       value="{{ old('posisi_detail_rework') }}"
+                                       autocomplete="off">
+                            </div>
+
+                            <!-- Crimp Measurements (F C/H, F C/W, R C/H, R C/W) -->
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:col-span-2">
+                                <div class="space-y-1">
+                                    <label for="fc_h" class="block text-[10px] font-bold text-gray-600 uppercase">F C/H</label>
+                                    <input type="text"
+                                           id="fc_h"
+                                           name="fc_h"
+                                           value="{{ old('fc_h') }}"
+                                           placeholder="F C/H"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
+                                </div>
+                                <div class="space-y-1">
+                                    <label for="fc_w" class="block text-[10px] font-bold text-gray-600 uppercase">F C/W</label>
+                                    <input type="text"
+                                           id="fc_w"
+                                           name="fc_w"
+                                           value="{{ old('fc_w') }}"
+                                           placeholder="F C/W"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
+                                </div>
+                                <div class="space-y-1">
+                                    <label for="rc_h" class="block text-[10px] font-bold text-gray-600 uppercase">R C/H</label>
+                                    <input type="text"
+                                           id="rc_h"
+                                           name="rc_h"
+                                           value="{{ old('rc_h') }}"
+                                           placeholder="R C/H"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
+                                </div>
+                                <div class="space-y-1">
+                                    <label for="rc_w" class="block text-[10px] font-bold text-gray-600 uppercase">R C/W</label>
+                                    <input type="text"
+                                           id="rc_w"
+                                           name="rc_w"
+                                           value="{{ old('rc_w') }}"
+                                           placeholder="R C/W"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation">
+                                </div>
+                            </div>
+
+                            <!-- Carton Box -->
+                            <div class="space-y-1.5 sm:col-span-1">
+                                <label for="no_box" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    Carton Box (No BOX)
+                                </label>
+                                <input type="text"
+                                       id="no_box"
+                                       name="no_box"
+                                       class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                                       placeholder="No Carton Box"
+                                       value="{{ old('no_box') }}"
+                                       autocomplete="off">
+                            </div>
+
+                            <!-- Shift -->
+                            <div class="space-y-1.5 sm:col-span-1">
+                                <label for="shift" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    Shift
+                                </label>
+                                <select id="shift"
+                                        name="shift"
+                                        class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
+                                    @php $currentShift = old('shift', session('current_shift', '1A')); @endphp
+                                    <option value="1A" {{ $currentShift === '1A' ? 'selected' : '' }}>1A</option>
+                                    <option value="1B" {{ $currentShift === '1B' ? 'selected' : '' }}>1B</option>
+                                    <option value="2A" {{ $currentShift === '2A' ? 'selected' : '' }}>2A</option>
+                                    <option value="2B" {{ $currentShift === '2B' ? 'selected' : '' }}>2B</option>
+                                    <option value="3A" {{ $currentShift === '3A' ? 'selected' : '' }}>3A</option>
+                                    <option value="3B" {{ $currentShift === '3B' ? 'selected' : '' }}>3B</option>
+                                    <option value="A" {{ $currentShift === 'A' ? 'selected' : '' }}>A</option>
+                                    <option value="B" {{ $currentShift === 'B' ? 'selected' : '' }}>B</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- Field 3: Defect Search -->
                         <div class="space-y-1.5">
                             <label for="defect_search" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">

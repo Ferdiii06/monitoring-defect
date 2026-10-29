@@ -709,12 +709,12 @@ class AdminReworkHistoryTest extends TestCase
         $this->assertEquals('Berjalan', $mapped[4]);
         $this->assertEquals('KB-EXPORT-TEST', $mapped[6]);
         $this->assertEquals('NP-EXPORT-TEST', $mapped[7]);
-        $this->assertEquals('rework_exp_user', $mapped[9]);
-        $this->assertEquals('1A', $mapped[10]);
-        $this->assertEquals('1A', $mapped[11]); // code derived
-        $this->assertEquals('TERMINAL DEFECT', $mapped[12]);
-        $this->assertEquals('1.A - TERMINAL BENGKOK', $mapped[13]);
-        $this->assertEquals(1, $mapped[14]);
-        $this->assertEquals($reworkArea->name, $mapped[15]);
+        $this->assertEquals($reworkArea->name, $mapped[12]);
+        $this->assertEquals('rework_exp_user', $mapped[19]);
+        $this->assertEquals('1A', $mapped[20]);
+        $this->assertEquals('1A', $mapped[21]); // code derived
+        $this->assertEquals('TERMINAL DEFECT', $mapped[22]);
+        $this->assertEquals('1.A - TERMINAL BENGKOK', $mapped[23]);
+        $this->assertEquals(1, $mapped[24]);
     }
 }
