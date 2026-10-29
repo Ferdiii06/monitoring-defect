@@ -52,6 +52,8 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
     // Protected Rework routes (only accessible by Rework role)
     Route::middleware(['rework'])->prefix('rework')->name('rework.')->group(function () {
         Route::get('/', [ReworkController::class, 'index'])->name('index');
+        Route::post('/in', [ReworkController::class, 'storeIn'])->name('store_in');
+        Route::post('/out/{groupId}', [ReworkController::class, 'storeOut'])->name('store_out');
     });
 
 
