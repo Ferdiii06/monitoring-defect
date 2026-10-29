@@ -43,6 +43,34 @@ class AuthController extends Controller
 
             return redirect()->route('operator.home');
 
+        } elseif ($role === 'rework') {
+            $credentials = $request->validate([
+                'name'  => 'required|string',
+                'shift' => 'required|string|in:1A,1B,2A,2B',
+                'pin'   => 'required|string|size:6',
+            ]);
+
+            $user = User::where('role', 'Rework')
+                ->whereRaw('LOWER(name) = ?', [strtolower(trim($credentials['name']))])
+                ->first();
+
+            if (!$user || $user->pin !== $credentials['pin']) {
+                throw ValidationException::withMessages([
+                    'name' => 'Nama atau PIN salah.',
+                ]);
+            }
+
+            session([
+                'logged_in'     => true,
+                'user_name'     => $user->name,
+                'current_shift' => $credentials['shift'],
+                'user_role'     => 'Rework',
+            ]);
+
+            $request->session()->regenerate();
+
+            return redirect()->route('operator.home');
+
         } else {
             $credentials = $request->validate([
                 'name' => 'required|string',

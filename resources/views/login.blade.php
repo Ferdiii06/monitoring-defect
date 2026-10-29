@@ -26,7 +26,7 @@
 
     <!-- Card Login Container -->
     <div class="w-full max-w-md bg-white rounded-3xl border border-gray-100/80 p-8 sm:p-9 shadow-2xl relative overflow-hidden">
-        
+
         <!-- Decorative Top Red Accent Bar -->
         <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#8b0000] via-red-600 to-[#8b0000]"></div>
 
@@ -37,6 +37,22 @@
             </div>
             <h1 class="text-xl font-extrabold text-gray-900 tracking-tight">Report Internal Defect</h1>
             <p id="role-subtitle" class="text-xs text-gray-500 font-medium mt-1">Silakan masuk sebagai Operator</p>
+        </div>
+
+        <!-- Role Toggle Tabs (Operator / Rework / Admin) -->
+        <div class="grid grid-cols-3 p-1 bg-gray-100 rounded-2xl mb-5 text-xs font-bold gap-1 border border-gray-200/70" role="tablist">
+            <button type="button" id="tab-user" onclick="setRole('user')"
+                class="py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold">
+                Operator
+            </button>
+            <button type="button" id="tab-rework" onclick="setRole('rework')"
+                class="py-2.5 rounded-xl transition-all duration-200 text-center text-gray-500 hover:text-gray-900 font-semibold">
+                Rework
+            </button>
+            <button type="button" id="tab-admin" onclick="setRole('admin')"
+                class="py-2.5 rounded-xl transition-all duration-200 text-center text-gray-500 hover:text-gray-900 font-semibold">
+                Admin
+            </button>
         </div>
 
         <!-- Validation Error Alert -->
@@ -50,18 +66,19 @@
         <!-- Main Form (100% Offline Native JS Controlled) -->
         <form action="{{ route('login.post') }}" method="POST" class="space-y-4 w-full">
             @csrf
-            <input type="hidden" name="login_type" id="login_type" value="user">
+            <input type="hidden" name="login_type" id="login_type" value="{{ old('login_type', 'user') }}">
 
-            <!-- Field 1: Operator Name -->
+            <!-- Field 1: Operator / Rework Name -->
             <div id="operator-field-group">
                 <label for="name" class="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                    Nama Lengkap <span class="text-[#8b0000]">*</span>
+                    <span id="name-label-text">Nama Lengkap</span> <span class="text-[#8b0000]">*</span>
                 </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                         <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
                     <input type="text" id="name" name="name" required
+                        value="{{ old('name') }}"
                         placeholder="Masukkan Nama Anda"
                         class="w-full pl-10 pr-3.5 py-3 bg-gray-50/80 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] transition-all">
                 </div>
@@ -76,10 +93,9 @@
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                         <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                     </div>
-                    <input type="text" id="admin_name" name="name" disabled value=""
+                    <input type="text" id="admin_name" name="name" disabled value="{{ old('name') }}"
                         placeholder="Masukkan Username Admin"
                         class="w-full pl-10 pr-3.5 py-3 bg-gray-50/80 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] transition-all">
-
                 </div>
             </div>
 
@@ -90,19 +106,19 @@
                 </label>
                 <div class="grid grid-cols-4 gap-2">
                     <label class="shift-card flex items-center justify-center py-2.5 px-2 rounded-xl border border-[#8b0000] bg-red-50/80 text-[#8b0000] font-bold text-xs cursor-pointer shadow-sm transition-all text-center">
-                        <input type="radio" name="shift" value="1A" class="sr-only" checked onchange="updateShiftStyle()">
+                        <input type="radio" name="shift" value="1A" class="sr-only" {{ old('shift', '1A') === '1A' ? 'checked' : '' }} onchange="updateShiftStyle()">
                         <span>1A</span>
                     </label>
                     <label class="shift-card flex items-center justify-center py-2.5 px-2 rounded-xl border border-gray-200 bg-gray-50/80 text-gray-700 text-xs font-semibold cursor-pointer hover:bg-gray-100 transition-all text-center">
-                        <input type="radio" name="shift" value="1B" class="sr-only" onchange="updateShiftStyle()">
+                        <input type="radio" name="shift" value="1B" class="sr-only" {{ old('shift') === '1B' ? 'checked' : '' }} onchange="updateShiftStyle()">
                         <span>1B</span>
                     </label>
                     <label class="shift-card flex items-center justify-center py-2.5 px-2 rounded-xl border border-gray-200 bg-gray-50/80 text-gray-700 text-xs font-semibold cursor-pointer hover:bg-gray-100 transition-all text-center">
-                        <input type="radio" name="shift" value="2A" class="sr-only" onchange="updateShiftStyle()">
+                        <input type="radio" name="shift" value="2A" class="sr-only" {{ old('shift') === '2A' ? 'checked' : '' }} onchange="updateShiftStyle()">
                         <span>2A</span>
                     </label>
                     <label class="shift-card flex items-center justify-center py-2.5 px-2 rounded-xl border border-gray-200 bg-gray-50/80 text-gray-700 text-xs font-semibold cursor-pointer hover:bg-gray-100 transition-all text-center">
-                        <input type="radio" name="shift" value="2B" class="sr-only" onchange="updateShiftStyle()">
+                        <input type="radio" name="shift" value="2B" class="sr-only" {{ old('shift') === '2B' ? 'checked' : '' }} onchange="updateShiftStyle()">
                         <span>2B</span>
                     </label>
                 </div>
@@ -111,7 +127,7 @@
             <!-- Field 3: PIN (6 DIGIT) -->
             <div>
                 <label for="pin" class="block text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                    PIN (6 DIGIT) <span class="text-[#8b0000]">*</span>
+                    <span id="pin-label-text">PIN (6 DIGIT)</span> <span class="text-[#8b0000]">*</span>
                 </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
@@ -133,7 +149,7 @@
                 <!-- 2. Ghost Button Toggle Role -->
                 <button type="button" onclick="toggleRole()"
                     class="w-full border border-gray-300 text-gray-600 font-semibold py-3 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 text-xs flex items-center justify-center">
-                    <span id="btn-toggle-label">Masuk sebagai Admin</span>
+                    <span id="btn-toggle-label">Beralih ke Rework</span>
                 </button>
             </div>
         </form>
@@ -146,11 +162,11 @@
 
     <!-- Offline Vanilla JS Logic -->
     <script>
-        let currentRole = 'user';
+        let currentRole = '{{ old('login_type', 'user') }}';
 
-        function toggleRole() {
-            currentRole = currentRole === 'user' ? 'admin' : 'user';
-            
+        function setRole(role) {
+            currentRole = role;
+
             const loginTypeInput = document.getElementById('login_type');
             const roleSubtitle = document.getElementById('role-subtitle');
             const operatorGroup = document.getElementById('operator-field-group');
@@ -158,29 +174,68 @@
             const shiftGroup = document.getElementById('shift-field-group');
             const operatorInput = document.getElementById('name');
             const adminInput = document.getElementById('admin_name');
+            const nameLabelText = document.getElementById('name-label-text');
+            const pinLabelText = document.getElementById('pin-label-text');
             const submitLabel = document.getElementById('btn-submit-label');
             const toggleLabel = document.getElementById('btn-toggle-label');
             const pinInput = document.getElementById('pin');
 
+            const tabUser = document.getElementById('tab-user');
+            const tabRework = document.getElementById('tab-rework');
+            const tabAdmin = document.getElementById('tab-admin');
+
             loginTypeInput.value = currentRole;
 
+            // Reset tab styles
+            [tabUser, tabRework, tabAdmin].forEach(tab => {
+                tab.className = 'py-2.5 rounded-xl transition-all duration-200 text-center text-gray-500 hover:text-gray-900 font-semibold';
+            });
+
             if (currentRole === 'user') {
+                tabUser.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold';
                 roleSubtitle.textContent = 'Silakan masuk sebagai Operator';
+                if (nameLabelText) nameLabelText.textContent = 'Nama Lengkap';
+                if (pinLabelText) pinLabelText.textContent = 'PIN (6 DIGIT)';
+
                 operatorGroup.classList.remove('hidden');
                 shiftGroup.classList.remove('hidden');
                 adminGroup.classList.add('hidden');
 
                 operatorInput.disabled = false;
                 operatorInput.required = true;
+                operatorInput.placeholder = 'Masukkan Nama Anda';
                 adminInput.disabled = true;
                 adminInput.required = false;
 
                 pinInput.maxLength = 6;
 
                 submitLabel.textContent = 'Masuk sebagai Operator';
-                toggleLabel.textContent = 'Masuk sebagai Admin';
+                toggleLabel.textContent = 'Beralih ke Rework';
+            } else if (currentRole === 'rework') {
+                tabRework.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold';
+                roleSubtitle.textContent = 'Silakan masuk sebagai Rework';
+                if (nameLabelText) nameLabelText.textContent = 'Nama Akun Rework';
+                if (pinLabelText) pinLabelText.textContent = 'PIN (6 DIGIT)';
+
+                operatorGroup.classList.remove('hidden');
+                shiftGroup.classList.remove('hidden');
+                adminGroup.classList.add('hidden');
+
+                operatorInput.disabled = false;
+                operatorInput.required = true;
+                operatorInput.placeholder = 'Masukkan Nama Akun Rework';
+                adminInput.disabled = true;
+                adminInput.required = false;
+
+                pinInput.maxLength = 6;
+
+                submitLabel.textContent = 'Masuk sebagai Rework';
+                toggleLabel.textContent = 'Beralih ke Admin';
             } else {
+                tabAdmin.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold';
                 roleSubtitle.textContent = 'Silakan masuk sebagai Administrator';
+                if (pinLabelText) pinLabelText.textContent = 'PIN ADMIN';
+
                 operatorGroup.classList.add('hidden');
                 shiftGroup.classList.add('hidden');
                 adminGroup.classList.remove('hidden');
@@ -193,7 +248,17 @@
                 pinInput.maxLength = 20;
 
                 submitLabel.textContent = 'Masuk sebagai Admin';
-                toggleLabel.textContent = 'Masuk sebagai Operator';
+                toggleLabel.textContent = 'Beralih ke Operator';
+            }
+        }
+
+        function toggleRole() {
+            if (currentRole === 'user') {
+                setRole('rework');
+            } else if (currentRole === 'rework') {
+                setRole('admin');
+            } else {
+                setRole('user');
             }
         }
 
@@ -208,6 +273,11 @@
                 }
             });
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setRole(currentRole);
+            updateShiftStyle();
+        });
     </script>
 </body>
 </html>

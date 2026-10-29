@@ -3,7 +3,14 @@
 @section('title', 'Master Area Ditemukan')
 
 @section('content')
-<div x-data="{ editModal: false, editId: null, editName: '' }">
+<div x-data="{
+    editModal: false,
+    editId: null,
+    editName: '',
+    editTipe: '{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}',
+    originalTipe: '{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}',
+    editDefectsCount: 0
+}">
     <!-- Header -->
     <header class="flex justify-between items-center mb-8">
         <div>
@@ -29,7 +36,7 @@
         </div>
     @endif
 
-    @if (isset($errors) && $errors->any())
+    @if ($errors->any())
         <div class="mb-6 bg-red-50 text-[#8b0000] text-xs font-semibold p-4 rounded-lg border border-red-200">
             <ul class="list-disc pl-5 space-y-1">
                 @foreach ($errors->all() as $error)
@@ -53,8 +60,17 @@
                 @csrf
                 <div>
                     <label for="name" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Nama Area <span class="text-red-500">*</span></label>
-                    <input type="text" id="name" name="name" placeholder="Contoh: CK / V1 / WP" value="{{ old('name') }}" required
+                    <input type="text" id="name" name="name" placeholder="Contoh: CK / V1 / WP" required
                         class="w-full border border-gray-200 rounded-lg p-3 text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white uppercase">
+                </div>
+
+                <div>
+                    <label for="tipe" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Tipe Area <span class="text-red-500">*</span></label>
+                    <select id="tipe" name="tipe" required
+                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
+                        <option value="{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}" selected>Internal Defect</option>
+                        <option value="{{ \App\Models\AreaDitemukan::TIPE_REWORK }}">Rework</option>
+                    </select>
                 </div>
 
                 <button type="submit" class="w-full bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold py-3 rounded-lg transition duration-200 shadow-sm flex items-center justify-center space-x-2">
@@ -75,8 +91,10 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="border-b border-gray-200">
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2 w-16">No</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2 w-12">No</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Nama Area</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Tipe</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Data Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2 w-32">Aksi</th>
                             </tr>
                         </thead>
@@ -89,28 +107,55 @@
                                             {{ $area->name }}
                                         </span>
                                     </td>
+                                    <td class="py-3.5 px-4">
+                                        @if($area->tipe === \App\Models\AreaDitemukan::TIPE_REWORK)
+                                            <span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                                                Rework
+                                            </span>
+                                        @else
+                                            <span class="inline-block bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                                                Internal Defect
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3.5 px-4 text-xs">
+                                        @if($area->defects_count > 0)
+                                            <span class="inline-flex items-center text-xs font-semibold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
+                                                {{ $area->defects_count }} defect
+                                            </span>
+                                        @else
+                                            <span class="text-xs text-gray-400">0 defect</span>
+                                        @endif
+                                    </td>
                                     <td class="py-3.5 text-center px-4 pr-2">
                                         <div class="inline-flex items-center space-x-1.5">
                                             <!-- Tombol Edit -->
                                             <button type="button"
-                                                @click="editModal = true; editId = {{ $area->id }}; editName = '{{ addslashes($area->name) }}'"
+                                                @click="editModal = true; editId = {{ $area->id }}; editName = '{{ addslashes($area->name) }}'; editTipe = '{{ $area->tipe }}'; originalTipe = '{{ $area->tipe }}'; editDefectsCount = {{ $area->defects_count }};"
                                                 class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">
                                                 Edit
                                             </button>
                                             <!-- Tombol Hapus -->
-                                            <form action="{{ route('admin.master.area_ditemukans.destroy', $area->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus area ditemukan ini?');" class="inline-block">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold transition-colors">
+                                            @if($area->defects_count > 0)
+                                                <button type="button" disabled title="Terkunci: area sudah digunakan pada {{ $area->defects_count }} data defect"
+                                                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-400 text-xs font-semibold cursor-not-allowed">
                                                     Hapus
                                                 </button>
-                                            </form>
+                                            @else
+                                                <form action="{{ route('admin.master.area_ditemukans.destroy', $area->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus area ditemukan ini?');" class="inline-block">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold transition-colors">
+                                                        Hapus
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="3" class="py-10 text-center text-xs text-gray-400 font-medium">Belum ada data area ditemukan.</td>
+                                    <td colspan="5" class="py-10 text-center text-xs text-gray-400 font-medium">Belum ada data area ditemukan.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -131,13 +176,32 @@
                 </button>
             </div>
 
-            <form :action="'{{ url('/master/area-ditemukans') }}/' + editId" method="POST" class="space-y-4">
+            <form :action="'{{ url('/master/area-ditemukans') }}/' + editId" method="POST"
+                @submit="if (editDefectsCount > 0 && editTipe !== originalTipe) { if (!confirm('Area ini memiliki ' + editDefectsCount + ' data defect terkait.\n\nPeringatan: Perubahan tipe ini ikut memindahkan data lama ke kategori lain di dashboard nanti.\n\nApakah Anda yakin ingin melanjutkan?')) { $event.preventDefault(); } }"
+                class="space-y-4">
                 @csrf
                 @method('PUT')
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Nama Area <span class="text-red-500">*</span></label>
                     <input type="text" name="name" x-model="editName" required
+                        :readonly="editDefectsCount > 0"
+                        :class="editDefectsCount > 0 ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900'"
                         class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] uppercase">
+                    <p x-show="editDefectsCount > 0" class="text-[11px] text-amber-600 mt-1 font-medium">
+                        Terkunci: Nama area tidak dapat diubah karena sudah digunakan pada <span x-text="editDefectsCount"></span> data defect.
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Tipe Area <span class="text-red-500">*</span></label>
+                    <select name="tipe" x-model="editTipe" required
+                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
+                        <option value="{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}">Internal Defect</option>
+                        <option value="{{ \App\Models\AreaDitemukan::TIPE_REWORK }}">Rework</option>
+                    </select>
+                    <div x-show="editDefectsCount > 0 && editTipe !== originalTipe" class="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                        <strong>Peringatan:</strong> Area ini memiliki <span x-text="editDefectsCount"></span> data defect. Mengubah tipe akan memindahkan data lama ke kategori lain di dashboard.
+                    </div>
                 </div>
 
                 <div class="flex justify-end space-x-2 pt-2">

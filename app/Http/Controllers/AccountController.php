@@ -38,7 +38,7 @@ class AccountController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:users,name',
             'pin'  => $pinRule,
-            'role' => 'required|string|in:Administrator,User',
+            'role' => 'required|string|in:Administrator,User,Rework',
         ]);
 
         User::forceCreate([
