@@ -9,6 +9,7 @@ use App\Models\DefectType;
 use App\Models\SubDefectType;
 use App\Models\InspectProcessType;
 use App\Models\FinalAssyInspectType;
+use App\Support\SubDefectHelper;
 
 class MasterDataSeeder extends Seeder
 {
@@ -72,10 +73,15 @@ class MasterDataSeeder extends Seeder
                 'type' => 'Final Assy',
             ]);
             foreach ($subList as $subName) {
-                SubDefectType::firstOrCreate([
-                    'defect_type_id' => $defectType->id,
-                    'name' => $subName,
-                ]);
+                SubDefectType::firstOrCreate(
+                    [
+                        'defect_type_id' => $defectType->id,
+                        'name' => $subName,
+                    ],
+                    [
+                        'code' => SubDefectHelper::deriveCode($subName),
+                    ]
+                );
             }
         }
 
@@ -97,10 +103,15 @@ class MasterDataSeeder extends Seeder
                 'type' => 'Pre Assy',
             ]);
             foreach ($subList as $subName) {
-                SubDefectType::firstOrCreate([
-                    'defect_type_id' => $defectType->id,
-                    'name' => $subName,
-                ]);
+                SubDefectType::firstOrCreate(
+                    [
+                        'defect_type_id' => $defectType->id,
+                        'name' => $subName,
+                    ],
+                    [
+                        'code' => SubDefectHelper::deriveCode($subName),
+                    ]
+                );
             }
         }
 

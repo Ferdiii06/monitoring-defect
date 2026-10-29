@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\DefectType;
 use App\Models\SubDefectType;
+use App\Support\SubDefectHelper;
 
 class DefectTypeController extends Controller
 {
@@ -65,7 +66,10 @@ class DefectTypeController extends Controller
             'name' => 'required|string|max:255',
         ]);
 
-        $defectType->subDefectTypes()->create($validated);
+        $defectType->subDefectTypes()->create([
+            'name' => $validated['name'],
+            'code' => SubDefectHelper::deriveCode($validated['name']),
+        ]);
 
         return redirect()->route('admin.master.defect_types.index', ['type' => $defectType->type])->with('success', 'Sub-Defect Type berhasil ditambahkan!');
     }
