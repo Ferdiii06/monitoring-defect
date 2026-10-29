@@ -116,14 +116,27 @@ class ReworkController extends Controller
             }
         }
 
+        // Master area rework check: must exist before inserting defects
+        $tipeRework = defined(AreaDitemukan::class . '::TIPE_REWORK')
+            ? AreaDitemukan::TIPE_REWORK
+            : 'rework';
+
+        $reworkArea = AreaDitemukan::where('tipe', $tipeRework)
+            ->orderBy('id', 'asc')
+            ->value('name');
+
+        if (!$reworkArea) {
+            return back()
+                ->withErrors([
+                    'area_ditemukan' => 'Area bertipe Rework belum diatur. Hubungi admin untuk menambahkannya di Master Data > Area Ditemukan.',
+                ])
+                ->withInput();
+        }
+
         $groupId = (string) Str::uuid();
         $now = now();
         $userName = session('user_name');
         $shift = session('current_shift', '1A');
-
-        $reworkArea = Schema::hasTable('area_ditemukans')
-            ? AreaDitemukan::where('tipe', 'rework')->value('name')
-            : null;
 
         foreach ($validated['sub_defect_ids'] as $subDefectId) {
             $sub = $subDefects->get($subDefectId);
