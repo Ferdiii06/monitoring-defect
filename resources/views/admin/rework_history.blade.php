@@ -119,7 +119,8 @@
                         <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Durasi</th>
                         <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Kanban &amp; NP</th>
                         <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Operator Input</th>
-                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pr-3">Daftar Defect</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Daftar Defect</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center pr-3 w-24">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="reworkTableBody">
@@ -210,7 +211,7 @@
                             </td>
 
                             <!-- Daftar Defect -->
-                            <td class="py-4 text-xs px-4 pr-3 align-top">
+                            <td class="py-4 text-xs px-4 align-top">
                                 <div class="space-y-1.5 max-w-md">
                                     @forelse($items as $item)
                                         @php
@@ -228,10 +229,22 @@
                                     @endforelse
                                 </div>
                             </td>
+
+                            <!-- Aksi (Edit) -->
+                            <td class="py-4 text-center px-4 pr-3 align-top">
+                                <a href="{{ route('rework.edit', array_merge(['groupId' => $groupId], request()->query() ? ['return_url' => request()->fullUrl()] : [])) }}"
+                                   title="Edit Riwayat Harness"
+                                   class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                    </svg>
+                                    <span>Edit</span>
+                                </a>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-sm text-gray-400 font-medium">
+                            <td colspan="8" class="py-12 text-center text-sm text-gray-400 font-medium">
                                 <div class="max-w-xs mx-auto space-y-2">
                                     <svg class="w-10 h-10 text-gray-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>

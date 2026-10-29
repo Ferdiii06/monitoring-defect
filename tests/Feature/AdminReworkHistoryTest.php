@@ -174,7 +174,7 @@ class AdminReworkHistoryTest extends TestCase
         $response->assertSee('Total Harness:');
     }
 
-    public function test_admin_rework_history_is_strictly_read_only_no_in_out_edit_delete(): void
+    public function test_admin_rework_history_has_edit_button_without_in_out_delete(): void
     {
         $reworkArea = AreaDitemukan::create([
             'name' => 'REWORK AREA 1',
@@ -201,17 +201,166 @@ class AdminReworkHistoryTest extends TestCase
         $response = $this->actingAsAdmin()->get('/admin/rework-history');
         $response->assertStatus(200);
 
-        // MUST NOT contain In form, Out button, Edit button, or Delete form
+        // MUST contain Edit link to /rework/edit/{groupId}
+        $response->assertSee(route('rework.edit', ['groupId' => $groupId]));
+        $response->assertSee('Edit');
+
+        // MUST NOT contain In form, Out button, or Delete form
         $response->assertDontSee('Mulai Rework (In)');
         $response->assertDontSee('Selesai (Out)');
         $response->assertDontSee('/rework/in');
         $response->assertDontSee('/rework/out');
-        $response->assertDontSee('/rework/edit');
         $response->assertDontSee('admin.report.destroy');
         $response->assertDontSee('admin.report.edit');
         $response->assertDontSee('Hapus');
         $response->assertDontSee('action="DELETE"');
         $response->assertDontSee("onsubmit=\"return confirm('Apakah Anda yakin ingin menghapus");
+    }
+
+    public function test_admin_can_open_and_save_edit_for_other_operator_harness_and_redirects_to_admin_history(): void
+    {
+        $reworkArea = AreaDitemukan::create([
+            'name' => 'REWORK AREA 1',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+
+        $defectType = DefectType::create([
+            'name' => 'WIRING',
+            'type' => 'Final Assy',
+        ]);
+
+        $subDefect1 = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+        ]);
+
+        $subDefect2 = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.B - SHORT CIRCUIT',
+        ]);
+
+        $groupId = (string) Str::uuid();
+        Defect::create([
+            'rework_group_id'     => $groupId,
+            'waktu'               => now(),
+            'waktu_in'            => now(),
+            'status_rework'       => 'Berjalan',
+            'kanban_assy'         => 'KB-BEFORE',
+            'nameplate_lama'      => 'NP-BEFORE',
+            'user_name'           => 'reworkA', // created by reworkA
+            'shift'               => '1A',
+            'jenis_assy'          => 'Final Assy',
+            'jenis_defect'        => $defectType->name,
+            'jenis_sub_defect'    => $subDefect1->name,
+            'sub_defect_type_id'  => $subDefect1->id,
+            'area_ditemukan'      => $reworkArea->name,
+            'quantity'            => 1,
+        ]);
+
+        // 1. Admin opens edit form for harness owned by reworkA
+        $returnUrl = url('/admin/rework-history?search=BEFORE');
+        $responseGet = $this->actingAsAdmin()->get(route('rework.edit', ['groupId' => $groupId, 'return_url' => $returnUrl]));
+        $responseGet->assertStatus(200);
+        $responseGet->assertSee('KB-BEFORE');
+        $responseGet->assertSee(e($returnUrl));
+
+        // 2. Admin submits update
+        $responsePut = $this->actingAsAdmin()->put(route('rework.update', $groupId), [
+            'kanban_assy'    => 'KB-AFTER-ADMIN',
+            'nameplate'      => 'NP-AFTER-ADMIN',
+            'sub_defect_ids' => [$subDefect2->id],
+            'return_url'     => $returnUrl,
+        ]);
+
+        // 3. Admin redirected back to return_url
+        $responsePut->assertRedirect($returnUrl);
+
+        // 4. Verify DB: creator user_name (reworkA) and area_ditemukan preserved
+        $updated = Defect::where('rework_group_id', $groupId)->first();
+        $this->assertEquals('KB-AFTER-ADMIN', $updated->kanban_assy);
+        $this->assertEquals('NP-AFTER-ADMIN', $updated->nameplate_lama);
+        $this->assertEquals('reworkA', $updated->user_name);
+        $this->assertEquals($reworkArea->name, $updated->area_ditemukan);
+        $this->assertNotNull($updated->area_ditemukan);
+    }
+
+    public function test_rework_operator_cannot_edit_harness_owned_by_another_operator(): void
+    {
+        $reworkArea = AreaDitemukan::create([
+            'name' => 'REWORK AREA 1',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+
+        $defectType = DefectType::create([
+            'name' => 'WIRING',
+            'type' => 'Final Assy',
+        ]);
+
+        $subDefect = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+        ]);
+
+        $groupId = (string) Str::uuid();
+        Defect::create([
+            'rework_group_id'     => $groupId,
+            'waktu'               => now(),
+            'waktu_in'            => now(),
+            'status_rework'       => 'Berjalan',
+            'kanban_assy'         => 'KB-OWNER-A',
+            'nameplate_lama'      => 'NP-OWNER-A',
+            'user_name'           => 'reworkA', // owned by reworkA
+            'shift'               => '1A',
+            'jenis_assy'          => 'Final Assy',
+            'jenis_defect'        => $defectType->name,
+            'jenis_sub_defect'    => $subDefect->name,
+            'sub_defect_type_id'  => $subDefect->id,
+            'area_ditemukan'      => $reworkArea->name,
+            'quantity'            => 1,
+        ]);
+
+        // reworkB attempts to open edit form -> 403 Forbidden
+        $responseGet = $this->withSession([
+            'logged_in'     => true,
+            'user_name'     => 'reworkB',
+            'user_role'     => 'Rework',
+            'current_shift' => '1A',
+        ])->get(route('rework.edit', $groupId));
+        $responseGet->assertStatus(403);
+
+        // reworkB attempts to update -> 403 Forbidden
+        $responsePut = $this->withSession([
+            'logged_in'     => true,
+            'user_name'     => 'reworkB',
+            'user_role'     => 'Rework',
+            'current_shift' => '1A',
+        ])->put(route('rework.update', $groupId), [
+            'kanban_assy'    => 'KB-HACK',
+            'nameplate'      => 'NP-HACK',
+            'sub_defect_ids' => [$subDefect->id],
+        ]);
+        $responsePut->assertStatus(403);
+    }
+
+    public function test_operator_and_guest_are_rejected_from_rework_edit_routes(): void
+    {
+        $groupId = (string) Str::uuid();
+
+        // Guest to rework edit -> redirected to login
+        $resGuest = $this->get(route('rework.edit', $groupId));
+        $resGuest->assertRedirect(route('login'));
+
+        // Operator (User) to rework edit -> redirected to operator.home
+        $resOperator = $this->actingAsOperator()->get(route('rework.edit', $groupId));
+        $resOperator->assertRedirect(route('operator.home'));
+
+        // Operator (User) to rework update -> redirected to operator.home
+        $resOperatorPut = $this->actingAsOperator()->put(route('rework.update', $groupId), [
+            'kanban_assy'    => 'KB-FAIL',
+            'nameplate'      => 'NP-FAIL',
+            'sub_defect_ids' => [1],
+        ]);
+        $resOperatorPut->assertRedirect(route('operator.home'));
     }
 
     public function test_filters_by_search_np_and_date_range_and_status(): void

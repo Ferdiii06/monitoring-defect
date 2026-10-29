@@ -250,7 +250,9 @@ class ReworkController extends Controller
             ];
         })->values();
 
-        return view('rework.edit', compact('defects', 'first', 'groupId', 'finalAssySubDefects', 'currentDefects', 'isAdmin'));
+        $returnUrl = $request->input('return_url');
+
+        return view('rework.edit', compact('defects', 'first', 'groupId', 'finalAssySubDefects', 'currentDefects', 'isAdmin', 'returnUrl'));
     }
 
     /**
@@ -366,12 +368,21 @@ class ReworkController extends Controller
                     'sub_defect_type_id'   => $sub->id,
                     'jenis_defect'         => $sub->defectType?->name,
                     'jenis_sub_defect'     => $sub->name,
-                    'area_ditemukan'       => $template->area_ditemukan,
+                    'area_ditemukan'       => $template->area_ditemukan ?: (Defect::getReworkAreaNames()[0] ?? null),
                     'conveyor'             => $template->conveyor,
                     'carline_id'           => $template->carline_id,
                 ]);
             }
         });
+
+        $returnUrl = $request->input('return_url');
+
+        if ($isAdmin) {
+            if ($returnUrl && (Str::startsWith($returnUrl, url('/admin/rework-history')) || Str::startsWith($returnUrl, '/admin/rework-history'))) {
+                return redirect()->to($returnUrl)->with('success', 'Riwayat rework harness berhasil diperbarui.');
+            }
+            return redirect()->route('admin.rework_history.index')->with('success', 'Riwayat rework harness berhasil diperbarui.');
+        }
 
         return redirect()->route('rework.index')->with('success', 'Riwayat rework harness berhasil diperbarui.');
     }

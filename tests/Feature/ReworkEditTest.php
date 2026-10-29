@@ -381,7 +381,7 @@ class ReworkEditTest extends TestCase
             'nameplate'      => 'NP-BY-ADMIN',
             'sub_defect_ids' => [$sub2->id],
         ]);
-        $resPut->assertRedirect(route('rework.index'));
+        $resPut->assertRedirect(route('admin.rework_history.index'));
         $resPut->assertSessionHas('success');
 
         $updated = Defect::where('rework_group_id', $groupId)->first();

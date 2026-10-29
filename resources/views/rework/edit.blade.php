@@ -3,15 +3,18 @@
 @section('title', 'Edit Riwayat Harness')
 
 @section('content')
+@php
+    $backUrl = $returnUrl ?: ($isAdmin ? route('admin.rework_history.index') : route('rework.index'));
+@endphp
 <div class="w-full">
 
     <main class="w-full bg-surface rounded-3xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] overflow-hidden border border-border flex flex-col">
 
         <!-- Header: Back Button + Title -->
         <header class="p-5 sm:p-6 pb-4 flex items-center space-x-3 border-b border-border bg-white">
-            <a href="{{ route('rework.index') }}"
+            <a href="{{ $backUrl }}"
                class="text-brand hover:text-brand-active p-2 -ml-2 rounded-xl hover:bg-red-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation cursor-pointer"
-               title="Kembali ke Riwayat">
+               title="Kembali">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -100,6 +103,9 @@
             <form id="rework_edit_form" action="{{ route('rework.update', $groupId) }}" method="POST" class="space-y-4">
                 @csrf
                 @method('PUT')
+                @if(!empty($returnUrl))
+                    <input type="hidden" name="return_url" value="{{ $returnUrl }}">
+                @endif
 
                 <!-- Field 1: Kanban Assy -->
                 <div class="space-y-1.5">
@@ -188,7 +194,7 @@
                         <span>Simpan Perubahan</span>
                     </button>
 
-                    <a href="{{ route('rework.index') }}"
+                    <a href="{{ $backUrl }}"
                        class="w-full min-h-[48px] bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl p-3 text-sm font-bold flex items-center justify-center border border-gray-300 transition-all cursor-pointer touch-manipulation">
                         Batal
                     </a>
