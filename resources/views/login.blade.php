@@ -41,16 +41,16 @@
 
         <!-- Role Toggle Tabs (Operator / Rework / Admin) -->
         <div class="grid grid-cols-3 p-1 bg-gray-100 rounded-2xl mb-5 text-xs font-bold gap-1 border border-gray-200/70" role="tablist">
-            <button type="button" id="tab-user" onclick="setRole('user')"
-                class="py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold">
+            <button type="button" id="tab-user" onclick="setRole('user', true)"
+                class="py-2.5 rounded-xl transition-all duration-200 text-center {{ old('login_type', 'user') === 'user' ? 'bg-white text-[#8b0000] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-900 font-semibold' }} border border-transparent">
                 Operator
             </button>
-            <button type="button" id="tab-rework" onclick="setRole('rework')"
-                class="py-2.5 rounded-xl transition-all duration-200 text-center text-gray-500 hover:text-gray-900 font-semibold">
+            <button type="button" id="tab-rework" onclick="setRole('rework', true)"
+                class="py-2.5 rounded-xl transition-all duration-200 text-center {{ old('login_type') === 'rework' ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm font-bold' : 'text-gray-500 hover:text-gray-900 font-semibold border-transparent' }} border">
                 Rework
             </button>
-            <button type="button" id="tab-admin" onclick="setRole('admin')"
-                class="py-2.5 rounded-xl transition-all duration-200 text-center text-gray-500 hover:text-gray-900 font-semibold">
+            <button type="button" id="tab-admin" onclick="setRole('admin', true)"
+                class="py-2.5 rounded-xl transition-all duration-200 text-center {{ old('login_type') === 'admin' ? 'bg-white text-[#8b0000] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-900 font-semibold' }} border border-transparent">
                 Admin
             </button>
         </div>
@@ -77,7 +77,7 @@
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                         <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
-                    <input type="text" id="name" name="name" required
+                    <input type="text" id="name" name="name" required autocomplete="off"
                         value="{{ old('name') }}"
                         placeholder="Masukkan Nama Anda"
                         class="w-full pl-10 pr-3.5 py-3 bg-gray-50/80 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] transition-all">
@@ -93,7 +93,7 @@
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                         <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                     </div>
-                    <input type="text" id="admin_name" name="name" disabled value="{{ old('name') }}"
+                    <input type="text" id="admin_name" name="name" disabled value="{{ old('name') }}" autocomplete="off"
                         placeholder="Masukkan Username Admin"
                         class="w-full pl-10 pr-3.5 py-3 bg-gray-50/80 border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] transition-all">
                 </div>
@@ -133,23 +133,17 @@
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                         <svg class="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                     </div>
-                    <input type="password" id="pin" name="pin" maxlength="6" placeholder="••••••" required
+                    <input type="password" id="pin" name="pin" maxlength="6" placeholder="••••••" required autocomplete="new-password"
                         class="w-full pl-10 pr-3.5 py-3 bg-gray-50/80 border border-gray-200 rounded-xl text-xs font-semibold tracking-[0.3em] text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] transition-all">
                 </div>
             </div>
 
             <!-- Button Group -->
-            <div class="pt-3 space-y-2.5">
-                <!-- 1. Tombol Submit Utama -->
+            <div class="pt-3">
+                <!-- Tombol Submit Utama -->
                 <button type="submit" id="btn-submit-main" class="w-full bg-gradient-to-r from-[#8b0000] to-red-900 hover:from-red-900 hover:to-[#600000] text-white font-bold py-3.5 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2 text-sm uppercase tracking-wider active:scale-[0.99]">
                     <span id="btn-submit-label">Masuk sebagai Operator</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                </button>
-
-                <!-- 2. Ghost Button Toggle Role -->
-                <button type="button" onclick="toggleRole()"
-                    class="w-full border border-gray-300 text-gray-600 font-semibold py-3 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 text-xs flex items-center justify-center">
-                    <span id="btn-toggle-label">Beralih ke Rework</span>
                 </button>
             </div>
         </form>
@@ -166,7 +160,7 @@
         const initialRole = '{{ old('login_type', 'user') }}';
         let currentRole = allowedRoles.includes(initialRole) ? initialRole : 'user';
 
-        function setRole(role) {
+        function setRole(role, shouldFocus = false) {
             currentRole = allowedRoles.includes(role) ? role : 'user';
 
             const loginTypeInput = document.getElementById('login_type');
@@ -179,7 +173,6 @@
             const nameLabelText = document.getElementById('name-label-text');
             const pinLabelText = document.getElementById('pin-label-text');
             const submitLabel = document.getElementById('btn-submit-label');
-            const toggleLabel = document.getElementById('btn-toggle-label');
             const pinInput = document.getElementById('pin');
 
             const tabUser = document.getElementById('tab-user');
@@ -190,11 +183,11 @@
 
             // Reset tab styles
             [tabUser, tabRework, tabAdmin].forEach(tab => {
-                tab.className = 'py-2.5 rounded-xl transition-all duration-200 text-center text-gray-500 hover:text-gray-900 font-semibold';
+                tab.className = 'py-2.5 rounded-xl transition-all duration-200 text-center text-gray-500 hover:text-gray-900 font-semibold border border-transparent';
             });
 
             if (currentRole === 'user') {
-                tabUser.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold';
+                tabUser.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold border border-transparent';
                 roleSubtitle.textContent = 'Silakan masuk sebagai Operator';
                 if (nameLabelText) nameLabelText.textContent = 'Nama Lengkap';
                 if (pinLabelText) pinLabelText.textContent = 'PIN (6 DIGIT)';
@@ -209,12 +202,13 @@
                 adminInput.disabled = true;
                 adminInput.required = false;
 
+                pinInput.setAttribute('inputmode', 'numeric');
+                pinInput.setAttribute('pattern', '[0-9]*');
                 pinInput.maxLength = 6;
 
                 submitLabel.textContent = 'Masuk sebagai Operator';
-                toggleLabel.textContent = 'Beralih ke Rework';
             } else if (currentRole === 'rework') {
-                tabRework.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold';
+                tabRework.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-amber-50 text-amber-700 border border-amber-200 shadow-sm font-bold';
                 roleSubtitle.textContent = 'Silakan masuk sebagai Rework';
                 if (nameLabelText) nameLabelText.textContent = 'Nama Akun Rework';
                 if (pinLabelText) pinLabelText.textContent = 'PIN (6 DIGIT)';
@@ -229,12 +223,13 @@
                 adminInput.disabled = true;
                 adminInput.required = false;
 
+                pinInput.setAttribute('inputmode', 'numeric');
+                pinInput.setAttribute('pattern', '[0-9]*');
                 pinInput.maxLength = 6;
 
                 submitLabel.textContent = 'Masuk sebagai Rework';
-                toggleLabel.textContent = 'Beralih ke Admin';
             } else {
-                tabAdmin.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold';
+                tabAdmin.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold border border-transparent';
                 roleSubtitle.textContent = 'Silakan masuk sebagai Administrator';
                 if (pinLabelText) pinLabelText.textContent = 'PIN ADMIN';
 
@@ -247,20 +242,19 @@
                 adminInput.disabled = false;
                 adminInput.required = true;
 
+                pinInput.removeAttribute('inputmode');
+                pinInput.removeAttribute('pattern');
                 pinInput.maxLength = 20;
 
                 submitLabel.textContent = 'Masuk sebagai Admin';
-                toggleLabel.textContent = 'Beralih ke Operator';
             }
-        }
 
-        function toggleRole() {
-            if (currentRole === 'user') {
-                setRole('rework');
-            } else if (currentRole === 'rework') {
-                setRole('admin');
-            } else {
-                setRole('user');
+            if (shouldFocus) {
+                if (currentRole === 'admin') {
+                    adminInput.focus();
+                } else {
+                    operatorInput.focus();
+                }
             }
         }
 
@@ -277,7 +271,7 @@
         }
 
         function initLoginPage() {
-            setRole(currentRole);
+            setRole(currentRole, false);
             updateShiftStyle();
         }
 
