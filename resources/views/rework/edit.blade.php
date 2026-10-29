@@ -234,10 +234,6 @@
                             <option value="1B" {{ $currentShift === '1B' ? 'selected' : '' }}>1B</option>
                             <option value="2A" {{ $currentShift === '2A' ? 'selected' : '' }}>2A</option>
                             <option value="2B" {{ $currentShift === '2B' ? 'selected' : '' }}>2B</option>
-                            <option value="3A" {{ $currentShift === '3A' ? 'selected' : '' }}>3A</option>
-                            <option value="3B" {{ $currentShift === '3B' ? 'selected' : '' }}>3B</option>
-                            <option value="A" {{ $currentShift === 'A' ? 'selected' : '' }}>A</option>
-                            <option value="B" {{ $currentShift === 'B' ? 'selected' : '' }}>B</option>
                         </select>
                     </div>
                 </div>
