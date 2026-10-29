@@ -49,11 +49,13 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
         Route::delete('/input-defect/{id}', [\App\Http\Controllers\ReportController::class, 'destroyInputDefect'])->name('input_defect.destroy');
     });
 
-    // Protected Rework routes (only accessible by Rework role)
+    // Protected Rework routes (accessible by Rework role and Administrator)
     Route::middleware(['rework'])->prefix('rework')->name('rework.')->group(function () {
         Route::get('/', [ReworkController::class, 'index'])->name('index');
         Route::post('/in', [ReworkController::class, 'storeIn'])->name('store_in');
         Route::post('/out/{groupId}', [ReworkController::class, 'storeOut'])->name('store_out');
+        Route::get('/edit/{groupId}', [ReworkController::class, 'edit'])->name('edit');
+        Route::put('/update/{groupId}', [ReworkController::class, 'update'])->name('update');
     });
 
 
