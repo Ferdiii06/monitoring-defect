@@ -620,4 +620,101 @@ class AdminReworkHistoryTest extends TestCase
         $response->assertSee(route('admin.rework_history.index'));
         $response->assertSee('Riwayat Rework');
     }
+
+    public function test_admin_can_download_rework_history_excel_export(): void
+    {
+        \Maatwebsite\Excel\Facades\Excel::fake();
+
+        $response = $this->actingAsAdmin()->get(route('admin.rework_history.export'));
+        $response->assertStatus(200);
+
+        \Maatwebsite\Excel\Facades\Excel::assertDownloaded('riwayat_rework_' . now()->format('Y-m-d') . '.xlsx', function (\App\Exports\ReworkHistoryExport $export) {
+            return true;
+        });
+    }
+
+    public function test_non_admin_cannot_access_rework_history_export(): void
+    {
+        // Guest
+        $resGuest = $this->get(route('admin.rework_history.export'));
+        $resGuest->assertRedirect(route('login'));
+
+        // Operator
+        $resOperator = $this->actingAsOperator()->get(route('admin.rework_history.export'));
+        $resOperator->assertRedirect(route('operator.home'));
+
+        // Rework Operator
+        $resRework = $this->actingAsRework()->get(route('admin.rework_history.export'));
+        $resRework->assertRedirect(route('rework.index'));
+    }
+
+    public function test_rework_history_view_has_export_excel_button_and_script(): void
+    {
+        $response = $this->actingAsAdmin()->get(route('admin.rework_history.index'));
+        $response->assertStatus(200);
+        $response->assertSee('Export Excel');
+        $response->assertSee('exportExcel()', false);
+        $response->assertSee(route('admin.rework_history.export'), false);
+    }
+
+    public function test_rework_history_export_generates_valid_rows_and_headings(): void
+    {
+        $reworkArea = AreaDitemukan::create([
+            'name' => 'REWORK AREA 1',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+
+        $defectType = DefectType::create([
+            'name' => 'TERMINAL DEFECT',
+            'type' => 'Final Assy',
+        ]);
+
+        $subDefect = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - TERMINAL BENGKOK',
+        ]);
+
+        $groupId = (string) Str::uuid();
+        Defect::create([
+            'rework_group_id'     => $groupId,
+            'waktu'               => now(),
+            'waktu_in'            => now(),
+            'status_rework'       => 'Berjalan',
+            'kanban_assy'         => 'KB-EXPORT-TEST',
+            'nameplate_lama'      => 'NP-EXPORT-TEST',
+            'user_name'           => 'rework_exp_user',
+            'shift'               => '1A',
+            'jenis_assy'          => 'Final Assy',
+            'defect_type_id'      => $defectType->id,
+            'sub_defect_type_id'  => $subDefect->id,
+            'jenis_defect'        => $defectType->name,
+            'jenis_sub_defect'    => $subDefect->name,
+            'area_ditemukan'      => $reworkArea->name,
+            'quantity'            => 1,
+        ]);
+
+        $request = new \Illuminate\Http\Request(['search' => 'EXPORT-TEST']);
+        $export = new \App\Exports\ReworkHistoryExport($request);
+
+        $headings = $export->headings();
+        $this->assertContains('Group ID', $headings);
+        $this->assertContains('Kanban Assy', $headings);
+        $this->assertContains('Status Rework', $headings);
+
+        $rows = $export->query()->get();
+        $this->assertCount(1, $rows);
+
+        $mapped = $export->map($rows->first());
+        $this->assertEquals($groupId, $mapped[1]);
+        $this->assertEquals('Berjalan', $mapped[4]);
+        $this->assertEquals('KB-EXPORT-TEST', $mapped[6]);
+        $this->assertEquals('NP-EXPORT-TEST', $mapped[7]);
+        $this->assertEquals('rework_exp_user', $mapped[9]);
+        $this->assertEquals('1A', $mapped[10]);
+        $this->assertEquals('1A', $mapped[11]); // code derived
+        $this->assertEquals('TERMINAL DEFECT', $mapped[12]);
+        $this->assertEquals('1.A - TERMINAL BENGKOK', $mapped[13]);
+        $this->assertEquals(1, $mapped[14]);
+        $this->assertEquals($reworkArea->name, $mapped[15]);
+    }
 }

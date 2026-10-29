@@ -88,6 +88,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
 
         // Riwayat Rework route (Admin)
         Route::get('/admin/rework-history', [\App\Http\Controllers\Admin\ReworkHistoryController::class, 'index'])->name('admin.rework_history.index');
+        Route::get('/admin/rework-history/export', [\App\Http\Controllers\Admin\ReworkHistoryController::class, 'export'])->name('admin.rework_history.export');
 
         Route::get('/report/{id}/edit', [\App\Http\Controllers\ReportController::class, 'adminEditReport'])->name('admin.report.edit');
         Route::put('/report/{id}', [\App\Http\Controllers\ReportController::class, 'adminUpdateReport'])->name('admin.report.update');

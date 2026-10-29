@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ReworkHistoryExport;
 use App\Http\Controllers\Controller;
 use App\Models\Defect;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReworkHistoryController extends Controller
 {
     /**
-     * Display a paginated, read-only list of rework history grouped by harness (rework_group_id).
+     * Build base filtered query for rework history (shared between index and export).
      */
-    public function index(Request $request)
+    public static function baseQuery(Request $request)
     {
         $reworkAreaNames = Defect::getReworkAreaNames();
 
@@ -75,6 +77,20 @@ class ReworkHistoryController extends Controller
             $query->where('status_rework', $selectedStatus);
         }
 
+        return $query;
+    }
+
+    /**
+     * Display a paginated, read-only list of rework history grouped by harness (rework_group_id).
+     */
+    public function index(Request $request)
+    {
+        $dateRange = (string) $request->input('date_range', '');
+        $search = trim((string) $request->input('search', ''));
+        $selectedStatus = (string) $request->input('status', 'all');
+
+        $query = static::baseQuery($request);
+
         // 4. Paginate distinct rework groups (15 items per page)
         $paginatedGroups = $query
             ->select(
@@ -111,5 +127,16 @@ class ReworkHistoryController extends Controller
             'selectedStatus',
             'totalHarnesses'
         ));
+    }
+
+    /**
+     * Export rework history to Excel based on active filters.
+     */
+    public function export(Request $request)
+    {
+        return Excel::download(
+            new ReworkHistoryExport($request),
+            'riwayat_rework_' . now()->format('Y-m-d') . '.xlsx'
+        );
     }
 }
