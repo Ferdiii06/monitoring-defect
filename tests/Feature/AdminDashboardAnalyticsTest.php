@@ -1658,4 +1658,36 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertMatchesRegularExpression('/id="btnModeInternal"[^>]*aria-pressed="false"/', $htmlAll);
         $this->assertMatchesRegularExpression('/id="btnModeRework"[^>]*aria-pressed="false"/', $htmlAll);
     }
+
+    public function test_dashboard_renders_batch_4_elements_and_per_mode_visual_markup(): void
+    {
+        $response = $this->actingAsAdmin()->get('/dashboard');
+        $response->assertStatus(200);
+
+        // Card Header & Notice IDs
+        $response->assertSee('id="cardTitleDpmFinal"', false);
+        $response->assertSee('id="cardSubDpmFinal"', false);
+        $response->assertSee('id="conveyorNoticeDpmFinal"', false);
+        $response->assertSee('id="cardTitleParetoFinal"', false);
+        $response->assertSee('id="cardSubParetoFinal"', false);
+        $response->assertSee('id="conveyorNoticeParetoFinal"', false);
+
+        // Pre Assy Empty State IDs
+        $response->assertSee('id="emptyMsgDpmPre"', false);
+        $response->assertSee('id="emptySubDpmPre"', false);
+        $response->assertSee('id="emptyMsgParetoPre"', false);
+        $response->assertSee('id="emptySubParetoPre"', false);
+
+        // Script Constants & Guard Checks
+        $html = $response->getContent();
+        $this->assertStringContainsString('THEME_COLORS', $html);
+        $this->assertStringContainsString('updateConveyorFilterUI', $html);
+        $this->assertStringContainsString('updateModeVisuals', $html);
+        $this->assertStringContainsString('reqMode !== currentMode', $html);
+        $this->assertStringContainsString('Baris rework belum punya data konveyor, jadi tidak ikut terfilter', $html);
+        $this->assertStringContainsString('Baris rework belum punya konveyor dan tidak ikut terfilter', $html);
+        $this->assertStringContainsString('Rework tidak tersedia untuk Pre Assy', $html);
+        $this->assertStringContainsString('DPM rework menyusul', $html);
+        $this->assertStringContainsString('DPM gabungan menyusul', $html);
+    }
 }

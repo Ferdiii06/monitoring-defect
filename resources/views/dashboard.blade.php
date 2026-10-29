@@ -199,10 +199,10 @@
                             <span class="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block shadow-xs"></span>
                             <div>
                                 <div class="flex items-center space-x-2">
-                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight">DPM Final Assy</h3>
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleDpmFinal">DPM Final Assy</h3>
                                     <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">Final Assy</span>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-0.5">Defect Per Million tren per periode</p>
+                                <p class="text-xs text-slate-500 mt-0.5" id="cardSubDpmFinal">Defect Per Million tren per periode</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -274,6 +274,7 @@
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                     </div>
                                 </div>
+                                <p id="conveyorNoticeDpmFinal" class="hidden text-[10px] text-amber-600 font-medium mt-1 leading-tight flex items-center gap-1"></p>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-transparent uppercase tracking-wider mb-1 select-none">Aksi</label>
@@ -305,10 +306,10 @@
                             <span class="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block shadow-xs"></span>
                             <div>
                                 <div class="flex items-center space-x-2">
-                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight">Pareto Sub Defect Final Assy</h3>
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleParetoFinal">Pareto Sub Defect Final Assy</h3>
                                     <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">Final Assy</span>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-0.5">Total defect & persentase kumulatif per sub defect</p>
+                                <p class="text-xs text-slate-500 mt-0.5" id="cardSubParetoFinal">Total defect & persentase kumulatif per sub defect</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -370,6 +371,7 @@
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
                             </div>
+                            <p id="conveyorNoticeParetoFinal" class="hidden text-[10px] text-amber-600 font-medium mt-1 leading-tight flex items-center gap-1"></p>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-transparent uppercase tracking-wider mb-1 select-none">Aksi</label>
@@ -524,8 +526,8 @@
                     </div>
                     <div id="emptyDpmPre" class="hidden flex flex-col items-center justify-center h-72 text-center p-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
                         <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                        <p class="text-xs font-semibold text-slate-600">Tidak ada data pada periode ini</p>
-                        <span class="text-[11px] text-slate-400 mt-0.5">Ubah rentang tanggal atau pilih filter carline lain</span>
+                        <p class="text-xs font-semibold text-slate-600" id="emptyMsgDpmPre">Tidak ada data pada periode ini</p>
+                        <span class="text-[11px] text-slate-400 mt-0.5" id="emptySubDpmPre">Ubah rentang tanggal atau pilih filter carline lain</span>
                     </div>
                     <div id="noteDpmPre" class="hidden mt-2.5 pt-2.5 border-t border-slate-100 space-y-1"></div>
                 </div>
@@ -620,8 +622,8 @@
                 </div>
                 <div id="emptyParetoPre" class="hidden flex flex-col items-center justify-center h-72 text-center p-6 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
                     <svg class="w-10 h-10 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    <p class="text-xs font-semibold text-slate-600">Tidak ada data pada periode ini</p>
-                    <span class="text-[11px] text-slate-400 mt-0.5">Ubah rentang tanggal atau pilih filter carline lain</span>
+                    <p class="text-xs font-semibold text-slate-600" id="emptyMsgParetoPre">Tidak ada data pada periode ini</p>
+                    <span class="text-[11px] text-slate-400 mt-0.5" id="emptySubParetoPre">Ubah rentang tanggal atau pilih filter carline lain</span>
                 </div>
             </div>
         </div>
@@ -636,6 +638,126 @@
         let currentMode = validModes.includes(urlMode)
             ? urlMode
             : (validModes.includes('{{ $currentMode ?? "internal" }}') ? '{{ $currentMode ?? "internal" }}' : 'internal');
+
+        // Theme Colors
+        const THEME_COLORS = {
+            internal: '#0d9488',
+            internalDark: '#0f766e',
+            internalLight: 'rgba(13, 148, 136, 0.08)',
+            rework: '#d97706',
+            reworkDark: '#b45309',
+            reworkLight: 'rgba(217, 119, 6, 0.08)',
+            target: '#64748b',
+            preAssy: '#1d4ed8',
+            preAssyDark: '#1e40af',
+            preAssyLight: 'rgba(29, 78, 216, 0.08)',
+        };
+
+        function updateConveyorFilterUI(mode) {
+            const convDpm = document.getElementById('filterConveyorDpmFinal');
+            const convPareto = document.getElementById('filterConveyorParetoFinal');
+            const noticeDpm = document.getElementById('conveyorNoticeDpmFinal');
+            const noticePareto = document.getElementById('conveyorNoticeParetoFinal');
+
+            const warningIcon = `<svg class="w-3.5 h-3.5 text-amber-500 shrink-0 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+
+            if (mode === 'rework') {
+                if (convDpm) {
+                    convDpm.disabled = true;
+                    convDpm.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
+                    convDpm.classList.remove('bg-white', 'cursor-pointer');
+                }
+                if (convPareto) {
+                    convPareto.disabled = true;
+                    convPareto.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
+                    convPareto.classList.remove('bg-white', 'cursor-pointer');
+                }
+                const text = `${warningIcon}<span>Baris rework belum punya data konveyor, jadi tidak ikut terfilter</span>`;
+                if (noticeDpm) {
+                    noticeDpm.innerHTML = text;
+                    noticeDpm.classList.remove('hidden');
+                }
+                if (noticePareto) {
+                    noticePareto.innerHTML = text;
+                    noticePareto.classList.remove('hidden');
+                }
+            } else if (mode === 'all') {
+                if (convDpm) {
+                    convDpm.disabled = false;
+                    convDpm.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
+                    convDpm.classList.add('bg-white', 'cursor-pointer');
+                }
+                if (convPareto) {
+                    convPareto.disabled = false;
+                    convPareto.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
+                    convPareto.classList.add('bg-white', 'cursor-pointer');
+                }
+                const warnText = `${warningIcon}<span>Baris rework belum punya konveyor dan tidak ikut terfilter</span>`;
+                if (noticeDpm) {
+                    if (filtersDpmFinal.conveyor && filtersDpmFinal.conveyor !== 'all') {
+                        noticeDpm.innerHTML = warnText;
+                        noticeDpm.classList.remove('hidden');
+                    } else {
+                        noticeDpm.innerHTML = '';
+                        noticeDpm.classList.add('hidden');
+                    }
+                }
+                if (noticePareto) {
+                    if (filtersParetoFinal.conveyor && filtersParetoFinal.conveyor !== 'all') {
+                        noticePareto.innerHTML = warnText;
+                        noticePareto.classList.remove('hidden');
+                    } else {
+                        noticePareto.innerHTML = '';
+                        noticePareto.classList.add('hidden');
+                    }
+                }
+            } else {
+                if (convDpm) {
+                    convDpm.disabled = false;
+                    convDpm.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
+                    convDpm.classList.add('bg-white', 'cursor-pointer');
+                }
+                if (convPareto) {
+                    convPareto.disabled = false;
+                    convPareto.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-75');
+                    convPareto.classList.add('bg-white', 'cursor-pointer');
+                }
+                if (noticeDpm) {
+                    noticeDpm.innerHTML = '';
+                    noticeDpm.classList.add('hidden');
+                }
+                if (noticePareto) {
+                    noticePareto.innerHTML = '';
+                    noticePareto.classList.add('hidden');
+                }
+            }
+        }
+
+        function updateModeVisuals(mode) {
+            const titleDpmFinal = document.getElementById('cardTitleDpmFinal');
+            const subDpmFinal = document.getElementById('cardSubDpmFinal');
+            const titleParetoFinal = document.getElementById('cardTitleParetoFinal');
+            const subParetoFinal = document.getElementById('cardSubParetoFinal');
+
+            if (mode === 'rework') {
+                if (titleDpmFinal) titleDpmFinal.textContent = 'Tren Rework Final Assy';
+                if (subDpmFinal) subDpmFinal.textContent = 'Jumlah defect & harness dirework per periode';
+                if (titleParetoFinal) titleParetoFinal.textContent = 'Pareto Sub Defect Rework Final Assy';
+                if (subParetoFinal) subParetoFinal.textContent = 'Defect rework & persentase kumulatif per sub defect';
+            } else if (mode === 'all') {
+                if (titleDpmFinal) titleDpmFinal.textContent = 'Tren Defect Final Assy (Gabungan)';
+                if (subDpmFinal) subDpmFinal.textContent = 'Perbandingan jumlah Internal Defect & Rework per periode';
+                if (titleParetoFinal) titleParetoFinal.textContent = 'Pareto Sub Defect Final Assy (Gabungan)';
+                if (subParetoFinal) subParetoFinal.textContent = 'Total defect gabungan (stacked) & persentase kumulatif';
+            } else {
+                if (titleDpmFinal) titleDpmFinal.textContent = 'DPM Final Assy';
+                if (subDpmFinal) subDpmFinal.textContent = 'Defect Per Million tren per periode';
+                if (titleParetoFinal) titleParetoFinal.textContent = 'Pareto Sub Defect Final Assy';
+                if (subParetoFinal) subParetoFinal.textContent = 'Total defect & persentase kumulatif per sub defect';
+            }
+
+            updateConveyorFilterUI(mode);
+        }
 
         function updateModeToggleUI(activeMode) {
             document.querySelectorAll('.btn-dashboard-mode').forEach(btn => {
@@ -672,6 +794,7 @@
 
             currentMode = newMode;
             updateModeToggleUI(currentMode);
+            updateModeVisuals(currentMode);
 
             if (shouldPushState) {
                 const url = new URL(window.location.href);
@@ -934,18 +1057,44 @@
                                     return `Tanggal: ${raw}`;
                                 },
                                 label: function(context) {
-                                    const hasDataset0 = context.chart.tooltip?.dataPoints?.some(dp => dp.datasetIndex === 0);
+                                    const chart = context.chart;
+                                    const mode = chart?._mode || 'internal';
+                                    const isFinalAssy = (chart?.canvas?.id === 'chartDpmFinal');
+                                    const i = context.dataIndex;
+                                    const meta = chart?.data?.datasets[0]?._meta ? chart.data.datasets[0]._meta[i] : null;
+
+                                    if (isFinalAssy && mode === 'rework') {
+                                        if (context.datasetIndex === 0) {
+                                            const defVal = context.raw !== null && context.raw !== undefined ? Number(context.raw).toLocaleString('id-ID') : '0';
+                                            return `  Jumlah defect rework: ${defVal} pcs`;
+                                        } else if (context.datasetIndex === 1) {
+                                            const hVal = context.raw !== null && context.raw !== undefined ? Number(context.raw).toLocaleString('id-ID') : '0';
+                                            return `  Jumlah harness dirework: ${hVal} pcs`;
+                                        }
+                                        return null;
+                                    }
+
+                                    if (isFinalAssy && mode === 'all') {
+                                        if (context.datasetIndex === 0) {
+                                            const intVal = context.raw !== null && context.raw !== undefined ? Number(context.raw).toLocaleString('id-ID') : '0';
+                                            return `  Internal Defect: ${intVal} pcs`;
+                                        } else if (context.datasetIndex === 1) {
+                                            const rewVal = context.raw !== null && context.raw !== undefined ? Number(context.raw).toLocaleString('id-ID') : '0';
+                                            return `  Rework: ${rewVal} pcs`;
+                                        }
+                                        return null;
+                                    }
+
+                                    const hasDataset0 = chart.tooltip?.dataPoints?.some(dp => dp.datasetIndex === 0);
                                     if (hasDataset0 && context.datasetIndex !== 0) {
                                         return null;
                                     }
 
-                                    const i = context.dataIndex;
-                                    const meta = context.chart.data.datasets[0]._meta ? context.chart.data.datasets[0]._meta[i] : null;
                                     const dpmVal = meta ? meta.dpm : (context.datasetIndex === 0 ? context.raw : null);
                                     const targetVal = (meta && meta.target !== undefined && meta.target !== null)
                                         ? meta.target
-                                        : (context.chart.data.datasets[1]?.data && context.chart.data.datasets[1].data[i] !== undefined && context.chart.data.datasets[1].data[i] !== null
-                                            ? context.chart.data.datasets[1].data[i]
+                                        : (chart.data.datasets[1]?.data && chart.data.datasets[1].data[i] !== undefined && chart.data.datasets[1].data[i] !== null
+                                            ? chart.data.datasets[1].data[i]
                                             : (context.datasetIndex === 1 ? context.raw : null));
 
                                     const dpmStr = (dpmVal !== null && dpmVal !== undefined)
@@ -961,7 +1110,7 @@
                                         ? Number(meta.total_inspect).toLocaleString('id-ID')
                                         : '0';
 
-                                    const currentMetric = context.chart?._metricLabel || metricLabel || 'DPM';
+                                    const currentMetric = chart?._metricLabel || metricLabel || 'DPM';
                                     const lines = [
                                         `  ${currentMetric} Real: ${dpmStr}`
                                     ];
@@ -1102,6 +1251,21 @@
                                     if (context.dataset.yAxisID === 'y1') {
                                         return `  Kumulatif: ${Number(val).toFixed(1)}%`;
                                     }
+                                    const chart = context.chart;
+                                    const mode = chart?._mode || 'internal';
+                                    const isFinalAssy = (chart?.canvas?.id === 'chartParetoFinal');
+
+                                    if (isFinalAssy && mode === 'all') {
+                                        if (context.datasetIndex === 1) {
+                                            return `  Internal Defect: ${Number(val).toLocaleString('id-ID')} pcs`;
+                                        }
+                                        if (context.datasetIndex === 2) {
+                                            return `  Rework: ${Number(val).toLocaleString('id-ID')} pcs`;
+                                        }
+                                    } else if (isFinalAssy && mode === 'rework') {
+                                        return `  Defect Rework: ${Number(val).toLocaleString('id-ID')} pcs`;
+                                    }
+
                                     return `  Total Defect: ${Number(val).toLocaleString('id-ID')} pcs`;
                                 }
                             }
@@ -1197,11 +1361,32 @@
         }
 
         // --- 4. In-Place Update & Empty State Logic ---
-        function updateDpmData(chart, wrapperId, emptyId, trends, groupBy = 'day') {
+        function updateDpmData(chart, wrapperId, emptyId, trends, groupBy = 'day', mode = currentMode) {
+            const isFinal = (wrapperId === 'wrapperDpmFinal');
+            const isPre = (wrapperId === 'wrapperDpmPre');
             const wrapper = document.getElementById(wrapperId);
             const emptyEl = document.getElementById(emptyId);
             const msgEl = emptyEl ? emptyEl.querySelector('p') : null;
-            const noteEl = document.getElementById(wrapperId === 'wrapperDpmFinal' ? 'noteDpmFinal' : 'noteDpmPre');
+            const subMsgEl = emptyEl ? emptyEl.querySelector('span') : null;
+            const noteEl = document.getElementById(isFinal ? 'noteDpmFinal' : 'noteDpmPre');
+
+            // 1. Khusus Pre Assy pada mode rework: sembunyikan canvas, tampilkan pesan rework tidak tersedia
+            if (isPre && mode === 'rework') {
+                if (msgEl) msgEl.textContent = 'Rework tidak tersedia untuk Pre Assy';
+                if (subMsgEl) subMsgEl.textContent = 'Proses rework hanya terdapat pada Final Assy';
+                if (wrapper) wrapper.classList.add('hidden');
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                if (noteEl) {
+                    noteEl.innerHTML = '';
+                    noteEl.classList.add('hidden');
+                }
+                return;
+            }
+
+            // Kembalikan subteks default jika sebelumnya dari mode rework
+            if (isPre && subMsgEl && subMsgEl.textContent === 'Proses rework hanya terdapat pada Final Assy') {
+                subMsgEl.textContent = 'Ubah rentang tanggal atau pilih filter carline lain';
+            }
 
             const trendList = Array.isArray(trends) ? trends : [];
             const missingInspectCount = trendList.filter(t => (Number(t.total_defect) || 0) > 0 && (!t.total_inspect || Number(t.total_inspect) === 0)).length;
@@ -1218,152 +1403,306 @@
                 return;
             }
 
-            const hasAnyTarget = trendList.some(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
-            const allDpmNull = trendList.every(t => t.dpm === null || t.dpm === undefined);
-            if (allDpmNull && !hasAnyTarget) {
-                if (msgEl) msgEl.textContent = 'Belum ada Quantity Inspect pada periode ini';
-                if (wrapper) wrapper.classList.add('hidden');
-                if (emptyEl) emptyEl.classList.remove('hidden');
-                if (noteEl) {
-                    noteEl.innerHTML = '';
-                    noteEl.classList.add('hidden');
+            // Mode internal atau Pre Assy: jika semua DPM null dan tidak ada target, tampilkan pesan belum ada quantity inspect
+            if (mode === 'internal' || isPre) {
+                const hasAnyTarget = trendList.some(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
+                const allDpmNull = trendList.every(t => t.dpm === null || t.dpm === undefined);
+                if (allDpmNull && !hasAnyTarget) {
+                    if (msgEl) msgEl.textContent = 'Belum ada Quantity Inspect pada periode ini';
+                    if (wrapper) wrapper.classList.add('hidden');
+                    if (emptyEl) emptyEl.classList.remove('hidden');
+                    if (noteEl) {
+                        noteEl.innerHTML = '';
+                        noteEl.classList.add('hidden');
+                    }
+                    return;
                 }
-                return;
             }
 
             if (msgEl) msgEl.textContent = 'Tidak ada data pada periode ini';
             if (wrapper) wrapper.classList.remove('hidden');
             if (emptyEl) emptyEl.classList.add('hidden');
 
-            // Render catatan teks kondisi data inspect dan tren
+            // Render catatan teks kondisi data
             if (noteEl) {
-                const notes = [];
-                const mLabel = chart?._metricLabel || 'DPM';
-                if (missingInspectCount > 0) {
-                    notes.push(`${missingInspectCount} periode belum memiliki data inspect, ${mLabel}-nya tidak dapat dihitung.`);
-                }
-                if (validDpmCount === 1) {
-                    notes.push(`Baru 1 titik ${mLabel} valid. Garis tren muncul setelah minimal 2 periode memiliki data inspect.`);
-                } else if (validDpmCount === 0 && hasAnyTarget) {
-                    notes.push(`Belum ada data ${mLabel} real pada periode ini. Menampilkan garis target.`);
-                }
-
-                if (notes.length > 0) {
-                    noteEl.innerHTML = notes.map(msg => `
+                if (isFinal && mode === 'rework') {
+                    noteEl.innerHTML = `
                         <div class="flex items-center space-x-1.5 text-[11px] font-medium text-slate-500">
                             <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
-                            <span>${msg}</span>
+                            <span>DPM rework menyusul</span>
                         </div>
-                    `).join('');
+                    `;
+                    noteEl.classList.remove('hidden');
+                } else if (isFinal && mode === 'all') {
+                    noteEl.innerHTML = `
+                        <div class="flex items-center space-x-1.5 text-[11px] font-medium text-slate-500">
+                            <svg class="w-3.5 h-3.5 text-teal-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span>DPM gabungan menyusul</span>
+                        </div>
+                    `;
                     noteEl.classList.remove('hidden');
                 } else {
-                    noteEl.innerHTML = '';
-                    noteEl.classList.add('hidden');
+                    const notes = [];
+                    const mLabel = chart?._metricLabel || 'DPM';
+                    if (missingInspectCount > 0) {
+                        notes.push(`${missingInspectCount} periode belum memiliki data inspect, ${mLabel}-nya tidak dapat dihitung.`);
+                    }
+                    if (validDpmCount === 1) {
+                        notes.push(`Baru 1 titik ${mLabel} valid. Garis tren muncul setelah minimal 2 periode memiliki data inspect.`);
+                    } else if (validDpmCount === 0 && trendList.some(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)))) {
+                        notes.push(`Belum ada data ${mLabel} real pada periode ini. Menampilkan garis target.`);
+                    }
+
+                    if (notes.length > 0) {
+                        noteEl.innerHTML = notes.map(msg => `
+                            <div class="flex items-center space-x-1.5 text-[11px] font-medium text-slate-500">
+                                <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                                <span>${msg}</span>
+                            </div>
+                        `).join('');
+                        noteEl.classList.remove('hidden');
+                    } else {
+                        noteEl.innerHTML = '';
+                        noteEl.classList.add('hidden');
+                    }
                 }
             }
 
             if (chart) {
                 chart._groupBy = groupBy;
-                const baseColor = chart.data.datasets[0].borderColor || '#0f766e';
+                chart._mode = mode;
                 chart.data.labels = trendList.map(t => t.label);
 
-                // Dataset 0: DPM Real
-                chart.data.datasets[0].data = trendList.map(t => t.dpm);
-                chart.data.datasets[0]._meta = trendList;
+                // Pastikan chart memiliki 2 dataset awal
+                while (chart.data.datasets.length < 2) {
+                    chart.data.datasets.push({});
+                }
+                if (chart.data.datasets.length > 2) {
+                    chart.data.datasets = chart.data.datasets.slice(0, 2);
+                }
 
-                // Cek ketersediaan data target DPM
-                const hasAnyTarget = trendList.some(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
-                const validTargetPoints = trendList.filter(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
-                const validTargetCount = validTargetPoints.length;
-                const targetColor = chart.data.datasets[1].borderColor || '#64748b';
+                if (isFinal && mode === 'rework') {
+                    // Sumbu Y = "Jumlah"
+                    chart.options.scales.y.title.text = 'Jumlah';
 
-                if (hasAnyTarget) {
-                    // Tampilkan garis target (abu gelap putus-putus)
-                    chart.data.datasets[1].data = trendList.map(t => (t.target !== null && t.target !== undefined ? Number(t.target) : null));
+                    // Seri 1: Jumlah defect rework
+                    chart.data.datasets[0].label = 'Jumlah defect rework';
+                    chart.data.datasets[0].data = trendList.map(t => (t.total_defect_rework !== undefined ? t.total_defect_rework : t.total_defect) || 0);
+                    chart.data.datasets[0].borderColor = THEME_COLORS.rework;
+                    chart.data.datasets[0].backgroundColor = THEME_COLORS.reworkLight;
+                    chart.data.datasets[0].borderWidth = 2.5;
+                    chart.data.datasets[0].borderDash = [];
+                    chart.data.datasets[0].fill = true;
+                    chart.data.datasets[0].tension = 0.3;
+                    chart.data.datasets[0].spanGaps = true;
+                    chart.data.datasets[0].pointStyle = 'circle';
+                    chart.data.datasets[0].pointBackgroundColor = THEME_COLORS.rework;
+                    chart.data.datasets[0].pointBorderColor = '#ffffff';
+                    chart.data.datasets[0].pointBorderWidth = 2;
+                    chart.data.datasets[0].pointRadius = 4;
+                    chart.data.datasets[0].pointHoverRadius = 6;
+                    chart.data.datasets[0]._meta = trendList;
+                    chart.data.datasets[0].hidden = false;
+
+                    // Seri 2: Jumlah harness dirework
+                    chart.data.datasets[1].label = 'Jumlah harness dirework';
+                    chart.data.datasets[1].data = trendList.map(t => t.total_harness_rework || 0);
+                    chart.data.datasets[1].borderColor = THEME_COLORS.reworkDark;
+                    chart.data.datasets[1].backgroundColor = 'transparent';
+                    chart.data.datasets[1].borderWidth = 2;
+                    chart.data.datasets[1].borderDash = [4, 4];
+                    chart.data.datasets[1].fill = false;
+                    chart.data.datasets[1].tension = 0.3;
+                    chart.data.datasets[1].spanGaps = true;
+                    chart.data.datasets[1].pointStyle = 'circle';
+                    chart.data.datasets[1].pointBackgroundColor = THEME_COLORS.reworkDark;
+                    chart.data.datasets[1].pointBorderColor = '#ffffff';
+                    chart.data.datasets[1].pointBorderWidth = 2;
+                    chart.data.datasets[1].pointRadius = 4;
+                    chart.data.datasets[1].pointHoverRadius = 6;
                     chart.data.datasets[1].hidden = false;
 
-                    // Saat jumlah titik data target hanya 1, garis target tidak tergambar karena pointRadius: 0.
-                    // Gunakan pointStyle 'line' dengan pointRadius cukup lebar (20) dan warna sama dengan garis target.
-                    // Saat titik >= 2 perilaku lama tetap (pointRadius 0, garis putus-putus).
-                    if (validTargetCount === 1) {
-                        chart.data.datasets[1].pointStyle = 'line';
-                        chart.data.datasets[1].pointRadius = trendList.map(t => (t.target !== null && t.target !== undefined && !isNaN(Number(t.target)) ? 20 : 0));
-                        chart.data.datasets[1].pointHoverRadius = trendList.map(t => (t.target !== null && t.target !== undefined && !isNaN(Number(t.target)) ? 22 : 0));
-                        chart.data.datasets[1].pointBorderColor = targetColor;
-                        chart.data.datasets[1].pointBorderWidth = 3;
-                        chart.data.datasets[1].pointBackgroundColor = targetColor;
+                } else if (isFinal && mode === 'all') {
+                    // Sumbu Y = "Jumlah defect"
+                    chart.options.scales.y.title.text = 'Jumlah defect';
+
+                    // Seri 1: Internal Defect
+                    chart.data.datasets[0].label = 'Internal Defect';
+                    chart.data.datasets[0].data = trendList.map(t => (t.total_defect_internal !== undefined ? t.total_defect_internal : t.total_defect) || 0);
+                    chart.data.datasets[0].borderColor = THEME_COLORS.internal;
+                    chart.data.datasets[0].backgroundColor = THEME_COLORS.internalLight;
+                    chart.data.datasets[0].borderWidth = 2.5;
+                    chart.data.datasets[0].borderDash = [];
+                    chart.data.datasets[0].fill = true;
+                    chart.data.datasets[0].tension = 0.3;
+                    chart.data.datasets[0].spanGaps = true;
+                    chart.data.datasets[0].pointStyle = 'circle';
+                    chart.data.datasets[0].pointBackgroundColor = THEME_COLORS.internal;
+                    chart.data.datasets[0].pointBorderColor = '#ffffff';
+                    chart.data.datasets[0].pointBorderWidth = 2;
+                    chart.data.datasets[0].pointRadius = 4;
+                    chart.data.datasets[0].pointHoverRadius = 6;
+                    chart.data.datasets[0]._meta = trendList;
+                    chart.data.datasets[0].hidden = false;
+
+                    // Seri 2: Rework
+                    chart.data.datasets[1].label = 'Rework';
+                    chart.data.datasets[1].data = trendList.map(t => t.total_defect_rework || 0);
+                    chart.data.datasets[1].borderColor = THEME_COLORS.rework;
+                    chart.data.datasets[1].backgroundColor = THEME_COLORS.reworkLight;
+                    chart.data.datasets[1].borderWidth = 2.5;
+                    chart.data.datasets[1].borderDash = [];
+                    chart.data.datasets[1].fill = false;
+                    chart.data.datasets[1].tension = 0.3;
+                    chart.data.datasets[1].spanGaps = true;
+                    chart.data.datasets[1].pointStyle = 'circle';
+                    chart.data.datasets[1].pointBackgroundColor = THEME_COLORS.rework;
+                    chart.data.datasets[1].pointBorderColor = '#ffffff';
+                    chart.data.datasets[1].pointBorderWidth = 2;
+                    chart.data.datasets[1].pointRadius = 4;
+                    chart.data.datasets[1].pointHoverRadius = 6;
+                    chart.data.datasets[1].hidden = false;
+
+                } else {
+                    // Mode internal atau Pre Assy: 100% pulih ke perilaku legacy DPM / PPM
+                    const mLabel = isFinal ? 'DPM' : 'PPM';
+                    const baseColor = isFinal ? THEME_COLORS.internalDark : THEME_COLORS.preAssy;
+                    const bgLight = isFinal ? 'rgba(15, 118, 110, 0.08)' : THEME_COLORS.preAssyLight;
+                    const targetColor = THEME_COLORS.target;
+
+                    chart.options.scales.y.title.text = mLabel;
+
+                    // Dataset 0: DPM Real
+                    chart.data.datasets[0].label = `${mLabel} Real`;
+                    chart.data.datasets[0].data = trendList.map(t => t.dpm);
+                    chart.data.datasets[0].borderColor = baseColor;
+                    chart.data.datasets[0].backgroundColor = bgLight;
+                    chart.data.datasets[0].borderWidth = 2.5;
+                    chart.data.datasets[0].borderDash = [];
+                    chart.data.datasets[0].fill = true;
+                    chart.data.datasets[0].tension = 0.3;
+                    chart.data.datasets[0].spanGaps = true;
+                    chart.data.datasets[0].pointStyle = 'circle';
+                    chart.data.datasets[0]._meta = trendList;
+                    chart.data.datasets[0].hidden = false;
+
+                    // Dataset 1: Target DPM
+                    chart.data.datasets[1].label = `Target ${mLabel}`;
+                    chart.data.datasets[1].borderColor = targetColor;
+                    chart.data.datasets[1].backgroundColor = 'transparent';
+                    chart.data.datasets[1].borderWidth = 2;
+                    chart.data.datasets[1].borderDash = [6, 4];
+                    chart.data.datasets[1].fill = false;
+                    chart.data.datasets[1].tension = 0;
+                    chart.data.datasets[1].spanGaps = false;
+
+                    const hasAnyTarget = trendList.some(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
+                    const validTargetPoints = trendList.filter(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
+                    const validTargetCount = validTargetPoints.length;
+
+                    if (hasAnyTarget) {
+                        chart.data.datasets[1].data = trendList.map(t => (t.target !== null && t.target !== undefined ? Number(t.target) : null));
+                        chart.data.datasets[1].hidden = false;
+
+                        if (validTargetCount === 1) {
+                            chart.data.datasets[1].pointStyle = 'line';
+                            chart.data.datasets[1].pointRadius = trendList.map(t => (t.target !== null && t.target !== undefined && !isNaN(Number(t.target)) ? 20 : 0));
+                            chart.data.datasets[1].pointHoverRadius = trendList.map(t => (t.target !== null && t.target !== undefined && !isNaN(Number(t.target)) ? 22 : 0));
+                            chart.data.datasets[1].pointBorderColor = targetColor;
+                            chart.data.datasets[1].pointBorderWidth = 3;
+                            chart.data.datasets[1].pointBackgroundColor = targetColor;
+                        } else {
+                            chart.data.datasets[1].pointStyle = 'circle';
+                            chart.data.datasets[1].pointRadius = 0;
+                            chart.data.datasets[1].pointHoverRadius = 0;
+                            chart.data.datasets[1].pointBorderWidth = 0;
+                        }
+
+                        chart.data.datasets[0].pointBackgroundColor = trendList.map(t => {
+                            const hasTarget = t.target !== null && t.target !== undefined;
+                            const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                            if (hasTarget && hasDpm && Number(t.dpm) > Number(t.target)) {
+                                return '#dc2626';
+                            }
+                            return baseColor;
+                        });
+
+                        chart.data.datasets[0].pointBorderColor = trendList.map(t => {
+                            const hasTarget = t.target !== null && t.target !== undefined;
+                            const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                            if (hasTarget && hasDpm && Number(t.dpm) > Number(t.target)) {
+                                return '#991b1b';
+                            }
+                            return '#ffffff';
+                        });
+
+                        chart.data.datasets[0].pointRadius = trendList.map(t => {
+                            const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                            if (!hasDpm) return 0;
+                            const hasTarget = t.target !== null && t.target !== undefined;
+                            if (hasTarget && Number(t.dpm) > Number(t.target)) {
+                                return validDpmCount === 1 ? 8 : 5;
+                            }
+                            return validDpmCount === 1 ? 7 : 4;
+                        });
+                        chart.data.datasets[0].pointHoverRadius = trendList.map(t => {
+                            const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                            if (!hasDpm) return 0;
+                            return validDpmCount === 1 ? 9 : 6;
+                        });
                     } else {
+                        chart.data.datasets[1].data = [];
+                        chart.data.datasets[1].hidden = true;
                         chart.data.datasets[1].pointStyle = 'circle';
                         chart.data.datasets[1].pointRadius = 0;
                         chart.data.datasets[1].pointHoverRadius = 0;
                         chart.data.datasets[1].pointBorderWidth = 0;
+                        chart.data.datasets[0].pointBackgroundColor = baseColor;
+                        chart.data.datasets[0].pointBorderColor = '#ffffff';
+                        chart.data.datasets[0].pointRadius = trendList.map(t => {
+                            const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                            if (!hasDpm) return 0;
+                            return validDpmCount === 1 ? 7 : 4;
+                        });
+                        chart.data.datasets[0].pointHoverRadius = trendList.map(t => {
+                            const hasDpm = t.dpm !== null && t.dpm !== undefined;
+                            if (!hasDpm) return 0;
+                            return validDpmCount === 1 ? 9 : 6;
+                        });
                     }
-
-                    // Titik spike: Titik merah jika DPM Real melebihi Target
-                    chart.data.datasets[0].pointBackgroundColor = trendList.map(t => {
-                        const hasTarget = t.target !== null && t.target !== undefined;
-                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
-                        if (hasTarget && hasDpm && Number(t.dpm) > Number(t.target)) {
-                            return '#dc2626'; // Merah spike
-                        }
-                        return baseColor;
-                    });
-
-                    chart.data.datasets[0].pointBorderColor = trendList.map(t => {
-                        const hasTarget = t.target !== null && t.target !== undefined;
-                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
-                        if (hasTarget && hasDpm && Number(t.dpm) > Number(t.target)) {
-                            return '#991b1b';
-                        }
-                        return '#ffffff';
-                    });
-
-                    chart.data.datasets[0].pointRadius = trendList.map(t => {
-                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
-                        if (!hasDpm) return 0;
-                        const hasTarget = t.target !== null && t.target !== undefined;
-                        if (hasTarget && Number(t.dpm) > Number(t.target)) {
-                            return validDpmCount === 1 ? 8 : 5;
-                        }
-                        return validDpmCount === 1 ? 7 : 4;
-                    });
-                    chart.data.datasets[0].pointHoverRadius = trendList.map(t => {
-                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
-                        if (!hasDpm) return 0;
-                        return validDpmCount === 1 ? 9 : 6;
-                    });
-                } else {
-                    // Sembunyikan garis target dan highlight spike sampai data target tersedia
-                    chart.data.datasets[1].data = [];
-                    chart.data.datasets[1].hidden = true;
-                    chart.data.datasets[1].pointStyle = 'circle';
-                    chart.data.datasets[1].pointRadius = 0;
-                    chart.data.datasets[1].pointHoverRadius = 0;
-                    chart.data.datasets[1].pointBorderWidth = 0;
-                    chart.data.datasets[0].pointBackgroundColor = baseColor;
-                    chart.data.datasets[0].pointBorderColor = '#ffffff';
-                    chart.data.datasets[0].pointRadius = trendList.map(t => {
-                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
-                        if (!hasDpm) return 0;
-                        return validDpmCount === 1 ? 7 : 4;
-                    });
-                    chart.data.datasets[0].pointHoverRadius = trendList.map(t => {
-                        const hasDpm = t.dpm !== null && t.dpm !== undefined;
-                        if (!hasDpm) return 0;
-                        return validDpmCount === 1 ? 9 : 6;
-                    });
                 }
 
-                chart.update('none'); // Update in place tanpa flicker
+                chart.update('none');
             }
         }
 
-        function updateParetoData(chart, wrapperId, emptyId, pareto) {
+        function updateParetoData(chart, wrapperId, emptyId, pareto, mode = currentMode) {
+            const isFinal = (wrapperId === 'wrapperParetoFinal');
+            const isPre = (wrapperId === 'wrapperParetoPre');
             const wrapper = document.getElementById(wrapperId);
             const emptyEl = document.getElementById(emptyId);
             const msgEl = emptyEl ? emptyEl.querySelector('p') : null;
+            const subMsgEl = emptyEl ? emptyEl.querySelector('span') : null;
+
+            // 1. Khusus Pre Assy pada mode rework: sembunyikan canvas, tampilkan pesan rework tidak tersedia
+            if (isPre && mode === 'rework') {
+                if (msgEl) msgEl.textContent = 'Rework tidak tersedia untuk Pre Assy';
+                if (subMsgEl) subMsgEl.textContent = 'Proses rework hanya terdapat pada Final Assy';
+                if (wrapper) wrapper.classList.add('hidden');
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                return;
+            }
+
+            // Kembalikan subteks default jika sebelumnya dari mode rework
+            if (isPre && subMsgEl && subMsgEl.textContent === 'Proses rework hanya terdapat pada Final Assy') {
+                subMsgEl.textContent = 'Ubah rentang tanggal atau pilih filter carline lain';
+            }
 
             const paretoList = Array.isArray(pareto) ? pareto : [];
             const hasData = paretoList.length > 0 && paretoList.some(p => (p.total || 0) > 0);
@@ -1379,14 +1718,145 @@
             if (emptyEl) emptyEl.classList.add('hidden');
 
             if (chart) {
+                chart._mode = mode;
                 chart.data.labels = paretoList.map(p => p.name);
-                chart.data.datasets[0].data = paretoList.map(p => p.cumulative_percent);
-                chart.data.datasets[1].data = paretoList.map(p => p.total);
-                chart.update('none'); // Update in place tanpa flicker
+
+                if (isFinal && mode === 'all') {
+                    // Stacked bar: Internal Defect (Teal) + Rework (Amber)
+                    chart.options.scales.x.stacked = true;
+                    chart.options.scales.y.stacked = true;
+
+                    // Dataset 0: Kumulatif %
+                    chart.data.datasets[0] = {
+                        type: 'line',
+                        label: 'Kumulatif %',
+                        data: paretoList.map(p => p.cumulative_percent),
+                        borderColor: '#d97706',
+                        backgroundColor: '#d97706',
+                        borderWidth: 2,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#d97706',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5,
+                        fill: false,
+                        tension: 0.25,
+                        yAxisID: 'y1',
+                        order: 1
+                    };
+
+                    // Dataset 1: Internal Defect (Teal)
+                    chart.data.datasets[1] = {
+                        type: 'bar',
+                        label: 'Internal Defect',
+                        data: paretoList.map(p => p.internal_qty || 0),
+                        backgroundColor: THEME_COLORS.internal,
+                        borderRadius: 0,
+                        maxBarThickness: 44,
+                        yAxisID: 'y',
+                        order: 2,
+                        stack: 'defect'
+                    };
+
+                    // Dataset 2: Rework (Amber)
+                    chart.data.datasets[2] = {
+                        type: 'bar',
+                        label: 'Rework',
+                        data: paretoList.map(p => p.rework_qty || 0),
+                        backgroundColor: THEME_COLORS.rework,
+                        borderRadius: 4,
+                        maxBarThickness: 44,
+                        yAxisID: 'y',
+                        order: 3,
+                        stack: 'defect'
+                    };
+
+                } else if (isFinal && mode === 'rework') {
+                    // Pareto Rework Final: Bar Amber + Kumulatif Line
+                    chart.options.scales.x.stacked = false;
+                    chart.options.scales.y.stacked = false;
+                    if (chart.data.datasets.length > 2) {
+                        chart.data.datasets = chart.data.datasets.slice(0, 2);
+                    }
+
+                    // Dataset 0: Kumulatif %
+                    chart.data.datasets[0] = {
+                        type: 'line',
+                        label: 'Kumulatif %',
+                        data: paretoList.map(p => p.cumulative_percent),
+                        borderColor: '#d97706',
+                        backgroundColor: '#d97706',
+                        borderWidth: 2,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#d97706',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5,
+                        fill: false,
+                        tension: 0.25,
+                        yAxisID: 'y1',
+                        order: 1
+                    };
+
+                    // Dataset 1: Defect Rework
+                    chart.data.datasets[1] = {
+                        type: 'bar',
+                        label: 'Defect Rework',
+                        data: paretoList.map(p => (p.rework_qty !== undefined ? p.rework_qty : p.total)),
+                        backgroundColor: THEME_COLORS.rework,
+                        borderRadius: 4,
+                        maxBarThickness: 44,
+                        yAxisID: 'y',
+                        order: 2
+                    };
+
+                } else {
+                    // Mode internal atau Pre Assy: 100% pulih ke legacy pareto
+                    chart.options.scales.x.stacked = false;
+                    chart.options.scales.y.stacked = false;
+                    if (chart.data.datasets.length > 2) {
+                        chart.data.datasets = chart.data.datasets.slice(0, 2);
+                    }
+
+                    const barColor = isFinal ? THEME_COLORS.internalDark : THEME_COLORS.preAssyDark;
+
+                    // Dataset 0: Kumulatif %
+                    chart.data.datasets[0] = {
+                        type: 'line',
+                        label: 'Kumulatif %',
+                        data: paretoList.map(p => p.cumulative_percent),
+                        borderColor: '#d97706',
+                        backgroundColor: '#d97706',
+                        borderWidth: 2,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#d97706',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5,
+                        fill: false,
+                        tension: 0.25,
+                        yAxisID: 'y1',
+                        order: 1
+                    };
+
+                    // Dataset 1: Total Defect
+                    chart.data.datasets[1] = {
+                        type: 'bar',
+                        label: 'Total Defect',
+                        data: paretoList.map(p => p.total),
+                        backgroundColor: barColor,
+                        borderRadius: 4,
+                        maxBarThickness: 44,
+                        yAxisID: 'y',
+                        order: 2
+                    };
+                }
+
+                chart.update('none');
             }
         }
 
-        function updateDpmSummaryCard(type, trends, filters) {
+        function updateDpmSummaryCard(type, trends, filters, mode = currentMode) {
             const isFinal = type === 'final';
             const titleEl = document.getElementById(isFinal ? 'summaryTitleDpmFinal' : 'summaryTitleDpmPre');
             const periodEl = document.getElementById(isFinal ? 'summaryPeriodDpmFinal' : 'summaryPeriodDpmPre');
@@ -1398,9 +1868,44 @@
                 periodEl.textContent = formatPeriodLabel(filters.start_date, filters.end_date);
             }
 
+            if (!isFinal && mode === 'rework') {
+                if (titleEl) titleEl.textContent = 'PPM Pre Assy';
+                if (valEl) valEl.textContent = '-';
+                if (unitEl) unitEl.textContent = 'PPM';
+                if (subEl) subEl.textContent = 'Rework tidak tersedia untuk Pre Assy';
+                return;
+            }
+
             const list = Array.isArray(trends) ? trends : [];
 
-            // Cek ketersediaan data jumlah (total_defect & total_inspect) di dalam respons
+            if (isFinal && mode === 'rework') {
+                if (titleEl) titleEl.textContent = 'Defect Rework';
+                const totalDefectRework = list.reduce((sum, t) => sum + (Number(t.total_defect_rework !== undefined ? t.total_defect_rework : t.total_defect) || 0), 0);
+                const totalHarnessRework = list.reduce((sum, t) => sum + (Number(t.total_harness_rework) || 0), 0);
+
+                if (valEl) valEl.textContent = totalDefectRework.toLocaleString('id-ID');
+                if (unitEl) unitEl.textContent = 'pcs';
+                if (subEl) {
+                    subEl.innerHTML = `${totalHarnessRework.toLocaleString('id-ID')} harness dirework &bull; <span class="text-amber-600 font-medium">DPM rework menyusul</span>`;
+                }
+                return;
+            }
+
+            if (isFinal && mode === 'all') {
+                if (titleEl) titleEl.textContent = 'Defect Final Assy';
+                const intDef = list.reduce((sum, t) => sum + (Number(t.total_defect_internal !== undefined ? t.total_defect_internal : t.total_defect) || 0), 0);
+                const rewDef = list.reduce((sum, t) => sum + (Number(t.total_defect_rework) || 0), 0);
+                const combinedDef = intDef + rewDef;
+
+                if (valEl) valEl.textContent = combinedDef.toLocaleString('id-ID');
+                if (unitEl) unitEl.textContent = 'pcs';
+                if (subEl) {
+                    subEl.innerHTML = `Internal: ${intDef.toLocaleString('id-ID')} &bull; Rework: ${rewDef.toLocaleString('id-ID')} &bull; <span class="text-teal-600 font-medium">DPM gabungan menyusul</span>`;
+                }
+                return;
+            }
+
+            // Mode internal atau Pre Assy: perhitungan DPM/PPM legacy
             const hasQuantity = list.length > 0 && list.some(item => item.total_inspect !== undefined && item.total_defect !== undefined);
 
             if (hasQuantity) {
@@ -1426,7 +1931,6 @@
                     if (valEl) valEl.textContent = dpmCalc.toLocaleString('id-ID');
                     if (unitEl) unitEl.textContent = isFinal ? 'DPM' : 'PPM';
 
-                    // Cek target terakhir dari periode yang memiliki data inspect (fallback ke target terakhir di list)
                     const targetFromValidPeriod = [...list].reverse().find(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)) && (Number(t.total_inspect) || 0) > 0);
                     const latestTargetItem = targetFromValidPeriod || [...list].reverse().find(t => t.target !== null && t.target !== undefined && !isNaN(Number(t.target)));
                     let statusPrefix = '';
@@ -1456,7 +1960,6 @@
                     }
                 }
             } else {
-                // Data jumlah tidak ada di respons -> pakai label "DPM / PPM terakhir"
                 if (titleEl) titleEl.textContent = isFinal ? 'DPM Terakhir' : 'PPM Terakhir';
 
                 const lastValid = [...list].reverse().find(item => item.dpm !== null && item.dpm !== undefined && !isNaN(Number(item.dpm)));
@@ -1472,7 +1975,7 @@
             }
         }
 
-        function updateParetoSummaryCard(type, pareto, filters) {
+        function updateParetoSummaryCard(type, pareto, filters, mode = currentMode) {
             const isFinal = type === 'final';
             const periodEl = document.getElementById(isFinal ? 'summaryPeriodParetoFinal' : 'summaryPeriodParetoPre');
             const valEl = document.getElementById(isFinal ? 'summaryValParetoFinal' : 'summaryValParetoPre');
@@ -1481,6 +1984,16 @@
 
             if (periodEl) {
                 periodEl.textContent = formatPeriodLabel(filters.start_date, filters.end_date);
+            }
+
+            if (!isFinal && mode === 'rework') {
+                if (valEl) {
+                    valEl.textContent = '-';
+                    valEl.title = '';
+                }
+                if (countEl) countEl.textContent = '';
+                if (subEl) subEl.textContent = 'Rework tidak tersedia untuk Pre Assy';
+                return;
             }
 
             const list = Array.isArray(pareto) ? pareto : [];
@@ -1492,11 +2005,20 @@
                     valEl.title = topItem.name;
                 }
                 if (countEl) {
-                    countEl.textContent = `(${Number(topItem.total).toLocaleString('id-ID')} pcs)`;
+                    const displayQty = (isFinal && mode === 'rework' && topItem.rework_qty !== undefined)
+                        ? topItem.rework_qty
+                        : topItem.total;
+                    countEl.textContent = `(${Number(displayQty).toLocaleString('id-ID')} pcs)`;
                 }
                 if (subEl) {
                     const cum = topItem.cumulative_percent !== undefined ? `${Number(topItem.cumulative_percent).toFixed(1)}%` : '';
-                    subEl.textContent = cum ? `Peringkat 1 (${cum} kumulatif)` : 'Peringkat 1 terbanyak';
+                    if (isFinal && mode === 'all') {
+                        subEl.textContent = `Peringkat 1 total (Internal: ${(topItem.internal_qty || 0).toLocaleString('id-ID')}, Rework: ${(topItem.rework_qty || 0).toLocaleString('id-ID')})`;
+                    } else if (isFinal && mode === 'rework') {
+                        subEl.textContent = cum ? `Peringkat 1 rework (${cum} kumulatif)` : 'Peringkat 1 defect rework';
+                    } else {
+                        subEl.textContent = cum ? `Peringkat 1 (${cum} kumulatif)` : 'Peringkat 1 terbanyak';
+                    }
                 }
             } else {
                 if (valEl) {
@@ -1548,6 +2070,7 @@
         let isFetchingParetoPre = false;
 
         function fetchDpmFinal(isSilent = false) {
+            const reqMode = currentMode;
             if (isSilent && isFetchingDpmFinal) return;
             if (!isSilent) {
                 if (abortDpmFinal) abortDpmFinal.abort();
@@ -1585,14 +2108,16 @@
                 return response.json();
             })
             .then(res => {
+                if (reqMode !== currentMode) return;
                 const data = res.dpm_final || [];
-                updateDpmData(chartDpmFinal, 'wrapperDpmFinal', 'emptyDpmFinal', data, filtersDpmFinal.group_by);
-                updateDpmSummaryCard('final', data, filtersDpmFinal);
+                updateDpmData(chartDpmFinal, 'wrapperDpmFinal', 'emptyDpmFinal', data, filtersDpmFinal.group_by, currentMode);
+                updateDpmSummaryCard('final', data, filtersDpmFinal, currentMode);
                 setLoadingBadge('loadingDpmFinal', 'success');
                 if (errorEl) errorEl.classList.add('hidden');
             })
             .catch(err => {
                 if (err.name === 'AbortError') return;
+                if (reqMode !== currentMode) return;
                 console.error('[Analytics DPM Final] Error fetch:', err);
                 setLoadingBadge('loadingDpmFinal', 'error');
                 const message = err.isSessionExpired
@@ -1609,6 +2134,7 @@
         }
 
         function fetchParetoFinal(isSilent = false) {
+            const reqMode = currentMode;
             if (isSilent && isFetchingParetoFinal) return;
             if (!isSilent) {
                 if (abortParetoFinal) abortParetoFinal.abort();
@@ -1645,14 +2171,16 @@
                 return response.json();
             })
             .then(res => {
+                if (reqMode !== currentMode) return;
                 const data = res.pareto_final || [];
-                updateParetoData(chartParetoFinal, 'wrapperParetoFinal', 'emptyParetoFinal', data);
-                updateParetoSummaryCard('final', data, filtersParetoFinal);
+                updateParetoData(chartParetoFinal, 'wrapperParetoFinal', 'emptyParetoFinal', data, currentMode);
+                updateParetoSummaryCard('final', data, filtersParetoFinal, currentMode);
                 setLoadingBadge('loadingParetoFinal', 'success');
                 if (errorEl) errorEl.classList.add('hidden');
             })
             .catch(err => {
                 if (err.name === 'AbortError') return;
+                if (reqMode !== currentMode) return;
                 console.error('[Analytics Pareto Final] Error fetch:', err);
                 setLoadingBadge('loadingParetoFinal', 'error');
                 const message = err.isSessionExpired
@@ -1669,6 +2197,7 @@
         }
 
         function fetchDpmPre(isSilent = false) {
+            const reqMode = currentMode;
             if (isSilent && isFetchingDpmPre) return;
             if (!isSilent) {
                 if (abortDpmPre) abortDpmPre.abort();
@@ -1706,14 +2235,16 @@
                 return response.json();
             })
             .then(res => {
+                if (reqMode !== currentMode) return;
                 const data = res.dpm_pre || [];
-                updateDpmData(chartDpmPre, 'wrapperDpmPre', 'emptyDpmPre', data, filtersDpmPre.group_by);
-                updateDpmSummaryCard('pre', data, filtersDpmPre);
+                updateDpmData(chartDpmPre, 'wrapperDpmPre', 'emptyDpmPre', data, filtersDpmPre.group_by, currentMode);
+                updateDpmSummaryCard('pre', data, filtersDpmPre, currentMode);
                 setLoadingBadge('loadingDpmPre', 'success');
                 if (errorEl) errorEl.classList.add('hidden');
             })
             .catch(err => {
                 if (err.name === 'AbortError') return;
+                if (reqMode !== currentMode) return;
                 console.error('[Analytics DPM Pre] Error fetch:', err);
                 setLoadingBadge('loadingDpmPre', 'error');
                 const message = err.isSessionExpired
@@ -1730,6 +2261,7 @@
         }
 
         function fetchParetoPre(isSilent = false) {
+            const reqMode = currentMode;
             if (isSilent && isFetchingParetoPre) return;
             if (!isSilent) {
                 if (abortParetoPre) abortParetoPre.abort();
@@ -1766,14 +2298,16 @@
                 return response.json();
             })
             .then(res => {
+                if (reqMode !== currentMode) return;
                 const data = res.pareto_pre || [];
-                updateParetoData(chartParetoPre, 'wrapperParetoPre', 'emptyParetoPre', data);
-                updateParetoSummaryCard('pre', data, filtersParetoPre);
+                updateParetoData(chartParetoPre, 'wrapperParetoPre', 'emptyParetoPre', data, currentMode);
+                updateParetoSummaryCard('pre', data, filtersParetoPre, currentMode);
                 setLoadingBadge('loadingParetoPre', 'success');
                 if (errorEl) errorEl.classList.add('hidden');
             })
             .catch(err => {
                 if (err.name === 'AbortError') return;
+                if (reqMode !== currentMode) return;
                 console.error('[Analytics Pareto Pre] Error fetch:', err);
                 setLoadingBadge('loadingParetoPre', 'error');
                 const message = err.isSessionExpired
@@ -1904,6 +2438,7 @@
         if (conveyorSelectDpmFinal) {
             conveyorSelectDpmFinal.addEventListener('change', function () {
                 filtersDpmFinal.conveyor = this.value;
+                updateConveyorFilterUI(currentMode);
                 triggerFilterDpmFinal(300);
             });
         }
@@ -1930,6 +2465,7 @@
                 if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
 
                 if (conveyorSelectDpmFinal) conveyorSelectDpmFinal.value = 'all';
+                updateConveyorFilterUI(currentMode);
 
                 groupButtonsDpmFinal.forEach(b => {
                     if (b.dataset.val === 'day') {
@@ -1959,6 +2495,7 @@
         if (conveyorSelectParetoFinal) {
             conveyorSelectParetoFinal.addEventListener('change', function () {
                 filtersParetoFinal.conveyor = this.value;
+                updateConveyorFilterUI(currentMode);
                 triggerFilterParetoFinal(300);
             });
         }
@@ -1984,6 +2521,7 @@
                 if (periodEl) periodEl.textContent = formatPeriodLabel(resetDates.start, resetDates.end);
 
                 if (conveyorSelectParetoFinal) conveyorSelectParetoFinal.value = 'all';
+                updateConveyorFilterUI(currentMode);
 
                 triggerFilterParetoFinal(0);
             });
@@ -2113,9 +2651,11 @@
         }
 
         function fetchStats() {
+            const reqMode = currentMode;
             fetch(`{{ url("/api/dashboard/stats") }}?mode=${encodeURIComponent(currentMode)}`)
                 .then(r => r.json())
                 .then(stats => {
+                    if (reqMode !== currentMode) return;
                     const totalEl = document.getElementById('stat-total-defect');
                     if (totalEl && stats.totalDefect !== undefined) {
                         const newTxt = stats.totalDefect.toLocaleString('id-ID');
@@ -2152,7 +2692,10 @@
                         }
                     }
                 })
-                .catch(err => console.error('[Polling] Gagal fetch stats:', err));
+                .catch(err => {
+                    if (reqMode !== currentMode) return;
+                    console.error('[Polling] Gagal fetch stats:', err);
+                });
         }
 
         // --- 12. Polling Execution (8s & Tab Inactive Prevention) ---
@@ -2178,6 +2721,9 @@
         if (document.getElementById('summaryPeriodParetoPre')) {
             document.getElementById('summaryPeriodParetoPre').textContent = formatPeriodLabel(filtersParetoPre.start_date, filtersParetoPre.end_date);
         }
+
+        // Inisialisasi visual mode awal (judul kartu, filter konveyor, dll.)
+        updateModeVisuals(currentMode);
 
         // Initial Load
         fetchStats();
