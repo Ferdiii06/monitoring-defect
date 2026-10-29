@@ -144,6 +144,38 @@
                             </div>
                         </div>
 
+                        <!-- Baris 1.5: Carline & Conveyor (Opsional) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                            <!-- Field: Carline -->
+                            <div class="space-y-1.5">
+                                <label for="carline" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    Carline <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
+                                </label>
+                                <select id="carline"
+                                        name="carline"
+                                        class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
+                                    <option value="">Pilih Carline (Opsional)...</option>
+                                    @foreach($carTypes ?? [] as $ct)
+                                        <option value="{{ $ct->name }}" {{ old('carline') === $ct->name ? 'selected' : '' }}>
+                                            {{ $ct->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Field: Conveyor -->
+                            <div class="space-y-1.5">
+                                <label for="conveyor" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                    Konveyor <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
+                                </label>
+                                <select id="conveyor"
+                                        name="conveyor"
+                                        class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
+                                    <option value="">Pilih Konveyor (Opsional)...</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <!-- Baris 2: Tracking & Status (No Defective Tag, #End, 4M, Shift) -->
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                             <!-- No Defective Tag -->
@@ -372,6 +404,29 @@
                                         <span class="text-xs font-bold font-mono text-gray-500 block truncate">
                                             NP: {{ $first->nameplate_lama ?? '-' }}
                                         </span>
+                                        @if(filled($first->nameplate_baru))
+                                            <span class="text-xs font-bold font-mono text-emerald-700 block truncate">
+                                                NP Baru: {{ $first->nameplate_baru }}
+                                            </span>
+                                        @endif
+                                        @php
+                                            $carlineDisplay = $first->jenis_mobil ?: ($first->carline?->carType?->name ?: $first->carline?->name);
+                                            $conveyorDisplay = $first->conveyor ?: ($first->carline?->name);
+                                        @endphp
+                                        @if(filled($carlineDisplay) || filled($conveyorDisplay))
+                                            <div class="flex items-center gap-1.5 flex-wrap text-[11px] font-semibold text-gray-700 pt-0.5">
+                                                @if(filled($carlineDisplay))
+                                                    <span class="inline-block bg-gray-100 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">
+                                                        Carline: {{ $carlineDisplay }}
+                                                    </span>
+                                                @endif
+                                                @if(filled($conveyorDisplay))
+                                                    <span class="inline-block bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">
+                                                        Conv: {{ $conveyorDisplay }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @endif
                                         @if($isAdmin)
                                             <span class="text-[11px] font-semibold text-gray-600 block mt-0.5 truncate">
                                                 Pembuat: <strong class="text-brand">{{ $first->user_name }}</strong> (Shift {{ $first->shift ?? '-' }})
@@ -380,15 +435,15 @@
                                     </div>
 
                                     <div class="shrink-0 flex items-center space-x-1 -mr-2 -mt-2">
-                                        @if($first->status_rework === 'Selesai')
+                                        @if(in_array($first->status_rework, ['Selesai', 'CLOSE'], true))
                                             <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                                <span>Selesai</span>
+                                                <span>CLOSE</span>
                                             </span>
                                         @else
                                             <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                                <span>Berjalan</span>
+                                                <span>OPEN</span>
                                             </span>
                                         @endif
 
@@ -415,7 +470,7 @@
 
                                     <div>
                                         <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Durasi</span>
-                                        @if($first->status_rework === 'Selesai')
+                                        @if(in_array($first->status_rework, ['Selesai', 'CLOSE'], true))
                                             <span class="font-extrabold text-emerald-700 text-[11px]">
                                                 {{ $first->durasi_rework_menit ?? 0 }} menit
                                             </span>
@@ -426,7 +481,7 @@
                                         @endif
                                     </div>
 
-                                    @if($first->status_rework === 'Selesai')
+                                    @if(in_array($first->status_rework, ['Selesai', 'CLOSE'], true))
                                         <div class="col-span-2 pt-1 border-t border-gray-200/60">
                                             <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Waktu Out</span>
                                             <span class="font-extrabold text-gray-900 font-mono text-[11px]">
@@ -455,8 +510,8 @@
                                     </div>
                                 </div>
 
-                                <!-- Tombol Out (Hanya untuk Rework berstatus Berjalan) -->
-                                @if(!$isAdmin && $first->status_rework === 'Berjalan')
+                                <!-- Tombol Out (Hanya untuk Rework berstatus OPEN) -->
+                                @if(!$isAdmin && !in_array($first->status_rework, ['Selesai', 'CLOSE'], true))
                                     <div class="pt-1">
                                         <form action="{{ route('rework.store_out', $groupId) }}" method="POST" onsubmit="return confirm('Selesaikan rework untuk harness ini?');" class="w-full">
                                             @csrf
@@ -526,6 +581,49 @@
         const defectSearch = document.getElementById('defect_search');
         const dropdown = document.getElementById('dropdown_results');
         const chipsContainer = document.getElementById('selected_defects_container');
+
+        // Cascading dropdown Carline -> Konveyor (Opsional)
+        const conveyorMap = @json($carTypes ? $carTypes->mapWithKeys(fn($ct) => [$ct->name => $ct->carlines->pluck('name')]) : []);
+        const carlineSelect = document.getElementById('carline');
+        const conveyorSelect = document.getElementById('conveyor');
+        const oldConveyor = @json(old('conveyor', ''));
+
+        function updateConveyors(selectedCarline, preselectedConveyor = '') {
+            if (!conveyorSelect) return;
+            conveyorSelect.innerHTML = '';
+
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+
+            if (!selectedCarline || !conveyorMap[selectedCarline]) {
+                defaultOpt.textContent = 'Pilih Carline Terlebih Dahulu';
+                conveyorSelect.appendChild(defaultOpt);
+                conveyorSelect.disabled = true;
+                return;
+            }
+
+            defaultOpt.textContent = 'Pilih Konveyor (Opsional)...';
+            conveyorSelect.appendChild(defaultOpt);
+            conveyorSelect.disabled = false;
+
+            const conveyors = conveyorMap[selectedCarline] || [];
+            conveyors.forEach(function(conv) {
+                const opt = document.createElement('option');
+                opt.value = conv;
+                opt.textContent = conv;
+                if (preselectedConveyor && conv === preselectedConveyor) {
+                    opt.selected = true;
+                }
+                conveyorSelect.appendChild(opt);
+            });
+        }
+
+        if (carlineSelect) {
+            carlineSelect.addEventListener('change', function() {
+                updateConveyors(this.value, '');
+            });
+            updateConveyors(carlineSelect.value, oldConveyor);
+        }
 
         // 1. Enter on Kanban input moves focus to Nameplate
         if (kanbanInput) {

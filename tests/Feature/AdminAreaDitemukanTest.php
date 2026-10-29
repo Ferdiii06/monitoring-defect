@@ -239,4 +239,60 @@ class AdminAreaDitemukanTest extends TestCase
             'id' => $area->id,
         ]);
     }
+
+    public function test_seeder_area_rework_idempotent_dan_get_rework_area_names_tidak_kosong(): void
+    {
+        // Pastikan awalnya belum ada area bertipe rework
+        $this->assertEquals(0, AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->count());
+
+        // Jalankan seeder pertama kali
+        $this->seed(\Database\Seeders\ReworkAreaSeeder::class);
+
+        // Verifikasi area 'REWORK' tersimpan dengan tipe rework
+        $this->assertDatabaseHas('area_ditemukans', [
+            'name' => 'REWORK',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+        $this->assertEquals(1, AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->count());
+
+        // Verifikasi getReworkAreaNames() tidak kosong dan berisi 'REWORK'
+        $areaNames1 = Defect::getReworkAreaNames();
+        $this->assertNotEmpty($areaNames1);
+        $this->assertContains('REWORK', $areaNames1);
+
+        // Jalankan seeder kedua kali untuk membuktikan idempotensi
+        $this->seed(\Database\Seeders\ReworkAreaSeeder::class);
+
+        // Jumlah area bertipe rework tetap 1 (tidak duplikat)
+        $this->assertEquals(1, AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->count());
+
+        // getReworkAreaNames() tetap konsisten
+        $areaNames2 = Defect::getReworkAreaNames();
+        $this->assertNotEmpty($areaNames2);
+        $this->assertContains('REWORK', $areaNames2);
+    }
+
+    public function test_seeder_area_rework_tidak_membuat_duplikat_jika_sudah_ada_area_bertipe_rework(): void
+    {
+        // Buat area bertipe rework bernama 'Rework Station'
+        AreaDitemukan::create([
+            'name' => 'Rework Station',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+
+        $this->assertEquals(1, AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->count());
+
+        // Jalankan ReworkAreaSeeder
+        $this->seed(\Database\Seeders\ReworkAreaSeeder::class);
+
+        // Pastikan tetap hanya 1 area bertipe rework dan tidak ada baris bernama 'REWORK'
+        $this->assertEquals(1, AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->count());
+        $this->assertDatabaseMissing('area_ditemukans', [
+            'name' => 'REWORK',
+        ]);
+        $this->assertDatabaseHas('area_ditemukans', [
+            'name' => 'Rework Station',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+    }
 }

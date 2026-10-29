@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\AreaDitemukan;
+use App\Models\CarType;
+use App\Models\Carline;
 use App\Models\Defect;
 use App\Models\DefectType;
 use App\Models\SubDefectType;
@@ -66,7 +68,7 @@ class ReworkFormTest extends TestCase
             $this->assertEquals('KB-12345', $defect->kanban_assy);
             $this->assertEquals('NP-ABCDEF', $defect->nameplate_lama);
             $this->assertNull($defect->nameplate_baru);
-            $this->assertEquals('Berjalan', $defect->status_rework);
+            $this->assertEquals('OPEN', $defect->status_rework);
             $this->assertNotNull($defect->waktu_in);
             $this->assertNull($defect->waktu_out);
             $this->assertNull($defect->durasi_rework_menit);
@@ -184,7 +186,7 @@ class ReworkFormTest extends TestCase
         $resOwner->assertSessionHas('success');
 
         $updatedDefect = Defect::where('rework_group_id', $groupId)->first();
-        $this->assertEquals('Selesai', $updatedDefect->status_rework);
+        $this->assertEquals('CLOSE', $updatedDefect->status_rework);
         $this->assertNotNull($updatedDefect->waktu_out);
         $this->assertEquals(18, $updatedDefect->durasi_rework_menit);
 
@@ -575,5 +577,102 @@ class ReworkFormTest extends TestCase
         $this->assertEquals('Konektor B pin 4', $updated->posisi_detail_rework);
         $this->assertEquals('BOX-3638', $updated->no_box);
         $this->assertEquals('3A', $updated->shift);
+    }
+
+    public function test_simpan_in_dengan_conveyor_dan_carline_tersimpan_di_database(): void
+    {
+        $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
+        AreaDitemukan::create(['name' => 'RWK', 'tipe' => 'rework']);
+
+        $carType = CarType::create(['name' => 'TOYOTA']);
+        $carline = Carline::create([
+            'car_type_id' => $carType->id,
+            'name'        => '664W-C5',
+        ]);
+
+        $response = $this->withSession([
+            'logged_in'     => true,
+            'user_name'     => 'reworkA',
+            'user_role'     => 'Rework',
+            'current_shift' => '1A',
+        ])->post(route('rework.store_in'), [
+            'kanban_assy'    => 'KB-CONV-01',
+            'nameplate'      => 'NP-CONV-01',
+            'sub_defect_ids' => [$sub->id],
+            'carline'        => 'TOYOTA',
+            'conveyor'       => '664W-C5',
+        ]);
+
+        $response->assertRedirect(route('rework.index'));
+        $response->assertSessionHas('success');
+
+        $defect = Defect::where('kanban_assy', 'KB-CONV-01')->first();
+        $this->assertNotNull($defect);
+        $this->assertEquals('664W-C5', $defect->conveyor);
+        $this->assertEquals($carline->id, $defect->carline_id);
+        $this->assertEquals('TOYOTA', $defect->jenis_mobil);
+        $this->assertEquals('OPEN', $defect->status_rework);
+    }
+
+    public function test_validasi_kombinasi_conveyor_dan_carline_tidak_valid(): void
+    {
+        $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
+        AreaDitemukan::create(['name' => 'RWK', 'tipe' => 'rework']);
+
+        $toyota = CarType::create(['name' => 'TOYOTA']);
+        $nissan = CarType::create(['name' => 'NISSAN']);
+        Carline::create([
+            'car_type_id' => $toyota->id,
+            'name'        => '664W-C5',
+        ]);
+
+        // Kirim kombinasi tidak valid: conveyor 664W-C5 (milik TOYOTA) tapi carline NISSAN
+        $response = $this->withSession([
+            'logged_in'     => true,
+            'user_name'     => 'reworkA',
+            'user_role'     => 'Rework',
+            'current_shift' => '1A',
+        ])->from(route('rework.index'))->post(route('rework.store_in'), [
+            'kanban_assy'    => 'KB-INVALID-01',
+            'nameplate'      => 'NP-INVALID-01',
+            'sub_defect_ids' => [$sub->id],
+            'carline'        => 'NISSAN',
+            'conveyor'       => '664W-C5',
+        ]);
+
+        $response->assertRedirect(route('rework.index'));
+        $response->assertSessionHasErrors(['conveyor']);
+        $this->assertEquals(0, Defect::where('kanban_assy', 'KB-INVALID-01')->count());
+    }
+
+    public function test_simpan_in_dengan_conveyor_saja_mengisi_carline_id_dan_jenis_mobil_secara_otomatis(): void
+    {
+        $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
+        AreaDitemukan::create(['name' => 'RWK', 'tipe' => 'rework']);
+
+        $mazda = CarType::create(['name' => 'MAZDA']);
+        $carline = Carline::create([
+            'car_type_id' => $mazda->id,
+            'name'        => 'J72A-12B.LHD',
+        ]);
+
+        $response = $this->withSession([
+            'logged_in'     => true,
+            'user_name'     => 'reworkA',
+            'user_role'     => 'Rework',
+            'current_shift' => '1A',
+        ])->post(route('rework.store_in'), [
+            'kanban_assy'    => 'KB-AUTO-01',
+            'nameplate'      => 'NP-AUTO-01',
+            'sub_defect_ids' => [$sub->id],
+            'conveyor'       => 'J72A-12B.LHD',
+        ]);
+
+        $response->assertRedirect(route('rework.index'));
+        $defect = Defect::where('kanban_assy', 'KB-AUTO-01')->first();
+        $this->assertNotNull($defect);
+        $this->assertEquals('J72A-12B.LHD', $defect->conveyor);
+        $this->assertEquals($carline->id, $defect->carline_id);
+        $this->assertEquals('MAZDA', $defect->jenis_mobil);
     }
 }
