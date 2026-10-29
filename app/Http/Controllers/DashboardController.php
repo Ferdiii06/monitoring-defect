@@ -17,11 +17,14 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         if (!session('logged_in')) {
             return redirect()->route('login');
         }
+
+        $mode = $request->query('mode', 'internal');
+        $currentMode = in_array($mode, ['all', 'internal', 'rework'], true) ? $mode : 'internal';
 
         try {
             ExternalApiService::syncFromApi();
@@ -30,8 +33,8 @@ class DashboardController extends Controller
         }
 
         // Hitung statistik dari database
-        $totalDefect = Defect::sum('quantity');
-        $defectToday = Defect::whereDate('waktu', Carbon::today())->sum('quantity');
+        $totalDefect = Defect::byDashboardMode($currentMode)->sum('quantity');
+        $defectToday = Defect::byDashboardMode($currentMode)->whereDate('waktu', Carbon::today())->sum('quantity');
 
         // 🆕 Active Users & Total Users - diambil dari endpoint qa-backend
         $totalUsers = 0;
@@ -71,17 +74,18 @@ class DashboardController extends Controller
         }
 
         // Mengambil 4 data defect terbaru secara riil
-        $recentDefects = Defect::orderBy('waktu', 'desc')->take(4)->get();
+        $recentDefects = Defect::byDashboardMode($currentMode)->orderBy('waktu', 'desc')->take(4)->get();
 
         $startOfMonth = Carbon::now()->startOfMonth()->startOfDay();
         $startOfWeek = Carbon::now()->startOfWeek()->startOfDay();
 
         // 1 DB query untuk mengambil semua data defect bulan ini untuk analitik chart
-        $monthRecords = Defect::where('waktu', '>=', $startOfMonth)
+        $monthRecords = Defect::byDashboardMode($currentMode)
+            ->where('waktu', '>=', $startOfMonth)
             ->get(['waktu', 'jenis_assy', 'quantity', 'inspect_quantity']);
 
-        $finalAssyChart = $this->buildAssyChartData('Final Assy', $monthRecords, $startOfWeek);
-        $preAssyChart = $this->buildAssyChartData('Pre Assy', $monthRecords, $startOfWeek);
+        $finalAssyChart = $this->buildAssyChartData('Final Assy', $monthRecords, $startOfWeek, $currentMode);
+        $preAssyChart = $this->buildAssyChartData('Pre Assy', $monthRecords, $startOfWeek, $currentMode);
 
         // Opsi dropdown filter untuk Dashboard Analytics: grup unik dari gabungan master dan defects Final Assy
         $finalAssyConveyors = ConveyorGroup::availableGroups();
@@ -99,32 +103,37 @@ class DashboardController extends Controller
             'finalAssyChart',
             'preAssyChart',
             'finalAssyConveyors',
-            'preAssyCarlines'
+            'preAssyCarlines',
+            'currentMode'
         ));
     }
 
     /**
      * API Live Polling: Dashboard Charts Data Real-time (Final Assy & Pre Assy)
      */
-    public function apiCharts()
+    public function apiCharts(Request $request = null)
     {
+        $mode = $request ? $request->query('mode', 'internal') : 'internal';
+        $currentMode = in_array($mode, ['all', 'internal', 'rework'], true) ? $mode : 'internal';
+
         $startOfMonth = Carbon::now()->startOfMonth()->startOfDay();
         $startOfWeek = Carbon::now()->startOfWeek()->startOfDay();
 
-        $monthRecords = Defect::where('waktu', '>=', $startOfMonth)
+        $monthRecords = Defect::byDashboardMode($currentMode)
+            ->where('waktu', '>=', $startOfMonth)
             ->get(['waktu', 'jenis_assy', 'quantity', 'inspect_quantity']);
 
         return response()->json([
             'success'   => true,
-            'finalAssy' => $this->buildAssyChartData('Final Assy', $monthRecords, $startOfWeek),
-            'preAssy'   => $this->buildAssyChartData('Pre Assy', $monthRecords, $startOfWeek),
+            'finalAssy' => $this->buildAssyChartData('Final Assy', $monthRecords, $startOfWeek, $currentMode),
+            'preAssy'   => $this->buildAssyChartData('Pre Assy', $monthRecords, $startOfWeek, $currentMode),
         ]);
     }
 
     /**
      * Helper kalkulasi data chart Quantity Inspect vs Quantity Defect
      */
-    protected function buildAssyChartData($jenisAssy, $monthRecords, $startOfWeek)
+    protected function buildAssyChartData($jenisAssy, $monthRecords, $startOfWeek, string $mode = 'internal')
     {
         $records = $monthRecords->where('jenis_assy', $jenisAssy);
 
@@ -163,7 +172,7 @@ class DashboardController extends Controller
             $monthDefect[] = (int) $rangeRecords->sum('quantity');
         }
 
-        $allTime = Defect::where('jenis_assy', $jenisAssy);
+        $allTime = Defect::byDashboardMode($mode, $jenisAssy)->where('jenis_assy', $jenisAssy);
         return [
             'today' => [
                 'inspect' => $todayInspect,

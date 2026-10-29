@@ -17,6 +17,15 @@ class AdminDashboardAnalyticsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        \Illuminate\Support\Facades\Http::fake([
+            '*/users*' => \Illuminate\Support\Facades\Http::response(['data' => []], 200),
+            '*' => \Illuminate\Support\Facades\Http::response([], 200),
+        ]);
+    }
+
     private function actingAsAdmin()
     {
         return $this->withSession([
@@ -1372,5 +1381,316 @@ class AdminDashboardAnalyticsTest extends TestCase
             $this->assertGreaterThanOrEqual($paretoFinal[$k + 1]['total'], $paretoFinal[$k]['total']);
             $this->assertLessThanOrEqual($paretoFinal[$k + 1]['cumulative_percent'], $paretoFinal[$k]['cumulative_percent']);
         }
+    }
+
+    public function test_kpi_dan_tabel_terbaru_dan_donut_menghormati_mode_dashboard(): void
+    {
+        AreaDitemukan::create(['name' => 'Area FA 1', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+        AreaDitemukan::create(['name' => 'Area Rework 1', 'tipe' => AreaDitemukan::TIPE_REWORK]);
+
+        // Defect 1: Final Assy internal (today)
+        $d1 = Defect::create([
+            'waktu'            => Carbon::today()->setTime(10, 0),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => 'CONV-1',
+            'jenis_defect'     => 'TERMINAL',
+            'jenis_sub_defect' => 'BENT',
+            'area_ditemukan'   => 'Area FA 1',
+            'quantity'         => 10,
+            'inspect_quantity' => 1000,
+        ]);
+
+        // Defect 2: Final Assy rework (today)
+        $d2 = Defect::create([
+            'waktu'            => Carbon::today()->setTime(11, 0),
+            'user_name'        => 'Reworker A',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => null,
+            'jenis_defect'     => 'CONNECTOR',
+            'jenis_sub_defect' => 'BROKEN',
+            'area_ditemukan'   => 'Area Rework 1',
+            'rework_group_id'  => (string) Str::uuid(),
+            'quantity'         => 5,
+            'inspect_quantity' => null,
+        ]);
+
+        // Defect 3: Pre Assy internal (today)
+        $d3 = Defect::create([
+            'waktu'            => Carbon::today()->setTime(9, 0),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Pre Assy',
+            'carline_id'       => null,
+            'jenis_defect'     => 'CRIMP',
+            'jenis_sub_defect' => 'BAD',
+            'area_ditemukan'   => 'Area FA 1',
+            'quantity'         => 7,
+            'inspect_quantity' => 500,
+        ]);
+
+        // Defect 4: Final Assy internal (yesterday)
+        $d4 = Defect::create([
+            'waktu'            => Carbon::yesterday()->setTime(14, 0),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => 'CONV-1',
+            'jenis_defect'     => 'WIRE',
+            'jenis_sub_defect' => 'CUT',
+            'area_ditemukan'   => null,
+            'quantity'         => 3,
+            'inspect_quantity' => 0,
+        ]);
+
+        // 1. Mode Internal (Default)
+        $resInternal = $this->actingAsAdmin()->get('/dashboard?mode=internal');
+        $resInternal->assertStatus(200);
+        $resInternal->assertViewHas('currentMode', 'internal');
+        $resInternal->assertViewHas('totalDefect', 20); // 10 + 7 + 3 (tanpa 5 rework)
+        $resInternal->assertViewHas('defectToday', 17); // 10 + 7 (tanpa 5 rework)
+
+        $recentInternal = $resInternal->viewData('recentDefects');
+        $recentInternalIds = $recentInternal->pluck('id')->all();
+        $this->assertContains($d1->id, $recentInternalIds);
+        $this->assertContains($d3->id, $recentInternalIds);
+        $this->assertContains($d4->id, $recentInternalIds);
+        $this->assertNotContains($d2->id, $recentInternalIds); // baris rework dikecualikan
+
+        // Donut chart mode internal: Final Assy = 10, Pre Assy = 7
+        $finalChartInternal = $resInternal->viewData('finalAssyChart');
+        $this->assertEquals(10, array_sum($finalChartInternal['today']['defect']));
+        $this->assertEquals(13, $finalChartInternal['total_defect']);
+        $preChartInternal = $resInternal->viewData('preAssyChart');
+        $this->assertEquals(7, array_sum($preChartInternal['today']['defect']));
+        $this->assertEquals(7, $preChartInternal['total_defect']);
+
+        // 2. Mode Rework: hanya Final Assy rework, Pre Assy 0
+        $resRework = $this->actingAsAdmin()->get('/dashboard?mode=rework');
+        $resRework->assertStatus(200);
+        $resRework->assertViewHas('currentMode', 'rework');
+        $resRework->assertViewHas('totalDefect', 5);
+        $resRework->assertViewHas('defectToday', 5);
+
+        $recentRework = $resRework->viewData('recentDefects');
+        $recentReworkIds = $recentRework->pluck('id')->all();
+        $this->assertEquals([$d2->id], $recentReworkIds);
+
+        $finalChartRework = $resRework->viewData('finalAssyChart');
+        $this->assertEquals(5, array_sum($finalChartRework['today']['defect']));
+        $this->assertEquals(5, $finalChartRework['total_defect']);
+        $preChartRework = $resRework->viewData('preAssyChart');
+        $this->assertEquals(0, array_sum($preChartRework['today']['defect']));
+        $this->assertEquals(0, $preChartRework['total_defect']); // Pre Assy kosong di mode rework
+
+        // 3. Mode All: semua defect ikut
+        $resAll = $this->actingAsAdmin()->get('/dashboard?mode=all');
+        $resAll->assertStatus(200);
+        $resAll->assertViewHas('currentMode', 'all');
+        $resAll->assertViewHas('totalDefect', 25); // 10 + 5 + 7 + 3
+        $resAll->assertViewHas('defectToday', 22); // 10 + 5 + 7
+
+        $recentAll = $resAll->viewData('recentDefects');
+        $this->assertCount(4, $recentAll);
+        $recentAllIds = $recentAll->pluck('id')->all();
+        $this->assertContains($d2->id, $recentAllIds);
+
+        $finalChartAll = $resAll->viewData('finalAssyChart');
+        $this->assertEquals(15, array_sum($finalChartAll['today']['defect'])); // 10 + 5
+        $this->assertEquals(18, $finalChartAll['total_defect']);
+        $preChartAll = $resAll->viewData('preAssyChart');
+        $this->assertEquals(7, array_sum($preChartAll['today']['defect']));
+        $this->assertEquals(7, $preChartAll['total_defect']);
+    }
+
+    public function test_get_stats_api_menghormati_mode(): void
+    {
+        AreaDitemukan::create(['name' => 'Area FA 1', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+        AreaDitemukan::create(['name' => 'Area Rework 1', 'tipe' => AreaDitemukan::TIPE_REWORK]);
+
+        Defect::create([
+            'waktu'            => Carbon::today()->setTime(10, 0),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => 'CONV-1',
+            'jenis_defect'     => 'TERMINAL',
+            'jenis_sub_defect' => 'BENT',
+            'area_ditemukan'   => 'Area FA 1',
+            'quantity'         => 10,
+        ]);
+
+        Defect::create([
+            'waktu'            => Carbon::today()->setTime(11, 0),
+            'user_name'        => 'Reworker A',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => null,
+            'jenis_defect'     => 'CONNECTOR',
+            'jenis_sub_defect' => 'BROKEN',
+            'area_ditemukan'   => 'Area Rework 1',
+            'rework_group_id'  => (string) Str::uuid(),
+            'quantity'         => 5,
+        ]);
+
+        Defect::create([
+            'waktu'            => Carbon::today()->setTime(9, 0),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Pre Assy',
+            'carline_id'       => null,
+            'jenis_defect'     => 'CRIMP',
+            'jenis_sub_defect' => 'BAD',
+            'area_ditemukan'   => 'Area FA 1',
+            'quantity'         => 7,
+        ]);
+
+        Defect::create([
+            'waktu'            => Carbon::yesterday()->setTime(14, 0),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => 'CONV-1',
+            'jenis_defect'     => 'WIRE',
+            'jenis_sub_defect' => 'CUT',
+            'area_ditemukan'   => null,
+            'quantity'         => 3,
+        ]);
+
+        // Tanpa parameter mode -> default internal
+        $resDef = $this->getJson('/api/dashboard/stats');
+        $resDef->assertStatus(200);
+        $this->assertEquals(20, $resDef->json('totalDefect'));
+        $this->assertEquals(17, $resDef->json('defectToday'));
+
+        // Eksplisit mode=internal
+        $resInternal = $this->getJson('/api/dashboard/stats?mode=internal');
+        $resInternal->assertStatus(200);
+        $this->assertEquals(20, $resInternal->json('totalDefect'));
+        $this->assertEquals(17, $resInternal->json('defectToday'));
+
+        // Mode rework -> hanya baris rework Final Assy
+        $resRework = $this->getJson('/api/dashboard/stats?mode=rework');
+        $resRework->assertStatus(200);
+        $this->assertEquals(5, $resRework->json('totalDefect'));
+        $this->assertEquals(5, $resRework->json('defectToday'));
+
+        // Mode all -> semua baris
+        $resAll = $this->getJson('/api/dashboard/stats?mode=all');
+        $resAll->assertStatus(200);
+        $this->assertEquals(25, $resAll->json('totalDefect'));
+        $this->assertEquals(22, $resAll->json('defectToday'));
+
+        // Mode tidak dikenal -> fallback internal
+        $resInvalid = $this->getJson('/api/dashboard/stats?mode=xyz');
+        $resInvalid->assertStatus(200);
+        $this->assertEquals(20, $resInvalid->json('totalDefect'));
+        $this->assertEquals(17, $resInvalid->json('defectToday'));
+    }
+
+    public function test_tanpa_rework_hasil_index_dan_get_stats_identik_tanpa_mode_dan_mode_internal(): void
+    {
+        Defect::create([
+            'waktu'            => Carbon::today()->setTime(10, 0),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => 'CONV-1',
+            'jenis_defect'     => 'TERMINAL',
+            'jenis_sub_defect' => 'BENT',
+            'area_ditemukan'   => 'Inspection Line',
+            'quantity'         => 12,
+        ]);
+
+        Defect::create([
+            'waktu'            => Carbon::today()->setTime(11, 0),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Pre Assy',
+            'carline_id'       => null,
+            'jenis_defect'     => 'CRIMP',
+            'jenis_sub_defect' => 'BAD',
+            'area_ditemukan'   => null,
+            'quantity'         => 8,
+        ]);
+
+        $resIndexNoMode = $this->actingAsAdmin()->get('/dashboard');
+        $resIndexInternal = $this->actingAsAdmin()->get('/dashboard?mode=internal');
+
+        $this->assertEquals($resIndexNoMode->viewData('totalDefect'), $resIndexInternal->viewData('totalDefect'));
+        $this->assertEquals($resIndexNoMode->viewData('defectToday'), $resIndexInternal->viewData('defectToday'));
+        $this->assertEquals(
+            $resIndexNoMode->viewData('recentDefects')->pluck('id')->all(),
+            $resIndexInternal->viewData('recentDefects')->pluck('id')->all()
+        );
+        $this->assertEquals($resIndexNoMode->viewData('finalAssyChart'), $resIndexInternal->viewData('finalAssyChart'));
+        $this->assertEquals($resIndexNoMode->viewData('preAssyChart'), $resIndexInternal->viewData('preAssyChart'));
+
+        $resStatsNoMode = $this->getJson('/api/dashboard/stats');
+        $resStatsInternal = $this->getJson('/api/dashboard/stats?mode=internal');
+
+        $this->assertEquals($resStatsNoMode->json('totalDefect'), $resStatsInternal->json('totalDefect'));
+        $this->assertEquals($resStatsNoMode->json('defectToday'), $resStatsInternal->json('defectToday'));
+    }
+
+    public function test_dashboard_renders_toggle_mode_ui_with_active_states(): void
+    {
+        // 1. Default (Internal)
+        $resDef = $this->actingAsAdmin()->get('/dashboard');
+        $resDef->assertStatus(200);
+        $resDef->assertSee('id="btnModeAll"', false);
+        $resDef->assertSee('id="btnModeInternal"', false);
+        $resDef->assertSee('id="btnModeRework"', false);
+        $resDef->assertSee('Gabungan');
+        $resDef->assertSee('Internal Defect');
+        $resDef->assertSee('Rework');
+
+        $htmlDef = $resDef->getContent();
+        $this->assertMatchesRegularExpression('/id="btnModeInternal"[^>]*aria-pressed="true"/', $htmlDef);
+        $this->assertMatchesRegularExpression('/id="btnModeAll"[^>]*aria-pressed="false"/', $htmlDef);
+        $this->assertMatchesRegularExpression('/id="btnModeRework"[^>]*aria-pressed="false"/', $htmlDef);
+
+        // 2. Mode Rework
+        $resRework = $this->actingAsAdmin()->get('/dashboard?mode=rework');
+        $resRework->assertStatus(200);
+        $htmlRework = $resRework->getContent();
+        $this->assertMatchesRegularExpression('/id="btnModeRework"[^>]*aria-pressed="true"/', $htmlRework);
+        $this->assertMatchesRegularExpression('/id="btnModeInternal"[^>]*aria-pressed="false"/', $htmlRework);
+        $this->assertMatchesRegularExpression('/id="btnModeAll"[^>]*aria-pressed="false"/', $htmlRework);
+
+        // 3. Mode All
+        $resAll = $this->actingAsAdmin()->get('/dashboard?mode=all');
+        $resAll->assertStatus(200);
+        $htmlAll = $resAll->getContent();
+        $this->assertMatchesRegularExpression('/id="btnModeAll"[^>]*aria-pressed="true"/', $htmlAll);
+        $this->assertMatchesRegularExpression('/id="btnModeInternal"[^>]*aria-pressed="false"/', $htmlAll);
+        $this->assertMatchesRegularExpression('/id="btnModeRework"[^>]*aria-pressed="false"/', $htmlAll);
+    }
+
+    public function test_dashboard_renders_batch_4_elements_and_per_mode_visual_markup(): void
+    {
+        $response = $this->actingAsAdmin()->get('/dashboard');
+        $response->assertStatus(200);
+
+        // Card Header & Notice IDs
+        $response->assertSee('id="cardTitleDpmFinal"', false);
+        $response->assertSee('id="cardSubDpmFinal"', false);
+        $response->assertSee('id="conveyorNoticeDpmFinal"', false);
+        $response->assertSee('id="cardTitleParetoFinal"', false);
+        $response->assertSee('id="cardSubParetoFinal"', false);
+        $response->assertSee('id="conveyorNoticeParetoFinal"', false);
+
+        // Pre Assy Empty State IDs
+        $response->assertSee('id="emptyMsgDpmPre"', false);
+        $response->assertSee('id="emptySubDpmPre"', false);
+        $response->assertSee('id="emptyMsgParetoPre"', false);
+        $response->assertSee('id="emptySubParetoPre"', false);
+
+        // Script Constants & Guard Checks
+        $html = $response->getContent();
+        $this->assertStringContainsString('THEME_COLORS', $html);
+        $this->assertStringContainsString('updateConveyorFilterUI', $html);
+        $this->assertStringContainsString('updateModeVisuals', $html);
+        $this->assertStringContainsString('reqMode !== currentMode', $html);
+        $this->assertStringContainsString('Baris rework belum punya data konveyor, jadi tidak ikut terfilter', $html);
+        $this->assertStringContainsString('Baris rework belum punya konveyor dan tidak ikut terfilter', $html);
+        $this->assertStringContainsString('Rework tidak tersedia untuk Pre Assy', $html);
+        $this->assertStringContainsString('DPM rework menyusul', $html);
+        $this->assertStringContainsString('DPM gabungan menyusul', $html);
+        $this->assertStringContainsString("currentMode !== 'rework' && filtersDpmFinal.conveyor", $html);
+        $this->assertStringContainsString("currentMode !== 'rework' && filtersParetoFinal.conveyor", $html);
+        $this->assertStringContainsString('Chart.getChart(canvas)', $html);
     }
 }

@@ -129,6 +129,7 @@ class Defect extends Model
                         ->toArray();
                 }
             } catch (\Throwable $e) {
+                report($e);
                 return [];
             }
 
@@ -206,7 +207,8 @@ class Defect extends Model
         }
 
         return $query->where(function ($q) use ($reworkAreaNames) {
-            $q->where('jenis_assy', '!=', 'Final Assy')
+            $q->whereNull('jenis_assy')
+              ->orWhere('jenis_assy', '!=', 'Final Assy')
               ->orWhere(function ($sub) use ($reworkAreaNames) {
                   $sub->where('jenis_assy', 'Final Assy')
                       ->where(function ($w) use ($reworkAreaNames) {
