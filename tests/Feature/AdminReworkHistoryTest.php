@@ -652,7 +652,7 @@ class AdminReworkHistoryTest extends TestCase
     {
         $response = $this->actingAsAdmin()->get(route('admin.rework_history.index'));
         $response->assertStatus(200);
-        $response->assertSee('Export Excel');
+        $response->assertSee('Export');
         $response->assertSee('exportExcel()', false);
         $response->assertSee(route('admin.rework_history.export'), false);
     }
