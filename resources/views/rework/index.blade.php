@@ -1,378 +1,79 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>Rework</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            font-size: 16px;
-            line-height: 1.4;
-            background-color: #f1f5f9;
-            color: #0f172a;
-            padding: 12px;
-            max-width: 480px;
-            margin: 0 auto;
-            overflow-x: hidden;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #ffffff;
-            padding: 12px 14px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 12px;
-            gap: 8px;
-        }
-        .header-info {
-            flex: 1;
-            min-width: 0;
-        }
-        .header-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 2px;
-        }
-        .header-meta {
-            font-size: 14px;
-            color: #475569;
-            word-break: break-word;
-        }
-        .btn-logout {
-            background-color: #ef4444;
-            color: #ffffff;
-            border: none;
-            padding: 0 16px;
-            min-height: 48px;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: manipulation;
-        }
-        .alert {
-            padding: 12px 14px;
-            border-radius: 6px;
-            font-size: 16px;
-            margin-bottom: 12px;
-            word-break: break-word;
-        }
-        .alert-success {
-            background-color: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
-        .alert-error {
-            background-color: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-        .card {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            padding: 14px;
-            margin-bottom: 14px;
-        }
-        .card-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 12px;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 8px;
-        }
-        .form-group {
-            margin-bottom: 12px;
-        }
-        .form-label {
-            display: block;
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            color: #334155;
-        }
-        .form-input {
-            width: 100%;
-            min-height: 48px;
-            font-size: 16px;
-            padding: 8px 12px;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 6px;
-            background: #ffffff;
-            color: #0f172a;
-            touch-action: manipulation;
-        }
-        .form-input:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-        }
-        .search-container {
-            position: relative;
-        }
-        .dropdown-results {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: #ffffff;
-            border: 1.5px solid #cbd5e1;
-            border-top: none;
-            border-radius: 0 0 6px 6px;
-            max-height: 220px;
-            overflow-y: auto;
-            z-index: 50;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-        .dropdown-item {
-            padding: 12px 14px;
-            font-size: 16px;
-            border-bottom: 1px solid #f1f5f9;
-            cursor: pointer;
-            min-height: 48px;
-            display: flex;
-            align-items: center;
-            color: #1e293b;
-            touch-action: manipulation;
-        }
-        .dropdown-item:active {
-            background-color: #e0e7ff;
-        }
-        .chips-container {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin-top: 8px;
-            margin-bottom: 8px;
-        }
-        .chip {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #ede9fe;
-            color: #4c1d95;
-            border: 1px solid #ddd6fe;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 15px;
-            font-weight: 500;
-            word-break: break-word;
-        }
-        .chip-remove {
-            background: #f5f3ff;
-            border: 1px solid #c4b5fd;
-            border-radius: 4px;
-            color: #7c3aed;
-            font-size: 18px;
-            font-weight: bold;
-            margin-left: 10px;
-            cursor: pointer;
-            min-width: 44px;
-            min-height: 44px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: manipulation;
-        }
-        .btn-submit {
-            width: 100%;
-            min-height: 48px;
-            font-size: 16px;
-            font-weight: 700;
-            background-color: #2563eb;
-            color: #ffffff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 6px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: manipulation;
-        }
-        .btn-submit:active {
-            background-color: #1d4ed8;
-        }
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1e293b;
-            margin: 16px 0 10px 0;
-        }
-        .harness-card {
-            background: #ffffff;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 8px;
-            padding: 14px;
-            margin-bottom: 12px;
-        }
-        .harness-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 8px;
-            gap: 6px;
-        }
-        .harness-title-wrap {
-            flex: 1;
-        }
-        .harness-kanban {
-            font-size: 17px;
-            font-weight: 700;
-            color: #0f172a;
-        }
-        .harness-np {
-            font-size: 15px;
-            font-weight: 600;
-            color: #475569;
-        }
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-        .badge-berjalan {
-            background-color: #fef3c7;
-            color: #92400e;
-            border: 1px solid #fde68a;
-        }
-        .badge-selesai {
-            background-color: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
-        .meta-list {
-            font-size: 14px;
-            color: #475569;
-            margin-bottom: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .meta-list strong {
-            color: #1e293b;
-        }
-        .defect-list {
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 8px 10px;
-            margin-bottom: 10px;
-        }
-        .defect-item {
-            font-size: 14px;
-            color: #334155;
-            padding: 4px 0;
-            border-bottom: 1px dashed #e2e8f0;
-            display: flex;
-            align-items: baseline;
-            gap: 6px;
-        }
-        .defect-item:last-child {
-            border-bottom: none;
-        }
-        .defect-code {
-            display: inline-block;
-            background: #e2e8f0;
-            color: #0f172a;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 13px;
-            flex-shrink: 0;
-        }
-        .btn-out {
-            width: 100%;
-            min-height: 48px;
-            font-size: 16px;
-            font-weight: 700;
-            background-color: #16a34a;
-            color: #ffffff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            touch-action: manipulation;
-        }
-        .btn-out:active {
-            background-color: #15803d;
-        }
-        .empty-history {
-            text-align: center;
-            color: #64748b;
-            padding: 24px;
-            background: #ffffff;
-            border: 1px dashed #cbd5e1;
-            border-radius: 8px;
-            font-size: 15px;
-        }
-        .pagination-wrapper {
-            margin-top: 14px;
-            margin-bottom: 24px;
-        }
-        .uuid-label {
-            font-size: 11px;
-            color: #94a3b8;
-            font-family: monospace;
-            word-break: break-all;
-            margin-top: 4px;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="header-info">
-            <h1 class="header-title">Rework</h1>
-            <p class="header-meta">
-                User: <strong>{{ session('user_name') }}</strong> | Shift: <strong>{{ session('current_shift', '-') }}</strong> | Role: <strong>{{ session('user_role') }}</strong>
-            </p>
-        </div>
-        <div>
+@extends('layouts.operator')
+
+@section('title', 'Rework')
+
+@section('content')
+<div class="w-full flex flex-col space-y-4">
+
+    <!-- Header Card: Identity & Logout -->
+    <header class="bg-surface rounded-3xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] border border-border p-5 overflow-hidden">
+        <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+            <div>
+                <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">YAZAKI QA • REWORK</span>
+                <h1 class="text-xl font-black text-brand tracking-tight mt-1">Rework</h1>
+            </div>
+
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
-                <button type="submit" class="btn-logout">Logout</button>
+                <button type="submit"
+                        class="min-h-[44px] px-3.5 py-2 bg-red-50 hover:bg-red-100 text-brand border border-red-200 rounded-xl font-extrabold text-xs flex items-center space-x-1.5 active:scale-95 transition-all cursor-pointer touch-manipulation"
+                        title="Logout">
+                    <svg class="w-4 h-4 shrink-0 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                    <span>Logout</span>
+                </button>
             </form>
         </div>
-    </div>
 
+        <!-- Meta Pills Row -->
+        <div class="pt-3 flex flex-wrap items-center gap-2 text-xs">
+            <span class="inline-flex items-center space-x-1.5 bg-gray-100/80 text-gray-800 font-semibold px-2.5 py-1 rounded-lg">
+                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span>User: <strong class="text-gray-900">{{ session('user_name') }}</strong></span>
+            </span>
+
+            <span class="inline-flex items-center space-x-1.5 bg-red-50 text-brand border border-red-100 font-bold px-2.5 py-1 rounded-lg">
+                <span class="w-2 h-2 rounded-full bg-brand animate-pulse"></span>
+                <span>Shift: <strong class="text-brand">{{ session('current_shift', '-') }}</strong></span>
+            </span>
+
+            <span class="inline-flex items-center bg-gray-800 text-white font-bold text-[10px] px-2.5 py-1 rounded-lg uppercase tracking-wider">
+                Role: <strong>{{ session('user_role') }}</strong>
+            </span>
+        </div>
+    </header>
+
+    <!-- Flash Alerts -->
     @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
+        <div class="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl p-4 text-xs font-bold flex items-center space-x-2">
+            <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>{{ session('success') }}</span>
         </div>
     @endif
 
     @if(session('error'))
-        <div class="alert alert-error">
-            {{ session('error') }}
+        <div class="bg-rose-50 text-rose-800 border border-rose-200 rounded-2xl p-4 text-xs font-bold flex items-center space-x-2">
+            <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>{{ session('error') }}</span>
         </div>
     @endif
 
     @if($errors->any())
-        <div class="alert alert-error">
-            <ul style="padding-left: 20px;">
+        <div class="bg-rose-50 text-rose-800 border border-rose-200 rounded-2xl p-4 text-xs font-bold space-y-1">
+            <div class="flex items-center space-x-1.5 text-rose-900 font-extrabold mb-1">
+                <svg class="w-4 h-4 shrink-0 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <span>Mohon periksa input berikut:</span>
+            </div>
+            <ul class="list-disc pl-5 space-y-0.5">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -380,289 +81,423 @@
         </div>
     @endif
 
-    <!-- Form In -->
-    <div class="card">
-        <h2 class="card-title">Mulai Rework (In)</h2>
-        <form id="rework_form" action="{{ route('rework.store_in') }}" method="POST">
+    <!-- Form In Card -->
+    <section class="bg-surface rounded-3xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] border border-border p-5 sm:p-6 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div>
+                <h2 class="text-base font-extrabold text-gray-900 tracking-tight flex items-center space-x-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-brand"></span>
+                    <span>Mulai Rework (In)</span>
+                </h2>
+                <p class="text-[11px] text-gray-400 font-semibold mt-0.5">Scan / masukkan identitas harness untuk mulai rework</p>
+            </div>
+        </div>
+
+        <form id="rework_form" action="{{ route('rework.store_in') }}" method="POST" class="space-y-4">
             @csrf
 
-            <div class="form-group">
-                <label for="kanban_assy" class="form-label">Kanban Assy *</label>
-                <input type="text"
-                       id="kanban_assy"
-                       name="kanban_assy"
-                       class="form-input"
-                       placeholder="Scan / ketik Kanban Assy"
-                       value="{{ old('kanban_assy') }}"
-                       autofocus
-                       autocomplete="off"
-                       required>
+            <!-- Field 1: Kanban Assy -->
+            <div class="space-y-1.5">
+                <label for="kanban_assy" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Kanban Assy <span class="text-brand">*</span>
+                </label>
+                <div class="relative">
+                    <input type="text"
+                           id="kanban_assy"
+                           name="kanban_assy"
+                           class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                           placeholder="Scan / ketik Kanban Assy"
+                           value="{{ old('kanban_assy') }}"
+                           autofocus
+                           autocomplete="off"
+                           required>
+                    <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                        </svg>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="nameplate" class="form-label">Nameplate (NP) *</label>
-                <input type="text"
-                       id="nameplate"
-                       name="nameplate"
-                       class="form-input"
-                       placeholder="Scan / ketik Nameplate"
-                       value="{{ old('nameplate') }}"
-                       style="text-transform: uppercase;"
-                       autocomplete="off"
-                       required>
+            <!-- Field 2: Nameplate -->
+            <div class="space-y-1.5">
+                <label for="nameplate" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Nameplate (NP) <span class="text-brand">*</span>
+                </label>
+                <div class="relative">
+                    <input type="text"
+                           id="nameplate"
+                           name="nameplate"
+                           class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 uppercase focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
+                           placeholder="Scan / ketik Nameplate"
+                           value="{{ old('nameplate') }}"
+                           autocomplete="off"
+                           required>
+                    <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                        </svg>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="defect_search" class="form-label">Defect (Kode / Nama) *</label>
-                <div class="search-container">
+            <!-- Field 3: Defect Search -->
+            <div class="space-y-1.5">
+                <label for="defect_search" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                    Defect (Kode / Nama) <span class="text-brand">*</span>
+                </label>
+                <div class="relative">
                     <input type="text"
                            id="defect_search"
-                           class="form-input"
+                           class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 pr-10 text-base font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation"
                            placeholder="Ketik kode (1A) / nama defect"
                            autocomplete="off">
-                    <div id="dropdown_results" class="dropdown-results"></div>
+                    <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-gray-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+
+                    <!-- Autocomplete Dropdown List -->
+                    <div id="dropdown_results"
+                         class="hidden absolute top-full left-0 right-0 bg-white border border-border rounded-xl shadow-xl mt-1.5 overflow-hidden z-50 max-h-56 overflow-y-auto divide-y divide-gray-100">
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label" style="font-size: 14px; margin-bottom: 4px;">Defect Terpilih:</label>
-                <div id="selected_defects_container" class="chips-container"></div>
+            <!-- Selected Defect Chips -->
+            <div class="space-y-1.5">
+                <span class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider">Defect Terpilih:</span>
+                <div id="selected_defects_container" class="space-y-2"></div>
             </div>
 
-            <button type="submit" class="btn-submit">Mulai Rework (In)</button>
+            <!-- Submit Button (Primary Yazaki Brand) -->
+            <button type="submit"
+                    class="w-full min-h-[50px] bg-brand hover:bg-brand-active text-white rounded-2xl p-3.5 text-base font-extrabold flex items-center justify-center space-x-2 shadow-sm shadow-brand/20 active:scale-95 transition-all cursor-pointer touch-manipulation">
+                <svg class="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>Mulai Rework (In)</span>
+            </button>
         </form>
-    </div>
+    </section>
 
-    <!-- Riwayat Grouped -->
-    <h2 class="section-title">Riwayat Rework</h2>
+    <!-- Riwayat Rework Section -->
+    <section class="space-y-3 pt-2">
+        <div class="flex items-center justify-between px-1">
+            <h2 class="text-base font-extrabold text-gray-900 tracking-tight">Riwayat Rework</h2>
+            <span class="text-[11px] font-mono text-gray-400 font-bold">Terbaru di Atas</span>
+        </div>
 
-    @forelse($paginatedGroups as $groupItem)
-        @php
-            $groupId = $groupItem->rework_group_id;
-            $items = $defectsByGroup->get($groupId, collect());
-            $first = $items->first();
-        @endphp
+        @forelse($paginatedGroups as $groupItem)
+            @php
+                $groupId = $groupItem->rework_group_id;
+                $items = $defectsByGroup->get($groupId, collect());
+                $first = $items->first();
+            @endphp
 
-        @if($first)
-            <div class="harness-card">
-                <div class="harness-header">
-                    <div class="harness-title-wrap">
-                        <div class="harness-kanban">{{ $first->kanban_assy ?? '-' }}</div>
-                        <div class="harness-np">NP: {{ $first->nameplate_lama ?? '-' }}</div>
+            @if($first)
+                <div class="bg-surface rounded-2xl sm:rounded-3xl shadow-[0_2px_12px_-2px_rgba(0,0,0,0.04)] border border-border p-4 sm:p-5 space-y-3">
+                    
+                    <!-- Header Card: Kanban & Status Badge -->
+                    <div class="flex justify-between items-start gap-2 pb-3 border-b border-gray-100">
+                        <div class="space-y-0.5 min-w-0">
+                            <span class="text-base font-black text-gray-900 tracking-tight block truncate">
+                                {{ $first->kanban_assy ?? '-' }}
+                            </span>
+                            <span class="text-xs font-bold font-mono text-gray-500 block">
+                                NP: {{ $first->nameplate_lama ?? '-' }}
+                            </span>
+                        </div>
+
+                        <div class="shrink-0">
+                            @if($first->status_rework === 'Selesai')
+                                <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span>Selesai</span>
+                                </span>
+                            @else
+                                <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                    <span>Berjalan</span>
+                                </span>
+                            @endif
+                        </div>
                     </div>
-                    <div>
+
+                    <!-- Meta Times Grid -->
+                    <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 bg-gray-50/70 p-3 rounded-xl border border-gray-100">
+                        <div>
+                            <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Waktu In</span>
+                            <span class="font-extrabold text-gray-900 font-mono text-[11px]">
+                                {{ $first->waktu_in ? \Carbon\Carbon::parse($first->waktu_in)->format('d/m/Y H:i') : '-' }}
+                            </span>
+                        </div>
+
+                        <div>
+                            <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Durasi</span>
+                            @if($first->status_rework === 'Selesai')
+                                <span class="font-extrabold text-emerald-700 text-[11px]">
+                                    {{ $first->durasi_rework_menit ?? 0 }} menit
+                                </span>
+                            @else
+                                <span class="font-bold text-amber-600 text-[11px]">
+                                    Sedang berjalan
+                                </span>
+                            @endif
+                        </div>
+
                         @if($first->status_rework === 'Selesai')
-                            <span class="badge badge-selesai">Selesai</span>
-                        @else
-                            <span class="badge badge-berjalan">Berjalan</span>
+                            <div class="col-span-2 pt-1 border-t border-gray-200/60">
+                                <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Waktu Out</span>
+                                <span class="font-extrabold text-gray-900 font-mono text-[11px]">
+                                    {{ $first->waktu_out ? \Carbon\Carbon::parse($first->waktu_out)->format('d/m/Y H:i') : '-' }}
+                                </span>
+                            </div>
                         @endif
                     </div>
-                </div>
 
-                <div class="meta-list">
-                    <div>Waktu In: <strong>{{ $first->waktu_in ? \Carbon\Carbon::parse($first->waktu_in)->format('d/m/Y H:i') : '-' }}</strong></div>
-                    @if($first->status_rework === 'Selesai')
-                        <div>Waktu Out: <strong>{{ $first->waktu_out ? \Carbon\Carbon::parse($first->waktu_out)->format('d/m/Y H:i') : '-' }}</strong></div>
-                        <div>Durasi: <strong>{{ $first->durasi_rework_menit ?? 0 }} menit</strong></div>
-                    @else
-                        <div>Durasi: <strong>Sedang berjalan</strong></div>
-                    @endif
-                </div>
-
-                <div class="defect-list">
-                    @foreach($items as $item)
-                        @php
-                            $code = $item->subDefectType?->code ?? \App\Support\SubDefectHelper::deriveCode($item->jenis_sub_defect) ?? '-';
-                            $name = $item->jenis_sub_defect ?? $item->subDefectType?->name ?? '-';
-                        @endphp
-                        <div class="defect-item">
-                            <span class="defect-code">[{{ $code }}]</span>
-                            <span>{{ $name }}</span>
+                    <!-- Defect List -->
+                    <div class="space-y-1.5">
+                        <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Daftar Defect:</span>
+                        <div class="bg-gray-50/80 rounded-xl p-2.5 border border-gray-100 space-y-1.5">
+                            @foreach($items as $item)
+                                @php
+                                    $code = $item->subDefectType?->code ?? \App\Support\SubDefectHelper::deriveCode($item->jenis_sub_defect) ?? '-';
+                                    $name = $item->jenis_sub_defect ?? $item->subDefectType?->name ?? '-';
+                                @endphp
+                                <div class="flex items-start text-xs font-bold text-gray-800">
+                                    <span class="bg-brand/10 text-brand border border-brand/20 font-black px-1.5 py-0.5 rounded text-[10px] mr-2 shrink-0">
+                                        [{{ $code }}]
+                                    </span>
+                                    <span class="leading-tight">{{ $name }}</span>
+                                </div>
+                            @endforeach
                         </div>
-                    @endforeach
+                    </div>
+
+                    <!-- Out Action Button (Only for Berjalan) -->
+                    @if($first->status_rework === 'Berjalan')
+                        <form action="{{ route('rework.store_out', $groupId) }}" method="POST" onsubmit="return confirm('Selesaikan rework untuk harness ini?');" class="pt-1">
+                            @csrf
+                            <button type="submit"
+                                    class="w-full min-h-[48px] bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-2 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer touch-manipulation">
+                                <svg class="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Selesai (Out)</span>
+                            </button>
+                        </form>
+                    @endif
+
+                    <!-- Group UUID for Traceability and Audit -->
+                    <div class="text-[10px] font-mono text-gray-400 pt-1 border-t border-gray-100/60 truncate">
+                        Group: {{ $groupId }}
+                    </div>
                 </div>
-
-                @if($first->status_rework === 'Berjalan')
-                    <form action="{{ route('rework.store_out', $groupId) }}" method="POST" onsubmit="return confirm('Selesaikan rework untuk harness ini?');">
-                        @csrf
-                        <button type="submit" class="btn-out">Selesai (Out)</button>
-                    </form>
-                @endif
-
-                <div class="uuid-label">Group: {{ $groupId }}</div>
-            </div>
-        @endif
-    @empty
-        <div class="empty-history">
-            Belum ada riwayat rework.
-        </div>
-    @endforelse
-
-    <div class="pagination-wrapper">
-        {{ $paginatedGroups->links() }}
-    </div>
-
-    <script>
-        (function() {
-            const finalAssyDefects = @json($finalAssySubDefects);
-            let selectedDefects = [];
-
-            // Restore old selected defects if validation failed
-            @if(old('sub_defect_ids'))
-                const oldIds = @json(old('sub_defect_ids'));
-                if (Array.isArray(oldIds)) {
-                    oldIds.forEach(function(id) {
-                        const match = finalAssyDefects.find(function(d) { return d.id == id; });
-                        if (match) {
-                            selectedDefects.push(match);
-                        }
-                    });
-                }
             @endif
+        @empty
+            <div class="bg-surface border border-dashed border-gray-300 rounded-3xl p-8 text-center text-gray-400 text-xs font-semibold flex flex-col items-center justify-center space-y-2">
+                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                <span>Belum ada riwayat rework.</span>
+            </div>
+        @endforelse
 
-            const kanbanInput = document.getElementById('kanban_assy');
-            const npInput = document.getElementById('nameplate');
-            const defectSearch = document.getElementById('defect_search');
-            const dropdown = document.getElementById('dropdown_results');
-            const chipsContainer = document.getElementById('selected_defects_container');
-            const reworkForm = document.getElementById('rework_form');
+        <div class="pt-2">
+            {{ $paginatedGroups->links() }}
+        </div>
+    </section>
 
-            // 1. Enter on Kanban input moves focus to Nameplate
-            kanbanInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    npInput.focus();
-                }
-            });
+</div>
 
-            // 2. Enter on Nameplate input moves focus to Defect Search
-            npInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    defectSearch.focus();
-                }
-            });
+@push('scripts')
+<script>
+    (function() {
+        const finalAssyDefects = @json($finalAssySubDefects);
+        let selectedDefects = [];
 
-            // Render chips
-            function renderChips() {
-                chipsContainer.innerHTML = '';
-                if (selectedDefects.length === 0) {
-                    const emptyText = document.createElement('span');
-                    emptyText.style.color = '#94a3b8';
-                    emptyText.style.fontSize = '14px';
-                    emptyText.textContent = 'Belum ada defect dipilih';
-                    chipsContainer.appendChild(emptyText);
-                    return;
-                }
-
-                selectedDefects.forEach(function(item, index) {
-                    const chip = document.createElement('div');
-                    chip.className = 'chip';
-
-                    const labelWrap = document.createElement('span');
-                    const code = item.code ? '[' + item.code + '] ' : '';
-                    labelWrap.textContent = code + item.name;
-
-                    const removeBtn = document.createElement('button');
-                    removeBtn.type = 'button';
-                    removeBtn.className = 'chip-remove';
-                    removeBtn.innerHTML = '&times;';
-                    removeBtn.setAttribute('aria-label', 'Hapus defect');
-                    removeBtn.addEventListener('click', function(evt) {
-                        evt.stopPropagation();
-                        selectedDefects.splice(index, 1);
-                        renderChips();
-                    });
-
-                    const hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'hidden';
-                    hiddenInput.name = 'sub_defect_ids[]';
-                    hiddenInput.value = item.id;
-
-                    chip.appendChild(labelWrap);
-                    chip.appendChild(removeBtn);
-                    chip.appendChild(hiddenInput);
-                    chipsContainer.appendChild(chip);
+        // Restore old selected defects if validation failed
+        @if(old('sub_defect_ids'))
+            const oldIds = @json(old('sub_defect_ids'));
+            if (Array.isArray(oldIds)) {
+                oldIds.forEach(function(id) {
+                    const match = finalAssyDefects.find(function(d) { return d.id == id; });
+                    if (match) {
+                        selectedDefects.push(match);
+                    }
                 });
             }
+        @endif
 
-            renderChips();
+        const kanbanInput = document.getElementById('kanban_assy');
+        const npInput = document.getElementById('nameplate');
+        const defectSearch = document.getElementById('defect_search');
+        const dropdown = document.getElementById('dropdown_results');
+        const chipsContainer = document.getElementById('selected_defects_container');
+        const reworkForm = document.getElementById('rework_form');
 
-            function getFiltered(query) {
-                const q = query.trim().toLowerCase();
-                if (!q) return [];
-                return finalAssyDefects.filter(function(d) {
-                    const code = (d.code || '').toLowerCase();
-                    const name = (d.name || '').toLowerCase();
-                    return code === q || code.includes(q) || name.includes(q);
-                });
+        // 1. Enter on Kanban input moves focus to Nameplate
+        kanbanInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                npInput.focus();
             }
+        });
 
-            function showDropdown(items) {
-                dropdown.innerHTML = '';
-                if (items.length === 0) {
-                    dropdown.style.display = 'none';
-                    return;
-                }
-
-                items.slice(0, 10).forEach(function(item) {
-                    const div = document.createElement('div');
-                    div.className = 'dropdown-item';
-                    const code = item.code ? '[' + item.code + '] ' : '';
-                    div.textContent = code + item.name;
-                    div.addEventListener('click', function() {
-                        addDefect(item);
-                    });
-                    dropdown.appendChild(div);
-                });
-                dropdown.style.display = 'block';
-            }
-
-            function addDefect(item) {
-                selectedDefects.push(item);
-                renderChips();
-                defectSearch.value = '';
-                dropdown.style.display = 'none';
+        // 2. Enter on Nameplate input moves focus to Defect Search
+        npInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
                 defectSearch.focus();
             }
+        });
 
-            defectSearch.addEventListener('input', function() {
-                const filtered = getFiltered(this.value);
-                showDropdown(filtered);
-            });
+        // Render chips
+        function renderChips() {
+            chipsContainer.innerHTML = '';
+            if (selectedDefects.length === 0) {
+                const emptyWrap = document.createElement('div');
+                emptyWrap.className = 'text-xs text-gray-400 italic bg-gray-50/80 border border-dashed border-gray-200 rounded-xl p-3 text-center';
+                emptyWrap.textContent = 'Belum ada defect dipilih';
+                chipsContainer.appendChild(emptyWrap);
+                return;
+            }
 
-            defectSearch.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const val = this.value.trim().toLowerCase();
-                    if (!val) return;
+            selectedDefects.forEach(function(item, index) {
+                const chip = document.createElement('div');
+                chip.className = 'flex items-center justify-between bg-red-50/70 border border-red-200/80 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm font-bold text-gray-900 shadow-2xs';
 
-                    const filtered = getFiltered(val);
-                    if (filtered.length > 0) {
-                        const exact = filtered.find(function(d) {
-                            return (d.code || '').toLowerCase() === val;
-                        });
-                        addDefect(exact || filtered[0]);
-                    }
+                const leftWrap = document.createElement('div');
+                leftWrap.className = 'flex items-center min-w-0 pr-2';
+
+                if (item.code) {
+                    const codeBadge = document.createElement('span');
+                    codeBadge.className = 'bg-brand text-white font-black px-2 py-0.5 rounded-md text-[11px] mr-2 shrink-0';
+                    codeBadge.textContent = '[' + item.code + ']';
+                    leftWrap.appendChild(codeBadge);
                 }
-            });
 
-            // Close dropdown if clicked outside
-            document.addEventListener('click', function(e) {
-                if (!defectSearch.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.style.display = 'none';
-                }
-            });
+                const nameText = document.createElement('span');
+                nameText.className = 'truncate';
+                nameText.textContent = item.name;
+                leftWrap.appendChild(nameText);
 
-            // Form validation before submit
-            reworkForm.addEventListener('submit', function(e) {
-                if (selectedDefects.length === 0) {
-                    e.preventDefault();
-                    alert('Minimal satu defect harus dipilih.');
-                    defectSearch.focus();
-                }
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'min-w-[36px] min-h-[36px] flex items-center justify-center text-gray-400 hover:text-brand hover:bg-white rounded-lg transition-colors cursor-pointer shrink-0 touch-manipulation';
+                removeBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>';
+                removeBtn.setAttribute('aria-label', 'Hapus defect');
+                removeBtn.addEventListener('click', function(evt) {
+                    evt.stopPropagation();
+                    selectedDefects.splice(index, 1);
+                    renderChips();
+                });
+
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'sub_defect_ids[]';
+                hiddenInput.value = item.id;
+
+                chip.appendChild(leftWrap);
+                chip.appendChild(removeBtn);
+                chip.appendChild(hiddenInput);
+                chipsContainer.appendChild(chip);
             });
-        })();
-    </script>
-</body>
-</html>
+        }
+
+        renderChips();
+
+        function getFiltered(query) {
+            const q = query.trim().toLowerCase();
+            if (!q) return [];
+            return finalAssyDefects.filter(function(d) {
+                const code = (d.code || '').toLowerCase();
+                const name = (d.name || '').toLowerCase();
+                return code === q || code.includes(q) || name.includes(q);
+            });
+        }
+
+        function showDropdown(items) {
+            dropdown.innerHTML = '';
+            if (items.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            items.slice(0, 10).forEach(function(item) {
+                const div = document.createElement('div');
+                div.className = 'px-3.5 py-3 hover:bg-red-50 text-sm font-semibold text-gray-800 flex items-center justify-between border-b border-gray-100 last:border-b-0 cursor-pointer min-h-[48px] touch-manipulation transition-colors';
+
+                const left = document.createElement('div');
+                left.className = 'flex items-center min-w-0 pr-2';
+                if (item.code) {
+                    const code = document.createElement('span');
+                    code.className = 'bg-brand/10 text-brand font-black px-2 py-0.5 rounded text-xs mr-2 shrink-0';
+                    code.textContent = '[' + item.code + ']';
+                    left.appendChild(code);
+                }
+                const name = document.createElement('span');
+                name.className = 'truncate text-xs sm:text-sm';
+                name.textContent = item.name;
+                left.appendChild(name);
+
+                div.appendChild(left);
+                div.addEventListener('click', function() {
+                    addDefect(item);
+                });
+                dropdown.appendChild(div);
+            });
+            dropdown.classList.remove('hidden');
+        }
+
+        function addDefect(item) {
+            selectedDefects.push(item);
+            renderChips();
+            defectSearch.value = '';
+            dropdown.classList.add('hidden');
+            defectSearch.focus();
+        }
+
+        defectSearch.addEventListener('input', function() {
+            const filtered = getFiltered(this.value);
+            showDropdown(filtered);
+        });
+
+        defectSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = this.value.trim().toLowerCase();
+                if (!val) return;
+
+                const filtered = getFiltered(val);
+                if (filtered.length > 0) {
+                    const exact = filtered.find(function(d) {
+                        return (d.code || '').toLowerCase() === val;
+                    });
+                    addDefect(exact || filtered[0]);
+                }
+            }
+        });
+
+        // Close dropdown if clicked outside
+        document.addEventListener('click', function(e) {
+            if (!defectSearch.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Form validation before submit
+        reworkForm.addEventListener('submit', function(e) {
+            if (selectedDefects.length === 0) {
+                e.preventDefault();
+                alert('Minimal satu defect harus dipilih.');
+                defectSearch.focus();
+            }
+        });
+    })();
+</script>
+@endpush
+@endsection
