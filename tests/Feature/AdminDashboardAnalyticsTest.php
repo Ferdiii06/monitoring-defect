@@ -1961,4 +1961,173 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertEquals('CARLINE-ALPHA', $res->json('items.0.name'));
         $this->assertEquals(8, $res->json('items.0.total'));
     }
+
+    public function test_admin_can_drilldown_pareto_lain_lain_covers_null_empty_and_dash(): void
+    {
+        \Illuminate\Support\Facades\Schema::table('defects', function ($table) {
+            $table->string('jenis_sub_defect')->nullable()->change();
+        });
+
+        $today = Carbon::today()->format('Y-m-d');
+        Defect::create([
+            'user_name' => 'Operator 1',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Final Assy',
+            'jenis_sub_defect' => null,
+            'conveyor' => 'CV-01',
+            'quantity' => 4,
+        ]);
+        Defect::create([
+            'user_name' => 'Operator 1',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Final Assy',
+            'jenis_sub_defect' => '',
+            'conveyor' => 'CV-02',
+            'quantity' => 3,
+        ]);
+        Defect::create([
+            'user_name' => 'Operator 1',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Final Assy',
+            'jenis_sub_defect' => '-',
+            'conveyor' => 'CV-01',
+            'quantity' => 2,
+        ]);
+        Defect::create([
+            'user_name' => 'Operator 1',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Final Assy',
+            'jenis_sub_defect' => 'LAIN-LAIN',
+            'conveyor' => 'CV-03',
+            'quantity' => 1,
+        ]);
+
+        $res = $this->actingAsAdmin()->getJson("/dashboard/pareto-drilldown?sub_defect=LAIN-LAIN&start_date={$today}&end_date={$today}&jenis_assy=Final Assy");
+        $res->assertStatus(200);
+        $res->assertJsonStructure(['sub_defect', 'metric', 'items']);
+        $this->assertEquals('conveyor', $res->json('metric'));
+        $this->assertNotEmpty($res->json('items'));
+
+        $totalQty = collect($res->json('items'))->sum('total');
+        $this->assertEquals(10, $totalQty);
+
+        $itemsByConveyor = collect($res->json('items'))->keyBy('name');
+        $this->assertEquals(6, $itemsByConveyor['CV-01']['total']);
+        $this->assertEquals(3, $itemsByConveyor['CV-02']['total']);
+        $this->assertEquals(1, $itemsByConveyor['CV-03']['total']);
+    }
+
+    public function test_admin_can_drilldown_pareto_mode_rework_with_conveyor_and_area_fallback(): void
+    {
+        $today = Carbon::today()->format('Y-m-d');
+        AreaDitemukan::firstOrCreate(['name' => 'REWORK'], ['tipe' => AreaDitemukan::TIPE_REWORK]);
+
+        Defect::create([
+            'user_name' => 'reworkA',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Final Assy',
+            'area_ditemukan' => 'REWORK',
+            'jenis_sub_defect' => 'DAMAGE CLIP',
+            'conveyor' => '664W-C5',
+            'quantity' => 5,
+        ]);
+        Defect::create([
+            'user_name' => 'reworkA',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Final Assy',
+            'area_ditemukan' => 'REWORK',
+            'jenis_sub_defect' => 'DAMAGE CLIP',
+            'conveyor' => 'J30A-AB1',
+            'quantity' => 3,
+        ]);
+        Defect::create([
+            'user_name' => 'reworkA',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Final Assy',
+            'area_ditemukan' => 'REWORK',
+            'jenis_sub_defect' => 'DAMAGE CLIP',
+            'conveyor' => null,
+            'quantity' => 2,
+        ]);
+
+        $res = $this->actingAsAdmin()->getJson("/dashboard/pareto-drilldown?sub_defect=DAMAGE CLIP&start_date={$today}&end_date={$today}&mode=rework&jenis_assy=Final Assy");
+        $res->assertStatus(200);
+        $res->assertJsonStructure(['sub_defect', 'metric', 'items']);
+        $this->assertCount(3, $res->json('items'));
+
+        $itemsByName = collect($res->json('items'))->keyBy('name');
+        $this->assertTrue($itemsByName->has('664W-C5'));
+        $this->assertEquals(5, $itemsByName['664W-C5']['total']);
+        $this->assertTrue($itemsByName->has('J30A-AB1'));
+        $this->assertEquals(3, $itemsByName['J30A-AB1']['total']);
+        $this->assertTrue($itemsByName->has('REWORK'));
+        $this->assertEquals(2, $itemsByName['REWORK']['total']);
+    }
+
+    public function test_admin_can_drilldown_pareto_mode_all_combines_internal_and_rework(): void
+    {
+        $today = Carbon::today()->format('Y-m-d');
+        AreaDitemukan::firstOrCreate(['name' => 'AREA-RWK'], ['tipe' => AreaDitemukan::TIPE_REWORK]);
+        AreaDitemukan::firstOrCreate(['name' => 'CK'], ['tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+
+        Defect::create([
+            'user_name' => 'Operator 1',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Final Assy',
+            'area_ditemukan' => 'CK',
+            'jenis_sub_defect' => 'MISSING CLIP',
+            'conveyor' => 'CV-INTERNAL',
+            'quantity' => 7,
+        ]);
+        Defect::create([
+            'user_name' => 'reworkA',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Final Assy',
+            'area_ditemukan' => 'AREA-RWK',
+            'jenis_sub_defect' => 'MISSING CLIP',
+            'conveyor' => 'CV-REWORK',
+            'quantity' => 4,
+        ]);
+
+        $res = $this->actingAsAdmin()->getJson("/dashboard/pareto-drilldown?sub_defect=MISSING CLIP&start_date={$today}&end_date={$today}&mode=all&jenis_assy=all");
+        $res->assertStatus(200);
+        $res->assertJsonStructure(['sub_defect', 'metric', 'items']);
+        $this->assertCount(2, $res->json('items'));
+
+        $itemsByName = collect($res->json('items'))->keyBy('name');
+        $this->assertTrue($itemsByName->has('CV-INTERNAL'));
+        $this->assertEquals(7, $itemsByName['CV-INTERNAL']['total']);
+        $this->assertTrue($itemsByName->has('CV-REWORK'));
+        $this->assertEquals(4, $itemsByName['CV-REWORK']['total']);
+    }
+
+    public function test_admin_drilldown_mode_rework_with_pre_assy_returns_empty(): void
+    {
+        $today = Carbon::today()->format('Y-m-d');
+        AreaDitemukan::firstOrCreate(['name' => 'REWORK'], ['tipe' => AreaDitemukan::TIPE_REWORK]);
+
+        Defect::create([
+            'user_name' => 'Operator 1',
+            'waktu' => now(),
+            'jenis_defect' => 'WIRING',
+            'jenis_assy' => 'Pre Assy',
+            'area_ditemukan' => 'REWORK',
+            'jenis_sub_defect' => 'CORE FRAYING',
+            'quantity' => 5,
+        ]);
+
+        $res = $this->actingAsAdmin()->getJson("/dashboard/pareto-drilldown?sub_defect=CORE FRAYING&start_date={$today}&end_date={$today}&mode=rework&jenis_assy=Pre Assy");
+        $res->assertStatus(200);
+        $res->assertJsonStructure(['sub_defect', 'metric', 'items']);
+        $this->assertEmpty($res->json('items'));
+    }
 }

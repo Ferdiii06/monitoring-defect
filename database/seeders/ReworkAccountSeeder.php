@@ -22,10 +22,10 @@ class ReworkAccountSeeder extends Seeder
             User::firstOrCreate(
                 ['name' => $account['name']],
                 [
-                    'email'    => strtolower($account['name']) . '@example.com',
+                    'email' => strtolower($account['name']).'@example.com',
                     'password' => Hash::make($account['pin']),
-                    'role'     => 'Rework',
-                    'pin'      => $account['pin'],
+                    'role' => 'Rework',
+                    'pin' => $account['pin'],
                 ]
             );
         }

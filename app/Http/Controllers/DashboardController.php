@@ -314,10 +314,20 @@ class DashboardController extends Controller
         }
 
         // Filter sub defect name (case-insensitive & trimmed)
-        $query->where(function ($q) use ($subDefect) {
-            $q->where('jenis_sub_defect', $subDefect)
-              ->orWhereRaw('UPPER(TRIM(jenis_sub_defect)) = ?', [strtoupper($subDefect)]);
-        });
+        // Konsisten dengan normalisasi buildPareto & buildParetoCombined (NULL / '' / '-' dialiaskan ke 'LAIN-LAIN')
+        if (strtoupper($subDefect) === 'LAIN-LAIN') {
+            $query->where(function ($q) {
+                $q->whereNull('jenis_sub_defect')
+                  ->orWhereRaw("TRIM(jenis_sub_defect) = ''")
+                  ->orWhereRaw("TRIM(jenis_sub_defect) = '-'")
+                  ->orWhereRaw("UPPER(TRIM(jenis_sub_defect)) = 'LAIN-LAIN'");
+            });
+        } else {
+            $query->where(function ($q) use ($subDefect) {
+                $q->where('jenis_sub_defect', $subDefect)
+                  ->orWhereRaw('UPPER(TRIM(jenis_sub_defect)) = ?', [strtoupper($subDefect)]);
+            });
+        }
 
         if ($jenisAssy === 'Pre Assy') {
             $defects = $query->with('carline:id,name')->select(['id', 'carline_id', 'quantity'])->get();
