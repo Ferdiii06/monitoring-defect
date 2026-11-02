@@ -154,6 +154,11 @@ class DefectApiController extends Controller
 
             $reworkHarness = null;
             $reworkDpm = null;
+            $internalDefect = null;
+            $reworkDefect = null;
+            $internalPercent = null;
+            $reworkPercent = null;
+
             if ($currentMode === 'rework') {
                 $reworkHarness = (int) \App\Models\Defect::byDashboardMode('rework', 'Final Assy')
                     ->whereNotNull('rework_group_id')
@@ -161,15 +166,35 @@ class DefectApiController extends Controller
                     ->count('rework_group_id');
                 $totalDef = (int) \App\Models\Defect::byDashboardMode('rework', 'Final Assy')->sum('quantity');
                 $reworkDpm = $reworkHarness > 0 ? round(($totalDef / $reworkHarness) * 1000000, 2) : null;
+            } elseif ($currentMode === 'all') {
+                $internalDefect = (int) \App\Models\Defect::byDashboardMode('internal')->sum('quantity');
+                $reworkDefect = (int) \App\Models\Defect::byDashboardMode('rework')->sum('quantity');
+                $reworkHarness = (int) \App\Models\Defect::byDashboardMode('rework', 'Final Assy')
+                    ->whereNotNull('rework_group_id')
+                    ->distinct('rework_group_id')
+                    ->count('rework_group_id');
+                $sumDefect = $internalDefect + $reworkDefect;
+                $internalPercent = $sumDefect > 0 ? round(($internalDefect / $sumDefect) * 100, 2) : 0.0;
+                $reworkPercent = $sumDefect > 0 ? round(($reworkDefect / $sumDefect) * 100, 2) : 0.0;
             }
 
             return response()->json([
-                'totalDefect'   => (int) \App\Models\Defect::byDashboardMode($currentMode)->sum('quantity'),
-                'defectToday'   => (int) \App\Models\Defect::byDashboardMode($currentMode)->whereDate('waktu', Carbon::today())->sum('quantity'),
-                'activeUsers'   => (int) $activeUsers,
-                'totalUsers'    => (int) $totalUsers,
-                'reworkHarness' => $reworkHarness,
-                'reworkDpm'     => $reworkDpm,
+                'totalDefect'      => (int) \App\Models\Defect::byDashboardMode($currentMode)->sum('quantity'),
+                'defectToday'      => (int) \App\Models\Defect::byDashboardMode($currentMode)->whereDate('waktu', Carbon::today())->sum('quantity'),
+                'activeUsers'      => (int) $activeUsers,
+                'totalUsers'       => (int) $totalUsers,
+                'reworkHarness'    => $reworkHarness,
+                'reworkDpm'        => $reworkDpm,
+                'internal_defect'  => $internalDefect,
+                'rework_defect'    => $reworkDefect,
+                'rework_harness'   => $reworkHarness,
+                'internal_percent' => $internalPercent,
+                'rework_percent'   => $reworkPercent,
+                // CamelCase aliases
+                'internalDefect'   => $internalDefect,
+                'reworkDefect'     => $reworkDefect,
+                'internalPercent'  => $internalPercent,
+                'reworkPercent'    => $reworkPercent,
             ]);
 
         } catch (\Throwable $e) {

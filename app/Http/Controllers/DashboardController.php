@@ -113,7 +113,8 @@ class DashboardController extends Controller
      */
     public function apiCharts(Request $request = null)
     {
-        $mode = $request ? $request->query('mode', 'internal') : 'internal';
+        $request = $request ?? request();
+        $mode = strtolower((string) $request->input('mode', 'internal'));
         $currentMode = in_array($mode, ['all', 'internal', 'rework'], true) ? $mode : 'internal';
 
         $startOfMonth = Carbon::now()->startOfMonth()->startOfDay();
@@ -123,11 +124,29 @@ class DashboardController extends Controller
             ->where('waktu', '>=', $startOfMonth)
             ->get(['waktu', 'jenis_assy', 'quantity', 'inspect_quantity', 'rework_group_id']);
 
-        return response()->json([
+        $data = [
             'success'   => true,
             'finalAssy' => $this->buildAssyChartData('Final Assy', $monthRecords, $startOfWeek, $currentMode),
             'preAssy'   => $this->buildAssyChartData('Pre Assy', $monthRecords, $startOfWeek, $currentMode),
-        ]);
+        ];
+
+        if ($currentMode === 'all') {
+            $internalDefect = (int) Defect::byDashboardMode('internal')->sum('quantity');
+            $reworkDefect = (int) Defect::byDashboardMode('rework')->sum('quantity');
+            $reworkHarness = (int) Defect::byDashboardMode('rework', 'Final Assy')
+                ->whereNotNull('rework_group_id')
+                ->distinct('rework_group_id')
+                ->count('rework_group_id');
+            $sumDef = $internalDefect + $reworkDefect;
+
+            $data['internal_defect']  = $internalDefect;
+            $data['rework_defect']    = $reworkDefect;
+            $data['rework_harness']   = $reworkHarness;
+            $data['internal_percent'] = $sumDef > 0 ? round(($internalDefect / $sumDef) * 100, 2) : 0.0;
+            $data['rework_percent']   = $sumDef > 0 ? round(($reworkDefect / $sumDef) * 100, 2) : 0.0;
+        }
+
+        return response()->json($data);
     }
 
     /**
@@ -178,6 +197,11 @@ class DashboardController extends Controller
         $todayHarness = null;
         $dpmRework = null;
         $todayDpmRework = null;
+        $internalDefect = null;
+        $reworkDefect = null;
+        $reworkHarness = null;
+        $internalPercent = null;
+        $reworkPercent = null;
 
         if ($mode === 'rework' && $jenisAssy === 'Final Assy') {
             $totalHarness = (int) (clone $allTime)->whereNotNull('rework_group_id')->distinct('rework_group_id')->count('rework_group_id');
@@ -187,6 +211,15 @@ class DashboardController extends Controller
 
             $dpmRework = $totalHarness > 0 ? round(($totalDef / $totalHarness) * 1000000, 2) : null;
             $todayDpmRework = $todayHarness > 0 ? round(($todayDef / $todayHarness) * 1000000, 2) : null;
+        } elseif ($mode === 'all') {
+            $internalDefect = (int) Defect::byDashboardMode('internal', $jenisAssy)->where('jenis_assy', $jenisAssy)->sum('quantity');
+            $reworkDefect = (int) Defect::byDashboardMode('rework', $jenisAssy)->where('jenis_assy', $jenisAssy)->sum('quantity');
+            $reworkHarness = $jenisAssy === 'Final Assy'
+                ? (int) Defect::byDashboardMode('rework', 'Final Assy')->where('jenis_assy', 'Final Assy')->whereNotNull('rework_group_id')->distinct('rework_group_id')->count('rework_group_id')
+                : 0;
+            $sumDef = $internalDefect + $reworkDefect;
+            $internalPercent = $sumDef > 0 ? round(($internalDefect / $sumDef) * 100, 2) : 0.0;
+            $reworkPercent = $sumDef > 0 ? round(($reworkDefect / $sumDef) * 100, 2) : 0.0;
         }
 
         return [
@@ -210,6 +243,11 @@ class DashboardController extends Controller
             'today_harness'    => $todayHarness,
             'dpm_rework'       => $dpmRework,
             'today_dpm_rework' => $todayDpmRework,
+            'internal_defect'  => $internalDefect,
+            'rework_defect'    => $reworkDefect,
+            'rework_harness'   => $reworkHarness,
+            'internal_percent' => $internalPercent,
+            'rework_percent'   => $reworkPercent,
         ];
     }
 
@@ -255,17 +293,22 @@ class DashboardController extends Controller
         $data = [];
 
         if ($mode === 'all' || $assy === 'all' || $assy === 'combined') {
-            $combinedTrends = $this->buildDpmTrendsCombined($startDate, $endDate, $groupBy);
-            $combinedPareto = $this->buildParetoCombined($startDate, $endDate);
-
-            $data['dpm_combined'] = $combinedTrends;
-            $data['pareto_combined'] = $combinedPareto;
-            $data['dpm_final'] = $combinedTrends;
-            $data['pareto_final'] = $combinedPareto;
-
             if ($assy === 'pre') {
                 $data['dpm_pre'] = $this->buildDpmTrends('Pre Assy', $startDate, $endDate, $groupBy, null, $carlineId, $mode);
                 $data['pareto_pre'] = $this->buildPareto('Pre Assy', $startDate, $endDate, null, $carlineId, $mode);
+            } else {
+                $combinedTrends = $this->buildDpmTrendsCombined($startDate, $endDate, $groupBy);
+                $combinedPareto = $this->buildParetoCombined($startDate, $endDate);
+
+                $data['dpm_combined'] = $combinedTrends;
+                $data['pareto_combined'] = $combinedPareto;
+                $data['dpm_final'] = $combinedTrends;
+                $data['pareto_final'] = $combinedPareto;
+
+                if ($assy !== 'final') {
+                    $data['dpm_pre'] = $this->buildDpmTrends('Pre Assy', $startDate, $endDate, $groupBy, null, $carlineId, $mode);
+                    $data['pareto_pre'] = $this->buildPareto('Pre Assy', $startDate, $endDate, null, $carlineId, $mode);
+                }
             }
         } elseif ($assy === 'final') {
             $data['dpm_final'] = $this->buildDpmTrends('Final Assy', $startDate, $endDate, $groupBy, $conveyor, null, $mode);
@@ -430,9 +473,9 @@ class DashboardController extends Controller
                 ->get();
         }
 
-        // 1 query untuk mengambil semua target DPM relevan untuk assy ini (hanya jika mode internal)
+        // 1 query untuk mengambil semua target DPM relevan untuk assy ini (jika mode internal atau mode all Pre Assy)
         $targets = collect();
-        if ($mode === 'internal') {
+        if ($mode === 'internal' || ($mode === 'all' && $jenisAssy === 'Pre Assy')) {
             $targets = DpmTarget::where('jenis_assy', $jenisAssy)
                 ->where('period_start', '<=', $endDate->format('Y-m-d'))
                 ->where('period_end', '>=', $startDate->format('Y-m-d'))
@@ -652,6 +695,9 @@ class DashboardController extends Controller
                 'total_inspect'         => $totalInspect,
                 'dpm'                   => $dpm,
                 'target'                => $targetVal,
+                'def_internal'          => $defInternal,
+                'def_rework'            => $defRework,
+                'harness_rework'        => $harnessRework,
                 'total_defect_internal' => $defInternal,
                 'total_defect_rework'   => $defRework,
                 'total_harness_rework'  => $harnessRework,
@@ -673,7 +719,7 @@ class DashboardController extends Controller
         $reworkAreaNames = Defect::getReworkAreaNames();
 
         $query = Defect::query()
-            ->select(['jenis_sub_defect', 'quantity', 'area_ditemukan'])
+            ->select(['jenis_sub_defect', 'quantity', 'area_ditemukan', 'jenis_assy', 'rework_group_id'])
             ->byDashboardMode($mode, $jenisAssy)
             ->whereBetween('waktu', [$startDate, $endDate])
             ->where('jenis_assy', $jenisAssy)
@@ -708,7 +754,7 @@ class DashboardController extends Controller
             }
             $qty = (int) $r->quantity;
 
-            $isRework = (!empty($reworkAreaNames) && in_array($r->area_ditemukan, $reworkAreaNames, true));
+            $isRework = ($jenisAssy === 'Final Assy' && !empty($r->rework_group_id) && !empty($reworkAreaNames) && in_array($r->area_ditemukan, $reworkAreaNames, true));
 
             if (!isset($subDefectTotals[$normalizedName])) {
                 $subDefectTotals[$normalizedName] = 0;
@@ -870,6 +916,9 @@ class DashboardController extends Controller
                 'total_inspect'         => $totalInspect,
                 'dpm'                   => null,
                 'target'                => null,
+                'def_internal'          => $defInternal,
+                'def_rework'            => $defRework,
+                'harness_rework'        => $harnessRework,
                 'total_defect_internal' => $defInternal,
                 'total_defect_rework'   => $defRework,
                 'total_harness_rework'  => $harnessRework,
@@ -887,7 +936,7 @@ class DashboardController extends Controller
         $reworkAreaNames = Defect::getReworkAreaNames();
 
         $query = Defect::query()
-            ->select(['jenis_sub_defect', 'quantity', 'area_ditemukan', 'jenis_assy'])
+            ->select(['jenis_sub_defect', 'quantity', 'area_ditemukan', 'jenis_assy', 'rework_group_id'])
             ->byDashboardMode('all')
             ->whereBetween('waktu', [$startDate, $endDate])
             ->where(function ($q) {
@@ -910,7 +959,7 @@ class DashboardController extends Controller
             }
             $qty = (int) $r->quantity;
 
-            $isRework = ($r->jenis_assy === 'Final Assy' && !empty($reworkAreaNames) && in_array($r->area_ditemukan, $reworkAreaNames, true));
+            $isRework = ($r->jenis_assy === 'Final Assy' && !empty($r->rework_group_id) && !empty($reworkAreaNames) && in_array($r->area_ditemukan, $reworkAreaNames, true));
 
             if (!isset($subDefectTotals[$normalizedName])) {
                 $subDefectTotals[$normalizedName] = 0;
