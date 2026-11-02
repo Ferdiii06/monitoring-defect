@@ -17,17 +17,9 @@ class ReworkHistoryController extends Controller
      */
     public static function baseQuery(Request $request)
     {
-        $reworkAreaNames = Defect::getReworkAreaNames();
-
         $query = Defect::query()
             ->where('jenis_assy', 'Final Assy')
             ->whereNotNull('rework_group_id');
-
-        if (empty($reworkAreaNames)) {
-            $query->whereRaw('0 = 1');
-        } else {
-            $query->whereIn('area_ditemukan', $reworkAreaNames);
-        }
 
         // 1. Date Range Filter (waktu_in with fallback to waktu)
         $dateRange = (string) $request->input('date_range', '');

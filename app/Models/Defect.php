@@ -152,11 +152,25 @@ class Defect extends Model
         // Pre Assy: Rework tidak berlaku di Pre Assy.
         // Bila jenisAssy eksplisit Pre Assy:
         // - Mode 'rework' mengecualikan Pre Assy seluruhnya (0 baris).
-        // - Mode 'internal' dan 'all' menyertakan semua Pre Assy.
+        // - Mode 'internal': operator (rework_group_id IS NULL) DAN area non-rework (termasuk NULL).
+        // - Mode 'all' menyertakan semua Pre Assy tanpa filter tambahan.
         if ($jenisAssy === 'Pre Assy') {
             if ($mode === 'rework') {
                 return $query->whereRaw('1 = 0');
             }
+
+            if ($mode === 'internal') {
+                $query->whereNull('rework_group_id');
+                $reworkAreaNames = static::getReworkAreaNames();
+                if (!empty($reworkAreaNames)) {
+                    $query->where(function ($q) use ($reworkAreaNames) {
+                        $q->whereNull('area_ditemukan')
+                          ->orWhereNotIn('area_ditemukan', $reworkAreaNames);
+                    });
+                }
+                return $query;
+            }
+
             return $query;
         }
 
@@ -173,10 +187,12 @@ class Defect extends Model
                 if (empty($reworkAreaNames)) {
                     return $query->whereRaw('1 = 0');
                 }
-                return $query->whereIn('area_ditemukan', $reworkAreaNames);
+                return $query->whereNotNull('rework_group_id')
+                    ->whereIn('area_ditemukan', $reworkAreaNames);
             }
 
-            // Mode 'internal': area_ditemukan NULL atau BUKAN tipe rework
+            // Mode 'internal': operator (rework_group_id IS NULL) DAN (area_ditemukan NULL atau BUKAN tipe rework)
+            $query->whereNull('rework_group_id');
             if (empty($reworkAreaNames)) {
                 return $query;
             }
@@ -192,30 +208,25 @@ class Defect extends Model
         }
 
         if ($mode === 'rework') {
-            // Rework hanya Final Assy dan area bertipe rework (Pre Assy dikecualikan seluruhnya)
+            // Rework hanya Final Assy, ber-group rework, dan area bertipe rework (Pre Assy dikecualikan seluruhnya)
             if (empty($reworkAreaNames)) {
                 return $query->whereRaw('1 = 0');
             }
             return $query->where('jenis_assy', 'Final Assy')
+                ->whereNotNull('rework_group_id')
                 ->whereIn('area_ditemukan', $reworkAreaNames);
         }
 
         // Mode 'internal' untuk query global:
-        // Pre Assy tetap disertakan, Final Assy hanya yang non-rework (area NULL atau bukan rework)
+        // Wajib diinput operator (rework_group_id IS NULL) DAN area_ditemukan NULL atau BUKAN tipe rework
+        $query->whereNull('rework_group_id');
         if (empty($reworkAreaNames)) {
             return $query;
         }
 
         return $query->where(function ($q) use ($reworkAreaNames) {
-            $q->whereNull('jenis_assy')
-              ->orWhere('jenis_assy', '!=', 'Final Assy')
-              ->orWhere(function ($sub) use ($reworkAreaNames) {
-                  $sub->where('jenis_assy', 'Final Assy')
-                      ->where(function ($w) use ($reworkAreaNames) {
-                          $w->whereNull('area_ditemukan')
-                            ->orWhereNotIn('area_ditemukan', $reworkAreaNames);
-                      });
-              });
+            $q->whereNull('area_ditemukan')
+              ->orWhereNotIn('area_ditemukan', $reworkAreaNames);
         });
     }
 }
