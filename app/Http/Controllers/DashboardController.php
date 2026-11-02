@@ -82,7 +82,7 @@ class DashboardController extends Controller
         // 1 DB query untuk mengambil semua data defect bulan ini untuk analitik chart
         $monthRecords = Defect::byDashboardMode($currentMode)
             ->where('waktu', '>=', $startOfMonth)
-            ->get(['waktu', 'jenis_assy', 'quantity', 'inspect_quantity']);
+            ->get(['waktu', 'jenis_assy', 'quantity', 'inspect_quantity', 'rework_group_id']);
 
         $finalAssyChart = $this->buildAssyChartData('Final Assy', $monthRecords, $startOfWeek, $currentMode);
         $preAssyChart = $this->buildAssyChartData('Pre Assy', $monthRecords, $startOfWeek, $currentMode);
@@ -121,7 +121,7 @@ class DashboardController extends Controller
 
         $monthRecords = Defect::byDashboardMode($currentMode)
             ->where('waktu', '>=', $startOfMonth)
-            ->get(['waktu', 'jenis_assy', 'quantity', 'inspect_quantity']);
+            ->get(['waktu', 'jenis_assy', 'quantity', 'inspect_quantity', 'rework_group_id']);
 
         return response()->json([
             'success'   => true,
@@ -173,6 +173,22 @@ class DashboardController extends Controller
         }
 
         $allTime = Defect::byDashboardMode($mode, $jenisAssy)->where('jenis_assy', $jenisAssy);
+
+        $totalHarness = null;
+        $todayHarness = null;
+        $dpmRework = null;
+        $todayDpmRework = null;
+
+        if ($mode === 'rework' && $jenisAssy === 'Final Assy') {
+            $totalHarness = (int) (clone $allTime)->whereNotNull('rework_group_id')->distinct('rework_group_id')->count('rework_group_id');
+            $todayHarness = (int) $todayRecords->whereNotNull('rework_group_id')->pluck('rework_group_id')->filter()->unique()->count();
+            $totalDef = (int) (clone $allTime)->sum('quantity');
+            $todayDef = (int) $todayRecords->sum('quantity');
+
+            $dpmRework = $totalHarness > 0 ? round(($totalDef / $totalHarness) * 1000000, 2) : null;
+            $todayDpmRework = $todayHarness > 0 ? round(($todayDef / $todayHarness) * 1000000, 2) : null;
+        }
+
         return [
             'today' => [
                 'inspect' => $todayInspect,
@@ -186,10 +202,14 @@ class DashboardController extends Controller
                 'inspect' => $monthInspect,
                 'defect'  => $monthDefect,
             ],
-            'total_inspect' => (int) (clone $allTime)->sum('inspect_quantity'),
-            'total_defect'  => (int) (clone $allTime)->sum('quantity'),
-            'today_inspect' => (int) $todayRecords->sum('inspect_quantity'),
-            'today_defect'  => (int) $todayRecords->sum('quantity'),
+            'total_inspect'    => (int) (clone $allTime)->sum('inspect_quantity'),
+            'total_defect'     => (int) (clone $allTime)->sum('quantity'),
+            'today_inspect'    => (int) $todayRecords->sum('inspect_quantity'),
+            'today_defect'     => (int) $todayRecords->sum('quantity'),
+            'total_harness'    => $totalHarness,
+            'today_harness'    => $todayHarness,
+            'dpm_rework'       => $dpmRework,
+            'today_dpm_rework' => $todayDpmRework,
         ];
     }
 
@@ -528,10 +548,15 @@ class DashboardController extends Controller
             $dpm = null;
             $targetVal = null;
 
-            // DPM dan Target DPM dihitung pada mode 'internal', serta pada mode 'all' untuk Pre Assy (karena Pre Assy tidak ada rework)
-            $calculateDpm = ($mode === 'internal') || ($mode === 'all' && $jenisAssy === 'Pre Assy');
-
-            if ($calculateDpm) {
+            if ($mode === 'rework') {
+                // Rework DPM: (SUM(quantity) dari defect rework / COUNT(DISTINCT rework_group_id)) * 1.000.000
+                // Hanya Final Assy. Jika penyebut harnessRework <= 0, dpm = null (bukan 0 dan bukan error).
+                if ($jenisAssy === 'Final Assy' && $harnessRework > 0) {
+                    $dpm = round(($defRework / $harnessRework) * 1000000, 2);
+                }
+                // Target DPM rework DITUNDA: targetVal tetap null.
+                $targetVal = null;
+            } elseif ($mode === 'internal' || ($mode === 'all' && $jenisAssy === 'Pre Assy')) {
                 if ($totalInspect > 0) {
                     $dpm = round(($totalDefect / $totalInspect) * 1000000, 2);
                 }

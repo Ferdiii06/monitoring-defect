@@ -1138,8 +1138,8 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertEquals(0, $dpmFinal[0]['total_defect_internal']);
         $this->assertEquals(5, $dpmFinal[0]['total_defect_rework']);
         $this->assertEquals(1, $dpmFinal[0]['total_harness_rework']);
-        // DPM dan target harus NULL di mode rework
-        $this->assertNull($dpmFinal[0]['dpm']);
+        // DPM rework dihitung: (5 / 1) * 1.000.000 = 5.000.000, target tetap NULL
+        $this->assertEquals(5000000.0, $dpmFinal[0]['dpm']);
         $this->assertNull($dpmFinal[0]['target']);
 
         $paretoFinal = $res->json('pareto_final');

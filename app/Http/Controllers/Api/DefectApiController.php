@@ -152,11 +152,24 @@ class DefectApiController extends Controller
                 $activeUsers = max(1, $recentOperators);
             }
 
+            $reworkHarness = null;
+            $reworkDpm = null;
+            if ($currentMode === 'rework') {
+                $reworkHarness = (int) \App\Models\Defect::byDashboardMode('rework', 'Final Assy')
+                    ->whereNotNull('rework_group_id')
+                    ->distinct('rework_group_id')
+                    ->count('rework_group_id');
+                $totalDef = (int) \App\Models\Defect::byDashboardMode('rework', 'Final Assy')->sum('quantity');
+                $reworkDpm = $reworkHarness > 0 ? round(($totalDef / $reworkHarness) * 1000000, 2) : null;
+            }
+
             return response()->json([
-                'totalDefect' => (int) \App\Models\Defect::byDashboardMode($currentMode)->sum('quantity'),
-                'defectToday' => (int) \App\Models\Defect::byDashboardMode($currentMode)->whereDate('waktu', Carbon::today())->sum('quantity'),
-                'activeUsers' => (int) $activeUsers,
-                'totalUsers'  => (int) $totalUsers,
+                'totalDefect'   => (int) \App\Models\Defect::byDashboardMode($currentMode)->sum('quantity'),
+                'defectToday'   => (int) \App\Models\Defect::byDashboardMode($currentMode)->whereDate('waktu', Carbon::today())->sum('quantity'),
+                'activeUsers'   => (int) $activeUsers,
+                'totalUsers'    => (int) $totalUsers,
+                'reworkHarness' => $reworkHarness,
+                'reworkDpm'     => $reworkDpm,
             ]);
 
         } catch (\Throwable $e) {
