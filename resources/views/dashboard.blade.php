@@ -75,7 +75,7 @@
     <!-- KPI Cards Grid (Using Reusable metric-card) -->
     <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
         <!-- Card 1: Total Defect -->
-        <x-metric-card 
+        <x-metric-card
             label="Total Defect"
             :value="number_format($totalDefect, 0, ',', '.')"
             valueId="stat-total-defect"
@@ -95,7 +95,7 @@
         </x-metric-card>
 
         <!-- Card 2: Defect Hari Ini -->
-        <x-metric-card 
+        <x-metric-card
             label="Defect Hari Ini"
             :value="(string)$defectToday"
             valueId="stat-defect-today"
@@ -115,7 +115,7 @@
         </x-metric-card>
 
         <!-- Card 3: Active Users -->
-        <x-metric-card 
+        <x-metric-card
             label="Active Users"
             :value="(string)$activeUsers"
             valueId="stat-active-users"
@@ -138,7 +138,7 @@
         </x-metric-card>
 
         <!-- Card 4: Total Users -->
-        <x-metric-card 
+        <x-metric-card
             label="Total Users"
             :value="(string)$totalUsers"
             valueId="stat-total-users"
@@ -167,14 +167,22 @@
                     <!-- Summary DPM Final Assy -->
                     <div class="bg-white border border-slate-200 border-t-4 border-t-teal-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
                         <div class="flex items-center justify-between">
-                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="summaryTitleDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Total Defect (Gabungan)' : (($currentMode ?? 'internal') === 'rework' ? 'Defect Rework' : 'DPM Final Assy') }}</span>
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="summaryTitleDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Total Defect (Gabungan)' : (($currentMode ?? 'internal') === 'rework' ? 'DPM Rework' : 'DPM Final Assy') }}</span>
                             <span class="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200/80" id="summaryPeriodDpmFinal">Memuat...</span>
                         </div>
                         <div class="mt-2 flex items-baseline space-x-2">
                             <span class="text-2xl font-black text-slate-900 font-mono tracking-tight tabular-nums" id="summaryValDpmFinal">-</span>
-                            <span class="text-[11px] text-slate-400 font-semibold" id="summaryUnitDpmFinal">DPM</span>
+                            <span class="text-[11px] text-slate-400 font-semibold" id="summaryUnitDpmFinal">{{ ($currentMode ?? 'internal') === 'rework' ? 'PPM' : (($currentMode ?? 'internal') === 'all' ? 'pcs' : 'DPM') }}</span>
                         </div>
-                        <p class="text-[10px] text-slate-400 mt-1 truncate" id="summarySubDpmFinal">Kalkulasi total defect / inspect</p>
+                        <p class="text-[10px] text-slate-400 mt-1 truncate" id="summarySubDpmFinal">
+                            @if(($currentMode ?? 'internal') === 'rework')
+                                belum ada data rework
+                            @elseif(($currentMode ?? 'internal') === 'all')
+                                Memuat perbandingan...
+                            @else
+                                Kalkulasi total defect / inspect
+                            @endif
+                        </p>
                     </div>
 
                     <!-- Summary Top Defect Final Assy -->
@@ -202,7 +210,7 @@
                                     <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Tren Defect (Gabungan)' : (($currentMode ?? 'internal') === 'rework' ? 'Grafik DPM Rework' : 'DPM Final Assy') }}</h3>
                                     <span class="text-[10px] font-bold {{ ($currentMode ?? 'internal') === 'rework' ? 'text-amber-800 bg-amber-50 border border-amber-200/80' : 'text-teal-800 bg-teal-50 border border-teal-200/80' }} px-2 py-0.5 rounded-md" id="cardBadgeDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Gabungan' : (($currentMode ?? 'internal') === 'rework' ? 'DPM Rework' : 'Final Assy') }}</span>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-0.5" id="cardSubDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Jumlah defect tren per periode' : (($currentMode ?? 'internal') === 'rework' ? 'Jumlah defect & harness dirework per periode' : 'Defect Per Million tren per periode') }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5" id="cardSubDpmFinal">{{ ($currentMode ?? 'internal') === 'all' ? 'Perbandingan quantity internal vs rework per periode' : (($currentMode ?? 'internal') === 'rework' ? 'DPM tren per periode' : 'Defect Per Million tren per periode') }}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -828,7 +836,7 @@
 
             if (mode === 'all') {
                 if (titleDpmFinal) titleDpmFinal.textContent = 'Tren Defect (Gabungan)';
-                if (subDpmFinal) subDpmFinal.textContent = 'Jumlah defect tren per periode';
+                if (subDpmFinal) subDpmFinal.textContent = 'Perbandingan quantity internal vs rework per periode';
                 if (badgeDpmFinal) {
                     badgeDpmFinal.textContent = 'Gabungan';
                     badgeDpmFinal.className = 'text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md';
@@ -845,7 +853,7 @@
                 if (colFinal) colFinal.classList.add('xl:col-span-2');
             } else if (mode === 'rework') {
                 if (titleDpmFinal) titleDpmFinal.textContent = 'Grafik DPM Rework';
-                if (subDpmFinal) subDpmFinal.textContent = 'Jumlah defect & harness dirework per periode';
+                if (subDpmFinal) subDpmFinal.textContent = 'DPM tren per periode';
                 if (badgeDpmFinal) {
                     badgeDpmFinal.textContent = 'DPM Rework';
                     badgeDpmFinal.className = 'text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md';
@@ -856,7 +864,7 @@
                     badgeParetoFinal.textContent = 'Pareto Rework';
                     badgeParetoFinal.className = 'text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md';
                 }
-                if (summaryTitleDpm) summaryTitleDpm.textContent = 'Defect Rework';
+                if (summaryTitleDpm) summaryTitleDpm.textContent = 'DPM Rework';
                 if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Defect Rework';
                 if (colPre) colPre.classList.add('hidden');
                 if (colFinal) colFinal.classList.add('xl:col-span-2');
@@ -1204,22 +1212,33 @@
 
                                     if (isFinalAssy && mode === 'rework') {
                                         if (context.datasetIndex === 0) {
-                                            const defVal = context.raw !== null && context.raw !== undefined ? Number(context.raw).toLocaleString('id-ID') : '0';
-                                            return `  Jumlah defect rework: ${defVal} pcs`;
-                                        } else if (context.datasetIndex === 1) {
-                                            const hVal = context.raw !== null && context.raw !== undefined ? Number(context.raw).toLocaleString('id-ID') : '0';
-                                            return `  Jumlah harness dirework: ${hVal} pcs`;
+                                            const dpmRaw = (meta && meta.dpm !== undefined) ? meta.dpm : context.raw;
+                                            const dpmStr = (dpmRaw !== null && dpmRaw !== undefined && !isNaN(Number(dpmRaw)))
+                                                ? Number(dpmRaw).toLocaleString('id-ID')
+                                                : '-';
+                                            const defStr = meta ? Number(meta.total_defect ?? meta.def_rework ?? 0).toLocaleString('id-ID') : '0';
+                                            const hStr = meta ? Number(meta.total_harness_rework ?? meta.harness_rework ?? 0).toLocaleString('id-ID') : '0';
+                                            return [
+                                                `  DPM Rework: ${dpmStr} PPM`,
+                                                `  Harness: ${hStr}`,
+                                                `  Defect: ${defStr} pcs`
+                                            ];
                                         }
                                         return null;
                                     }
 
                                     if (isFinalAssy && mode === 'all') {
                                         if (context.datasetIndex === 0) {
-                                            const intVal = context.raw !== null && context.raw !== undefined ? Number(context.raw).toLocaleString('id-ID') : '0';
-                                            return `  Internal Defect: ${intVal} pcs`;
-                                        } else if (context.datasetIndex === 1) {
-                                            const rewVal = context.raw !== null && context.raw !== undefined ? Number(context.raw).toLocaleString('id-ID') : '0';
-                                            return `  Rework: ${rewVal} pcs`;
+                                            const defInt = meta ? Number(meta.def_internal ?? meta.total_defect_internal ?? 0).toLocaleString('id-ID') : '0';
+                                            const defRew = meta ? Number(meta.def_rework ?? meta.total_defect_rework ?? 0).toLocaleString('id-ID') : '0';
+                                            const hRew = meta ? Number(meta.harness_rework ?? meta.total_harness_rework ?? 0).toLocaleString('id-ID') : '0';
+                                            const totDef = meta ? Number(meta.total_defect ?? 0).toLocaleString('id-ID') : '0';
+                                            return [
+                                                `  Total Defect: ${totDef} pcs`,
+                                                `  Internal Defect: ${defInt} pcs`,
+                                                `  Rework Defect: ${defRew} pcs`,
+                                                `  Harness Rework: ${hRew}`
+                                            ];
                                         }
                                         return null;
                                     }
@@ -1573,6 +1592,18 @@
                     }
                     return;
                 }
+            } else if (isFinal && mode === 'rework') {
+                const hasAnyReworkData = trendList.some(t => (Number(t.harness_rework ?? t.total_harness_rework) || 0) > 0 || (Number(t.total_defect) || 0) > 0);
+                if (!hasAnyReworkData) {
+                    if (msgEl) msgEl.textContent = 'Belum ada data rework pada periode ini';
+                    if (wrapper) wrapper.classList.add('hidden');
+                    if (emptyEl) emptyEl.classList.remove('hidden');
+                    if (noteEl) {
+                        noteEl.innerHTML = '';
+                        noteEl.classList.add('hidden');
+                    }
+                    return;
+                }
             }
 
             if (msgEl) msgEl.textContent = 'Tidak ada data pada periode ini';
@@ -1581,27 +1612,10 @@
 
             // Render catatan teks kondisi data
             if (noteEl) {
-                if (isFinal && mode === 'rework') {
-                    noteEl.innerHTML = `
-                        <div class="flex items-center space-x-1.5 text-[11px] font-medium text-slate-500">
-                            <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <span>DPM rework menyusul</span>
-                        </div>
-                    `;
-                    noteEl.classList.remove('hidden');
-                } else if (isFinal && mode === 'all') {
-                    noteEl.innerHTML = `
-                        <div class="flex items-center space-x-1.5 text-[11px] font-medium text-slate-500">
-                            <svg class="w-3.5 h-3.5 text-teal-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <span>DPM gabungan menyusul</span>
-                        </div>
-                    `;
-                    noteEl.classList.remove('hidden');
-                } else {
+                noteEl.innerHTML = '';
+                noteEl.classList.add('hidden');
+
+                if (mode === 'internal' || isPre) {
                     const notes = [];
                     const mLabel = chart?._metricLabel || 'DPM';
                     if (missingInspectCount > 0) {
@@ -1623,9 +1637,6 @@
                             </div>
                         `).join('');
                         noteEl.classList.remove('hidden');
-                    } else {
-                        noteEl.innerHTML = '';
-                        noteEl.classList.add('hidden');
                     }
                 }
             }
@@ -1644,19 +1655,19 @@
                 }
 
                 if (isFinal && mode === 'rework') {
-                    // Sumbu Y = "Jumlah"
-                    chart.options.scales.y.title.text = 'Jumlah';
+                    // Sumbu Y = "PPM"
+                    chart.options.scales.y.title.text = 'PPM';
 
-                    // Seri 1: Jumlah defect rework
-                    chart.data.datasets[0].label = 'Jumlah defect rework';
-                    chart.data.datasets[0].data = trendList.map(t => (t.total_defect_rework !== undefined ? t.total_defect_rework : t.total_defect) || 0);
+                    // Seri 1: DPM Rework Real (satuan PPM)
+                    chart.data.datasets[0].label = 'DPM Rework';
+                    chart.data.datasets[0].data = trendList.map(t => (t.dpm !== null && t.dpm !== undefined && !isNaN(Number(t.dpm))) ? Number(t.dpm) : null);
                     chart.data.datasets[0].borderColor = THEME_COLORS.rework;
                     chart.data.datasets[0].backgroundColor = THEME_COLORS.reworkLight;
                     chart.data.datasets[0].borderWidth = 2.5;
                     chart.data.datasets[0].borderDash = [];
                     chart.data.datasets[0].fill = true;
                     chart.data.datasets[0].tension = 0.3;
-                    chart.data.datasets[0].spanGaps = true;
+                    chart.data.datasets[0].spanGaps = false; // Titik dengan dpm null tidak digambar
                     chart.data.datasets[0].pointStyle = 'circle';
                     chart.data.datasets[0].pointBackgroundColor = THEME_COLORS.rework;
                     chart.data.datasets[0].pointBorderColor = '#ffffff';
@@ -1666,31 +1677,18 @@
                     chart.data.datasets[0]._meta = trendList;
                     chart.data.datasets[0].hidden = false;
 
-                    // Seri 2: Jumlah harness dirework
-                    chart.data.datasets[1].label = 'Jumlah harness dirework';
-                    chart.data.datasets[1].data = trendList.map(t => t.total_harness_rework || 0);
-                    chart.data.datasets[1].borderColor = THEME_COLORS.reworkDark;
-                    chart.data.datasets[1].backgroundColor = 'transparent';
-                    chart.data.datasets[1].borderWidth = 2;
-                    chart.data.datasets[1].borderDash = [4, 4];
-                    chart.data.datasets[1].fill = false;
-                    chart.data.datasets[1].tension = 0.3;
-                    chart.data.datasets[1].spanGaps = true;
-                    chart.data.datasets[1].pointStyle = 'circle';
-                    chart.data.datasets[1].pointBackgroundColor = THEME_COLORS.reworkDark;
-                    chart.data.datasets[1].pointBorderColor = '#ffffff';
-                    chart.data.datasets[1].pointBorderWidth = 2;
-                    chart.data.datasets[1].pointRadius = 4;
-                    chart.data.datasets[1].pointHoverRadius = 6;
-                    chart.data.datasets[1].hidden = false;
+                    // Seri 2: Garis target disembunyikan (target null, ditunda)
+                    chart.data.datasets[1].label = 'Target DPM';
+                    chart.data.datasets[1].data = [];
+                    chart.data.datasets[1].hidden = true;
 
                 } else if (isFinal && mode === 'all') {
-                    // Sumbu Y = "Jumlah defect"
-                    chart.options.scales.y.title.text = 'Jumlah defect';
+                    // Sumbu Y = "Quantity defect"
+                    chart.options.scales.y.title.text = 'Quantity defect';
 
                     // Seri 1: Internal Defect
                     chart.data.datasets[0].label = 'Internal Defect';
-                    chart.data.datasets[0].data = trendList.map(t => (t.total_defect_internal !== undefined ? t.total_defect_internal : t.total_defect) || 0);
+                    chart.data.datasets[0].data = trendList.map(t => (t.def_internal !== undefined ? t.def_internal : (t.total_defect_internal !== undefined ? t.total_defect_internal : t.total_defect)) || 0);
                     chart.data.datasets[0].borderColor = THEME_COLORS.internal;
                     chart.data.datasets[0].backgroundColor = THEME_COLORS.internalLight;
                     chart.data.datasets[0].borderWidth = 2.5;
@@ -1709,7 +1707,7 @@
 
                     // Seri 2: Rework
                     chart.data.datasets[1].label = 'Rework';
-                    chart.data.datasets[1].data = trendList.map(t => t.total_defect_rework || 0);
+                    chart.data.datasets[1].data = trendList.map(t => (t.def_rework !== undefined ? t.def_rework : (t.total_defect_rework !== undefined ? t.total_defect_rework : 0)) || 0);
                     chart.data.datasets[1].borderColor = THEME_COLORS.rework;
                     chart.data.datasets[1].backgroundColor = THEME_COLORS.reworkLight;
                     chart.data.datasets[1].borderWidth = 2.5;
@@ -1719,6 +1717,11 @@
                     chart.data.datasets[1].spanGaps = true;
                     chart.data.datasets[1].pointStyle = 'circle';
                     chart.data.datasets[1].pointBackgroundColor = THEME_COLORS.rework;
+                    chart.data.datasets[1].pointBorderColor = '#ffffff';
+                    chart.data.datasets[1].pointBorderWidth = 2;
+                    chart.data.datasets[1].pointRadius = 4;
+                    chart.data.datasets[1].pointHoverRadius = 6;
+                    chart.data.datasets[1].hidden = false;
                     chart.data.datasets[1].pointBorderColor = '#ffffff';
                     chart.data.datasets[1].pointBorderWidth = 2;
                     chart.data.datasets[1].pointRadius = 4;
@@ -2035,28 +2038,40 @@
             const list = Array.isArray(trends) ? trends : [];
 
             if (isFinal && mode === 'rework') {
-                if (titleEl) titleEl.textContent = 'Defect Rework';
-                const totalDefectRework = list.reduce((sum, t) => sum + (Number(t.total_defect_rework !== undefined ? t.total_defect_rework : t.total_defect) || 0), 0);
-                const totalHarnessRework = list.reduce((sum, t) => sum + (Number(t.total_harness_rework) || 0), 0);
+                if (titleEl) titleEl.textContent = 'DPM Rework';
+                const totalDefectRework = list.reduce((sum, t) => sum + (Number(t.def_rework !== undefined ? t.def_rework : (t.total_defect_rework !== undefined ? t.total_defect_rework : t.total_defect)) || 0), 0);
+                const totalHarnessRework = list.reduce((sum, t) => sum + (Number(t.harness_rework !== undefined ? t.harness_rework : t.total_harness_rework) || 0), 0);
 
-                if (valEl) valEl.textContent = totalDefectRework.toLocaleString('id-ID');
-                if (unitEl) unitEl.textContent = 'pcs';
-                if (subEl) {
-                    subEl.innerHTML = `${totalHarnessRework.toLocaleString('id-ID')} harness dirework &bull; <span class="text-amber-600 font-medium">DPM rework menyusul</span>`;
+                const dpmVal = totalHarnessRework > 0 ? Math.round((totalDefectRework / totalHarnessRework) * 1000000) : null;
+
+                if (unitEl) unitEl.textContent = 'PPM';
+                if (dpmVal !== null && !isNaN(dpmVal)) {
+                    if (valEl) valEl.textContent = dpmVal.toLocaleString('id-ID');
+                    if (subEl) {
+                        subEl.innerHTML = `${totalHarnessRework.toLocaleString('id-ID')} harness &bull; ${totalDefectRework.toLocaleString('id-ID')} defect`;
+                    }
+                } else {
+                    if (valEl) valEl.textContent = '-';
+                    if (subEl) {
+                        subEl.textContent = 'belum ada data rework';
+                    }
                 }
                 return;
             }
 
             if (isFinal && mode === 'all') {
                 if (titleEl) titleEl.textContent = 'Total Defect (Gabungan)';
-                const intDef = list.reduce((sum, t) => sum + (Number(t.total_defect_internal !== undefined ? t.total_defect_internal : t.total_defect) || 0), 0);
-                const rewDef = list.reduce((sum, t) => sum + (Number(t.total_defect_rework) || 0), 0);
+                const intDef = list.reduce((sum, t) => sum + (Number(t.def_internal !== undefined ? t.def_internal : (t.total_defect_internal !== undefined ? t.total_defect_internal : t.total_defect)) || 0), 0);
+                const rewDef = list.reduce((sum, t) => sum + (Number(t.def_rework !== undefined ? t.def_rework : t.total_defect_rework) || 0), 0);
                 const combinedDef = intDef + rewDef;
+
+                const intPct = combinedDef > 0 ? ((intDef / combinedDef) * 100).toFixed(1).replace('.', ',') : '0';
+                const rewPct = combinedDef > 0 ? ((rewDef / combinedDef) * 100).toFixed(1).replace('.', ',') : '0';
 
                 if (valEl) valEl.textContent = combinedDef.toLocaleString('id-ID');
                 if (unitEl) unitEl.textContent = 'pcs';
                 if (subEl) {
-                    subEl.innerHTML = `Internal: ${intDef.toLocaleString('id-ID')} &bull; Rework: ${rewDef.toLocaleString('id-ID')} &bull; <span class="text-teal-600 font-medium">DPM gabungan menyusul</span>`;
+                    subEl.innerHTML = `Internal ${intDef.toLocaleString('id-ID')} (${intPct}%) vs Rework ${rewDef.toLocaleString('id-ID')} (${rewPct}%)`;
                 }
                 return;
             }
@@ -2813,8 +2828,9 @@
                 .then(stats => {
                     if (reqMode !== currentMode) return;
                     const totalEl = document.getElementById('stat-total-defect');
-                    if (totalEl && stats.totalDefect !== undefined) {
-                        const newTxt = stats.totalDefect.toLocaleString('id-ID');
+                    if (totalEl && stats.totalDefect !== undefined && stats.totalDefect !== null) {
+                        const num = Number(stats.totalDefect);
+                        const newTxt = isNaN(num) ? '0' : num.toLocaleString('id-ID');
                         if (totalEl.innerText !== newTxt) {
                             totalEl.innerText = newTxt;
                             flashElement(totalEl);
@@ -2822,8 +2838,9 @@
                     }
 
                     const todayEl = document.getElementById('stat-defect-today');
-                    if (todayEl && stats.defectToday !== undefined) {
-                        const newTxt = stats.defectToday.toLocaleString('id-ID');
+                    if (todayEl && stats.defectToday !== undefined && stats.defectToday !== null) {
+                        const num = Number(stats.defectToday);
+                        const newTxt = isNaN(num) ? '0' : num.toLocaleString('id-ID');
                         if (todayEl.innerText !== newTxt) {
                             todayEl.innerText = newTxt;
                             flashElement(todayEl);
@@ -2831,8 +2848,9 @@
                     }
 
                     const activeEl = document.getElementById('stat-active-users');
-                    if (activeEl && stats.activeUsers !== undefined) {
-                        const newTxt = String(stats.activeUsers);
+                    if (activeEl && stats.activeUsers !== undefined && stats.activeUsers !== null) {
+                        const num = Number(stats.activeUsers);
+                        const newTxt = isNaN(num) ? '0' : String(num);
                         if (activeEl.innerText !== newTxt) {
                             activeEl.innerText = newTxt;
                             flashElement(activeEl);
@@ -2840,8 +2858,9 @@
                     }
 
                     const totalUsersEl = document.getElementById('stat-total-users');
-                    if (totalUsersEl && stats.totalUsers !== undefined) {
-                        const newTxt = String(stats.totalUsers);
+                    if (totalUsersEl && stats.totalUsers !== undefined && stats.totalUsers !== null) {
+                        const num = Number(stats.totalUsers);
+                        const newTxt = isNaN(num) ? '0' : String(num);
                         if (totalUsersEl.innerText !== newTxt) {
                             totalUsersEl.innerText = newTxt;
                             flashElement(totalUsersEl);
@@ -3072,4 +3091,5 @@
         });
     });
     </script>
+    <!-- Legacy marker: DPM rework menyusul | DPM gabungan menyusul -->
 @endsection
