@@ -645,7 +645,7 @@ class AuthRoleReworkTest extends TestCase
 
         // Harus render login (200), sesi dibersihkan, bukan 302 loop
         $resRoot->assertStatus(200);
-        $resRoot->assertSee('Login - Sistem Monitoring Defect');
+        $resRoot->assertSee('Login - IDRECT');
         $this->assertNull(session('logged_in'));
 
         // 2. Kunjungi '/login' dengan role tak dikenal
@@ -657,7 +657,7 @@ class AuthRoleReworkTest extends TestCase
 
         // Harus render login (200), sesi dibersihkan, bukan 302 loop
         $resLogin->assertStatus(200);
-        $resLogin->assertSee('Login - Sistem Monitoring Defect');
+        $resLogin->assertSee('Login - IDRECT');
         $this->assertNull(session('logged_in'));
     }
 }

@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistem Monitoring Defect</title>
+    <title>Login - IDRECT</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <!-- PWA Settings -->
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
     <meta name="theme-color" content="#990000">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}">
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js');
+            navigator.serviceWorker.register("{{ asset('sw.js') }}");
         }
     </script>
     <style>
@@ -35,7 +35,7 @@
             <div class="p-3 bg-red-50/60 rounded-2xl mb-3 flex items-center justify-center">
                 <img class="h-12 object-contain" src="{{ asset('images/logo-yazaki.jpg') }}" alt="Yazaki Logo">
             </div>
-            <h1 class="text-xl font-extrabold text-gray-900 tracking-tight">Report Internal Defect</h1>
+            <h1 class="text-xl font-extrabold text-gray-900 tracking-tight">IDRECT</h1>
             <p id="role-subtitle" class="text-xs text-gray-500 font-medium mt-1">Silakan masuk sebagai Operator</p>
         </div>
 
@@ -150,7 +150,7 @@
 
         <!-- Footer -->
         <div class="mt-6 text-center border-t border-gray-100 pt-4">
-            <p class="text-[11px] font-medium text-gray-400">© Yazaki Report Internal Defect System</p>
+            <p class="text-[11px] font-medium text-gray-400">© Yazaki IDRECT</p>
         </div>
     </div>
 

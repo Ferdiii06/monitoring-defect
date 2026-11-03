@@ -56,8 +56,7 @@
                 <div class="flex items-center space-x-3">
                     <img class="w-14 h-14 -ml-2 -my-3 object-contain shrink-0 drop-shadow-sm" src="{{ asset('images/logo-yazaki.jpg') }}" alt="Yazaki Logo">
                     <div>
-                        <span class="block text-[11px] font-extrabold text-[#8b0000] uppercase tracking-wider leading-none">Report Internal</span>
-                        <span class="block text-xs font-black text-gray-900 uppercase tracking-widest mt-1">Defect QA</span>
+                        <span class="block text-sm font-black text-gray-900 uppercase tracking-widest leading-none">IDRECT</span>
                     </div>
                 </div>
                 <button 
