@@ -1897,6 +1897,25 @@ class AdminDashboardAnalyticsTest extends TestCase
         $resRework->assertSee('Pareto Rework');
     }
 
+    /**
+     * Test HTML dashboard memuat URL route('admin.dashboard.pareto_drilldown')
+     * dan tidak memuat pemanggilan fetch yang diawali hardcoded path '/dashboard'.
+     */
+    public function test_dashboard_uses_route_for_pareto_drilldown_and_no_raw_slash_dashboard_fetch(): void
+    {
+        $response = $this->actingAsAdmin()->get('/dashboard');
+        $response->assertStatus(200);
+
+        $html = $response->getContent();
+        $expectedRoute = route('admin.dashboard.pareto_drilldown');
+
+        // Pastikan HTML dashboard memuat hasil route('admin.dashboard.pareto_drilldown')
+        $this->assertStringContainsString($expectedRoute, $html);
+
+        // Pastikan tidak ada fetch yang diawali hardcoded '/dashboard'
+        $this->assertDoesNotMatchRegularExpression('/fetch\(\s*[\'`"]\/dashboard/', $html);
+    }
+
     public function test_admin_can_drilldown_pareto_final_assy_conveyor(): void
     {
         $today = Carbon::today()->format('Y-m-d');
@@ -1960,5 +1979,289 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertCount(2, $res->json('items'));
         $this->assertEquals('CARLINE-ALPHA', $res->json('items.0.name'));
         $this->assertEquals(8, $res->json('items.0.total'));
+    }
+
+    public function test_total_pareto_gabungan_equals_total_kpi_mode_gabungan(): void
+    {
+        $today = Carbon::today()->toDateString();
+
+        $areaInt = AreaDitemukan::create(['name' => 'AREA-INT-FA', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+        $areaRew = AreaDitemukan::create(['name' => 'AREA-REW-FA', 'tipe' => AreaDitemukan::TIPE_REWORK]);
+        $carline = Carline::create(['name' => 'CARLINE-OMEGA']);
+
+        // 1. Pre Assy Internal: qty 10 (G.1 - FOREIGN MATERIAL)
+        Defect::create([
+            'waktu' => "{$today} 08:00:00",
+            'user_name' => 'Operator Pre',
+            'jenis_assy' => 'Pre Assy',
+            'jenis_defect' => 'DEFECT-1',
+            'jenis_sub_defect' => 'G.1 - FOREIGN MATERIAL',
+            'carline_id' => $carline->id,
+            'quantity' => 10,
+        ]);
+
+        // 2. Final Assy Internal: qty 5 (11.A - FOREIGN MATERIAL)
+        Defect::create([
+            'waktu' => "{$today} 09:00:00",
+            'user_name' => 'Operator FA',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'DEFECT-1',
+            'jenis_sub_defect' => '11.A - FOREIGN MATERIAL',
+            'conveyor' => 'CONV-1',
+            'area_ditemukan' => $areaInt->name,
+            'quantity' => 5,
+        ]);
+
+        // 3. Final Assy Rework: qty 8 (11.A - FOREIGN MATERIAL, rework group)
+        Defect::create([
+            'waktu' => "{$today} 10:00:00",
+            'user_name' => 'Operator Rework',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'DEFECT-1',
+            'jenis_sub_defect' => '11.A - FOREIGN MATERIAL',
+            'rework_group_id' => 'GRP-REW-101',
+            'area_ditemukan' => $areaRew->name,
+            'quantity' => 8,
+        ]);
+
+        // 4. Final Assy Internal: qty 7 (1.A - CROSS CIRCUIT)
+        Defect::create([
+            'waktu' => "{$today} 11:00:00",
+            'user_name' => 'Operator FA',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'DEFECT-2',
+            'jenis_sub_defect' => '1.A - CROSS CIRCUIT',
+            'conveyor' => 'CONV-2',
+            'area_ditemukan' => $areaInt->name,
+            'quantity' => 7,
+        ]);
+
+        // 5. Defect Anomali (rework tapi area internal) -> tidak masuk DPM/pareto
+        Defect::create([
+            'waktu' => "{$today} 12:00:00",
+            'user_name' => 'Operator Rework',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'DEFECT-MISMATCH',
+            'jenis_sub_defect' => '2.B - DAMAGE CONNECTOR',
+            'rework_group_id' => 'GRP-REW-999',
+            'area_ditemukan' => $areaInt->name,
+            'quantity' => 99,
+        ]);
+
+        // Total sah seharusnya: 10 + 5 + 8 + 7 = 30
+        $resAnalytics = $this->actingAsAdmin()->getJson("/dashboard/analytics?mode=all&start_date={$today}&end_date={$today}");
+        $resAnalytics->assertStatus(200);
+
+        $pareto = $resAnalytics->json('pareto_final');
+        $sumParetoTotal = array_sum(array_column($pareto, 'total'));
+
+        // Cek bahwa FOREIGN MATERIAL menyatu dari Final Assy + Pre Assy
+        $fmItem = collect($pareto)->firstWhere('name', 'FOREIGN MATERIAL');
+        $this->assertNotNull($fmItem);
+        $this->assertEquals(23, $fmItem['total']); // 10 (Pre) + 5 (Final Internal) + 8 (Final Rework)
+        $this->assertEquals(15, $fmItem['internal_qty']);
+        $this->assertEquals(8, $fmItem['rework_qty']);
+
+        // Cek total pareto sama dengan KPI stats mode all
+        $resStats = $this->actingAsAdmin()->getJson('/api/dashboard/stats?mode=all');
+        $resStats->assertStatus(200);
+        $kpiTotalDefect = $resStats->json('totalDefect');
+
+        $this->assertEquals(30, $sumParetoTotal);
+        $this->assertEquals(30, $kpiTotalDefect);
+        $this->assertEquals($kpiTotalDefect, $sumParetoTotal);
+    }
+
+    public function test_drilldown_groups_sum_equals_pareto_bar_value(): void
+    {
+        $today = Carbon::today()->toDateString();
+
+        $areaInt = AreaDitemukan::create(['name' => 'AREA-INT-FA', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+        $areaRew = AreaDitemukan::create(['name' => 'AREA-REW-FA', 'tipe' => AreaDitemukan::TIPE_REWORK]);
+        $carlineA = Carline::create(['name' => 'CARLINE-ALPHA']);
+        $carlineB = Carline::create(['name' => 'CARLINE-BETA']);
+
+        // 1. Pre Assy Carline A: 6 pcs (G.1 - FOREIGN MATERIAL)
+        Defect::create([
+            'waktu' => "{$today} 08:00:00",
+            'user_name' => 'Operator Pre',
+            'jenis_assy' => 'Pre Assy',
+            'jenis_defect' => 'DEFECT-1',
+            'jenis_sub_defect' => 'G.1 - FOREIGN MATERIAL',
+            'carline_id' => $carlineA->id,
+            'quantity' => 6,
+        ]);
+
+        // 2. Pre Assy Carline B: 4 pcs (G.1 - FOREIGN MATERIAL)
+        Defect::create([
+            'waktu' => "{$today} 08:30:00",
+            'user_name' => 'Operator Pre',
+            'jenis_assy' => 'Pre Assy',
+            'jenis_defect' => 'DEFECT-1',
+            'jenis_sub_defect' => 'G.1 - FOREIGN MATERIAL',
+            'carline_id' => $carlineB->id,
+            'quantity' => 4,
+        ]);
+
+        // 3. Final Assy Internal Conv 1: 5 pcs (11.A - FOREIGN MATERIAL)
+        Defect::create([
+            'waktu' => "{$today} 09:00:00",
+            'user_name' => 'Operator FA',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'DEFECT-1',
+            'jenis_sub_defect' => '11.A - FOREIGN MATERIAL',
+            'conveyor' => 'CONV-1',
+            'area_ditemukan' => $areaInt->name,
+            'quantity' => 5,
+        ]);
+
+        // 4. Final Assy Rework tanpa konveyor: 3 pcs (11.A - FOREIGN MATERIAL)
+        Defect::create([
+            'waktu' => "{$today} 09:30:00",
+            'user_name' => 'Operator Rework',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'DEFECT-1',
+            'jenis_sub_defect' => '11.A - FOREIGN MATERIAL',
+            'conveyor' => null,
+            'rework_group_id' => 'GRP-REW-202',
+            'area_ditemukan' => $areaRew->name,
+            'quantity' => 3,
+        ]);
+
+        // Total FOREIGN MATERIAL = 6 + 4 + 5 + 3 = 18
+        $res = $this->actingAsAdmin()->getJson("/dashboard/pareto-drilldown?sub_defect=FOREIGN MATERIAL&mode=all&start_date={$today}&end_date={$today}");
+        $res->assertStatus(200);
+        $res->assertJsonStructure(['sub_defect', 'metric', 'items']);
+        $this->assertEquals('conveyor_carline', $res->json('metric'));
+
+        $items = $res->json('items');
+        $sumDrilldown = array_sum(array_column($items, 'total'));
+        $this->assertEquals(18, $sumDrilldown);
+
+        $itemNames = array_column($items, 'name');
+        $this->assertContains('Pre: CARLINE-ALPHA', $itemNames);
+        $this->assertContains('Pre: CARLINE-BETA', $itemNames);
+        $this->assertContains('Final: CONV-1', $itemNames);
+        $this->assertContains('Tanpa Konveyor (Rework)', $itemNames);
+
+        // Uji juga kategori LAIN-LAIN (termasuk strip '-' dan string kosong '')
+        Defect::create([
+            'waktu' => "{$today} 10:00:00",
+            'user_name' => 'Operator Pre',
+            'jenis_assy' => 'Pre Assy',
+            'jenis_defect' => 'DEFECT-DASH',
+            'jenis_sub_defect' => '-',
+            'carline_id' => $carlineA->id,
+            'quantity' => 7,
+        ]);
+        Defect::create([
+            'waktu' => "{$today} 10:30:00",
+            'user_name' => 'Operator FA',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'DEFECT-EMPTY',
+            'jenis_sub_defect' => '',
+            'conveyor' => 'CONV-1',
+            'area_ditemukan' => $areaInt->name,
+            'quantity' => 3,
+        ]);
+
+        $resLain = $this->actingAsAdmin()->getJson("/dashboard/pareto-drilldown?sub_defect=LAIN-LAIN&mode=all&start_date={$today}&end_date={$today}");
+        $resLain->assertStatus(200);
+        $itemsLain = $resLain->json('items');
+        $sumLain = array_sum(array_column($itemsLain, 'total'));
+        $this->assertEquals(10, $sumLain); // 7 + 3
+    }
+
+    /**
+     * Test penyatuan sub defect mode Gabungan hanya untuk yang ada di alias map (FOREIGN MATERIAL),
+     * sedangkan sub defect lain (C.2 vs D.2, 5.B vs 6.B) tetap menjadi batang terpisah.
+     */
+    public function test_pareto_gabungan_alias_map_and_distinct_bars(): void
+    {
+        $today = Carbon::today()->format('Y-m-d');
+        $areaInt = AreaDitemukan::create(['name' => 'Area Assembly QA Test', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+
+        // Pre Assy: C.2 - C/H TERLALU RENDAH vs D.2 - C/H TERLALU RENDAH
+        Defect::create([
+            'waktu' => "{$today} 08:00:00",
+            'user_name' => 'Operator Pre',
+            'jenis_assy' => 'Pre Assy',
+            'jenis_defect' => 'FRONT CRIMPING',
+            'jenis_sub_defect' => 'C.2 - C/H TERLALU RENDAH',
+            'quantity' => 2,
+        ]);
+        Defect::create([
+            'waktu' => "{$today} 08:15:00",
+            'user_name' => 'Operator Pre',
+            'jenis_assy' => 'Pre Assy',
+            'jenis_defect' => 'REAR CRIMPING',
+            'jenis_sub_defect' => 'D.2 - C/H TERLALU RENDAH',
+            'quantity' => 3,
+        ]);
+
+        // Final Assy: 5.B - MISALIGN vs 6.B - MISALIGN
+        Defect::create([
+            'waktu' => "{$today} 08:30:00",
+            'user_name' => 'Operator FA',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'HALF LOCK',
+            'jenis_sub_defect' => '5.B - MISALIGN',
+            'conveyor' => 'CONV-1',
+            'area_ditemukan' => $areaInt->name,
+            'quantity' => 4,
+        ]);
+        Defect::create([
+            'waktu' => "{$today} 08:45:00",
+            'user_name' => 'Operator FA',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'WRONG PART',
+            'jenis_sub_defect' => '6.B - MISALIGN',
+            'conveyor' => 'CONV-2',
+            'area_ditemukan' => $areaInt->name,
+            'quantity' => 5,
+        ]);
+
+        // Lintas lini: 11.A - FOREIGN MATERIAL (Final) vs G.1 - FOREIGN MATERIAL (Pre)
+        Defect::create([
+            'waktu' => "{$today} 09:00:00",
+            'user_name' => 'Operator FA',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'LAIN-LAIN',
+            'jenis_sub_defect' => '11.A - FOREIGN MATERIAL',
+            'conveyor' => 'CONV-1',
+            'area_ditemukan' => $areaInt->name,
+            'quantity' => 6,
+        ]);
+        Defect::create([
+            'waktu' => "{$today} 09:15:00",
+            'user_name' => 'Operator Pre',
+            'jenis_assy' => 'Pre Assy',
+            'jenis_defect' => 'CRIMPING',
+            'jenis_sub_defect' => 'G.1 - FOREIGN MATERIAL',
+            'quantity' => 7,
+        ]);
+
+        $res = $this->actingAsAdmin()->getJson("/dashboard/analytics?assy=final&mode=all&start_date={$today}&end_date={$today}");
+        $res->assertStatus(200);
+
+        $pareto = $res->json('pareto_final');
+        $paretoNames = array_column($pareto, 'name');
+        $paretoTotals = array_combine($paretoNames, array_column($pareto, 'total'));
+
+        // FOREIGN MATERIAL disatukan menjadi 1 batang dengan total 6 + 7 = 13
+        $this->assertContains('FOREIGN MATERIAL', $paretoNames);
+        $this->assertEquals(13, $paretoTotals['FOREIGN MATERIAL']);
+
+        // C.2 dan D.2 tetap menjadi 2 batang terpisah
+        $this->assertContains('C.2 - C/H TERLALU RENDAH', $paretoNames);
+        $this->assertEquals(2, $paretoTotals['C.2 - C/H TERLALU RENDAH']);
+        $this->assertContains('D.2 - C/H TERLALU RENDAH', $paretoNames);
+        $this->assertEquals(3, $paretoTotals['D.2 - C/H TERLALU RENDAH']);
+
+        // 5.B dan 6.B tetap menjadi 2 batang terpisah
+        $this->assertContains('5.B - MISALIGN', $paretoNames);
+        $this->assertEquals(4, $paretoTotals['5.B - MISALIGN']);
+        $this->assertContains('6.B - MISALIGN', $paretoNames);
+        $this->assertEquals(5, $paretoTotals['6.B - MISALIGN']);
     }
 }

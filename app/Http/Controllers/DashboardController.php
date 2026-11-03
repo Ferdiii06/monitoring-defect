@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\DpmTarget;
 use App\Models\AreaDitemukan;
 use App\Support\ConveyorGroup;
+use App\Support\SubDefectHelper;
 use App\Services\ExternalApiService;
 use Carbon\Carbon;
 
@@ -288,6 +289,11 @@ class DashboardController extends Controller
             $mode = 'internal';
         }
 
+        // Pada mode Gabungan, filter konveyor diabaikan sepenuhnya
+        if ($mode === 'all') {
+            $conveyor = null;
+        }
+
         $assy = strtolower((string) $request->input('assy'));
 
         $data = [];
@@ -305,7 +311,7 @@ class DashboardController extends Controller
                 $data['dpm_final'] = $combinedTrends;
                 $data['pareto_final'] = $combinedPareto;
 
-                if ($assy !== 'final') {
+                if ($mode !== 'all' && $assy !== 'final') {
                     $data['dpm_pre'] = $this->buildDpmTrends('Pre Assy', $startDate, $endDate, $groupBy, null, $carlineId, $mode);
                     $data['pareto_pre'] = $this->buildPareto('Pre Assy', $startDate, $endDate, null, $carlineId, $mode);
                 }
@@ -359,6 +365,60 @@ class DashboardController extends Controller
 
         $jenisAssy = (string) $request->input('jenis_assy', 'Final Assy');
 
+        $targetNormalized = SubDefectHelper::normalize($subDefect);
+
+        if ($mode === 'all') {
+            $reworkAreaNames = Defect::getReworkAreaNames();
+
+            $records = Defect::query()
+                ->whereBetween('waktu', [$startDate, $endDate])
+                ->where(function ($q) {
+                    $q->whereNull('jenis_defect')->orWhere('jenis_defect', '!=', 'Zero Defect');
+                })
+                ->where('quantity', '>', 0)
+                ->byDashboardMode('all')
+                ->with('carline:id,name')
+                ->select(['id', 'jenis_assy', 'conveyor', 'carline_id', 'area_ditemukan', 'rework_group_id', 'jenis_sub_defect', 'quantity'])
+                ->get();
+
+            $filtered = $records->filter(function ($d) use ($targetNormalized) {
+                return SubDefectHelper::normalize($d->jenis_sub_defect) === $targetNormalized;
+            });
+
+            $totals = [];
+            foreach ($filtered as $d) {
+                $qty = (int) $d->quantity;
+                if ($d->jenis_assy === 'Pre Assy') {
+                    $carline = $d->carline?->name ? trim($d->carline->name) : '';
+                    $label = $carline !== '' ? "Pre: {$carline}" : 'Pre: Tanpa Carline';
+                } else {
+                    // Final Assy
+                    $conveyor = trim((string) $d->conveyor);
+                    $isRework = (!empty($d->rework_group_id) && !empty($reworkAreaNames) && in_array($d->area_ditemukan, $reworkAreaNames, true));
+                    if ($conveyor !== '' && $conveyor !== '-') {
+                        $label = "Final: {$conveyor}";
+                    } else {
+                        $label = $isRework ? 'Tanpa Konveyor (Rework)' : 'Final: Tanpa Konveyor';
+                    }
+                }
+                $totals[$label] = ($totals[$label] ?? 0) + $qty;
+            }
+
+            arsort($totals);
+            $top5 = array_slice($totals, 0, 5, true);
+
+            $items = [];
+            foreach ($top5 as $name => $total) {
+                $items[] = ['name' => $name, 'total' => $total];
+            }
+
+            return response()->json([
+                'sub_defect' => $targetNormalized,
+                'metric'     => 'conveyor_carline',
+                'items'      => $items,
+            ]);
+        }
+
         $query = Defect::query()
             ->whereBetween('waktu', [$startDate, $endDate])
             ->where(function ($q) {
@@ -376,11 +436,20 @@ class DashboardController extends Controller
             $query->byDashboardMode($mode);
         }
 
-        // Filter sub defect name (case-insensitive & trimmed)
-        $query->where(function ($q) use ($subDefect) {
-            $q->where('jenis_sub_defect', $subDefect)
-              ->orWhereRaw('UPPER(TRIM(jenis_sub_defect)) = ?', [strtoupper($subDefect)]);
-        });
+        // Filter sub defect name (case-insensitive & trimmed, menangani LAIN-LAIN)
+        if ($targetNormalized === 'LAIN-LAIN') {
+            $query->where(function ($q) {
+                $q->whereNull('jenis_sub_defect')
+                  ->orWhere('jenis_sub_defect', '')
+                  ->orWhere('jenis_sub_defect', '-')
+                  ->orWhereRaw('UPPER(TRIM(jenis_sub_defect)) = ?', ['LAIN-LAIN']);
+            });
+        } else {
+            $query->where(function ($q) use ($subDefect) {
+                $q->where('jenis_sub_defect', $subDefect)
+                  ->orWhereRaw('UPPER(TRIM(jenis_sub_defect)) = ?', [strtoupper($subDefect)]);
+            });
+        }
 
         if ($jenisAssy === 'Pre Assy') {
             $defects = $query->with('carline:id,name')->select(['id', 'carline_id', 'quantity'])->get();
@@ -952,11 +1021,7 @@ class DashboardController extends Controller
         $grandTotal = 0;
 
         foreach ($records as $r) {
-            $rawName = $r->jenis_sub_defect ?? '-';
-            $normalizedName = trim(strtoupper($rawName));
-            if ($normalizedName === '' || $normalizedName === '-') {
-                $normalizedName = 'LAIN-LAIN';
-            }
+            $normalizedName = SubDefectHelper::normalize($r->jenis_sub_defect);
             $qty = (int) $r->quantity;
 
             $isRework = ($r->jenis_assy === 'Final Assy' && !empty($r->rework_group_id) && !empty($reworkAreaNames) && in_array($r->area_ditemukan, $reworkAreaNames, true));
