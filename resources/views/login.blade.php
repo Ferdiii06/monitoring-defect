@@ -36,7 +36,7 @@
                 <img class="h-12 object-contain" src="{{ asset('images/logo-yazaki.jpg') }}" alt="Yazaki Logo">
             </div>
             <h1 class="text-xl font-extrabold text-gray-900 tracking-tight">IDRECT</h1>
-            <p id="role-subtitle" class="text-xs text-gray-500 font-medium mt-1">Silakan masuk sebagai Operator</p>
+            <p class="text-xs sm:text-sm text-gray-500 font-medium tracking-wide mt-1">Internal Defect &amp; Rework Control</p>
         </div>
 
         <!-- Role Toggle Tabs (Operator / Rework / Admin) -->
@@ -164,7 +164,6 @@
             currentRole = allowedRoles.includes(role) ? role : 'user';
 
             const loginTypeInput = document.getElementById('login_type');
-            const roleSubtitle = document.getElementById('role-subtitle');
             const operatorGroup = document.getElementById('operator-field-group');
             const adminGroup = document.getElementById('admin-field-group');
             const shiftGroup = document.getElementById('shift-field-group');
@@ -188,7 +187,6 @@
 
             if (currentRole === 'user') {
                 tabUser.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold border border-transparent';
-                roleSubtitle.textContent = 'Silakan masuk sebagai Operator';
                 if (nameLabelText) nameLabelText.textContent = 'Nama Lengkap';
                 if (pinLabelText) pinLabelText.textContent = 'PIN (6 DIGIT)';
 
@@ -209,7 +207,6 @@
                 submitLabel.textContent = 'Masuk sebagai Operator';
             } else if (currentRole === 'rework') {
                 tabRework.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-amber-50 text-amber-700 border border-amber-200 shadow-sm font-bold';
-                roleSubtitle.textContent = 'Silakan masuk sebagai Rework';
                 if (nameLabelText) nameLabelText.textContent = 'Nama Akun Rework';
                 if (pinLabelText) pinLabelText.textContent = 'PIN (6 DIGIT)';
 
@@ -230,7 +227,6 @@
                 submitLabel.textContent = 'Masuk sebagai Rework';
             } else {
                 tabAdmin.className = 'py-2.5 rounded-xl transition-all duration-200 text-center bg-white text-[#8b0000] shadow-sm font-bold border border-transparent';
-                roleSubtitle.textContent = 'Silakan masuk sebagai Administrator';
                 if (pinLabelText) pinLabelText.textContent = 'PIN ADMIN';
 
                 operatorGroup.classList.add('hidden');

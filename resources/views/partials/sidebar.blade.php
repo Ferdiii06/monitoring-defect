@@ -53,10 +53,11 @@
         <div class="overflow-y-auto flex-1 py-1">
             <!-- Logo Section -->
             <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-3 min-w-0">
                     <img class="w-14 h-14 -ml-2 -my-3 object-contain shrink-0 drop-shadow-sm" src="{{ asset('images/logo-yazaki.jpg') }}" alt="Yazaki Logo">
-                    <div>
+                    <div class="min-w-0">
                         <span class="block text-sm font-black text-gray-900 uppercase tracking-widest leading-none">IDRECT</span>
+                        <span class="block text-[9.5px] font-medium text-gray-400 leading-tight mt-1 tracking-tight">Internal Defect &amp; Rework Control</span>
                     </div>
                 </div>
                 <button 
