@@ -41,7 +41,7 @@ class ReportController extends Controller
         }
 
         // 1. Buat Query awal
-        $query = Defect::with('finalInspectType')->where('jenis_assy', 'Final Assy');
+        $query = Defect::with('finalInspectType')->finalAssyReport();
 
         // 2. Ambil parameter filter
         $dateRange = $request->input('date_range');
@@ -590,13 +590,21 @@ class ReportController extends Controller
     /**
      * Show form to edit an existing defect report.
      */
-    public function editInputDefect($id)
+    public function editInputDefect(Request $request, $id)
     {
         if (!session('logged_in')) {
             return redirect()->route('login');
         }
 
         $defect = Defect::findOrFail($id);
+
+        if ($defect->rework_group_id) {
+            $params = ['groupId' => $defect->rework_group_id];
+            if ($request->filled('return_url')) {
+                $params['return_url'] = $request->input('return_url');
+            }
+            return redirect()->route('rework.edit', $params);
+        }
 
         if ($defect->user_name !== session('user_name')) {
             abort(403, 'Anda tidak memiliki akses untuk mengedit laporan ini.');
@@ -625,6 +633,10 @@ class ReportController extends Controller
         }
 
         $defect = Defect::findOrFail($id);
+
+        if ($defect->rework_group_id) {
+            return redirect()->back()->with('error', 'Data defect rework tidak dapat diedit melalui form ini. Silakan gunakan form edit rework.');
+        }
 
         if ($defect->user_name !== session('user_name')) {
             abort(403, 'Anda tidak memiliki akses untuk mengubah laporan ini.');
@@ -732,6 +744,10 @@ class ReportController extends Controller
 
         $defect = Defect::findOrFail($id);
 
+        if ($defect->rework_group_id) {
+            return redirect()->back()->with('error', 'Data defect rework tidak dapat diedit melalui form ini. Silakan gunakan form edit rework.');
+        }
+
         if ($defect->user_name !== session('user_name')) {
             abort(403, 'Anda tidak memiliki akses untuk menghapus laporan ini.');
         }
@@ -756,9 +772,17 @@ class ReportController extends Controller
     /**
      * Show form for admin to edit any defect report.
      */
-    public function adminEditReport($id)
+    public function adminEditReport(Request $request, $id)
     {
         $defect = Defect::findOrFail($id);
+
+        if ($defect->rework_group_id) {
+            $params = ['groupId' => $defect->rework_group_id];
+            if ($request->filled('return_url')) {
+                $params['return_url'] = $request->input('return_url');
+            }
+            return redirect()->route('rework.edit', $params);
+        }
 
         return view('input_defect', [
             'type'                  => $defect->jenis_assy,
@@ -780,6 +804,10 @@ class ReportController extends Controller
     public function adminUpdateReport(Request $request, $id)
     {
         $defect = Defect::findOrFail($id);
+
+        if ($defect->rework_group_id) {
+            return redirect()->back()->with('error', 'Data defect rework tidak dapat diedit melalui form ini. Silakan gunakan form edit rework.');
+        }
 
         $defectType = $defect->jenis_assy;
         $isPreAssy = $defectType === 'Pre Assy';
@@ -879,6 +907,10 @@ class ReportController extends Controller
     {
         $defect = Defect::findOrFail($id);
 
+        if ($defect->rework_group_id) {
+            return redirect()->back()->with('error', 'Data defect rework tidak dapat dihapus melalui halaman ini. Silakan gunakan menu rework.');
+        }
+
         $type = $defect->jenis_assy;
         $carlineOrLine = $defect->jenis_assy === 'Pre Assy' ? ($defect->carline?->name ?? '-') : ($defect->jenis_mobil . ' (' . ($defect->conveyor ?? '-') . ')');
         $defectType = $defect->jenis_defect;
@@ -914,7 +946,7 @@ class ReportController extends Controller
      */
     public function finalAssyLive(Request $request)
     {
-        $query = Defect::with('finalInspectType')->where('jenis_assy', 'Final Assy');
+        $query = Defect::with('finalInspectType')->finalAssyReport();
 
         $dateRange        = $request->input('date_range');
         $selectedDefect   = $request->input('defect');

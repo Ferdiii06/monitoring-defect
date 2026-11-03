@@ -261,4 +261,12 @@ class Defect extends Model
             }
         });
     }
+
+    /**
+     * Scope for Final Assy report queries (operator only, strictly excludes rework).
+     */
+    public function scopeFinalAssyReport($query)
+    {
+        return $query->where('jenis_assy', 'Final Assy')->whereNull('rework_group_id');
+    }
 }

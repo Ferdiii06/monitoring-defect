@@ -1172,11 +1172,15 @@
                                 color: '#475569',
                                 font: { size: 11, weight: '600' },
                                 filter: function(legendItem, chartData) {
-                                    // Sembunyikan label target dari legend jika dataset hidden
-                                    if (legendItem.datasetIndex === 1 && chartData.datasets[1]?.hidden) {
+                                    const chart = this.chart;
+                                    const ds = chartData.datasets ? chartData.datasets[legendItem.datasetIndex] : null;
+                                    if (ds && ds.hidden) {
                                         return false;
                                     }
-                                    return true;
+                                    if (chart && typeof chart.isDatasetVisible === 'function') {
+                                        return chart.isDatasetVisible(legendItem.datasetIndex);
+                                    }
+                                    return !ds?.hidden;
                                 }
                             }
                         },
@@ -1667,20 +1671,26 @@
                     chart.data.datasets[0].borderDash = [];
                     chart.data.datasets[0].fill = true;
                     chart.data.datasets[0].tension = 0.3;
-                    chart.data.datasets[0].spanGaps = false; // Titik dengan dpm null tidak digambar
+                    chart.data.datasets[0].spanGaps = false; // Hari tanpa data tetap celah (B3)
                     chart.data.datasets[0].pointStyle = 'circle';
-                    chart.data.datasets[0].pointBackgroundColor = THEME_COLORS.rework;
+                    chart.data.datasets[0].pointBackgroundColor = THEME_COLORS.rework; // Warna isi sama dengan garis (B3)
                     chart.data.datasets[0].pointBorderColor = '#ffffff';
                     chart.data.datasets[0].pointBorderWidth = 2;
-                    chart.data.datasets[0].pointRadius = 4;
+                    chart.data.datasets[0].pointRadius = 4; // Point radius 4 agar titik tunggal terlihat jelas (B3)
                     chart.data.datasets[0].pointHoverRadius = 6;
                     chart.data.datasets[0]._meta = trendList;
                     chart.data.datasets[0].hidden = false;
+                    if (typeof chart.setDatasetVisibility === 'function') {
+                        chart.setDatasetVisibility(0, true);
+                    }
 
                     // Seri 2: Garis target disembunyikan (target null, ditunda)
                     chart.data.datasets[1].label = 'Target DPM';
                     chart.data.datasets[1].data = [];
                     chart.data.datasets[1].hidden = true;
+                    if (typeof chart.setDatasetVisibility === 'function') {
+                        chart.setDatasetVisibility(1, false);
+                    }
 
                 } else if (isFinal && mode === 'all') {
                     // Sumbu Y = "Quantity defect"
@@ -1695,15 +1705,18 @@
                     chart.data.datasets[0].borderDash = [];
                     chart.data.datasets[0].fill = true;
                     chart.data.datasets[0].tension = 0.3;
-                    chart.data.datasets[0].spanGaps = true;
+                    chart.data.datasets[0].spanGaps = false; // Hari tanpa data tetap celah (B3)
                     chart.data.datasets[0].pointStyle = 'circle';
-                    chart.data.datasets[0].pointBackgroundColor = THEME_COLORS.internal;
+                    chart.data.datasets[0].pointBackgroundColor = THEME_COLORS.internal; // Warna isi sama dengan garis (B3)
                     chart.data.datasets[0].pointBorderColor = '#ffffff';
                     chart.data.datasets[0].pointBorderWidth = 2;
-                    chart.data.datasets[0].pointRadius = 4;
+                    chart.data.datasets[0].pointRadius = 4; // Point radius 4 (B3)
                     chart.data.datasets[0].pointHoverRadius = 6;
                     chart.data.datasets[0]._meta = trendList;
                     chart.data.datasets[0].hidden = false;
+                    if (typeof chart.setDatasetVisibility === 'function') {
+                        chart.setDatasetVisibility(0, true);
+                    }
 
                     // Seri 2: Rework
                     chart.data.datasets[1].label = 'Rework';
@@ -1714,19 +1727,17 @@
                     chart.data.datasets[1].borderDash = [];
                     chart.data.datasets[1].fill = false;
                     chart.data.datasets[1].tension = 0.3;
-                    chart.data.datasets[1].spanGaps = true;
+                    chart.data.datasets[1].spanGaps = false; // Hari tanpa data tetap celah (B3)
                     chart.data.datasets[1].pointStyle = 'circle';
-                    chart.data.datasets[1].pointBackgroundColor = THEME_COLORS.rework;
+                    chart.data.datasets[1].pointBackgroundColor = THEME_COLORS.rework; // Warna isi sama dengan garis (B3)
                     chart.data.datasets[1].pointBorderColor = '#ffffff';
                     chart.data.datasets[1].pointBorderWidth = 2;
-                    chart.data.datasets[1].pointRadius = 4;
+                    chart.data.datasets[1].pointRadius = 4; // Point radius 4 (B3)
                     chart.data.datasets[1].pointHoverRadius = 6;
                     chart.data.datasets[1].hidden = false;
-                    chart.data.datasets[1].pointBorderColor = '#ffffff';
-                    chart.data.datasets[1].pointBorderWidth = 2;
-                    chart.data.datasets[1].pointRadius = 4;
-                    chart.data.datasets[1].pointHoverRadius = 6;
-                    chart.data.datasets[1].hidden = false;
+                    if (typeof chart.setDatasetVisibility === 'function') {
+                        chart.setDatasetVisibility(1, true);
+                    }
 
                 } else {
                     // Mode internal atau Pre Assy: 100% pulih ke perilaku legacy DPM / PPM
@@ -1746,10 +1757,13 @@
                     chart.data.datasets[0].borderDash = [];
                     chart.data.datasets[0].fill = true;
                     chart.data.datasets[0].tension = 0.3;
-                    chart.data.datasets[0].spanGaps = true;
+                    chart.data.datasets[0].spanGaps = false; // Pertahankan spanGaps:false (B3)
                     chart.data.datasets[0].pointStyle = 'circle';
                     chart.data.datasets[0]._meta = trendList;
                     chart.data.datasets[0].hidden = false;
+                    if (typeof chart.setDatasetVisibility === 'function') {
+                        chart.setDatasetVisibility(0, true);
+                    }
 
                     // Dataset 1: Target DPM
                     chart.data.datasets[1].label = `Target ${mLabel}`;
@@ -1768,6 +1782,9 @@
                     if (hasAnyTarget) {
                         chart.data.datasets[1].data = trendList.map(t => (t.target !== null && t.target !== undefined ? Number(t.target) : null));
                         chart.data.datasets[1].hidden = false;
+                        if (typeof chart.setDatasetVisibility === 'function') {
+                            chart.setDatasetVisibility(1, true);
+                        }
 
                         if (validTargetCount === 1) {
                             chart.data.datasets[1].pointStyle = 'line';
@@ -1789,7 +1806,7 @@
                             if (hasTarget && hasDpm && Number(t.dpm) > Number(t.target)) {
                                 return '#dc2626';
                             }
-                            return baseColor;
+                            return baseColor; // Warna isi sama dengan garis (B3)
                         });
 
                         chart.data.datasets[0].pointBorderColor = trendList.map(t => {
@@ -1806,7 +1823,7 @@
                             if (!hasDpm) return 0;
                             const hasTarget = t.target !== null && t.target !== undefined;
                             if (hasTarget && Number(t.dpm) > Number(t.target)) {
-                                return validDpmCount === 1 ? 8 : 5;
+                                return validDpmCount === 1 ? 8 : 4;
                             }
                             return validDpmCount === 1 ? 7 : 4;
                         });
@@ -1818,11 +1835,14 @@
                     } else {
                         chart.data.datasets[1].data = [];
                         chart.data.datasets[1].hidden = true;
+                        if (typeof chart.setDatasetVisibility === 'function') {
+                            chart.setDatasetVisibility(1, false);
+                        }
                         chart.data.datasets[1].pointStyle = 'circle';
                         chart.data.datasets[1].pointRadius = 0;
                         chart.data.datasets[1].pointHoverRadius = 0;
                         chart.data.datasets[1].pointBorderWidth = 0;
-                        chart.data.datasets[0].pointBackgroundColor = baseColor;
+                        chart.data.datasets[0].pointBackgroundColor = baseColor; // Warna isi sama dengan garis (B3)
                         chart.data.datasets[0].pointBorderColor = '#ffffff';
                         chart.data.datasets[0].pointRadius = trendList.map(t => {
                             const hasDpm = t.dpm !== null && t.dpm !== undefined;

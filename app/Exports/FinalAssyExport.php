@@ -32,7 +32,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
 
     public function query()
     {
-        $query = Defect::with('finalInspectType')->where('jenis_assy', 'Final Assy');
+        $query = Defect::with('finalInspectType')->finalAssyReport();
 
         $dateRange = $this->request->input('date_range');
         $selectedDefect = $this->request->input('defect');

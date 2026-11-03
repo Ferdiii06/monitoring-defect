@@ -480,13 +480,22 @@ class ReworkController extends Controller
             return null;
         }
 
-        // Must be a relative path strictly starting with '/admin/rework-history'
-        if (!str_starts_with($trimmed, '/admin/rework-history')) {
+        // Must be a relative path strictly starting with '/admin/rework-history' or '/recent-defects'
+        $allowedPrefixes = ['/admin/rework-history', '/recent-defects'];
+        $matchedPrefix = null;
+        foreach ($allowedPrefixes as $prefix) {
+            if (str_starts_with($trimmed, $prefix)) {
+                $matchedPrefix = $prefix;
+                break;
+            }
+        }
+
+        if ($matchedPrefix === null) {
             return null;
         }
 
-        // Must be exactly '/admin/rework-history', or followed by '?' or '/'
-        $after = substr($trimmed, strlen('/admin/rework-history'));
+        // Must be exactly the allowed prefix, or followed by '?' or '/'
+        $after = substr($trimmed, strlen($matchedPrefix));
         if ($after !== '' && !str_starts_with($after, '?') && !str_starts_with($after, '/')) {
             return null;
         }

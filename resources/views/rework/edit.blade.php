@@ -1,4 +1,4 @@
-@extends('layouts.operator')
+@extends(((isset($isAdmin) && $isAdmin) || session('user_role') === 'Administrator') ? 'layouts.app' : 'layouts.operator')
 
 @section('title', 'Edit Riwayat Harness')
 
@@ -6,11 +6,12 @@
 
 @section('content')
 @php
-    $backUrl = $returnUrl ?: ($isAdmin ? route('admin.rework_history.index') : route('rework.index'));
+    $isAdminRole = (isset($isAdmin) && $isAdmin) || session('user_role') === 'Administrator';
+    $backUrl = $returnUrl ?: ($isAdminRole ? route('admin.rework_history.index') : route('rework.index'));
 @endphp
-<div class="w-full">
+<div class="w-full {{ $isAdminRole ? 'max-w-5xl mx-auto py-2' : '' }}">
 
-    <main class="w-full bg-surface rounded-3xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] overflow-hidden border border-border flex flex-col">
+    <div class="w-full bg-surface rounded-3xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] overflow-hidden border border-border flex flex-col">
 
         <!-- Header: Back Button + Title -->
         <header class="p-5 sm:p-6 pb-4 flex items-center space-x-3 border-b border-border bg-white">
@@ -22,7 +23,7 @@
                 </svg>
             </a>
             <div>
-                <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Rework QA • Edit</span>
+                <span class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">{{ $isAdminRole ? 'Admin • Riwayat Rework' : 'Rework QA • Edit' }}</span>
                 <h1 class="text-xl font-black text-brand tracking-tight mt-1">Edit Riwayat Harness</h1>
             </div>
         </header>
@@ -424,7 +425,7 @@
             </form>
 
         </div>
-    </main>
+    </div>
 
 </div>
 

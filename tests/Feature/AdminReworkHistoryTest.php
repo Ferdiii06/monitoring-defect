@@ -717,4 +717,386 @@ class AdminReworkHistoryTest extends TestCase
         $this->assertEquals('1.A - TERMINAL BENGKOK', $mapped[25]);
         $this->assertEquals(1, $mapped[26]);
     }
+
+    public function test_recent_defects_displays_rework_edit_and_disabled_delete_for_rework_rows(): void
+    {
+        $defectType = DefectType::create([
+            'name' => 'WIRING',
+            'type' => 'Final Assy',
+        ]);
+        $subDefect = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+        ]);
+
+        $normalDefect = Defect::create([
+            'rework_group_id'  => null,
+            'waktu'            => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_mobil'      => 'CALYA',
+            'conveyor'         => '1',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect->name,
+            'user_name'        => 'Operator QA',
+            'quantity'         => 1,
+            'inspect_quantity' => 10,
+        ]);
+
+        $reworkGroupId = (string) Str::uuid();
+        $reworkDefect = Defect::create([
+            'rework_group_id'  => $reworkGroupId,
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_mobil'      => 'CALYA',
+            'conveyor'         => '1',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect->name,
+            'user_name'        => 'reworkA',
+            'kanban_assy'      => 'KB-TEST-001',
+            'nameplate_lama'   => 'NP-TEST-001',
+            'status_rework'    => 'OPEN',
+            'quantity'         => 1,
+        ]);
+
+        $resRecent = $this->actingAsAdmin()->get(route('recent_defects.index'));
+        $resRecent->assertStatus(200);
+
+        // Baris rework: link edit ke rework.edit, tombol hapus disabled dengan title pengaman
+        $resRecent->assertSee(route('rework.edit', ['groupId' => $reworkGroupId]));
+        $resRecent->assertSee('title="Data rework tidak dapat dihapus dari halaman ini"', false);
+
+        // Baris non-rework: link edit ke admin.report.edit, tombol hapus form aktif
+        $resRecent->assertSee(route('admin.report.edit', $normalDefect->id));
+        $resRecent->assertSee(route('admin.report.destroy', $normalDefect->id));
+    }
+
+    public function test_report_final_assy_strictly_excludes_rework_and_includes_operator_rows(): void
+    {
+        $reworkArea = AreaDitemukan::create([
+            'name' => 'AREA KHUSUS REWORK',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+
+        $internalArea = AreaDitemukan::create([
+            'name' => 'CK AREA',
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        $defectType = DefectType::create([
+            'name' => 'WIRING',
+            'type' => 'Final Assy',
+        ]);
+        $subDefect = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+        ]);
+
+        // 1. Operator defect dengan area internal (HARUS MUNCUL)
+        $opDefectNormal = Defect::create([
+            'rework_group_id'  => null,
+            'waktu'            => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_mobil'      => 'CALYA',
+            'conveyor'         => '1',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect->name,
+            'area_ditemukan'   => $internalArea->name,
+            'user_name'        => 'Operator Normal',
+            'quantity'         => 1,
+        ]);
+
+        // 2. Operator defect dengan area bertipe rework (HARUS TETAP MUNCUL sesuai keputusan bisnis)
+        $opDefectReworkArea = Defect::create([
+            'rework_group_id'  => null,
+            'waktu'            => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_mobil'      => 'CALYA',
+            'conveyor'         => '1',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect->name,
+            'area_ditemukan'   => $reworkArea->name,
+            'user_name'        => 'Operator With Rework Area',
+            'quantity'         => 2,
+        ]);
+
+        // 3. Rework defect dengan area bertipe rework (TIDAK BOLEH MUNCUL)
+        $reworkDefect1 = Defect::create([
+            'rework_group_id'  => (string) Str::uuid(),
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_mobil'      => 'CALYA',
+            'conveyor'         => '1',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect->name,
+            'area_ditemukan'   => $reworkArea->name,
+            'user_name'        => 'reworkA',
+            'kanban_assy'      => 'KB-EXCLUDE-RW1',
+            'nameplate_lama'   => 'NP-EXCLUDE-RW1',
+            'status_rework'    => 'OPEN',
+            'quantity'         => 1,
+        ]);
+
+        // 4. Rework defect dengan area bertipe internal (TIDAK BOLEH MUNCUL)
+        $reworkDefect2 = Defect::create([
+            'rework_group_id'  => (string) Str::uuid(),
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_mobil'      => 'CALYA',
+            'conveyor'         => '1',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect->name,
+            'area_ditemukan'   => $internalArea->name,
+            'user_name'        => 'reworkA',
+            'kanban_assy'      => 'KB-EXCLUDE-RW2',
+            'nameplate_lama'   => 'NP-EXCLUDE-RW2',
+            'status_rework'    => 'OPEN',
+            'quantity'         => 1,
+        ]);
+
+        $resFinal = $this->actingAsAdmin()->get(route('final_assy.index'));
+        $resFinal->assertStatus(200);
+
+        // Operator rows muncul
+        $resFinal->assertSee('Operator Normal');
+        $resFinal->assertSee('Operator With Rework Area');
+
+        // Rework rows tidak muncul sama sekali
+        $resFinal->assertDontSee('KB-EXCLUDE-RW1');
+        $resFinal->assertDontSee('KB-EXCLUDE-RW2');
+        $resFinal->assertDontSee(route('rework.edit', ['groupId' => $reworkDefect1->rework_group_id]));
+        $resFinal->assertDontSee(route('rework.edit', ['groupId' => $reworkDefect2->rework_group_id]));
+
+        // Edit link di Final Assy hanya admin.report.edit
+        $resFinal->assertSee(route('admin.report.edit', $opDefectNormal->id));
+        $resFinal->assertSee(route('admin.report.edit', $opDefectReworkArea->id));
+    }
+
+    public function test_final_assy_export_strictly_excludes_rework_rows_and_matches_table(): void
+    {
+        $defectType = DefectType::create([
+            'name' => 'WIRING',
+            'type' => 'Final Assy',
+        ]);
+        $subDefect = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+        ]);
+
+        // 1 Operator row
+        Defect::create([
+            'rework_group_id'  => null,
+            'waktu'            => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect->name,
+            'user_name'        => 'Operator Export Test',
+            'quantity'         => 1,
+        ]);
+
+        // 1 Rework row
+        Defect::create([
+            'rework_group_id'  => (string) Str::uuid(),
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect->name,
+            'user_name'        => 'reworkA',
+            'kanban_assy'      => 'KB-EXPORT-REWORK-EXCLUDE',
+            'nameplate_lama'   => 'NP-EXPORT-REWORK-EXCLUDE',
+            'status_rework'    => 'OPEN',
+            'quantity'         => 1,
+        ]);
+
+        $request = new \Illuminate\Http\Request();
+        $export = new \App\Exports\FinalAssyExport($request);
+        $exportRows = $export->query()->get();
+
+        $this->assertCount(1, $exportRows);
+        $this->assertEquals('Operator Export Test', $exportRows->first()->user_name);
+        $this->assertNull($exportRows->first()->rework_group_id);
+    }
+
+    public function test_admin_edit_report_on_rework_row_redirects_to_rework_edit(): void
+    {
+        $reworkGroupId = (string) Str::uuid();
+        $reworkDefect = Defect::create([
+            'rework_group_id'  => $reworkGroupId,
+            'waktu'            => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'WIRING',
+            'jenis_sub_defect' => 'CROSS CIRCUIT',
+            'user_name'        => 'reworkA',
+            'quantity'         => 1,
+        ]);
+
+        $response = $this->actingAsAdmin()->get(route('admin.report.edit', [
+            'id' => $reworkDefect->id,
+            'return_url' => '/recent-defects',
+        ]));
+
+        $response->assertRedirect(route('rework.edit', [
+            'groupId'    => $reworkGroupId,
+            'return_url' => '/recent-defects',
+        ]));
+    }
+
+    public function test_admin_update_report_on_rework_row_is_rejected_without_modifying_data(): void
+    {
+        $area = AreaDitemukan::create([
+            'name' => 'REWORK AREA ORIG',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+
+        $reworkGroupId = (string) Str::uuid();
+        $reworkDefect = Defect::create([
+            'rework_group_id'  => $reworkGroupId,
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'area_ditemukan'   => $area->name,
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'WIRING',
+            'jenis_sub_defect' => 'CROSS CIRCUIT',
+            'quantity'         => 1,
+            'inspect_quantity' => null,
+            'user_name'        => 'reworkA',
+            'kanban_assy'      => 'KB-SAFEGUARD',
+            'nameplate_lama'   => 'NP-SAFEGUARD',
+        ]);
+
+        $response = $this->actingAsAdmin()->from('/final-assy')->put(route('admin.report.update', $reworkDefect->id), [
+            'type'             => 'Pre Assy',
+            'area_ditemukan'   => 'CK',
+            'jumlah'           => 99,
+            'inspect_quantity' => 500,
+            'tanggal'          => now()->format('Y-m-d'),
+            'jam'              => '10:00',
+        ]);
+
+        $response->assertRedirect('/final-assy');
+        $response->assertSessionHas('error');
+
+        $fresh = $reworkDefect->fresh();
+        $this->assertEquals($area->name, $fresh->area_ditemukan);
+        $this->assertEquals('Final Assy', $fresh->jenis_assy);
+        $this->assertEquals(1, $fresh->quantity);
+        $this->assertNull($fresh->inspect_quantity);
+    }
+
+    public function test_admin_destroy_report_rejects_rework_row_and_deletes_non_rework_row(): void
+    {
+        $defectType = DefectType::create([
+            'name' => 'WIRING',
+            'type' => 'Final Assy',
+        ]);
+        $subDefect = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+        ]);
+
+        $reworkDefect = Defect::create([
+            'rework_group_id'  => (string) Str::uuid(),
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect->name,
+            'user_name'        => 'reworkA',
+            'quantity'         => 1,
+        ]);
+
+        $normalDefect = Defect::create([
+            'rework_group_id'  => null,
+            'waktu'            => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect->name,
+            'user_name'        => 'Operator Normal',
+            'quantity'         => 1,
+        ]);
+
+        // 1. Destroy pada baris rework DITOLAK
+        $resRework = $this->actingAsAdmin()->from('/recent-defects')->delete(route('admin.report.destroy', $reworkDefect->id));
+        $resRework->assertRedirect('/recent-defects');
+        $resRework->assertSessionHas('error');
+        $this->assertDatabaseHas('defects', ['id' => $reworkDefect->id]);
+
+        // 2. Destroy pada baris non-rework DIIZINKAN
+        $resNormal = $this->actingAsAdmin()->from('/recent-defects')->delete(route('admin.report.destroy', $normalDefect->id));
+        $resNormal->assertRedirect('/recent-defects');
+        $resNormal->assertSessionHas('success');
+        $this->assertDatabaseMissing('defects', ['id' => $normalDefect->id]);
+    }
+
+    public function test_sanitize_admin_return_url_allows_recent_defects_and_rework_history(): void
+    {
+        $controller = app(\App\Http\Controllers\ReworkController::class);
+        $method = new \ReflectionMethod($controller, 'sanitizeAdminReturnUrl');
+        $method->setAccessible(true);
+
+        // Allowed relative URLs
+        $this->assertEquals('/recent-defects?x=1', $method->invoke($controller, '/recent-defects?x=1'));
+        $this->assertEquals('/recent-defects', $method->invoke($controller, '/recent-defects'));
+        $this->assertEquals('/admin/rework-history?x=1', $method->invoke($controller, '/admin/rework-history?x=1'));
+        $this->assertEquals('/admin/rework-history', $method->invoke($controller, '/admin/rework-history'));
+
+        // Disallowed / Malicious URLs
+        $this->assertNull($method->invoke($controller, 'https://evil.test'));
+        $this->assertNull($method->invoke($controller, 'http://evil.test'));
+        $this->assertNull($method->invoke($controller, '//evil.test'));
+        $this->assertNull($method->invoke($controller, '/\\evil.test'));
+        $this->assertNull($method->invoke($controller, '\\\\evil.test'));
+        $this->assertNull($method->invoke($controller, 'javascript:alert(1)'));
+        $this->assertNull($method->invoke($controller, '/lain'));
+        $this->assertNull($method->invoke($controller, '/recent-defects-hack'));
+    }
+
+    public function test_rework_edit_for_admin_uses_admin_layout_and_for_rework_role_uses_operator_layout(): void
+    {
+        $area = AreaDitemukan::create([
+            'name' => 'REWORK AREA 1',
+            'tipe' => AreaDitemukan::TIPE_REWORK,
+        ]);
+        $defectType = DefectType::create([
+            'name' => 'WIRING',
+            'type' => 'Final Assy',
+        ]);
+        $subDefect = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+        ]);
+
+        $reworkGroupId = (string) Str::uuid();
+        Defect::create([
+            'rework_group_id'     => $reworkGroupId,
+            'waktu'               => now(),
+            'waktu_in'            => now(),
+            'status_rework'       => 'OPEN',
+            'kanban_assy'         => 'KB-LAYOUT-TEST',
+            'nameplate_lama'      => 'NP-LAYOUT-TEST',
+            'user_name'           => 'reworkA',
+            'shift'               => '1A',
+            'jenis_assy'          => 'Final Assy',
+            'jenis_defect'        => $defectType->name,
+            'jenis_sub_defect'    => $subDefect->name,
+            'sub_defect_type_id'  => $subDefect->id,
+            'area_ditemukan'      => $area->name,
+            'quantity'            => 1,
+        ]);
+
+        // 1. Admin GET edit -> uses layouts.app (has adminSidebar)
+        $resAdmin = $this->actingAsAdmin()->get(route('rework.edit', $reworkGroupId));
+        $resAdmin->assertStatus(200);
+        $resAdmin->assertSee('id="adminSidebar"', false);
+        $resAdmin->assertSee('Admin • Riwayat Rework');
+
+        // 2. Rework operator GET edit -> uses layouts.operator (does NOT have adminSidebar)
+        $resRework = $this->actingAsRework()->get(route('rework.edit', $reworkGroupId));
+        $resRework->assertStatus(200);
+        $resRework->assertDontSee('id="adminSidebar"', false);
+        $resRework->assertSee('Rework QA • Edit');
+    }
 }
