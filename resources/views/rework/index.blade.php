@@ -615,6 +615,109 @@
         const conveyorSelect = document.getElementById('conveyor');
         const oldConveyor = @json(old('conveyor', ''));
 
+        // Lookup Feedback Elements
+        const kanbanLookupInfo = document.getElementById('kanban_lookup_info');
+        const kanbanInfoText = document.getElementById('kanban_info_text');
+        const kanbanInfoMsg = document.getElementById('kanban_info_msg');
+        const kanbanWarningBox = document.getElementById('kanban_warning_box');
+        const kanbanErrorBox = document.getElementById('kanban_error_box');
+        const kanbanErrorMsg = document.getElementById('kanban_error_msg');
+        const conveyorScanHint = document.getElementById('conveyor_scan_hint');
+
+        let lastLookupCode = '';
+
+        function clearLookupFeedback() {
+            if (kanbanLookupInfo) kanbanLookupInfo.classList.add('hidden');
+            if (kanbanInfoText) kanbanInfoText.classList.add('hidden');
+            if (kanbanWarningBox) kanbanWarningBox.classList.add('hidden');
+            if (kanbanErrorBox) kanbanErrorBox.classList.add('hidden');
+            if (conveyorScanHint) {
+                conveyorScanHint.classList.add('hidden');
+                conveyorScanHint.textContent = '';
+            }
+        }
+
+        function performAssyLookup(rawCode, sourceField) {
+            const code = (rawCode || '').trim();
+            if (!code) {
+                clearLookupFeedback();
+                lastLookupCode = '';
+                return;
+            }
+
+            if (code === lastLookupCode) {
+                return;
+            }
+            lastLookupCode = code;
+
+            const url = '{{ route("rework.lookup_assy") }}?code=' + encodeURIComponent(code);
+
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(res) {
+                if (res.status === 422) {
+                    return res.json().then(function(errData) {
+                        clearLookupFeedback();
+                        if (kanbanLookupInfo) kanbanLookupInfo.classList.remove('hidden');
+                        if (kanbanErrorBox) {
+                            kanbanErrorBox.classList.remove('hidden');
+                            if (kanbanErrorMsg) {
+                                kanbanErrorMsg.textContent = errData.message || 'Format barcode kanban atau nameplate tidak valid.';
+                            }
+                        }
+                    });
+                }
+                if (res.status === 401 || res.status === 403 || !res.ok) {
+                    // Fail gracefully, do not block form or show intrusive alert
+                    return;
+                }
+                return res.json().then(function(data) {
+                    clearLookupFeedback();
+                    if (!data) return;
+
+                    if (kanbanLookupInfo) kanbanLookupInfo.classList.remove('hidden');
+
+                    if (data.ditemukan_di_master) {
+                        // 1. Tampilkan teks info kecil (mis. "Assy 82111-VU020 · 664W-C5")
+                        if (kanbanInfoText) {
+                            kanbanInfoText.classList.remove('hidden');
+                            let infoMsg = 'Assy ' + (data.assy_number || '');
+                            if (data.carline_nama) {
+                                infoMsg += ' · ' + data.carline_nama;
+                            }
+                            if (kanbanInfoMsg) kanbanInfoMsg.textContent = infoMsg;
+                        }
+
+                        // 2. Auto-pilih Jenis Mobil dan Konveyor HANYA jika dropdown masih kosong
+                        if (carlineSelect && !carlineSelect.value && data.car_type_nama) {
+                            carlineSelect.value = data.car_type_nama;
+                            updateConveyors(data.car_type_nama, data.carline_nama || '');
+                        } else if (conveyorSelect && !conveyorSelect.value && data.carline_nama) {
+                            conveyorSelect.value = data.carline_nama;
+                        }
+                    } else {
+                        // Peringatan kuning jika ditemukan_di_master = false
+                        if (kanbanWarningBox) kanbanWarningBox.classList.remove('hidden');
+
+                        // Jika ada kode conveyor hasil scan kanban, tampilkan teks bantu di bawah dropdown Konveyor
+                        // JANGAN menebak / auto-pilih
+                        if (data.conveyor && conveyorScanHint) {
+                            conveyorScanHint.textContent = 'Hasil scan kanban: ' + data.conveyor + ' (silakan pilih konveyor yang sesuai)';
+                            conveyorScanHint.classList.remove('hidden');
+                        }
+                    }
+                });
+            })
+            .catch(function() {
+                // Network error: fail gracefully, do not block form
+            });
+        }
+
         function updateConveyors(selectedCarline, preselectedConveyor = '') {
             if (!conveyorSelect) return;
             conveyorSelect.innerHTML = '';
@@ -623,7 +726,7 @@
             defaultOpt.value = '';
 
             if (!selectedCarline || !conveyorMap[selectedCarline]) {
-                defaultOpt.textContent = 'Pilih Carline Terlebih Dahulu';
+                defaultOpt.textContent = 'Pilih Jenis Mobil Terlebih Dahulu';
                 conveyorSelect.appendChild(defaultOpt);
                 conveyorSelect.disabled = true;
                 return;
@@ -652,22 +755,35 @@
             updateConveyors(carlineSelect.value, oldConveyor);
         }
 
-        // 1. Enter on Kanban input moves focus to Nameplate
+        // 1. Enter on Kanban input moves focus to Nameplate & triggers lookup
         if (kanbanInput) {
             kanbanInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    performAssyLookup(this.value, 'kanban');
                     if (npInput) npInput.focus();
                 }
+            });
+            kanbanInput.addEventListener('blur', function() {
+                performAssyLookup(this.value, 'kanban');
             });
         }
 
         // 2. Enter on Nameplate input moves focus to Defect Search
+        // Lookup nameplate only if kanban_assy is empty
         if (npInput) {
             npInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    if (kanbanInput && !kanbanInput.value.trim()) {
+                        performAssyLookup(this.value, 'nameplate');
+                    }
                     if (defectSearch) defectSearch.focus();
+                }
+            });
+            npInput.addEventListener('blur', function() {
+                if (kanbanInput && !kanbanInput.value.trim()) {
+                    performAssyLookup(this.value, 'nameplate');
                 }
             });
         }
