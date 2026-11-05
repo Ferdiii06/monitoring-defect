@@ -529,10 +529,21 @@
                                 <!-- Tombol Out (Hanya untuk Rework berstatus OPEN) -->
                                 @if(!$isAdmin && !in_array($first->status_rework, ['Selesai', 'CLOSE'], true))
                                     <div class="pt-1">
-                                        <form action="{{ route('rework.store_out', $groupId) }}" method="POST" onsubmit="return confirm('Selesaikan rework untuk harness ini?');" class="w-full">
+                                        <form action="{{ route('rework.store_out', $groupId) }}" method="POST" onsubmit="return confirm('Selesaikan rework untuk harness ini?');" class="w-full space-y-2">
                                             @csrf
+                                            <div>
+                                                <label for="nameplate_baru_{{ $groupId }}" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">
+                                                    NP Baru <span class="text-[9px] font-normal text-gray-400 lowercase">(opsional)</span>
+                                                </label>
+                                                <input type="text"
+                                                       id="nameplate_baru_{{ $groupId }}"
+                                                       name="nameplate_baru"
+                                                       value="{{ old('nameplate_baru', $first->nameplate_baru ?? '') }}"
+                                                       placeholder="Scan / ketik NP Baru (opsional)"
+                                                       class="w-full bg-white border border-border rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-900 placeholder:text-gray-400 uppercase focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all touch-manipulation">
+                                            </div>
                                             <button type="submit"
-                                                    class="w-full min-h-[48px] bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer touch-manipulation">
+                                                    class="w-full min-h-[44px] bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-sm rounded-xl flex items-center justify-center space-x-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer touch-manipulation">
                                                 <svg class="w-4 h-4 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
                                                 </svg>
