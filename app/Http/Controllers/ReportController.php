@@ -482,6 +482,13 @@ class ReportController extends Controller
             $request->merge(['final_inspect_type_id' => null]);
         }
 
+        if ($request->has('nameplate_lama')) {
+            $request->merge(['nameplate_lama' => filled($request->input('nameplate_lama')) ? trim((string) $request->input('nameplate_lama')) : null]);
+        }
+        if ($request->has('no_defective_tag')) {
+            $request->merge(['no_defective_tag' => filled($request->input('no_defective_tag')) ? trim((string) $request->input('no_defective_tag')) : null]);
+        }
+
         $type = $request->input('type');
         $isPreAssy = $type === 'Pre Assy';
         $jenisMobil = $request->input('jenis_mobil');
@@ -510,6 +517,8 @@ class ReportController extends Controller
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
             'no_mesin'                 => 'nullable|string|max:255',
+            'nameplate_lama'           => 'nullable|string|max:255',
+            'no_defective_tag'         => 'nullable|string|max:255',
             // Kolom baru master data
             'carline_id'               => 'required_if:type,Pre Assy|nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
@@ -547,6 +556,10 @@ class ReportController extends Controller
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
             'no_mesin'                 => $validated['no_mesin'] ?? null,
+            'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
+            'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
+            'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
+            'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
             // Kolom baru master data
             'carline_id'               => $validated['carline_id'] ?? null,
             'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
@@ -649,6 +662,13 @@ class ReportController extends Controller
             $request->merge(['final_inspect_type_id' => null]);
         }
 
+        if ($request->has('nameplate_lama')) {
+            $request->merge(['nameplate_lama' => filled($request->input('nameplate_lama')) ? trim((string) $request->input('nameplate_lama')) : null]);
+        }
+        if ($request->has('no_defective_tag')) {
+            $request->merge(['no_defective_tag' => filled($request->input('no_defective_tag')) ? trim((string) $request->input('no_defective_tag')) : null]);
+        }
+
         $type = $request->input('type', $defectType);
         $jenisMobil = $request->input('jenis_mobil', $defect->jenis_mobil);
         $conveyor = $request->input('conveyor', $defect->conveyor);
@@ -679,6 +699,8 @@ class ReportController extends Controller
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
             'no_mesin'                 => 'nullable|string|max:255',
+            'nameplate_lama'           => 'nullable|string|max:255',
+            'no_defective_tag'         => 'nullable|string|max:255',
             'carline_id'               => $isPreAssy ? 'required|exists:carlines,id' : 'nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
@@ -711,6 +733,8 @@ class ReportController extends Controller
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
             'no_mesin'                 => $validated['no_mesin'] ?? null,
+            'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
+            'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
             'carline_id'               => $validated['carline_id'] ?? null,
             'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
             'final_inspect_type_id'    => $finalInspectTypeId,
@@ -816,6 +840,13 @@ class ReportController extends Controller
             $request->merge(['final_inspect_type_id' => null]);
         }
 
+        if ($request->has('nameplate_lama')) {
+            $request->merge(['nameplate_lama' => filled($request->input('nameplate_lama')) ? trim((string) $request->input('nameplate_lama')) : null]);
+        }
+        if ($request->has('no_defective_tag')) {
+            $request->merge(['no_defective_tag' => filled($request->input('no_defective_tag')) ? trim((string) $request->input('no_defective_tag')) : null]);
+        }
+
         $type = $request->input('type', $defectType);
         $jenisMobil = $request->input('jenis_mobil', $defect->jenis_mobil);
         $conveyor = $request->input('conveyor', $defect->conveyor);
@@ -846,6 +877,8 @@ class ReportController extends Controller
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
             'no_mesin'                 => 'nullable|string|max:255',
+            'nameplate_lama'           => 'nullable|string|max:255',
+            'no_defective_tag'         => 'nullable|string|max:255',
             'carline_id'               => $isPreAssy ? 'required|exists:carlines,id' : 'nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
@@ -878,6 +911,8 @@ class ReportController extends Controller
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
             'no_mesin'                 => $validated['no_mesin'] ?? null,
+            'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
+            'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
             'carline_id'               => $validated['carline_id'] ?? null,
             'inspect_process_type_id'  => $validated['inspect_process_type_id'] ?? null,
             'final_inspect_type_id'    => $finalInspectTypeId,
@@ -906,10 +941,6 @@ class ReportController extends Controller
     public function adminDestroyReport(Request $request, $id)
     {
         $defect = Defect::findOrFail($id);
-
-        if ($defect->rework_group_id) {
-            return redirect()->back()->with('error', 'Data defect rework tidak dapat dihapus melalui halaman ini. Silakan gunakan menu rework.');
-        }
 
         $type = $defect->jenis_assy;
         $carlineOrLine = $defect->jenis_assy === 'Pre Assy' ? ($defect->carline?->name ?? '-') : ($defect->jenis_mobil . ' (' . ($defect->conveyor ?? '-') . ')');

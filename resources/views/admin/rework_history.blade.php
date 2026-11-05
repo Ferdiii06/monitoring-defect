@@ -243,16 +243,33 @@
                                 </div>
                             </td>
 
-                            <!-- Aksi (Edit) -->
+                            <!-- Aksi (Edit & Hapus) -->
                             <td class="py-4 text-center px-4 pr-3 align-top">
-                                <a href="{{ route('rework.edit', array_merge(['groupId' => $groupId], request()->query() ? ['return_url' => request()->getRequestUri()] : [])) }}"
-                                   title="Edit Riwayat Harness"
-                                   class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer">
-                                    <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                                    </svg>
-                                    <span>Edit</span>
-                                </a>
+                                <div class="inline-flex items-center space-x-1.5">
+                                    <a href="{{ route('rework.edit', array_merge(['groupId' => $groupId], request()->query() ? ['return_url' => request()->getRequestUri()] : [])) }}"
+                                       title="Edit Riwayat Harness"
+                                       class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer">
+                                        <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                        </svg>
+                                        <span>Edit</span>
+                                    </a>
+                                    <form action="{{ route('admin.rework_history.destroy', $groupId) }}" 
+                                          method="POST" 
+                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus data rework ini? Sebanyak {{ $items->count() }} defect yang ada di dalam harness ini akan ikut terhapus.');" 
+                                          class="inline-block">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                title="Hapus Riwayat Harness"
+                                                class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                            <span>Hapus</span>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\ReworkHistoryExport;
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Defect;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -133,5 +134,38 @@ class ReworkHistoryController extends Controller
             new ReworkHistoryExport($request),
             'riwayat_rework_' . now()->format('Y-m-d') . '.xlsx'
         );
+    }
+
+    /**
+     * Delete an entire rework harness group and all defects belonging to it.
+     */
+    public function destroyGroup(Request $request, string $groupId)
+    {
+        $defects = Defect::where('rework_group_id', $groupId)->get();
+
+        if ($defects->isEmpty()) {
+            return redirect()->back()->with('error', 'Data riwayat rework tidak ditemukan.');
+        }
+
+        $count = $defects->count();
+        $defectSummary = $defects->pluck('jenis_defect')->filter()->unique()->implode(', ');
+        if ($defectSummary === '') {
+            $defectSummary = '-';
+        }
+
+        DB::transaction(function () use ($groupId, $request, $count, $defectSummary) {
+            Defect::where('rework_group_id', $groupId)->delete();
+
+            ActivityLog::create([
+                'waktu'        => now(),
+                'user_name'    => session('user_name', 'Admin'),
+                'jenis_aksi'   => 'Delete Rework Group',
+                'aktivitas'    => "Menghapus riwayat rework harness group {$groupId} ({$count} defect)",
+                'jenis_defect' => $defectSummary,
+                'ip_address'   => $request->ip() ?? '127.0.0.1',
+            ]);
+        });
+
+        return redirect()->back()->with('success', "Data riwayat rework berhasil dihapus ({$count} defect ikut terhapus).");
     }
 }

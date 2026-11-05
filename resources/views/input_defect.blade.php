@@ -241,6 +241,24 @@
                     />
                 </div>
 
+                <!-- NAMEPLATE & DEFECTIVE TAG (OPSIONAL) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <x-form-input 
+                        label="NAMEPLATE (NP) (OPSIONAL)" 
+                        type="text" 
+                        name="nameplate_lama" 
+                        x-model="form.nameplate_lama" 
+                        placeholder="Masukkan Nameplate (NP)..." 
+                    />
+                    <x-form-input 
+                        label="NO DEFECTIVE TAG (OPSIONAL)" 
+                        type="text" 
+                        name="no_defective_tag" 
+                        x-model="form.no_defective_tag" 
+                        placeholder="Masukkan No Defective Tag..." 
+                    />
+                </div>
+
                 <!-- DITEMUKAN OLEH (Card Segmented Picker 2 Opsi - Khusus Pre Assy) -->
                 <template x-if="form.type === 'Pre Assy'">
                     <div class="space-y-1.5">
@@ -408,6 +426,11 @@
                         <span class="font-bold text-gray-900 font-mono break-words [overflow-wrap:anywhere]" x-text="form.pattern"></span>
                     </div>
 
+                    <div x-show="form.nameplate_lama || form.no_defective_tag" class="pt-2 border-t border-gray-200 space-y-1.5 text-[11px] break-words [overflow-wrap:anywhere]">
+                        <div x-show="form.nameplate_lama"><span class="text-gray-400">Nameplate (NP):</span> <span class="font-bold text-gray-900 font-mono break-words [overflow-wrap:anywhere]" x-text="form.nameplate_lama"></span></div>
+                        <div x-show="form.no_defective_tag"><span class="text-gray-400">No Defective Tag:</span> <span class="font-bold text-gray-900 font-mono break-words [overflow-wrap:anywhere]" x-text="form.no_defective_tag"></span></div>
+                    </div>
+
                     <!-- Dynamic Fields Confirmation Summary -->
                     <template x-if="form.type === 'Final Assy'">
                         <div class="pt-2 border-t border-gray-200 space-y-1.5 text-[11px] break-words [overflow-wrap:anywhere]">
@@ -515,6 +538,8 @@
                 inspect_quantity: '{{ old("inspect_quantity", $defect->inspect_quantity ?? "") }}',
                 ditemukan_oleh: '{{ old("ditemukan_oleh", $defect->ditemukan_oleh ?? "") }}',
                 pattern: '{{ old("pattern", $defect->pattern ?? "") }}',
+                nameplate_lama: '{{ old("nameplate_lama", $defect->nameplate_lama ?? "") }}',
+                no_defective_tag: '{{ old("no_defective_tag", $defect->no_defective_tag ?? "") }}',
                 
                 end_number: '{{ old("end_number", $defect->end_number ?? "") }}',
                 specification: '{{ old("specification", $defect->specification ?? "") }}',

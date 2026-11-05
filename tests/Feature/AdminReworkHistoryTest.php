@@ -174,7 +174,7 @@ class AdminReworkHistoryTest extends TestCase
         $response->assertSee('Total Harness:');
     }
 
-    public function test_admin_rework_history_has_edit_button_without_in_out_delete(): void
+    public function test_admin_rework_history_has_edit_and_delete_button_without_in_out(): void
     {
         $reworkArea = AreaDitemukan::create([
             'name' => 'REWORK AREA 1',
@@ -201,20 +201,19 @@ class AdminReworkHistoryTest extends TestCase
         $response = $this->actingAsAdmin()->get('/admin/rework-history');
         $response->assertStatus(200);
 
-        // MUST contain Edit link to /rework/edit/{groupId}
+        // MUST contain Edit link to /rework/edit/{groupId} and Delete button
         $response->assertSee(route('rework.edit', ['groupId' => $groupId]));
         $response->assertSee('Edit');
+        $response->assertSee(route('admin.rework_history.destroy', $groupId));
+        $response->assertSee('Hapus');
 
-        // MUST NOT contain In form, Out button, or Delete form
+        // MUST NOT contain In form, Out button
         $response->assertDontSee('Mulai Rework (In)');
         $response->assertDontSee('Selesai (Out)');
         $response->assertDontSee('/rework/in');
         $response->assertDontSee('/rework/out');
         $response->assertDontSee('admin.report.destroy');
         $response->assertDontSee('admin.report.edit');
-        $response->assertDontSee('Hapus');
-        $response->assertDontSee('action="DELETE"');
-        $response->assertDontSee("onsubmit=\"return confirm('Apakah Anda yakin ingin menghapus");
     }
 
     public function test_admin_can_open_and_save_edit_for_other_operator_harness_and_redirects_to_admin_history(): void
@@ -718,7 +717,7 @@ class AdminReworkHistoryTest extends TestCase
         $this->assertEquals(1, $mapped[26]);
     }
 
-    public function test_recent_defects_displays_rework_edit_and_disabled_delete_for_rework_rows(): void
+    public function test_recent_defects_displays_rework_edit_and_active_delete_for_all_rows(): void
     {
         $defectType = DefectType::create([
             'name' => 'WIRING',
@@ -762,9 +761,9 @@ class AdminReworkHistoryTest extends TestCase
         $resRecent = $this->actingAsAdmin()->get(route('recent_defects.index'));
         $resRecent->assertStatus(200);
 
-        // Baris rework: link edit ke rework.edit, tombol hapus disabled dengan title pengaman
+        // Baris rework: link edit ke rework.edit, tombol hapus form aktif
         $resRecent->assertSee(route('rework.edit', ['groupId' => $reworkGroupId]));
-        $resRecent->assertSee('title="Data rework tidak dapat dihapus dari halaman ini"', false);
+        $resRecent->assertSee(route('admin.report.destroy', $reworkDefect->id));
 
         // Baris non-rework: link edit ke admin.report.edit, tombol hapus form aktif
         $resRecent->assertSee(route('admin.report.edit', $normalDefect->id));
@@ -986,7 +985,7 @@ class AdminReworkHistoryTest extends TestCase
         $this->assertNull($fresh->inspect_quantity);
     }
 
-    public function test_admin_destroy_report_rejects_rework_row_and_deletes_non_rework_row(): void
+    public function test_admin_destroy_report_allows_deleting_rework_row_and_non_rework_row(): void
     {
         $defectType = DefectType::create([
             'name' => 'WIRING',
@@ -1018,17 +1017,107 @@ class AdminReworkHistoryTest extends TestCase
             'quantity'         => 1,
         ]);
 
-        // 1. Destroy pada baris rework DITOLAK
-        $resRework = $this->actingAsAdmin()->from('/recent-defects')->delete(route('admin.report.destroy', $reworkDefect->id));
-        $resRework->assertRedirect('/recent-defects');
-        $resRework->assertSessionHas('error');
+        // 1. Operator ditolak 403
+        $resOp = $this->actingAsOperator()->delete(route('admin.report.destroy', $reworkDefect->id));
+        $resOp->assertStatus(403);
         $this->assertDatabaseHas('defects', ['id' => $reworkDefect->id]);
 
-        // 2. Destroy pada baris non-rework DIIZINKAN
+        // 2. Akun Rework ditolak 403
+        $resRw = $this->actingAsRework()->delete(route('admin.report.destroy', $reworkDefect->id));
+        $resRw->assertStatus(403);
+        $this->assertDatabaseHas('defects', ['id' => $reworkDefect->id]);
+
+        // 3. Admin berhasil hapus baris rework
+        $resRework = $this->actingAsAdmin()->from('/recent-defects')->delete(route('admin.report.destroy', $reworkDefect->id));
+        $resRework->assertRedirect('/recent-defects');
+        $resRework->assertSessionHas('success');
+        $this->assertDatabaseMissing('defects', ['id' => $reworkDefect->id]);
+
+        // 4. Admin berhasil hapus baris normal
         $resNormal = $this->actingAsAdmin()->from('/recent-defects')->delete(route('admin.report.destroy', $normalDefect->id));
         $resNormal->assertRedirect('/recent-defects');
         $resNormal->assertSessionHas('success');
         $this->assertDatabaseMissing('defects', ['id' => $normalDefect->id]);
+    }
+
+    public function test_admin_can_delete_rework_group_and_non_admin_is_rejected_403(): void
+    {
+        $defectType = DefectType::create([
+            'name' => 'WIRING',
+            'type' => 'Final Assy',
+        ]);
+        $subDefect1 = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.A - CROSS CIRCUIT',
+        ]);
+        $subDefect2 = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.B - SHORT CIRCUIT',
+        ]);
+
+        $groupIdTarget = (string) Str::uuid();
+        $defect1 = Defect::create([
+            'rework_group_id'  => $groupIdTarget,
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect1->name,
+            'user_name'        => 'reworkA',
+            'quantity'         => 1,
+        ]);
+        $defect2 = Defect::create([
+            'rework_group_id'  => $groupIdTarget,
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect2->name,
+            'user_name'        => 'reworkA',
+            'quantity'         => 1,
+        ]);
+
+        $groupIdOther = (string) Str::uuid();
+        $defectOther = Defect::create([
+            'rework_group_id'  => $groupIdOther,
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => $defectType->name,
+            'jenis_sub_defect' => $subDefect1->name,
+            'user_name'        => 'reworkB',
+            'quantity'         => 1,
+        ]);
+
+        // Verifikasi tombol hapus dan konfirmasi dialog di halaman admin
+        $resPage = $this->actingAsAdmin()->get('/admin/rework-history');
+        $resPage->assertStatus(200);
+        $resPage->assertSee(route('admin.rework_history.destroy', $groupIdTarget));
+        $resPage->assertSee('Sebanyak 2 defect yang ada di dalam harness ini akan ikut terhapus', false);
+
+        // Operator ditolak 403
+        $resOp = $this->actingAsOperator()->delete(route('admin.rework_history.destroy', $groupIdTarget));
+        $resOp->assertStatus(403);
+        $this->assertDatabaseHas('defects', ['id' => $defect1->id]);
+        $this->assertDatabaseHas('defects', ['id' => $defect2->id]);
+
+        // Rework role ditolak 403
+        $resRw = $this->actingAsRework()->delete(route('admin.rework_history.destroy', $groupIdTarget));
+        $resRw->assertStatus(403);
+        $this->assertDatabaseHas('defects', ['id' => $defect1->id]);
+        $this->assertDatabaseHas('defects', ['id' => $defect2->id]);
+
+        // Admin berhasil hapus
+        $resAdmin = $this->actingAsAdmin()->from('/admin/rework-history')->delete(route('admin.rework_history.destroy', $groupIdTarget));
+        $resAdmin->assertRedirect('/admin/rework-history');
+        $resAdmin->assertSessionHas('success');
+
+        // Kedua baris defect di groupIdTarget terhapus
+        $this->assertDatabaseMissing('defects', ['id' => $defect1->id]);
+        $this->assertDatabaseMissing('defects', ['id' => $defect2->id]);
+
+        // Defect group lain tetap utuh
+        $this->assertDatabaseHas('defects', ['id' => $defectOther->id]);
     }
 
     public function test_sanitize_admin_return_url_allows_recent_defects_and_rework_history(): void

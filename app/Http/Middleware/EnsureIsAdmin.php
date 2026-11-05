@@ -19,6 +19,9 @@ class EnsureIsAdmin
         }
 
         if (session('user_role') !== 'Administrator') {
+            if ($request->expectsJson() || $request->isMethod('delete')) {
+                abort(403, 'Akses tidak diizinkan.');
+            }
             return RoleRouteHelper::redirectForRole();
         }
 
