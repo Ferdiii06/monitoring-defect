@@ -15,4 +15,9 @@ class Carline extends Model
     {
         return $this->belongsTo(CarType::class);
     }
+
+    public function assyNumbers()
+    {
+        return $this->hasMany(AssyNumber::class);
+    }
 }

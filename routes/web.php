@@ -56,6 +56,8 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
         Route::post('/out/{groupId}', [ReworkController::class, 'storeOut'])->name('store_out');
         Route::get('/edit/{groupId}', [ReworkController::class, 'edit'])->name('edit');
         Route::put('/update/{groupId}', [ReworkController::class, 'update'])->name('update');
+        Route::get('/lookup-assy', [\App\Http\Controllers\AssyLookupController::class, 'lookup'])->name('lookup_assy');
+        Route::get('/lookup', [\App\Http\Controllers\AssyLookupController::class, 'lookup'])->name('lookup');
     });
 
 
@@ -109,6 +111,13 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
             Route::post('/carlines', [\App\Http\Controllers\CarlineController::class, 'store'])->name('carlines.store');
             Route::put('/carlines/{id}', [\App\Http\Controllers\CarlineController::class, 'update'])->name('carlines.update');
             Route::delete('/carlines/{id}', [\App\Http\Controllers\CarlineController::class, 'destroy'])->name('carlines.destroy');
+
+            // Assy Numbers
+            Route::get('/assy-numbers', [\App\Http\Controllers\AssyNumberController::class, 'index'])->name('assy_numbers.index');
+            Route::post('/assy-numbers', [\App\Http\Controllers\AssyNumberController::class, 'store'])->name('assy_numbers.store');
+            Route::post('/assy-numbers/import', [\App\Http\Controllers\AssyNumberController::class, 'import'])->name('assy_numbers.import');
+            Route::put('/assy-numbers/{id}', [\App\Http\Controllers\AssyNumberController::class, 'update'])->name('assy_numbers.update');
+            Route::delete('/assy-numbers/{id}', [\App\Http\Controllers\AssyNumberController::class, 'destroy'])->name('assy_numbers.destroy');
 
             // Defect Types & Sub Defect Types
             Route::get('/defect-types', [\App\Http\Controllers\DefectTypeController::class, 'index'])->name('defect_types.index');

@@ -19,6 +19,20 @@ class KanbanCodeParser
     protected const NAMEPLATE_PATTERN = '/^([A-Z0-9]{10})\s*([A-Z]?)\s*(\d{6})(\d{4})$/';
 
     /**
+     * Normalisasi nomor assy: hapus tanda "-" dan spasi, ubah ke huruf besar.
+     * Contoh: "82111-VU020" -> "82111VU020", " 82111 vu020 " -> "82111VU020".
+     */
+    public static function normalizeAssyNumber(?string $assy): ?string
+    {
+        if ($assy === null) {
+            return null;
+        }
+
+        $clean = strtoupper(str_replace(['-', ' '], '', trim($assy)));
+        return $clean === '' ? null : $clean;
+    }
+
+    /**
      * Normalisasi input:
      * Trim whitespace, buang karakter '*' di awal dan akhir, ubah ke huruf besar.
      * Mengembalikan null jika input null, kosong, atau hanya terdiri dari spasi/bintang.
@@ -85,11 +99,14 @@ class KanbanCodeParser
         }
 
         $rawAssy = $matches[1];
+        $cleanRaw = self::normalizeAssyNumber($rawAssy) ?? $rawAssy;
         $suffix = $matches[2] !== '' ? $matches[2] : null;
         $dateCode = $matches[3];
         $serial = $matches[4];
 
-        $assyNumber = substr($rawAssy, 0, 5) . '-' . substr($rawAssy, 5);
+        $assyNumber = (strlen($cleanRaw) >= 5)
+            ? substr($cleanRaw, 0, 5) . '-' . substr($cleanRaw, 5)
+            : $cleanRaw;
         $date = self::parseDateCode($dateCode);
 
         return [

@@ -243,4 +243,19 @@ class KanbanCodeParserTest extends TestCase
         $this->assertNull(KanbanCodeParser::detect(''));
         $this->assertNull(KanbanCodeParser::detect('INVALID_CODE'));
     }
+
+    /**
+     * Test helper normalisasi assy number: hapus "-" dan spasi, uppercase.
+     */
+    public function test_normalize_assy_number(): void
+    {
+        $this->assertSame('82111VU020', KanbanCodeParser::normalizeAssyNumber('82111-VU020'));
+        $this->assertSame('82111VU020', KanbanCodeParser::normalizeAssyNumber('82111VU020'));
+        $this->assertSame('82111VU020', KanbanCodeParser::normalizeAssyNumber(' 82111 - vu020 '));
+        $this->assertSame('82111VU020', KanbanCodeParser::normalizeAssyNumber('82111 vu020'));
+        $this->assertNull(KanbanCodeParser::normalizeAssyNumber(null));
+        $this->assertNull(KanbanCodeParser::normalizeAssyNumber(''));
+        $this->assertNull(KanbanCodeParser::normalizeAssyNumber('   '));
+        $this->assertNull(KanbanCodeParser::normalizeAssyNumber('-'));
+    }
 }

@@ -196,6 +196,11 @@
                                 <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.carlines.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1.5 3 3.5 3s3.5-1 3.5-3V7c0-2-1.5-3-3.5-3S4 5 4 7zm9 0v10c0 2 1.5 3 3.5 3s3.5-1 3.5-3V7c0-2-1.5-3-3.5-3s-3.5 1-3.5 3z"></path></svg>
                                 <span>Carline / Konveyor</span>
                             </a>
+                            <a href="{{ route('admin.master.assy_numbers.index') }}" 
+                               class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.assy_numbers.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                                <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.assy_numbers.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
+                                <span>Assy Number</span>
+                            </a>
                         </div>
                     </div>
 
