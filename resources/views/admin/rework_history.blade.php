@@ -198,7 +198,7 @@
                                         <div class="pt-1 flex flex-wrap gap-1">
                                             @if(filled($carlineDisplay))
                                                 <span class="inline-block bg-gray-100 text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                                    Carline: {{ $carlineDisplay }}
+                                                    Jenis Mobil: {{ $carlineDisplay }}
                                                 </span>
                                             @endif
                                             @if(filled($conveyorDisplay))

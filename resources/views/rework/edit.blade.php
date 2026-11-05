@@ -188,12 +188,12 @@
                     <!-- Field: Carline -->
                     <div class="space-y-1.5">
                         <label for="carline" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                            Carline <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
+                            Jenis Mobil <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
                         </label>
                         <select id="carline"
                                 name="carline"
                                 class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
-                            <option value="">Pilih Carline (Opsional)...</option>
+                            <option value="">Pilih Jenis Mobil (Opsional)...</option>
                             @foreach($carTypes ?? [] as $ct)
                                 <option value="{{ $ct->name }}" {{ $initialCarline === $ct->name ? 'selected' : '' }}>
                                     {{ $ct->name }}
@@ -481,7 +481,7 @@
             defaultOpt.value = '';
 
             if (!selectedCarline || !conveyorMap[selectedCarline]) {
-                defaultOpt.textContent = 'Pilih Carline Terlebih Dahulu';
+                defaultOpt.textContent = 'Pilih Jenis Mobil Terlebih Dahulu';
                 conveyorSelect.appendChild(defaultOpt);
                 conveyorSelect.disabled = true;
                 return;

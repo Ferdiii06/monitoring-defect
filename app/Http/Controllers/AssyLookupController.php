@@ -36,7 +36,7 @@ class AssyLookupController extends Controller
         $assyNumber = $parsed['assy_number'];
         $normalizedAssy = KanbanCodeParser::normalizeAssyNumber($assyNumber);
 
-        $master = AssyNumber::with('carline')
+        $master = AssyNumber::with(['carline.carType'])
             ->where(function ($q) use ($assyNumber, $normalizedAssy) {
                 $q->where('assy_number', $assyNumber)
                   ->orWhere('assy_number', $normalizedAssy)
@@ -50,6 +50,8 @@ class AssyLookupController extends Controller
             'serial'              => $parsed['serial'] ?? null,
             'carline_id'          => $master?->carline_id ?? null,
             'carline_nama'        => $master?->carline?->name ?? null,
+            'car_type_id'         => $master?->carline?->car_type_id ?? null,
+            'car_type_nama'       => $master?->carline?->carType?->name ?? null,
             'ditemukan_di_master' => $master !== null,
         ]);
     }

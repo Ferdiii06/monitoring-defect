@@ -221,15 +221,25 @@ class ReworkController extends Controller
             return redirect()->route('rework.index')->with('error', 'Harness ini sudah selesai di-rework.');
         }
 
+        $validated = $request->validate([
+            'nameplate_baru' => 'nullable|string|max:255',
+        ]);
+
         $waktuOut = now();
         $waktuIn = $defects->first()->waktu_in ? Carbon::parse($defects->first()->waktu_in) : $waktuOut;
         $durasiMenit = (int) max(0, round($waktuIn->diffInSeconds($waktuOut) / 60));
 
-        Defect::where('rework_group_id', $groupId)->update([
+        $updateData = [
             'waktu_out'           => $waktuOut,
             'status_rework'       => 'CLOSE',
             'durasi_rework_menit' => $durasiMenit,
-        ]);
+        ];
+
+        if ($request->filled('nameplate_baru')) {
+            $updateData['nameplate_baru'] = strtoupper(trim((string) $request->input('nameplate_baru')));
+        }
+
+        Defect::where('rework_group_id', $groupId)->update($updateData);
 
         return redirect()->route('rework.index')->with('success', 'Rework harness berhasil diselesaikan (Out). Durasi: ' . $durasiMenit . ' menit.');
     }
@@ -536,17 +546,17 @@ class ReworkController extends Controller
             $carlineRecord = Carline::with('carType')->find($carlineId);
             if (!$carlineRecord || $carlineRecord->car_type_id === null) {
                 throw ValidationException::withMessages([
-                    'carline_id' => 'Carline / Konveyor yang dipilih tidak valid untuk Final Assy.',
+                    'carline_id' => 'Konveyor yang dipilih tidak valid untuk Final Assy.',
                 ]);
             }
             if ($conveyor !== null && $carlineRecord->name !== $conveyor) {
                 throw ValidationException::withMessages([
-                    'conveyor' => 'Konveyor tidak sesuai dengan Carline yang dipilih.',
+                    'conveyor' => 'Konveyor tidak sesuai dengan Jenis Mobil yang dipilih.',
                 ]);
             }
             if ($carline !== null && $carlineRecord->carType?->name !== $carline) {
                 throw ValidationException::withMessages([
-                    'carline' => 'Carline tidak sesuai dengan Konveyor yang dipilih.',
+                    'carline' => 'Jenis Mobil tidak sesuai dengan Konveyor yang dipilih.',
                 ]);
             }
             return [$carlineRecord->name, $carlineRecord->id, $carlineRecord->carType?->name];
@@ -565,7 +575,7 @@ class ReworkController extends Controller
             if (!$carlineRecord) {
                 if ($carline !== null) {
                     throw ValidationException::withMessages([
-                        'conveyor' => 'Konveyor tidak sesuai dengan Carline yang dipilih.',
+                        'conveyor' => 'Konveyor tidak sesuai dengan Jenis Mobil yang dipilih.',
                     ]);
                 }
                 throw ValidationException::withMessages([
@@ -581,7 +591,7 @@ class ReworkController extends Controller
             $carTypeExists = CarType::where('name', $carline)->exists();
             if (!$carTypeExists) {
                 throw ValidationException::withMessages([
-                    'carline' => 'Carline yang dipilih tidak valid.',
+                    'carline' => 'Jenis Mobil yang dipilih tidak valid.',
                 ]);
             }
             return [null, null, $carline];

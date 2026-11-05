@@ -64,6 +64,8 @@ class AssyLookupEndpointTest extends TestCase
             'serial'              => '010',
             'carline_id'          => $carline->id,
             'carline_nama'        => '664W-C5',
+            'car_type_id'         => $carType->id,
+            'car_type_nama'       => 'AVANZA',
             'ditemukan_di_master' => true,
         ]);
     }
@@ -93,6 +95,8 @@ class AssyLookupEndpointTest extends TestCase
             'serial'              => '0008',
             'carline_id'          => $carline->id,
             'carline_nama'        => 'AT-LINE',
+            'car_type_id'         => $carType->id,
+            'car_type_nama'       => 'VELOZ',
             'ditemukan_di_master' => true,
         ]);
 

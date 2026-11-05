@@ -119,6 +119,21 @@
                                         </svg>
                                     </div>
                                 </div>
+                                <!-- Feedback Info / Peringatan / Error Lookup Scan -->
+                                <div id="kanban_lookup_info" class="space-y-1 hidden">
+                                    <div id="kanban_info_text" class="text-xs font-semibold text-emerald-700 flex items-center space-x-1.5 hidden pt-0.5">
+                                        <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                        <span id="kanban_info_msg"></span>
+                                    </div>
+                                    <div id="kanban_warning_box" class="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-start space-x-1.5 hidden">
+                                        <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                        <span>Nomor assy belum terdaftar di master data assy number (tetap bisa disimpan).</span>
+                                    </div>
+                                    <div id="kanban_error_box" class="p-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-[11px] font-medium flex items-start space-x-1.5 hidden">
+                                        <svg class="w-4 h-4 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        <span id="kanban_error_msg">Format kode scan tidak valid.</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Field 2: Nameplate -->
@@ -146,15 +161,15 @@
 
                         <!-- Baris 1.5: Carline & Conveyor (Opsional) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
-                            <!-- Field: Carline -->
+                            <!-- Field: Carline (Jenis Mobil) -->
                             <div class="space-y-1.5">
                                 <label for="carline" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                                    Carline <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
+                                    Jenis Mobil <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
                                 </label>
                                 <select id="carline"
                                         name="carline"
                                         class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
-                                    <option value="">Pilih Carline (Opsional)...</option>
+                                    <option value="">Pilih Jenis Mobil (Opsional)...</option>
                                     @foreach($carTypes ?? [] as $ct)
                                         <option value="{{ $ct->name }}" {{ old('carline') === $ct->name ? 'selected' : '' }}>
                                             {{ $ct->name }}
@@ -173,6 +188,7 @@
                                         class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
                                     <option value="">Pilih Konveyor (Opsional)...</option>
                                 </select>
+                                <p id="conveyor_scan_hint" class="text-[11px] text-gray-500 font-medium hidden"></p>
                             </div>
                         </div>
 
