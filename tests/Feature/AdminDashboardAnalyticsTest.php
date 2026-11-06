@@ -1790,21 +1790,37 @@ class AdminDashboardAnalyticsTest extends TestCase
 
         // Peringkat 1: SUB-PRE-4 (100) -> 100/500 = 20.0%
         $this->assertEquals('SUB-PRE-4', $pareto[0]['name']);
+        $this->assertEquals('SUB-PRE-4', $pareto[0]['key']);
+        $this->assertEquals('[Pre] SUB-PRE-4', $pareto[0]['label']);
+        $this->assertEquals('Pre', $pareto[0]['area_tag']);
         $this->assertEquals(100, $pareto[0]['total']);
+        $this->assertEquals(100, $pareto[0]['pre_qty']);
+        $this->assertEquals(0, $pareto[0]['final_qty']);
         $this->assertEquals(100, $pareto[0]['internal_qty']);
         $this->assertEquals(0, $pareto[0]['rework_qty']);
         $this->assertEquals(20.0, $pareto[0]['cumulative_percent']);
 
         // Peringkat 2: SUB-PRE-3 (75) -> (100+75)/500 = 35.0%
         $this->assertEquals('SUB-PRE-3', $pareto[1]['name']);
+        $this->assertEquals('SUB-PRE-3', $pareto[1]['key']);
+        $this->assertEquals('[Pre] SUB-PRE-3', $pareto[1]['label']);
+        $this->assertEquals('Pre', $pareto[1]['area_tag']);
         $this->assertEquals(75, $pareto[1]['total']);
+        $this->assertEquals(75, $pareto[1]['pre_qty']);
+        $this->assertEquals(0, $pareto[1]['final_qty']);
         $this->assertEquals(75, $pareto[1]['internal_qty']);
         $this->assertEquals(0, $pareto[1]['rework_qty']);
         $this->assertEquals(35.0, $pareto[1]['cumulative_percent']);
 
         // Peringkat 3: SUB-FA-REW-4 (60) -> (175+60)/500 = 47.0%
         $this->assertEquals('SUB-FA-REW-4', $pareto[2]['name']);
+        $this->assertEquals('SUB-FA-REW-4', $pareto[2]['key']);
+        $this->assertEquals('[Final] SUB-FA-REW-4', $pareto[2]['label']);
+        $this->assertEquals('Final', $pareto[2]['area_tag']);
         $this->assertEquals(60, $pareto[2]['total']);
+        $this->assertEquals(60, $pareto[2]['final_qty']);
+        $this->assertEquals(60, $pareto[2]['final_rework_qty']);
+        $this->assertEquals(0, $pareto[2]['pre_qty']);
         $this->assertEquals(0, $pareto[2]['internal_qty']);
         $this->assertEquals(60, $pareto[2]['rework_qty']);
         $this->assertEquals(47.0, $pareto[2]['cumulative_percent']);
@@ -2263,5 +2279,139 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertEquals(4, $paretoTotals['5.B - MISALIGN']);
         $this->assertContains('6.B - MISALIGN', $paretoNames);
         $this->assertEquals(5, $paretoTotals['6.B - MISALIGN']);
+    }
+
+    public function test_mode_all_pareto_includes_area_tag_key_label_and_qty_breakdown_and_drilldown(): void
+    {
+        $areaInt = AreaDitemukan::create(['name' => 'Area Assembly', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+        $areaRew = AreaDitemukan::create(['name' => 'Area Rework Khusus', 'tipe' => AreaDitemukan::TIPE_REWORK]);
+        $today = '2026-06-15';
+
+        // 1. Shared defect: FOREIGN MATERIAL in Final Assy Internal (4 pcs), Final Assy Rework (2 pcs), Pre Assy (5 pcs)
+        Defect::create([
+            'waktu' => "{$today} 08:00:00",
+            'user_name' => 'Operator FA',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'LAIN-LAIN',
+            'jenis_sub_defect' => '11.A - FOREIGN MATERIAL',
+            'conveyor' => 'CONV-1',
+            'area_ditemukan' => $areaInt->name,
+            'quantity' => 4,
+            'inspect_quantity' => 100,
+        ]);
+        Defect::create([
+            'waktu' => "{$today} 08:30:00",
+            'user_name' => 'Reworker 1',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'LAIN-LAIN',
+            'jenis_sub_defect' => '11.A - FOREIGN MATERIAL',
+            'area_ditemukan' => $areaRew->name,
+            'rework_group_id' => (string) Str::uuid(),
+            'quantity' => 2,
+        ]);
+        Defect::create([
+            'waktu' => "{$today} 09:00:00",
+            'user_name' => 'Operator Pre',
+            'jenis_assy' => 'Pre Assy',
+            'jenis_defect' => 'CRIMPING',
+            'jenis_sub_defect' => 'G.1 - FOREIGN MATERIAL',
+            'quantity' => 5,
+            'inspect_quantity' => 200,
+        ]);
+
+        // 2. Final-only defect (Internal 3 pcs, Rework 3 pcs)
+        Defect::create([
+            'waktu' => "{$today} 09:30:00",
+            'user_name' => 'Operator FA',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'INSER CIRCUIT',
+            'jenis_sub_defect' => '1.A - CROSS CIRCUIT',
+            'conveyor' => 'CONV-2',
+            'area_ditemukan' => $areaInt->name,
+            'quantity' => 3,
+        ]);
+        Defect::create([
+            'waktu' => "{$today} 09:45:00",
+            'user_name' => 'Reworker 1',
+            'jenis_assy' => 'Final Assy',
+            'jenis_defect' => 'INSER CIRCUIT',
+            'jenis_sub_defect' => '1.A - CROSS CIRCUIT',
+            'area_ditemukan' => $areaRew->name,
+            'rework_group_id' => (string) Str::uuid(),
+            'quantity' => 3,
+        ]);
+
+        // 3. Pre-only defect (7 pcs)
+        Defect::create([
+            'waktu' => "{$today} 10:00:00",
+            'user_name' => 'Operator Pre',
+            'jenis_assy' => 'Pre Assy',
+            'jenis_defect' => 'CORE',
+            'jenis_sub_defect' => 'A.1 - FRAYING',
+            'quantity' => 7,
+        ]);
+
+        // Fetch pareto mode all
+        $res = $this->actingAsAdmin()->getJson("/dashboard/analytics?mode=all&start_date={$today}&end_date={$today}");
+        $res->assertStatus(200);
+
+        $pareto = $res->json('pareto_final');
+        $byKey = collect($pareto)->keyBy('key');
+
+        // Check Shared Defect: FOREIGN MATERIAL
+        $this->assertTrue($byKey->has('FOREIGN MATERIAL'));
+        $fm = $byKey->get('FOREIGN MATERIAL');
+        $this->assertEquals('FOREIGN MATERIAL', $fm['key']);
+        $this->assertEquals('FOREIGN MATERIAL', $fm['name']);
+        $this->assertEquals('Final+Pre', $fm['area_tag']);
+        $this->assertEquals('[Final+Pre] FOREIGN MATERIAL', $fm['label']);
+        $this->assertEquals(11, $fm['total']);
+        $this->assertEquals(6, $fm['final_qty']);
+        $this->assertEquals(5, $fm['pre_qty']);
+        $this->assertEquals(4, $fm['final_internal_qty']);
+        $this->assertEquals(2, $fm['final_rework_qty']);
+        $this->assertEquals(9, $fm['internal_qty']); // 4 (FA int) + 5 (Pre int)
+        $this->assertEquals(2, $fm['rework_qty']);
+
+        // Check Final-only: 1.A - CROSS CIRCUIT
+        $this->assertTrue($byKey->has('1.A - CROSS CIRCUIT'));
+        $cc = $byKey->get('1.A - CROSS CIRCUIT');
+        $this->assertEquals('1.A - CROSS CIRCUIT', $cc['key']);
+        $this->assertEquals('Final', $cc['area_tag']);
+        $this->assertEquals('[Final] 1.A - CROSS CIRCUIT', $cc['label']);
+        $this->assertEquals(6, $cc['total']);
+        $this->assertEquals(6, $cc['final_qty']);
+        $this->assertEquals(0, $cc['pre_qty']);
+        $this->assertEquals(3, $cc['final_internal_qty']);
+        $this->assertEquals(3, $cc['final_rework_qty']);
+
+        // Check Pre-only: A.1 - FRAYING
+        $this->assertTrue($byKey->has('A.1 - FRAYING'));
+        $fr = $byKey->get('A.1 - FRAYING');
+        $this->assertEquals('A.1 - FRAYING', $fr['key']);
+        $this->assertEquals('Pre', $fr['area_tag']);
+        $this->assertEquals('[Pre] A.1 - FRAYING', $fr['label']);
+        $this->assertEquals(7, $fr['total']);
+        $this->assertEquals(0, $fr['final_qty']);
+        $this->assertEquals(7, $fr['pre_qty']);
+
+        // Test Drilldown using pure key
+        $resDrillKey = $this->actingAsAdmin()->getJson("/dashboard/pareto-drilldown?sub_defect=FOREIGN MATERIAL&mode=all&start_date={$today}&end_date={$today}");
+        $resDrillKey->assertStatus(200);
+        $this->assertEquals('FOREIGN MATERIAL', $resDrillKey->json('sub_defect'));
+        $this->assertNotEmpty($resDrillKey->json('items'));
+
+        // Test Drilldown with area tag in sub_defect (defensive handling)
+        $resDrillTagged = $this->actingAsAdmin()->getJson("/dashboard/pareto-drilldown?sub_defect=[Final+Pre] FOREIGN MATERIAL&mode=all&start_date={$today}&end_date={$today}");
+        $resDrillTagged->assertStatus(200);
+        $this->assertEquals('FOREIGN MATERIAL', $resDrillTagged->json('sub_defect'));
+        $this->assertEquals($resDrillKey->json('items'), $resDrillTagged->json('items'));
+
+        // Mode Internal and Mode Rework verification: area_tag is not present in single mode
+        $resInternal = $this->actingAsAdmin()->getJson("/dashboard/analytics?mode=internal&assy=final&start_date={$today}&end_date={$today}");
+        $resInternal->assertStatus(200);
+        $paretoInternal = $resInternal->json('pareto_final');
+        $this->assertNotEmpty($paretoInternal);
+        $this->assertArrayNotHasKey('area_tag', $paretoInternal[0]);
     }
 }

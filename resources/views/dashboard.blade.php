@@ -1407,9 +1407,14 @@
                     onClick: function(event, elements) {
                         if (!elements || elements.length === 0) return;
                         const el = elements[0];
-                        const label = this.data.labels[el.index];
-                        if (!label) return;
-                        triggerParetoDrilldown(canvasId, label);
+                        const item = (this._paretoList && this._paretoList[el.index]) ? this._paretoList[el.index] : null;
+                        let targetKey = item?.key || item?.name;
+                        if (!targetKey) {
+                            const rawLabel = this.data.labels[el.index];
+                            targetKey = Array.isArray(rawLabel) ? (rawLabel[1] || rawLabel[0]) : rawLabel;
+                        }
+                        if (!targetKey) return;
+                        triggerParetoDrilldown(canvasId, targetKey);
                     },
                     interaction: {
                         mode: 'index',
@@ -1443,8 +1448,50 @@
                                 title: function(tooltipItems) {
                                     if (!tooltipItems.length) return '';
                                     const item = tooltipItems[0];
-                                    const labels = item.chart?.data?.labels;
-                                    return (labels && labels[item.dataIndex]) ? labels[item.dataIndex] : (item.label || '');
+                                    const chart = item.chart;
+                                    const p = chart?._paretoList?.[item.dataIndex];
+                                    if (p) {
+                                        const tag = p.area_tag ? `[${p.area_tag}] ` : '';
+                                        return `${tag}${p.name || p.key}`;
+                                    }
+                                    const rawLabel = chart?.data?.labels?.[item.dataIndex];
+                                    if (Array.isArray(rawLabel)) {
+                                        return rawLabel.join(' ');
+                                    }
+                                    return rawLabel || item.label || '';
+                                },
+                                beforeBody: function(tooltipItems) {
+                                    if (!tooltipItems.length) return [];
+                                    const item = tooltipItems[0];
+                                    const chart = item.chart;
+                                    const mode = chart?._mode || 'internal';
+                                    const isFinalAssy = (chart?.canvas?.id === 'chartParetoFinal');
+
+                                    if (isFinalAssy && mode === 'all') {
+                                        const p = chart?._paretoList?.[item.dataIndex];
+                                        if (p) {
+                                            const lines = [];
+                                            lines.push(`Total: ${Number(p.total || 0).toLocaleString('id-ID')} pcs`);
+                                            if ((p.final_qty || 0) > 0 && (p.pre_qty || 0) > 0) {
+                                                if ((p.final_rework_qty || 0) > 0) {
+                                                    lines.push(`• Final Assy: ${Number(p.final_qty).toLocaleString('id-ID')} pcs (Internal: ${Number(p.final_internal_qty || 0).toLocaleString('id-ID')}, Rework: ${Number(p.final_rework_qty).toLocaleString('id-ID')})`);
+                                                } else {
+                                                    lines.push(`• Final Assy: ${Number(p.final_qty).toLocaleString('id-ID')} pcs`);
+                                                }
+                                                lines.push(`• Pre Assy: ${Number(p.pre_qty).toLocaleString('id-ID')} pcs`);
+                                            } else if ((p.final_qty || 0) > 0) {
+                                                if ((p.final_rework_qty || 0) > 0) {
+                                                    lines.push(`• Final Assy: ${Number(p.final_qty).toLocaleString('id-ID')} pcs (Internal: ${Number(p.final_internal_qty || 0).toLocaleString('id-ID')}, Rework: ${Number(p.final_rework_qty).toLocaleString('id-ID')})`);
+                                                } else {
+                                                    lines.push(`• Final Assy: ${Number(p.final_qty).toLocaleString('id-ID')} pcs`);
+                                                }
+                                            } else if ((p.pre_qty || 0) > 0) {
+                                                lines.push(`• Pre Assy: ${Number(p.pre_qty).toLocaleString('id-ID')} pcs`);
+                                            }
+                                            return lines;
+                                        }
+                                    }
+                                    return [];
                                 },
                                 label: function(context) {
                                     const val = context.raw || 0;
@@ -1456,12 +1503,7 @@
                                     const isFinalAssy = (chart?.canvas?.id === 'chartParetoFinal');
 
                                     if (isFinalAssy && mode === 'all') {
-                                        if (context.datasetIndex === 1) {
-                                            return `  Internal Defect: ${Number(val).toLocaleString('id-ID')} pcs`;
-                                        }
-                                        if (context.datasetIndex === 2) {
-                                            return `  Rework: ${Number(val).toLocaleString('id-ID')} pcs`;
-                                        }
+                                        return null;
                                     } else if (isFinalAssy && mode === 'rework') {
                                         return `  Defect Rework: ${Number(val).toLocaleString('id-ID')} pcs`;
                                     }
@@ -1476,14 +1518,20 @@
                             grid: { display: false },
                             ticks: {
                                 color: '#475569',
-                                font: { size: 11, weight: '600' },
+                                font: { size: 10, weight: '600' },
                                 padding: 6,
                                 callback: function(val, index) {
-                                    const label = this.getLabelForValue(val);
-                                    if (typeof label === 'string' && label.length > 13) {
-                                        return label.substring(0, 13) + '…';
+                                    const rawLabel = this.getLabelForValue(val);
+                                    if (Array.isArray(rawLabel)) {
+                                        const tag = rawLabel[0] || '';
+                                        const text = rawLabel[1] || '';
+                                        const truncatedText = text.length > 13 ? text.substring(0, 13) + '…' : text;
+                                        return [tag, truncatedText];
                                     }
-                                    return label;
+                                    if (typeof rawLabel === 'string' && rawLabel.length > 13) {
+                                        return rawLabel.substring(0, 13) + '…';
+                                    }
+                                    return rawLabel;
                                 }
                             }
                         },
@@ -1922,7 +1970,17 @@
 
             if (chart) {
                 chart._mode = mode;
-                chart.data.labels = paretoList.map(p => p.name);
+                chart._paretoList = paretoList;
+
+                if (isFinal && mode === 'all') {
+                    chart.data.labels = paretoList.map(p => {
+                        const tag = p.area_tag ? `[${p.area_tag}]` : '';
+                        const nameStr = p.name || p.key || '';
+                        return tag ? [tag, nameStr] : nameStr;
+                    });
+                } else {
+                    chart.data.labels = paretoList.map(p => p.name || p.key || '');
+                }
 
                 if (isFinal && mode === 'all') {
                     // Stacked bar: Internal Defect (Teal) + Rework (Amber)
@@ -2216,8 +2274,9 @@
 
             if (topItem) {
                 if (valEl) {
-                    valEl.textContent = topItem.name;
-                    valEl.title = topItem.name;
+                    const tag = (isFinal && mode === 'all' && topItem.area_tag) ? `[${topItem.area_tag}] ` : '';
+                    valEl.textContent = `${tag}${topItem.name || topItem.key}`;
+                    valEl.title = `${tag}${topItem.name || topItem.key}`;
                 }
                 if (countEl) {
                     const displayQty = (isFinal && mode === 'rework' && topItem.rework_qty !== undefined)
@@ -2228,7 +2287,15 @@
                 if (subEl) {
                     const cum = topItem.cumulative_percent !== undefined ? `${Number(topItem.cumulative_percent).toFixed(1)}%` : '';
                     if (isFinal && mode === 'all') {
-                        subEl.textContent = `Peringkat 1 total (Internal: ${(topItem.internal_qty || 0).toLocaleString('id-ID')}, Rework: ${(topItem.rework_qty || 0).toLocaleString('id-ID')})`;
+                        let breakdownText = '';
+                        if ((topItem.final_qty || 0) > 0 && (topItem.pre_qty || 0) > 0) {
+                            breakdownText = `Final: ${(topItem.final_qty || 0).toLocaleString('id-ID')}, Pre: ${(topItem.pre_qty || 0).toLocaleString('id-ID')}`;
+                        } else if ((topItem.final_qty || 0) > 0) {
+                            breakdownText = `Final: ${(topItem.final_qty || 0).toLocaleString('id-ID')}`;
+                        } else if ((topItem.pre_qty || 0) > 0) {
+                            breakdownText = `Pre: ${(topItem.pre_qty || 0).toLocaleString('id-ID')}`;
+                        }
+                        subEl.textContent = breakdownText ? `Peringkat 1 total (${breakdownText})` : `Peringkat 1 total`;
                     } else if (isFinal && mode === 'rework') {
                         subEl.textContent = cum ? `Peringkat 1 rework (${cum} kumulatif)` : 'Peringkat 1 defect rework';
                     } else {
@@ -2979,6 +3046,9 @@
         function triggerParetoDrilldown(canvasId, subDefectName) {
             const isPre = (canvasId === 'chartParetoPre');
             const targetType = isPre ? 'Pre' : 'Final';
+            const cleanSubDefect = (typeof subDefectName === 'string')
+                ? subDefectName.replace(/^\[(Final[\s+]+Pre|Final|Pre)\]\s*/i, '').trim()
+                : subDefectName;
             const jenisAssy = isPre ? 'Pre Assy' : (currentMode === 'all' ? 'all' : 'Final Assy');
             const filters = isPre ? filtersParetoPre : filtersParetoFinal;
             const barColor = isPre ? '#2563eb' : (currentMode === 'rework' ? '#d97706' : '#0f766e');
@@ -2994,7 +3064,7 @@
             if (!wrapper) return;
 
             wrapper.classList.remove('hidden');
-            if (badge) badge.textContent = subDefectName;
+            if (badge) badge.textContent = cleanSubDefect;
             if (titleEl) {
                 titleEl.textContent = (currentMode === 'all') ? 'Top 5 Konveyor / Carline' : (isPre ? 'Top 5 Carline' : 'Top 5 Konveyor');
             }
@@ -3017,7 +3087,7 @@
             if (canvasWrap) canvasWrap.classList.add('hidden');
 
             const params = new URLSearchParams({
-                sub_defect: subDefectName,
+                sub_defect: cleanSubDefect,
                 start_date: filters.start_date || '',
                 end_date: filters.end_date || '',
                 mode: currentMode,

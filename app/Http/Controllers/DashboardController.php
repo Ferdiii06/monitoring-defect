@@ -337,7 +337,8 @@ class DashboardController extends Controller
      */
     public function paretoDrilldown(Request $request)
     {
-        $subDefect = trim((string) $request->input('sub_defect', ''));
+        $rawSubDefect = trim((string) $request->input('sub_defect', ''));
+        $subDefect = preg_replace('/^\[(Final[\s+]+Pre|Final|Pre)\]\s*/i', '', $rawSubDefect);
         if ($subDefect === '') {
             return response()->json([
                 'sub_defect' => '',
@@ -1018,18 +1019,38 @@ class DashboardController extends Controller
         $subDefectTotals = [];
         $subDefectInternal = [];
         $subDefectRework = [];
+        $subDefectFinal = [];
+        $subDefectPre = [];
+        $subDefectFinalInternal = [];
+        $subDefectFinalRework = [];
         $grandTotal = 0;
 
         foreach ($records as $r) {
             $normalizedName = SubDefectHelper::normalize($r->jenis_sub_defect);
             $qty = (int) $r->quantity;
 
-            $isRework = ($r->jenis_assy === 'Final Assy' && !empty($r->rework_group_id) && !empty($reworkAreaNames) && in_array($r->area_ditemukan, $reworkAreaNames, true));
+            $isFinal = ($r->jenis_assy === 'Final Assy');
+            $isRework = ($isFinal && !empty($r->rework_group_id) && !empty($reworkAreaNames) && in_array($r->area_ditemukan, $reworkAreaNames, true));
 
             if (!isset($subDefectTotals[$normalizedName])) {
                 $subDefectTotals[$normalizedName] = 0;
                 $subDefectInternal[$normalizedName] = 0;
                 $subDefectRework[$normalizedName] = 0;
+                $subDefectFinal[$normalizedName] = 0;
+                $subDefectPre[$normalizedName] = 0;
+                $subDefectFinalInternal[$normalizedName] = 0;
+                $subDefectFinalRework[$normalizedName] = 0;
+            }
+
+            if ($isFinal) {
+                $subDefectFinal[$normalizedName] += $qty;
+                if ($isRework) {
+                    $subDefectFinalRework[$normalizedName] += $qty;
+                } else {
+                    $subDefectFinalInternal[$normalizedName] += $qty;
+                }
+            } else {
+                $subDefectPre[$normalizedName] += $qty;
             }
 
             if ($isRework) {
@@ -1051,10 +1072,31 @@ class DashboardController extends Controller
         foreach ($top10 as $name => $total) {
             $runningSum += $total;
             $cumPercent = $grandTotal > 0 ? round(($runningSum / $grandTotal) * 100, 2) : 0.0;
+
+            $finalQty = $subDefectFinal[$name] ?? 0;
+            $preQty = $subDefectPre[$name] ?? 0;
+
+            if ($finalQty > 0 && $preQty > 0) {
+                $areaTag = 'Final+Pre';
+            } elseif ($finalQty > 0) {
+                $areaTag = 'Final';
+            } elseif ($preQty > 0) {
+                $areaTag = 'Pre';
+            } else {
+                $areaTag = 'Final';
+            }
+
             $pareto[] = [
                 'name'               => $name,
+                'key'                => $name,
+                'label'              => "[{$areaTag}] {$name}",
+                'area_tag'           => $areaTag,
                 'total'              => $total,
                 'cumulative_percent' => $cumPercent,
+                'final_qty'          => $finalQty,
+                'pre_qty'            => $preQty,
+                'final_internal_qty' => $subDefectFinalInternal[$name] ?? 0,
+                'final_rework_qty'   => $subDefectFinalRework[$name] ?? 0,
                 'internal_qty'       => $subDefectInternal[$name] ?? 0,
                 'rework_qty'         => $subDefectRework[$name] ?? 0,
             ];
