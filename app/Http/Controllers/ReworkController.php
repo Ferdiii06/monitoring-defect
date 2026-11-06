@@ -77,22 +77,30 @@ class ReworkController extends Controller
      * Handle harness check-in (In) with one or more defects.
      * Only accessible by Rework role.
      */
+    /**
+     * Handle harness check-in (In) with one or more defects.
+     * Supports both Live mode (status OPEN) and Susulan / Kertas Manual mode (status CLOSE).
+     * Only accessible by Rework role.
+     */
     public function storeIn(Request $request)
     {
         if (session('user_role') !== 'Rework') {
             return RoleRouteHelper::redirectForRole();
         }
 
+        $isSusulan = $request->input('mode_input') === 'susulan';
+
         $request->merge([
             'kanban_assy' => is_string($request->kanban_assy) ? trim($request->kanban_assy) : $request->kanban_assy,
             'nameplate'   => is_string($request->nameplate) ? strtoupper(trim($request->nameplate)) : $request->nameplate,
         ]);
 
-        $validated = $request->validate([
+        $rules = [
             'kanban_assy'          => 'required|string|max:255',
             'nameplate'            => 'required|string|max:255',
             'sub_defect_ids'       => 'required|array|min:1',
             'sub_defect_ids.*'     => 'required|integer|exists:sub_defect_types,id',
+            'nameplate_baru'       => 'nullable|string|max:255',
             'no_defective_tag'     => 'nullable|string|max:255',
             'ujung'                => 'nullable|string|max:255',
             'status_4m'            => 'nullable|string|max:50',
@@ -103,14 +111,97 @@ class ReworkController extends Controller
             'rc_h'                 => 'nullable|string|max:255',
             'rc_w'                 => 'nullable|string|max:255',
             'no_box'               => 'nullable|string|max:255',
-            'shift'                => 'nullable|string|max:50',
-        ], [
+        ];
+
+        $messages = [
             'kanban_assy.required'    => 'Kanban Assy wajib diisi.',
             'nameplate.required'      => 'Nameplate wajib diisi.',
             'sub_defect_ids.required' => 'Minimal satu defect harus dipilih.',
             'sub_defect_ids.min'      => 'Minimal satu defect harus dipilih.',
             'sub_defect_ids.*.exists' => 'Defect yang dipilih tidak valid.',
-        ]);
+        ];
+
+        if ($isSusulan) {
+            $rules['shift'] = 'required|in:1A,1B,2A,2B';
+            $rules['tanggal'] = 'required|date';
+            $rules['jam_in'] = 'required';
+            $rules['jam_out'] = 'required';
+
+            $messages['shift.required']   = 'Shift wajib dipilih di mode susulan.';
+            $messages['shift.in']         = 'Shift harus salah satu dari: 1A, 1B, 2A, atau 2B.';
+            $messages['tanggal.required'] = 'Tanggal kejadian rework wajib diisi.';
+            $messages['tanggal.date']     = 'Format tanggal kejadian tidak valid.';
+            $messages['jam_in.required']  = 'Jam In wajib diisi.';
+            $messages['jam_out.required'] = 'Jam Out wajib diisi.';
+        } else {
+            $rules['shift'] = 'nullable|string|max:50';
+        }
+
+        $validated = $request->validate($rules, $messages);
+
+        // Validasi waktu untuk mode susulan
+        $waktuIn = null;
+        $waktuOut = null;
+        $durasiMenit = null;
+        $shift = null;
+
+        if ($isSusulan) {
+            $tanggal = $validated['tanggal'];
+            $tanggalOut = $request->filled('tanggal_out') ? $request->input('tanggal_out') : $tanggal;
+            $jamIn = $validated['jam_in'];
+            $jamOut = $validated['jam_out'];
+            $shift = $validated['shift'];
+
+            try {
+                $waktuIn = Carbon::parse($tanggal . ' ' . $jamIn);
+            } catch (\Throwable $e) {
+                return back()->withErrors(['jam_in' => 'Format tanggal atau jam In tidak valid.'])->withInput();
+            }
+
+            try {
+                $waktuOut = Carbon::parse($tanggalOut . ' ' . $jamOut);
+            } catch (\Throwable $e) {
+                return back()->withErrors(['jam_out' => 'Format tanggal atau jam Out tidak valid.'])->withInput();
+            }
+
+            // Jika Out < In (dan tanggal_out tidak ditentukan eksplisit), tambah 1 hari untuk shift malam (lintas tengah malam)
+            if (!$request->filled('tanggal_out') && $waktuOut->lt($waktuIn)) {
+                $waktuOut = $waktuOut->copy()->addDay();
+            }
+
+            $now = now();
+            if ($waktuIn->gt($now)) {
+                return back()->withErrors(['jam_in' => 'Waktu In tidak boleh di masa depan.'])->withInput();
+            }
+
+            if ($waktuOut->gt($now)) {
+                return back()->withErrors(['jam_out' => 'Waktu Out tidak boleh di masa depan.'])->withInput();
+            }
+
+            // Durasi minimal 1 menit (Out harus setelah In)
+            $diffInMinutes = $waktuIn->diffInMinutes($waktuOut, false);
+            if ($diffInMinutes < 1) {
+                return back()->withErrors(['jam_out' => 'Waktu Out harus setelah waktu In (durasi minimal 1 menit).'])->withInput();
+            }
+
+            // Durasi maksimal 24 jam (1440 menit)
+            if ($diffInMinutes > 1440) {
+                return back()->withErrors(['jam_out' => 'Durasi rework tidak boleh lebih dari 24 jam.'])->withInput();
+            }
+
+            // Waktu In tidak boleh lebih dari 7 hari ke belakang
+            if ($waktuIn->lt($now->copy()->subDays(7)->startOfDay())) {
+                return back()->withErrors(['tanggal' => 'Waktu In tidak boleh lebih dari 7 hari ke belakang.'])->withInput();
+            }
+
+            $durasiMenit = (int) $diffInMinutes;
+        } else {
+            $now = now();
+            $waktuIn = $now;
+            $waktuOut = null;
+            $durasiMenit = null;
+            $shift = $request->filled('shift') ? $request->input('shift') : session('current_shift', '1A');
+        }
 
         // Duplicate check in one harness
         if (count($validated['sub_defect_ids']) !== count(array_unique($validated['sub_defect_ids']))) {
@@ -149,9 +240,10 @@ class ReworkController extends Controller
         [$resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil] = $this->resolveConveyorAndCarline($request);
 
         $groupId = (string) Str::uuid();
-        $now = now();
         $userName = session('user_name');
-        $shift = $request->filled('shift') ? $request->input('shift') : session('current_shift', '1A');
+        $nameplateBaru = ($isSusulan && $request->filled('nameplate_baru'))
+            ? strtoupper(trim((string) $request->input('nameplate_baru')))
+            : null;
 
         foreach ($validated['sub_defect_ids'] as $subDefectId) {
             $sub = $subDefects->get($subDefectId);
@@ -161,13 +253,15 @@ class ReworkController extends Controller
 
             Defect::create([
                 'rework_group_id'      => $groupId,
-                'waktu'                => $now,
-                'waktu_in'             => $now,
-                'waktu_out'            => null,
-                'status_rework'        => 'OPEN',
+                'waktu'                => $waktuIn,
+                'waktu_in'             => $waktuIn,
+                'waktu_out'            => $waktuOut,
+                'durasi_rework_menit'  => $durasiMenit,
+                'status_rework'        => $isSusulan ? 'CLOSE' : 'OPEN',
+                'is_susulan'           => $isSusulan,
                 'kanban_assy'          => $validated['kanban_assy'],
                 'nameplate_lama'       => $validated['nameplate'],
-                'nameplate_baru'       => null,
+                'nameplate_baru'       => $nameplateBaru,
                 'no_defective_tag'     => $request->input('no_defective_tag') ?: null,
                 'ujung'                => $request->input('ujung') ?: null,
                 'status_4m'            => $request->input('status_4m') ?: 'NO',
@@ -190,6 +284,16 @@ class ReworkController extends Controller
                 'carline_id'           => $resolvedCarlineId,
                 'jenis_mobil'          => $resolvedJenisMobil,
             ]);
+        }
+
+        if ($isSusulan) {
+            $msg = sprintf(
+                'Rework susulan berhasil disimpan (CLOSE). Waktu In: %s, Out: %s, Durasi: %d menit.',
+                $waktuIn->format('d/m/Y H:i'),
+                $waktuOut->format('d/m/Y H:i'),
+                $durasiMenit
+            );
+            return redirect()->route('rework.index')->with('success', $msg);
         }
 
         return redirect()->route('rework.index')->with('success', 'Rework harness berhasil dimulai (In).');
@@ -445,6 +549,7 @@ class ReworkController extends Controller
                     'waktu_out'            => $template->waktu_out,
                     'durasi_rework_menit'  => $template->durasi_rework_menit,
                     'status_rework'        => $template->status_rework,
+                    'is_susulan'           => (bool) $template->is_susulan,
                     'user_name'            => $template->user_name, // Akun pembuat tetap pemilik asli
                     'jenis_assy'           => 'Final Assy',
                     'quantity'             => 1,

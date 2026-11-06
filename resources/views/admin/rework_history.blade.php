@@ -150,17 +150,24 @@
 
                             <!-- Status Badge -->
                             <td class="py-4 text-xs font-bold px-4 text-center align-top">
-                                @if(in_array($first?->status_rework, ['Selesai', 'CLOSE'], true))
-                                    <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                        <span>CLOSE</span>
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                        <span>OPEN</span>
-                                    </span>
-                                @endif
+                                <div class="inline-flex flex-col items-center gap-1">
+                                    @if($first?->is_susulan)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
+                                            Susulan
+                                        </span>
+                                    @endif
+                                    @if(in_array($first?->status_rework, ['Selesai', 'CLOSE'], true))
+                                        <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            <span>CLOSE</span>
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-50 text-amber-800 border border-amber-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                            <span>OPEN</span>
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
 
                             <!-- Durasi -->

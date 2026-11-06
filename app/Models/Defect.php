@@ -56,6 +56,7 @@ class Defect extends Model
         'no_box',
         'ujung',
         'rework_group_id',
+        'is_susulan',
     ];
 
     protected $casts = [
@@ -70,6 +71,7 @@ class Defect extends Model
         'waktu_in'                 => 'datetime',
         'waktu_out'                => 'datetime',
         'durasi_rework_menit'      => 'integer',
+        'is_susulan'               => 'boolean',
     ];
 
     // --- Relasi ke master data baru ---

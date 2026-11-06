@@ -96,6 +96,122 @@
                     <form id="rework_form" action="{{ route('rework.store_in') }}" method="POST" class="space-y-4 sm:space-y-5">
                         @csrf
 
+                        @php
+                            $initialMode = old('mode_input', 'live');
+                            $isSusulan = $initialMode === 'susulan';
+                        @endphp
+
+                        <input type="hidden" name="mode_input" id="mode_input" value="{{ $initialMode }}">
+
+                        <!-- Toggle Segmented Control: Live vs Susulan -->
+                        <div class="p-1 bg-gray-100 rounded-2xl flex items-center gap-1 border border-border">
+                            <button type="button"
+                                    id="btn_mode_live"
+                                    onclick="setModeInput('live')"
+                                    class="flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center space-x-2 transition-all cursor-pointer {{ !$isSusulan ? 'bg-white text-gray-900 shadow-sm border border-gray-200/80' : 'text-gray-500 hover:text-gray-900' }}">
+                                <span class="w-2 h-2 rounded-full {{ !$isSusulan ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400' }}"></span>
+                                <span>Live (Real-time)</span>
+                            </button>
+                            <button type="button"
+                                    id="btn_mode_susulan"
+                                    onclick="setModeInput('susulan')"
+                                    class="flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center space-x-2 transition-all cursor-pointer {{ $isSusulan ? 'bg-brand text-white shadow-sm' : 'text-gray-500 hover:text-gray-900' }}">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <span>Susulan (Kertas Manual)</span>
+                            </button>
+                        </div>
+
+                        <!-- Container Fields Mode Susulan -->
+                        <div id="susulan_fields" class="{{ $isSusulan ? '' : 'hidden' }} bg-purple-50/60 border border-purple-200/80 rounded-2xl p-4 sm:p-5 space-y-3.5">
+                            <div class="flex items-center justify-between pb-2 border-b border-purple-100">
+                                <div class="flex items-center space-x-2">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800">
+                                        Mode Susulan
+                                    </span>
+                                    <span class="text-xs font-bold text-purple-900">Input Kertas Manual (Status Langsung CLOSE)</span>
+                                </div>
+                                <span class="text-[11px] text-purple-600 font-medium hidden sm:inline">Maksimal mundur 7 hari</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                                <!-- Tanggal Kejadian -->
+                                <div class="space-y-1.5">
+                                    <label for="tanggal" class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                                        Tanggal Kejadian <span class="text-brand">*</span>
+                                    </label>
+                                    <input type="date"
+                                           id="tanggal"
+                                           name="tanggal"
+                                           value="{{ old('tanggal', now()->format('Y-m-d')) }}"
+                                           max="{{ now()->format('Y-m-d') }}"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-600 transition-all touch-manipulation"
+                                           {{ $isSusulan ? 'required' : '' }}>
+                                </div>
+
+                                <!-- Jam In -->
+                                <div class="space-y-1.5">
+                                    <label for="jam_in" class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                                        Jam In (Mulai) <span class="text-brand">*</span>
+                                    </label>
+                                    <input type="time"
+                                           id="jam_in"
+                                           name="jam_in"
+                                           value="{{ old('jam_in') }}"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-600 transition-all touch-manipulation"
+                                           {{ $isSusulan ? 'required' : '' }}>
+                                </div>
+
+                                <!-- Jam Out -->
+                                <div class="space-y-1.5">
+                                    <label for="jam_out" class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                                        Jam Out (Selesai) <span class="text-brand">*</span>
+                                    </label>
+                                    <input type="time"
+                                           id="jam_out"
+                                           name="jam_out"
+                                           value="{{ old('jam_out') }}"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-600 transition-all touch-manipulation"
+                                           {{ $isSusulan ? 'required' : '' }}>
+                                    <p class="text-[10px] text-gray-400 leading-tight">Out &lt; In otomatis +1 hari (shift malam)</p>
+                                </div>
+
+                                <!-- Shift Susulan -->
+                                <div class="space-y-1.5">
+                                    <label for="shift" class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                                        Shift Kejadian <span class="text-brand">*</span>
+                                    </label>
+                                    <select id="shift"
+                                            name="shift"
+                                            class="w-full min-h-[44px] bg-white border border-border rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-600 transition-all touch-manipulation cursor-pointer"
+                                            {{ $isSusulan ? 'required' : '' }}>
+                                        <option value="">-- Pilih Shift --</option>
+                                        @php $currentShift = old('shift'); @endphp
+                                        <option value="1A" {{ $currentShift === '1A' ? 'selected' : '' }}>1A</option>
+                                        <option value="1B" {{ $currentShift === '1B' ? 'selected' : '' }}>1B</option>
+                                        <option value="2A" {{ $currentShift === '2A' ? 'selected' : '' }}>2A</option>
+                                        <option value="2B" {{ $currentShift === '2B' ? 'selected' : '' }}>2B</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Nameplate Baru (Opsional di mode susulan) -->
+                            <div class="pt-1">
+                                <div class="space-y-1.5">
+                                    <label for="nameplate_baru" class="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                                        Nameplate Baru (NP Baru) <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
+                                    </label>
+                                    <input type="text"
+                                           id="nameplate_baru"
+                                           name="nameplate_baru"
+                                           value="{{ old('nameplate_baru') }}"
+                                           placeholder="Scan / ketik Nameplate Baru jika ada penggantian"
+                                           class="w-full min-h-[44px] bg-white border border-border rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-gray-900 uppercase placeholder:text-gray-400 placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-600 transition-all touch-manipulation">
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Baris 1: Identitas Harness (Kanban Assy & Nameplate) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
                             <!-- Field 1: Kanban Assy -->
@@ -192,8 +308,8 @@
                             </div>
                         </div>
 
-                        <!-- Baris 2: Tracking & Status (No Defective Tag, #End, 4M, Shift) -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                        <!-- Baris 2: Tracking & Status (No Defective Tag, #End, 4M) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                             <!-- No Defective Tag -->
                             <div class="space-y-1.5">
                                 <label for="no_defective_tag" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
@@ -232,22 +348,6 @@
                                         class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
                                     <option value="NO" {{ old('status_4m', 'NO') === 'NO' ? 'selected' : '' }}>NO</option>
                                     <option value="YES" {{ old('status_4m') === 'YES' ? 'selected' : '' }}>YES</option>
-                                </select>
-                            </div>
-
-                            <!-- Shift -->
-                            <div class="space-y-1.5">
-                                <label for="shift" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                                    Shift
-                                </label>
-                                <select id="shift"
-                                        name="shift"
-                                        class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
-                                    @php $currentShift = old('shift', session('current_shift', '1A')); @endphp
-                                    <option value="1A" {{ $currentShift === '1A' ? 'selected' : '' }}>1A</option>
-                                    <option value="1B" {{ $currentShift === '1B' ? 'selected' : '' }}>1B</option>
-                                    <option value="2A" {{ $currentShift === '2A' ? 'selected' : '' }}>2A</option>
-                                    <option value="2B" {{ $currentShift === '2B' ? 'selected' : '' }}>2B</option>
                                 </select>
                             </div>
                         </div>
@@ -382,12 +482,21 @@
 
                         <!-- Submit Button (Primary Yazaki Brand) -->
                         <button type="submit"
+                                id="btn_submit_rework"
                                 class="w-full min-h-[50px] bg-brand hover:bg-brand-active text-white rounded-2xl p-3.5 text-base font-extrabold flex items-center justify-center space-x-2 shadow-sm shadow-brand/20 active:scale-95 transition-all cursor-pointer touch-manipulation">
-                            <svg class="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>Mulai Rework (In)</span>
+                            <span id="submit_icon_live" class="{{ $isSusulan ? 'hidden' : '' }} flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>Mulai Rework (In)</span>
+                            </span>
+                            <span id="submit_icon_susulan" class="{{ $isSusulan ? '' : 'hidden' }} flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Simpan Rework Susulan (CLOSE)</span>
+                            </span>
                         </button>
                     </form>
                 </section>
@@ -451,6 +560,11 @@
                                     </div>
 
                                     <div class="shrink-0 flex items-center space-x-1 -mr-2 -mt-2">
+                                        @if($first->is_susulan)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
+                                                Susulan
+                                            </span>
+                                        @endif
                                         @if(in_array($first->status_rework, ['Selesai', 'CLOSE'], true))
                                             <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -586,6 +700,43 @@
         if (!reworkForm) {
             return;
         }
+
+        window.setModeInput = function(mode) {
+            const modeInput = document.getElementById('mode_input');
+            const btnLive = document.getElementById('btn_mode_live');
+            const btnSusulan = document.getElementById('btn_mode_susulan');
+            const susulanFields = document.getElementById('susulan_fields');
+            const submitLive = document.getElementById('submit_icon_live');
+            const submitSusulan = document.getElementById('submit_icon_susulan');
+            const inputTanggal = document.getElementById('tanggal');
+            const inputJamIn = document.getElementById('jam_in');
+            const inputJamOut = document.getElementById('jam_out');
+            const selectShift = document.getElementById('shift');
+
+            if (mode === 'susulan') {
+                if (modeInput) modeInput.value = 'susulan';
+                if (btnSusulan) btnSusulan.className = 'flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center space-x-2 transition-all cursor-pointer bg-brand text-white shadow-sm';
+                if (btnLive) btnLive.className = 'flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center space-x-2 transition-all cursor-pointer text-gray-500 hover:text-gray-900';
+                if (susulanFields) susulanFields.classList.remove('hidden');
+                if (submitLive) submitLive.classList.add('hidden');
+                if (submitSusulan) submitSusulan.classList.remove('hidden');
+                if (inputTanggal) inputTanggal.required = true;
+                if (inputJamIn) inputJamIn.required = true;
+                if (inputJamOut) inputJamOut.required = true;
+                if (selectShift) selectShift.required = true;
+            } else {
+                if (modeInput) modeInput.value = 'live';
+                if (btnLive) btnLive.className = 'flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center space-x-2 transition-all cursor-pointer bg-white text-gray-900 shadow-sm border border-gray-200/80';
+                if (btnSusulan) btnSusulan.className = 'flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center space-x-2 transition-all cursor-pointer text-gray-500 hover:text-gray-900';
+                if (susulanFields) susulanFields.classList.add('hidden');
+                if (submitLive) submitLive.classList.remove('hidden');
+                if (submitSusulan) submitSusulan.classList.add('hidden');
+                if (inputTanggal) inputTanggal.required = false;
+                if (inputJamIn) inputJamIn.required = false;
+                if (inputJamOut) inputJamOut.required = false;
+                if (selectShift) selectShift.required = false;
+            }
+        };
 
         const finalAssyDefects = @json($finalAssySubDefects);
         let selectedDefects = [];

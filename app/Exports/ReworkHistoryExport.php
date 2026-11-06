@@ -78,6 +78,7 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             'Jenis Defect',
             'Sub Defect',
             'Quantity',
+            'Input Susulan',
         ];
     }
 
@@ -117,6 +118,7 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             $row->jenis_defect ?? '-',
             $row->jenis_sub_defect ?? '-',
             $row->quantity ?? 1,
+            $row->is_susulan ? 'Ya' : 'Tidak',
         ];
     }
 }
