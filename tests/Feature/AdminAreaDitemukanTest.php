@@ -295,4 +295,120 @@ class AdminAreaDitemukanTest extends TestCase
             'tipe' => AreaDitemukan::TIPE_REWORK,
         ]);
     }
+
+    /**
+     * Verifikasi penambahan dan pembaruan dua field terpisah: tipe sistem dan kategori_report F/A.
+     */
+    public function test_kategori_report_dan_tipe_sistem_dapat_disimpan_dan_diupdate(): void
+    {
+        // 1. Tambah dengan dua field
+        $response = $this->actingAsAdmin()->post('/master/area-ditemukans', [
+            'name'            => 'STASIUN_DUAL_FIELD',
+            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'kategori_report' => AreaDitemukan::REPORT_INSPEKSI,
+        ]);
+
+        $response->assertRedirect(route('admin.master.area_ditemukans.index'));
+        $this->assertDatabaseHas('area_ditemukans', [
+            'name'            => 'STASIUN_DUAL_FIELD',
+            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'kategori_report' => AreaDitemukan::REPORT_INSPEKSI,
+        ]);
+
+        $area = AreaDitemukan::where('name', 'STASIUN_DUAL_FIELD')->firstOrFail();
+
+        // 2. Update kategori_report ke assembly tanpa mengubah tipe operasional
+        $updateRes = $this->actingAsAdmin()->put("/master/area-ditemukans/{$area->id}", [
+            'name'            => 'STASIUN_DUAL_FIELD',
+            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'kategori_report' => AreaDitemukan::REPORT_ASSEMBLY,
+        ]);
+
+        $updateRes->assertRedirect(route('admin.master.area_ditemukans.index'));
+        $this->assertDatabaseHas('area_ditemukans', [
+            'id'              => $area->id,
+            'name'            => 'STASIUN_DUAL_FIELD',
+            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'kategori_report' => AreaDitemukan::REPORT_ASSEMBLY,
+        ]);
+    }
+
+    /**
+     * Verifikasi bahwa dashboard mode internal tidak berubah perilakunya.
+     */
+    public function test_dashboard_mode_internal_tidak_berubah_perilaku(): void
+    {
+        $area = AreaDitemukan::create([
+            'name'            => 'AREA_DASHBOARD_TEST',
+            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'kategori_report' => AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI,
+        ]);
+
+        $defect = Defect::create([
+            'waktu'            => Carbon::now(),
+            'user_name'        => 'Operator QA',
+            'jenis_assy'       => 'Final Assy',
+            'area_ditemukan'   => $area->name,
+            'rework_group_id'  => null,
+            'jenis_defect'     => 'MISSING PART',
+            'jenis_sub_defect' => 'LOCK',
+            'quantity'         => 5,
+            'inspect_quantity' => 10,
+        ]);
+
+        // Query mode internal pada dashboard
+        $internalCount = Defect::where('id', $defect->id)
+            ->byDashboardMode('internal')
+            ->count();
+
+        $this->assertEquals(1, $internalCount, 'Defect di area non-rework wajib tetap masuk ke mode internal dashboard');
+    }
+
+    /**
+     * Verifikasi bahwa form dan validasi input defect tetap memuat seluruh area dan tidak berubah perilakunya.
+     */
+    public function test_dropdown_dan_validasi_input_defect_tidak_berubah(): void
+    {
+        $area = AreaDitemukan::create([
+            'name'            => 'AREA_INPUT_TEST',
+            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'kategori_report' => AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI,
+        ]);
+
+        // 1. Dropdown input defect memuat area ini
+        $response = $this->withSession([
+            'logged_in' => true,
+            'user_name' => 'Operator QA',
+            'user_role' => 'User',
+        ])->get(route('input_defect.create', ['type' => 'Final Assy']));
+
+        $response->assertOk();
+        $response->assertSee('AREA_INPUT_TEST');
+
+        // 2. Simpan input defect dengan area ini berhasil lolos validasi
+        $storeRes = $this->withSession([
+            'logged_in'     => true,
+            'user_name'     => 'Operator QA',
+            'user_role'     => 'User',
+            'current_shift' => '1A',
+        ])->post(route('input_defect.store'), [
+            'type'             => 'Final Assy',
+            'jenis_mobil'      => 'CALYA',
+            'conveyor'         => '1',
+            'tanggal'          => Carbon::today()->toDateString(),
+            'jam'              => '10:00',
+            'area_ditemukan'   => 'AREA_INPUT_TEST',
+            'jenis_defect'     => 'MISSING PART',
+            'sub_defect'       => 'LOCK',
+            'jumlah'           => 1,
+            'inspect_quantity' => 10,
+        ]);
+
+        $storeRes->assertRedirect(route('operator.home'));
+        $storeRes->assertSessionHas('success');
+        $this->assertDatabaseHas('defects', [
+            'area_ditemukan' => 'AREA_INPUT_TEST',
+            'jenis_defect'   => 'MISSING PART',
+        ]);
+    }
 }

@@ -2,7 +2,10 @@
 
 namespace App\Support;
 
+use App\Models\KanbanComponent;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class KanbanCodeParser
 {
@@ -17,6 +20,214 @@ class KanbanCodeParser
      * ASSY (10 alfanumerik tanpa '-'), spasi opsional, 1 huruf suffix opsional, 6 digit tanggal, 4 digit serial.
      */
     protected const NAMEPLATE_PATTERN = '/^([A-Z0-9]{10})\s*([A-Z]?)\s*(\d{6})(\d{4})$/';
+
+    /**
+     * Pola regex tetap untuk setiap komponen kanban di kode (konstanta).
+     */
+    public const COMPONENT_PATTERNS = [
+        'assy_number' => '[A-Z0-9]+-[A-Z0-9]+',
+        'conveyor'    => '[A-Z0-9]+',
+        'serial'      => '\d{3}',
+    ];
+
+    public const CACHE_KEY = 'kanban_dynamic_pattern';
+    public const CACHE_COMPONENTS_KEY = 'kanban_ordered_components';
+
+    /**
+     * Cache in-memory lokal untuk proses aktif
+     */
+    protected static ?string $cachedDynamicPattern = null;
+    protected static bool $cacheInitialized = false;
+
+    /**
+     * Reset cache regex (dipanggil setelah reorder master format).
+     * Menghapus cache in-memory lokal dan cache aplikasi lintas proses.
+     */
+    public static function clearCache(): void
+    {
+        self::$cachedDynamicPattern = null;
+        self::$cacheInitialized = false;
+
+        try {
+            Cache::forget(self::CACHE_KEY);
+            Cache::forget(self::CACHE_COMPONENTS_KEY);
+        } catch (\Throwable) {
+            // Abaikan kegagalan cache store
+        }
+    }
+
+    /**
+     * Dapatkan daftar komponen terurut dari database/cache dengan fallback bawaan.
+     *
+     * @return array<int, array{key: string, delimiter: string}>
+     */
+    public static function getOrderedComponents(): array
+    {
+        try {
+            return Cache::remember(self::CACHE_COMPONENTS_KEY, 3600, function () {
+                if (Schema::hasTable('kanban_components')) {
+                    $components = KanbanComponent::orderBy('sequence', 'asc')->get();
+                    if ($components->count() === count(self::COMPONENT_PATTERNS)) {
+                        $keys = $components->pluck('component_key')->all();
+                        if (count(array_diff(array_keys(self::COMPONENT_PATTERNS), $keys)) === 0) {
+                            return $components->map(fn($c) => [
+                                'key'       => $c->component_key,
+                                'delimiter' => ($c->delimiter === 'spasi' || $c->delimiter === ' ') ? ' ' : '.',
+                            ])->all();
+                        }
+                    }
+                }
+
+                return [
+                    ['key' => 'assy_number', 'delimiter' => '.'],
+                    ['key' => 'conveyor',    'delimiter' => '.'],
+                    ['key' => 'serial',      'delimiter' => '.'],
+                ];
+            });
+        } catch (\Throwable) {
+            return [
+                ['key' => 'assy_number', 'delimiter' => '.'],
+                ['key' => 'conveyor',    'delimiter' => '.'],
+                ['key' => 'serial',      'delimiter' => '.'],
+            ];
+        }
+    }
+
+    /**
+     * Susun string kanban berdasarkan urutan komponen dan delimiter aktif di master kanban_components.
+     * Memvalidasi setiap input komponen dan memastikan string hasilnya lolos parsing kembali.
+     *
+     * @throws \InvalidArgumentException Jika komponen tidak sesuai format regex
+     * @throws \RuntimeException Jika string yang dihasilkan gagal di-parse kembali
+     */
+    public static function generateKanban(string $assyNumber, string $conveyor, string $serial): string
+    {
+        $cleanAssy = strtoupper(trim($assyNumber));
+        $cleanConveyor = strtoupper(trim($conveyor));
+        $cleanSerial = trim($serial);
+
+        if (ctype_digit($cleanSerial) && strlen($cleanSerial) < 3) {
+            $cleanSerial = str_pad($cleanSerial, 3, '0', STR_PAD_LEFT);
+        }
+
+        if (!preg_match('/^' . self::COMPONENT_PATTERNS['assy_number'] . '$/', $cleanAssy)) {
+            throw new \InvalidArgumentException("Nomor Assy '{$assyNumber}' tidak valid. Format harus memuat tanda hubung (misal: 82111-VU020).");
+        }
+
+        if (!preg_match('/^' . self::COMPONENT_PATTERNS['conveyor'] . '$/', $cleanConveyor)) {
+            throw new \InvalidArgumentException("Konveyor '{$conveyor}' tidak valid. Hanya karakter alfanumerik tanpa tanda hubung yang diizinkan.");
+        }
+
+        if (!preg_match('/^' . self::COMPONENT_PATTERNS['serial'] . '$/', $cleanSerial)) {
+            throw new \InvalidArgumentException("Serial number '{$serial}' tidak valid. Harus berupa 3 digit angka (001-999).");
+        }
+
+        $components = self::getOrderedComponents();
+        $map = [
+            'assy_number' => $cleanAssy,
+            'conveyor'    => $cleanConveyor,
+            'serial'      => $cleanSerial,
+        ];
+
+        $parts = [];
+        $total = count($components);
+        foreach ($components as $index => $comp) {
+            $parts[] = $map[$comp['key']] ?? '';
+            if ($index < $total - 1) {
+                $parts[] = $comp['delimiter'];
+            }
+        }
+        $generated = implode('', $parts);
+
+        // Verifikasi round-trip: string hasil generate wajib dapat di-parse kembali dengan sempurna
+        $parsed = self::parseKanban($generated);
+        if ($parsed === null ||
+            $parsed['assy_number'] !== $cleanAssy ||
+            $parsed['conveyor'] !== $cleanConveyor ||
+            $parsed['serial'] !== $cleanSerial) {
+            throw new \RuntimeException("String kanban yang dihasilkan ('{$generated}') gagal divalidasi oleh parser.");
+        }
+
+        return $generated;
+    }
+
+    /**
+     * Dapatkan regex pola dinamis dari master kanban_components.
+     * Menggunakan Laravel Cache agar aman dan tersinkronisasi lintas proses worker.
+     */
+    public static function getDynamicPattern(): ?string
+    {
+        if (self::$cacheInitialized) {
+            return self::$cachedDynamicPattern;
+        }
+
+        try {
+            $pattern = Cache::remember(self::CACHE_KEY, 3600, function () {
+                return self::buildDynamicPattern() ?? '__NONE__';
+            });
+
+            self::$cachedDynamicPattern = ($pattern === '__NONE__') ? null : $pattern;
+        } catch (\Throwable) {
+            self::$cachedDynamicPattern = self::buildDynamicPattern();
+        }
+
+        self::$cacheInitialized = true;
+        return self::$cachedDynamicPattern;
+    }
+
+    /**
+     * Bangun regex dinamis dari tabel kanban_components.
+     * Aman dari error jika tabel kanban_components belum dimigrasi/dibuat.
+     */
+    public static function buildDynamicPattern(): ?string
+    {
+        try {
+            if (!Schema::hasTable('kanban_components')) {
+                return null;
+            }
+
+            $components = KanbanComponent::orderBy('sequence', 'asc')->get();
+            if ($components->count() !== count(self::COMPONENT_PATTERNS)) {
+                return null;
+            }
+
+            // Pastikan semua komponen wajib ada
+            $keys = $components->pluck('component_key')->all();
+            if (count(array_diff(array_keys(self::COMPONENT_PATTERNS), $keys)) !== 0) {
+                return null;
+            }
+
+            $regexParts = [];
+            $total = $components->count();
+
+            foreach ($components as $index => $comp) {
+                $key = $comp->component_key;
+                $pattern = self::COMPONENT_PATTERNS[$key];
+                $regexParts[] = '(?P<' . $key . '>' . $pattern . ')';
+
+                if ($index < $total - 1) {
+                    $regexParts[] = self::regexDelimiter($comp->delimiter);
+                }
+            }
+
+            return '/^' . implode('', $regexParts) . '$/';
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Escape delimiter menjadi pola regex.
+     * Pilihan delimiter valid: '.' (titik) atau ' ' (spasi).
+     */
+    protected static function regexDelimiter(?string $delimiter): string
+    {
+        if ($delimiter === ' ' || $delimiter === 'spasi') {
+            return '\s+';
+        }
+        // Default '.'
+        return '\s*\.\s*';
+    }
 
     /**
      * Normalisasi nomor assy: hapus tanda "-" dan spasi, ubah ke huruf besar.
@@ -59,7 +270,7 @@ class KanbanCodeParser
 
     /**
      * Parse kode kanban (e-kanban baru / kanban lama).
-     * Format: ASSY.CONVEYOR.SERIAL
+     * Format acuan: ASSY.CONVEYOR.SERIAL atau sesuai urutan dinamis di master.
      *
      * @return array{assy_number: string, conveyor: string, serial: string}|null
      */
@@ -70,6 +281,19 @@ class KanbanCodeParser
             return null;
         }
 
+        // 1. Coba regex dinamis dari master database (jika ada dan valid)
+        $dynamicPattern = self::getDynamicPattern();
+        if ($dynamicPattern !== null) {
+            if (preg_match($dynamicPattern, $normalized, $matches)) {
+                return [
+                    'assy_number' => $matches['assy_number'] ?? null,
+                    'conveyor'    => $matches['conveyor'] ?? null,
+                    'serial'      => $matches['serial'] ?? null,
+                ];
+            }
+        }
+
+        // 2. Fallback ke KANBAN_PATTERN lama jika pola dinamis gagal atau master kosong
         if (!preg_match(self::KANBAN_PATTERN, $normalized, $matches)) {
             return null;
         }
@@ -160,8 +384,8 @@ class KanbanCodeParser
                 return null;
             }
 
-            return $date;
-        } catch (\Throwable) {
+            return $date->startOfDay();
+        } catch (\Throwable $e) {
             return null;
         }
     }

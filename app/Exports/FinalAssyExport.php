@@ -32,7 +32,21 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
 
     public function query()
     {
-        $query = Defect::with('finalInspectType')->finalAssyReport();
+        $selectedCategory = strtolower((string) $this->request->input('category', 'all'));
+
+        $query = Defect::with(['finalInspectType', 'areaDitemukanRef']);
+
+        if ($selectedCategory === 'internal') {
+            $query->finalAssyInternal();
+        } elseif ($selectedCategory === 'assembly') {
+            $query->finalAssyAssembly();
+        } elseif ($selectedCategory === 'unclassified') {
+            $query->finalAssyUnclassified();
+        } elseif ($selectedCategory === 'rework') {
+            $query->where('jenis_assy', 'Final Assy')->whereNotNull('rework_group_id');
+        } else {
+            $query->finalAssyReport();
+        }
 
         $dateRange = $this->request->input('date_range');
         $selectedDefect = $this->request->input('defect');
@@ -82,6 +96,7 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             'User',
             'Shift',
             'Jenis Assy',
+            'Kategori Defect',
             'Data Mobil',
             'conveyor',
             'Quantity Inspect Type',
@@ -91,20 +106,36 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             'Specification',
             'Actual',
             'Area Ditemukan',
+            'Tipe Area',
             'Job Station',
             'Inspect Quantity',
             'Defect Quantity',
+            'Status Rework',
+            'Asal Rework (Asumsi)',
         ];
     }
 
     public function map($row): array
     {
+        $tipeArea = $row->areaDitemukanRef?->tipe;
+        $katReport = $row->areaDitemukanRef?->kategori_report ?: $tipeArea;
+        $kategoriDefect = match ($katReport) {
+            \App\Models\AreaDitemukan::REPORT_INSPEKSI, \App\Models\AreaDitemukan::TIPE_INSPEKSI => 'Internal Defect (Inspeksi)',
+            \App\Models\AreaDitemukan::REPORT_ASSEMBLY, \App\Models\AreaDitemukan::TIPE_ASSEMBLY => 'Assembly Defect (Assembly)',
+            default => 'Belum Terklasifikasi',
+        };
+
+        $isRework = !empty($row->rework_group_id);
+        $statusRework = $isRework ? 'Rework' : 'Non-Rework';
+        $asalRework = $isRework ? ($kategoriDefect . ' (Asumsi)') : '-';
+
         return [
             $row->id,
             Carbon::parse($row->waktu)->format('Y-m-d H:i:s'),
             $row->user_name,
             $row->shift ?? '-',
             $row->jenis_assy,
+            $kategoriDefect,
             $row->jenis_mobil ?? '-',
             $row->conveyor,
             $row->finalInspectType?->name ?? '-',
@@ -113,10 +144,13 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             $row->end_number,
             $row->specification,
             $row->actual,
-            $row->area_ditemukan,
+            $row->area_ditemukan ?? '-',
+            $tipeArea ?? 'tidak_ada_di_master',
             $row->job_station,
             $row->inspect_quantity ?? 0,
             $row->quantity,
+            $statusRework,
+            $asalRework,
         ];
     }
 }

@@ -24,13 +24,78 @@
             </div>
         </header>
 
+        <!-- KPI Summary Cards (Invarian Pre Assy) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total Defect Pre Assy</span>
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                </div>
+                <div class="text-2xl font-black text-gray-900 mt-2 font-mono tabular-nums">{{ $totalPreAssy }}</div>
+                <p class="text-[11px] text-gray-500 mt-1">Total defect Pre Assy keseluruhan</p>
+            </div>
+
+            <div class="bg-white border border-blue-200 bg-blue-50/20 rounded-lg p-4 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Internal Defect</span>
+                    <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                </div>
+                <div class="text-2xl font-black text-blue-900 mt-2 font-mono tabular-nums">{{ $totalInternal }}</div>
+                <p class="text-[11px] text-blue-600/80 mt-1">Ditemukan oleh Inspektor</p>
+            </div>
+
+            <div class="bg-white border border-amber-200 bg-amber-50/20 rounded-lg p-4 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Assembly Defect</span>
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                </div>
+                <div class="text-2xl font-black text-amber-900 mt-2 font-mono tabular-nums">{{ $totalAssembly ?? $totalProcess }}</div>
+                <p class="text-[11px] text-amber-700/80 mt-1">Ditemukan oleh Operator</p>
+            </div>
+
+            @if(($totalUnknown ?? 0) > 0)
+            <div class="bg-white border border-gray-200 bg-gray-50/50 rounded-lg p-4 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Tidak Diketahui</span>
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                </div>
+                <div class="text-2xl font-black text-gray-700 mt-2 font-mono tabular-nums">{{ $totalUnknown }}</div>
+                <p class="text-[11px] text-gray-500 mt-1">Ditemukan oleh NULL / Kosong</p>
+            </div>
+            @endif
+        </div>
+
         <!-- Filters and Table Container -->
         <section class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm flex-1 flex flex-col justify-between">
             
             <div>
+                <!-- Category Filter Tabs -->
+                <div class="flex flex-wrap items-center gap-2 mb-5 pb-4 border-b border-gray-100">
+                    <span class="text-xs font-bold text-gray-500 mr-1">Kategori Defect:</span>
+                    <a href="{{ request()->fullUrlWithQuery(['category' => 'all', 'page' => 1]) }}"
+                       class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ in_array($selectedCategory, ['all', ''], true) ? 'bg-[#8b0000] text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+                        Semua Defect ({{ $totalPreAssy }})
+                    </a>
+                    <a href="{{ request()->fullUrlWithQuery(['category' => 'internal', 'page' => 1]) }}"
+                       class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ $selectedCategory === 'internal' ? 'bg-blue-600 text-white shadow-xs' : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200' }}">
+                        Internal Defect ({{ $totalInternal }})
+                    </a>
+                    <a href="{{ request()->fullUrlWithQuery(['category' => 'assembly', 'page' => 1]) }}"
+                       class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ in_array($selectedCategory, ['assembly', 'process'], true) ? 'bg-amber-600 text-white shadow-xs' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200' }}">
+                        Assembly Defect ({{ $totalAssembly ?? $totalProcess }})
+                    </a>
+                    @if(($totalUnknown ?? 0) > 0)
+                    <a href="{{ request()->fullUrlWithQuery(['category' => 'unknown', 'page' => 1]) }}"
+                       class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ $selectedCategory === 'unknown' ? 'bg-gray-700 text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200' }}">
+                        Tidak Diketahui ({{ $totalUnknown }})
+                    </a>
+                    @endif
+                </div>
+
                 <!-- Form Filter -->
-                <form id="filterForm" method="GET" action="{{ route('pre_assy.index') }}" class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <form id="filterForm" method="GET" action="{{ url()->current() }}" class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                     <input type="hidden" name="page" value="1">
+                    <input type="hidden" name="category" value="{{ $selectedCategory }}">
                     
                     <div class="flex flex-wrap items-center gap-3">
                         <!-- Date Range Picker -->
@@ -131,14 +196,16 @@
                                     <td class="py-4 text-xs font-bold px-4 text-center">
                                         @if($record->ditemukan_oleh === 'Inspektor')
                                             <span class="inline-block px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 tracking-wider">
-                                                Inspektor
+                                                Internal Defect (Inspektor)
                                             </span>
                                         @elseif($record->ditemukan_oleh === 'Operator')
                                             <span class="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">
-                                                Operator
+                                                Assembly Defect (Operator)
                                             </span>
                                         @else
-                                            <span class="text-gray-400 font-normal">-</span>
+                                            <span class="inline-block px-2 py-0.5 rounded border border-gray-200 bg-gray-50 text-gray-500 tracking-wider">
+                                                Tidak Diketahui
+                                            </span>
                                         @endif
                                     </td>
                                     <td class="py-4 text-sm font-bold px-4">
@@ -451,6 +518,7 @@
             url += "date_range=" + encodeURIComponent(dateRange);
             url += "&defect=" + encodeURIComponent(defect);
             url += "&carline=" + encodeURIComponent(carline);
+            url += "&category=" + encodeURIComponent("{{ $selectedCategory }}");
             
             window.location.href = url;
         }
@@ -493,10 +561,10 @@
                     let html = '';
                     res.data.forEach(item => {
                         const ditemukanBadge = item.ditemukan_oleh === 'Inspektor'
-                            ? '<span class="inline-block px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 tracking-wider">Inspektor</span>'
+                            ? '<span class="inline-block px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 tracking-wider">Internal Defect (Inspektor)</span>'
                             : (item.ditemukan_oleh === 'Operator'
-                                ? '<span class="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">Operator</span>'
-                                : '<span class="text-gray-400 font-normal">-</span>');
+                                ? '<span class="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">Assembly Defect (Operator)</span>'
+                                : '<span class="inline-block px-2 py-0.5 rounded border border-gray-200 bg-gray-50 text-gray-500 tracking-wider">Tidak Diketahui</span>');
 
                         html += `
                             <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${item.id}">

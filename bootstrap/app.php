@@ -17,6 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'operator' => \App\Http\Middleware\EnsureIsOperator::class,
             'rework'   => \App\Http\Middleware\EnsureIsRework::class,
         ]);
+        $middleware->trimStrings(except: [
+            fn (\Illuminate\Http\Request $request) => $request->is('master/kanban-format*'),
+        ]);
+        $middleware->convertEmptyStringsToNull(except: [
+            fn (\Illuminate\Http\Request $request) => $request->is('master/kanban-format*'),
+        ]);
     })
 
     ->withExceptions(function (Exceptions $exceptions): void {

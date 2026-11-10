@@ -1,5 +1,6 @@
 @php
-    $isReportActive = request()->routeIs('final_assy.*') || request()->routeIs('pre_assy.*');
+    $isFinalAssyActive = request()->routeIs('final_assy.*');
+    $isPreAssyActive = request()->routeIs('pre_assy.*');
     $isRiwayatActive = request()->routeIs('recent_defects.*') || request()->routeIs('log_system.*') || request()->routeIs('admin.rework_history.*');
     $isMasterActive = request()->routeIs('admin.master.*');
 @endphp
@@ -14,7 +15,8 @@
                 return false;
             }
         })(),
-        reportOpen: {{ $isReportActive ? 'true' : 'false' }},
+        finalAssyOpen: {{ $isFinalAssyActive ? 'true' : 'false' }},
+        preAssyOpen: {{ $isPreAssyActive ? 'true' : 'false' }},
         riwayatOpen: {{ $isRiwayatActive ? 'true' : 'false' }},
         masterOpen: {{ $isMasterActive ? 'true' : 'false' }},
         logoutModal: false,
@@ -97,31 +99,86 @@
                 <span class="px-3.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Laporan &amp; Monitoring</span>
             </div>
 
-            <!-- 3. Report (Dropdown) -->
+            <!-- 3. Final Assy Report (Accordion) -->
             <div>
-                <button type="button" @click="reportOpen = !reportOpen" 
-                        class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 text-left {{ $isReportActive ? 'text-[#8b0000] bg-red-50/80 font-bold border border-red-100/70' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' }}">
+                <button type="button" @click="finalAssyOpen = !finalAssyOpen"
+                        class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 text-left {{ $isFinalAssyActive ? 'text-[#8b0000] bg-red-50/80 font-bold border border-red-100/70' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' }}">
                     <div class="flex items-center space-x-3">
-                        <svg class="w-5 h-5 shrink-0 {{ $isReportActive ? 'text-[#8b0000]' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <span class="tracking-wide">Report</span>
+                        <svg class="w-5 h-5 shrink-0 {{ $isFinalAssyActive ? 'text-[#8b0000]' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span class="tracking-wide">Final Assy</span>
                     </div>
-                    <svg class="w-4 h-4 transform transition-transform duration-300 ease-out {{ $isReportActive ? 'text-[#8b0000]' : 'text-gray-400' }}" :class="{ 'rotate-180': reportOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 transform transition-transform duration-300 ease-out {{ $isFinalAssyActive ? 'text-[#8b0000]' : 'text-gray-400' }}" :class="{ 'rotate-180': finalAssyOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
-                <div x-show="reportOpen" 
-                     x-collapse 
-                     x-cloak 
+                <div x-show="finalAssyOpen"
+                     x-collapse
+                     x-cloak
                      class="mt-1 pl-3 pr-1 space-y-1 border-l-2 border-red-100 ml-5">
-                    <a href="{{ route('final_assy.index') }}" 
-                       class="group flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('final_assy.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
-                        <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('final_assy.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        <span>Final Assy</span>
+                    @php
+                        $isFinalAll = (request()->routeIs('final_assy.index') && in_array(request('category', 'all'), ['all', ''], true));
+                        $isFinalInternal = (request()->routeIs('final_assy.internal') || (request()->routeIs('final_assy.index') && request('category') === 'internal'));
+                        $isFinalAssembly = (request()->routeIs('final_assy.assembly') || (request()->routeIs('final_assy.index') && request('category') === 'assembly'));
+                        $isFinalRework = (request()->routeIs('final_assy.rework') || (request()->routeIs('final_assy.index') && request('category') === 'rework'));
+                    @endphp
+                    <a href="{{ route('final_assy.index') }}"
+                       class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isFinalAll ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isFinalAll ? 'bg-white' : 'bg-gray-300 group-hover:bg-gray-500' }}"></span>
+                        <span>All</span>
                     </a>
-                    <a href="{{ route('pre_assy.index') }}" 
-                       class="group flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('pre_assy.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
-                        <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('pre_assy.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
-                        <span>Pre Assy</span>
+                    <a href="{{ route('final_assy.internal') }}"
+                       class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isFinalInternal ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isFinalInternal ? 'bg-white' : 'bg-gray-300 group-hover:bg-gray-500' }}"></span>
+                        <span>Internal Defect</span>
+                    </a>
+                    <a href="{{ route('final_assy.assembly') }}"
+                       class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isFinalAssembly ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isFinalAssembly ? 'bg-white' : 'bg-gray-300 group-hover:bg-gray-500' }}"></span>
+                        <span>Assembly Defect</span>
+                    </a>
+                    <a href="{{ route('final_assy.rework') }}"
+                       class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isFinalRework ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isFinalRework ? 'bg-white' : 'bg-gray-300 group-hover:bg-gray-500' }}"></span>
+                        <span>Rework</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 4. Pre Assy Report (Accordion) -->
+            <div>
+                <button type="button" @click="preAssyOpen = !preAssyOpen"
+                        class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 text-left {{ $isPreAssyActive ? 'text-[#8b0000] bg-red-50/80 font-bold border border-red-100/70' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' }}">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-5 h-5 shrink-0 {{ $isPreAssyActive ? 'text-[#8b0000]' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                        <span class="tracking-wide">Pre Assy</span>
+                    </div>
+                    <svg class="w-4 h-4 transform transition-transform duration-300 ease-out {{ $isPreAssyActive ? 'text-[#8b0000]' : 'text-gray-400' }}" :class="{ 'rotate-180': preAssyOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div x-show="preAssyOpen"
+                     x-collapse
+                     x-cloak
+                     class="mt-1 pl-3 pr-1 space-y-1 border-l-2 border-red-100 ml-5">
+                    @php
+                        $isPreAll = (request()->routeIs('pre_assy.index') && in_array(request('category', 'all'), ['all', ''], true));
+                        $isPreInternal = (request()->routeIs('pre_assy.internal') || (request()->routeIs('pre_assy.index') && request('category') === 'internal'));
+                        $isPreAssembly = (request()->routeIs('pre_assy.assembly') || (request()->routeIs('pre_assy.index') && in_array(request('category'), ['assembly', 'process'], true)));
+                    @endphp
+                    <a href="{{ route('pre_assy.index') }}"
+                       class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isPreAll ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isPreAll ? 'bg-white' : 'bg-gray-300 group-hover:bg-gray-500' }}"></span>
+                        <span>All</span>
+                    </a>
+                    <a href="{{ route('pre_assy.internal') }}"
+                       class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isPreInternal ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isPreInternal ? 'bg-white' : 'bg-gray-300 group-hover:bg-gray-500' }}"></span>
+                        <span>Internal Defect</span>
+                    </a>
+                    <a href="{{ route('pre_assy.assembly') }}"
+                       class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isPreAssembly ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isPreAssembly ? 'bg-white' : 'bg-gray-300 group-hover:bg-gray-500' }}"></span>
+                        <span>Assembly Defect</span>
                     </a>
                 </div>
             </div>
@@ -199,7 +256,17 @@
                             <a href="{{ route('admin.master.assy_numbers.index') }}" 
                                class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.assy_numbers.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
                                 <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.assy_numbers.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path></svg>
-                                <span>Assy Number</span>
+                                <span>Master Kanban</span>
+                            </a>
+                            <a href="{{ route('admin.master.kanban_format.index') }}" 
+                               class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.kanban_format.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                                <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.kanban_format.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 4h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <span>Format Kanban</span>
+                            </a>
+                            <a href="{{ route('admin.master.nameplates.index') }}" 
+                               class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.nameplates.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                                <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.nameplates.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                                <span>Nameplate (HTScan)</span>
                             </a>
                         </div>
                     </div>

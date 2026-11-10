@@ -29,11 +29,38 @@ class AreaDitemukanController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:area_ditemukans,name',
-            'tipe' => ['nullable', Rule::in([AreaDitemukan::TIPE_INTERNAL_DEFECT, AreaDitemukan::TIPE_REWORK])],
+            'name'            => 'required|string|max:255|unique:area_ditemukans,name',
+            'tipe'            => ['nullable', Rule::in([
+                AreaDitemukan::TIPE_INTERNAL_DEFECT,
+                AreaDitemukan::TIPE_REWORK,
+                AreaDitemukan::TIPE_INSPEKSI,
+                AreaDitemukan::TIPE_ASSEMBLY,
+                AreaDitemukan::TIPE_BELUM_DIKLASIFIKASI,
+            ])],
+            'kategori_report' => ['nullable', Rule::in([
+                AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI,
+                AreaDitemukan::REPORT_INSPEKSI,
+                AreaDitemukan::REPORT_ASSEMBLY,
+                AreaDitemukan::REPORT_REWORK,
+            ])],
         ]);
 
-        $validated['tipe'] = $validated['tipe'] ?? AreaDitemukan::TIPE_INTERNAL_DEFECT;
+        $inputTipe = $validated['tipe'] ?? AreaDitemukan::TIPE_INTERNAL_DEFECT;
+        $inputKat  = $validated['kategori_report'] ?? null;
+
+        if ($inputKat === null) {
+            if (in_array($inputTipe, [AreaDitemukan::TIPE_INSPEKSI, AreaDitemukan::TIPE_ASSEMBLY, AreaDitemukan::TIPE_BELUM_DIKLASIFIKASI], true)) {
+                $inputKat = $inputTipe;
+                $inputTipe = AreaDitemukan::TIPE_INTERNAL_DEFECT;
+            } elseif ($inputTipe === AreaDitemukan::TIPE_REWORK) {
+                $inputKat = AreaDitemukan::REPORT_REWORK;
+            } else {
+                $inputKat = AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI;
+            }
+        }
+
+        $validated['tipe'] = $inputTipe;
+        $validated['kategori_report'] = $inputKat;
 
         AreaDitemukan::create($validated);
 
@@ -46,9 +73,38 @@ class AreaDitemukanController extends Controller
         $defectsCount = Defect::where('area_ditemukan', $area->name)->count();
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:area_ditemukans,name,' . $id,
-            'tipe' => ['required', Rule::in([AreaDitemukan::TIPE_INTERNAL_DEFECT, AreaDitemukan::TIPE_REWORK])],
+            'name'            => 'required|string|max:255|unique:area_ditemukans,name,' . $id,
+            'tipe'            => ['nullable', Rule::in([
+                AreaDitemukan::TIPE_INTERNAL_DEFECT,
+                AreaDitemukan::TIPE_REWORK,
+                AreaDitemukan::TIPE_INSPEKSI,
+                AreaDitemukan::TIPE_ASSEMBLY,
+                AreaDitemukan::TIPE_BELUM_DIKLASIFIKASI,
+            ])],
+            'kategori_report' => ['nullable', Rule::in([
+                AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI,
+                AreaDitemukan::REPORT_INSPEKSI,
+                AreaDitemukan::REPORT_ASSEMBLY,
+                AreaDitemukan::REPORT_REWORK,
+            ])],
         ]);
+
+        $inputTipe = $validated['tipe'] ?? $area->tipe;
+        $inputKat  = $validated['kategori_report'] ?? null;
+
+        if ($inputKat === null) {
+            if (in_array($inputTipe, [AreaDitemukan::TIPE_INSPEKSI, AreaDitemukan::TIPE_ASSEMBLY, AreaDitemukan::TIPE_BELUM_DIKLASIFIKASI], true)) {
+                $inputKat = $inputTipe;
+                $inputTipe = AreaDitemukan::TIPE_INTERNAL_DEFECT;
+            } elseif ($inputTipe === AreaDitemukan::TIPE_REWORK) {
+                $inputKat = AreaDitemukan::REPORT_REWORK;
+            } else {
+                $inputKat = $area->kategori_report ?? AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI;
+            }
+        }
+
+        $validated['tipe'] = $inputTipe;
+        $validated['kategori_report'] = $inputKat;
 
         if ($defectsCount > 0 && trim($validated['name']) !== $area->name) {
             return redirect()->back()->withErrors([

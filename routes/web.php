@@ -73,13 +73,23 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
         Route::put('/add-account/{id}', [\App\Http\Controllers\AccountController::class, 'update'])->name('account.update');
         Route::delete('/add-account/{id}', [\App\Http\Controllers\AccountController::class, 'destroy'])->name('account.destroy');
 
-        // Final Assy Report route
-        Route::get('/final-assy', [\App\Http\Controllers\ReportController::class, 'index'])->name('final_assy.index');
-        Route::get('/final-assy/export', [\App\Http\Controllers\ReportController::class, 'exportFinalAssy'])->name('final_assy.export');
+        // Final Assy Report routes
+        Route::prefix('final-assy')->name('final_assy.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ReportController::class, 'index'])->name('index');
+            Route::get('/internal', [\App\Http\Controllers\ReportController::class, 'finalAssyInternal'])->name('internal');
+            Route::get('/assembly', [\App\Http\Controllers\ReportController::class, 'finalAssyAssembly'])->name('assembly');
+            Route::get('/rework', [\App\Http\Controllers\ReportController::class, 'finalAssyRework'])->name('rework');
+            Route::get('/export', [\App\Http\Controllers\ReportController::class, 'exportFinalAssy'])->name('export');
+            Route::get('/chart-data', [\App\Http\Controllers\ReportController::class, 'finalAssyChartData'])->name('chart_data');
+        });
 
-        // Pre Assy Report route
-        Route::get('/pre-assy', [\App\Http\Controllers\ReportController::class, 'preAssy'])->name('pre_assy.index');
-        Route::get('/pre-assy/export', [\App\Http\Controllers\ReportController::class, 'exportPreAssy'])->name('pre_assy.export');
+        // Pre Assy Report routes
+        Route::prefix('pre-assy')->name('pre_assy.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\ReportController::class, 'preAssy'])->name('index');
+            Route::get('/internal', [\App\Http\Controllers\ReportController::class, 'preAssyInternalCategory'])->name('internal');
+            Route::get('/assembly', [\App\Http\Controllers\ReportController::class, 'preAssyAssemblyCategory'])->name('assembly');
+            Route::get('/export', [\App\Http\Controllers\ReportController::class, 'exportPreAssy'])->name('export');
+        });
 
         // Log System route
         Route::get('/log-system', [\App\Http\Controllers\ReportController::class, 'logSystem'])->name('log_system.index');
@@ -159,6 +169,24 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
                 Route::put('/dpm_targets/{id}', [\App\Http\Controllers\DpmTargetController::class, 'update'])->name('update');
                 Route::delete('/dpm_targets/{id}', [\App\Http\Controllers\DpmTargetController::class, 'destroy'])->name('destroy');
             });
+
+            // Kanban Format (Urutan Format Kanban)
+            Route::prefix('kanban-format')->name('kanban_format.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\KanbanFormatController::class, 'index'])->name('index');
+                Route::put('/', [\App\Http\Controllers\KanbanFormatController::class, 'update'])->name('update');
+                Route::post('/reset', [\App\Http\Controllers\KanbanFormatController::class, 'reset'])->name('reset');
+            });
+
+            // Nameplates (Master Nameplate HTScan JAI)
+            Route::prefix('nameplates')->name('nameplates.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\NameplateController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\NameplateController::class, 'store'])->name('store');
+                Route::post('/import', [\App\Http\Controllers\NameplateController::class, 'import'])->name('import');
+                Route::put('/{id}', [\App\Http\Controllers\NameplateController::class, 'update'])->name('update');
+                Route::delete('/{id}', [\App\Http\Controllers\NameplateController::class, 'destroy'])->name('destroy');
+            });
+
+
         });
 
         // Alias for master.dpm-targets.* (without admin. prefix)

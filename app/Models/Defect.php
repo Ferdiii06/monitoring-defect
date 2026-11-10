@@ -265,10 +265,161 @@ class Defect extends Model
     }
 
     /**
+     * Relasi ke AreaDitemukan berdasarkan string name (tanpa bentrok dengan atribut area_ditemukan).
+     */
+    public function areaDitemukanRef()
+    {
+        return $this->belongsTo(AreaDitemukan::class, 'area_ditemukan', 'name');
+    }
+
+    /**
+     * Scope untuk menerapkan seluruh parameter filter Final Assy secara terpusat.
+     * Digunakan bersama oleh halaman report, kartu KPI, dan endpoint data chart.
+     */
+    public function scopeFilterFinalAssy($query, $request = null)
+    {
+        $query->where('jenis_assy', 'Final Assy');
+
+        if ($request === null) {
+            return $query;
+        }
+
+        $getParam = function ($key) use ($request) {
+            if ($request instanceof \Illuminate\Http\Request) {
+                return $request->input($key);
+            }
+            if (is_array($request)) {
+                return $request[$key] ?? null;
+            }
+            return null;
+        };
+
+        $dateRange = $getParam('date_range');
+        if ($dateRange) {
+            try {
+                $dates = explode(' to ', $dateRange);
+                if (count($dates) === 2) {
+                    $startDate = \Carbon\Carbon::parse($dates[0])->startOfDay();
+                    $endDate = \Carbon\Carbon::parse($dates[1])->endOfDay();
+                    $query->whereBetween('waktu', [$startDate, $endDate]);
+                } else if (count($dates) === 1) {
+                    $startDate = \Carbon\Carbon::parse($dates[0])->startOfDay();
+                    $endDate = \Carbon\Carbon::parse($dates[0])->endOfDay();
+                    $query->whereBetween('waktu', [$startDate, $endDate]);
+                }
+            } catch (\Throwable $e) {
+                // Abaikan bila format tanggal tidak valid
+            }
+        }
+
+        $defect = $getParam('defect');
+        if ($defect && $defect !== 'all') {
+            $query->where('jenis_defect', $defect);
+        }
+
+        $line = $getParam('line');
+        if ($line && $line !== 'all') {
+            $query->where('jenis_mobil', $line);
+        }
+
+        $conveyor = $getParam('conveyor');
+        if ($conveyor && $conveyor !== 'all') {
+            $query->where('conveyor', $conveyor);
+        }
+
+        $pattern = $getParam('pattern');
+        if ($pattern && $pattern !== 'all') {
+            $query->where('pattern', $pattern);
+        }
+
+        return $query;
+    }
+
+    /**
      * Scope for Final Assy report queries (operator only, strictly excludes rework).
      */
     public function scopeFinalAssyReport($query)
     {
         return $query->where('jenis_assy', 'Final Assy')->whereNull('rework_group_id');
+    }
+
+    /**
+     * Scope Final Assy: Internal Defect (Area dengan kategori_report Inspeksi).
+     */
+    public function scopeFinalAssyInternal($query)
+    {
+        return $query->finalAssyReport()
+            ->whereHas('areaDitemukanRef', function ($q) {
+                $q->where('kategori_report', AreaDitemukan::REPORT_INSPEKSI);
+            });
+    }
+
+    /**
+     * Scope Final Assy: Assembly Defect (Area dengan kategori_report Assembly).
+     */
+    public function scopeFinalAssyAssembly($query)
+    {
+        return $query->finalAssyReport()
+            ->whereHas('areaDitemukanRef', function ($q) {
+                $q->where('kategori_report', AreaDitemukan::REPORT_ASSEMBLY);
+            });
+    }
+
+    /**
+     * Scope Final Assy: Belum Terklasifikasi.
+     * Mencakup: area_ditemukan NULL/kosong, area tidak ada di master area_ditemukans,
+     * area dengan kategori_report 'belum_diklasifikasi', atau area dengan kategori selain inspeksi/assembly.
+     *
+     * Invarian mutlak: Internal + Assembly + Belum Terklasifikasi = Total Final Assy (non-rework).
+     */
+    public function scopeFinalAssyUnclassified($query)
+    {
+        return $query->finalAssyReport()
+            ->where(function ($q) {
+                $q->whereNull('area_ditemukan')
+                  ->orWhere('area_ditemukan', '')
+                  ->orWhereDoesntHave('areaDitemukanRef')
+                  ->orWhereHas('areaDitemukanRef', function ($sub) {
+                      $sub->whereNotIn('kategori_report', [AreaDitemukan::REPORT_INSPEKSI, AreaDitemukan::REPORT_ASSEMBLY]);
+                  });
+            });
+    }
+
+    /**
+     * Scope Pre Assy: Internal Defect (ditemukan oleh Inspektor).
+     */
+    public function scopePreAssyInternal($query)
+    {
+        return $query->where('jenis_assy', 'Pre Assy')
+            ->where('ditemukan_oleh', 'Inspektor');
+    }
+
+    /**
+     * Scope Pre Assy: Assembly Defect (ditemukan oleh Operator).
+     */
+    public function scopePreAssyAssembly($query)
+    {
+        return $query->where('jenis_assy', 'Pre Assy')
+            ->where('ditemukan_oleh', 'Operator');
+    }
+
+    /**
+     * Scope Pre Assy: Process Defect (alias untuk backward-compatibility).
+     */
+    public function scopePreAssyProcess($query)
+    {
+        return $this->scopePreAssyAssembly($query);
+    }
+
+    /**
+     * Scope Pre Assy: Tidak Diketahui (ditemukan_oleh NULL atau selain Inspektor/Operator).
+     */
+    public function scopePreAssyUnknown($query)
+    {
+        return $query->where('jenis_assy', 'Pre Assy')
+            ->where(function ($q) {
+                $q->whereNull('ditemukan_oleh')
+                  ->orWhereNotIn('ditemukan_oleh', ['Inspektor', 'Operator']);
+            });
     }
 }

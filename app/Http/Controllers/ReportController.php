@@ -40,51 +40,62 @@ class ReportController extends Controller
             \Log::warning('FinalAssy: External API sync skipped - ' . $e->getMessage());
         }
 
-        // 1. Buat Query awal
-        $query = Defect::with('finalInspectType')->finalAssyReport();
-
-        // 2. Ambil parameter filter
+        // 1. Ambil parameter filter
         $dateRange = $request->input('date_range');
         $selectedDefect = $request->input('defect');
         $selectedLine = $request->input('line');
         $selectedConveyor = $request->input('conveyor');
         $selectedPattern = $request->input('pattern');
+        $selectedCategory = strtolower((string) $request->input('category', 'all'));
+        if (!in_array($selectedCategory, ['all', 'internal', 'assembly', 'unclassified', 'rework'], true)) {
+            $selectedCategory = 'all';
+        }
 
-        // 3. Terapkan Filter Tanggal
-        if ($dateRange) {
-            $dates = explode(' to ', $dateRange);
-            if (count($dates) === 2) {
-                $startDate = Carbon::parse($dates[0])->startOfDay();
-                $endDate = Carbon::parse($dates[1])->endOfDay();
-                $query->whereBetween('waktu', [$startDate, $endDate]);
-            } else if (count($dates) === 1) {
-                $startDate = Carbon::parse($dates[0])->startOfDay();
-                $endDate = Carbon::parse($dates[0])->endOfDay();
-                $query->whereBetween('waktu', [$startDate, $endDate]);
+        // 2. Base query Final Assy dengan filter terpusat
+        $baseFinalQuery = Defect::query()->filterFinalAssy($request);
+
+        // 3. Invarian Mutlak Non-Rework:
+        // Internal + Assembly + Belum Terklasifikasi = Total Final Assy Non-Rework
+        $totalFinalAssyNonRework = (clone $baseFinalQuery)->finalAssyReport()->count();
+        $totalInternal = (clone $baseFinalQuery)->finalAssyInternal()->count();
+        $totalAssembly = (clone $baseFinalQuery)->finalAssyAssembly()->count();
+        $totalUnclassified = (clone $baseFinalQuery)->finalAssyUnclassified()->count();
+
+        // Riwayat Rework (sebagai record riwayat, tidak di-double count ke total defect utama)
+        $reworkBaseQuery = (clone $baseFinalQuery)
+            ->whereNotNull('rework_group_id')
+            ->with(['finalInspectType', 'areaDitemukanRef']);
+        $totalRework = (clone $reworkBaseQuery)->count();
+        $reworkRecords = (clone $reworkBaseQuery)
+            ->orderBy('waktu', 'desc')
+            ->paginate(10, ['*'], 'rework_page')
+            ->withQueryString();
+
+        // Total PCS (sum quantity) untuk Kartu KPI (Opsi A)
+        $pcsFinalAssyNonRework = (int) (clone $baseFinalQuery)->finalAssyReport()->sum('quantity');
+        $pcsInternal = (int) (clone $baseFinalQuery)->finalAssyInternal()->sum('quantity');
+        $pcsAssembly = (int) (clone $baseFinalQuery)->finalAssyAssembly()->sum('quantity');
+        $pcsUnclassified = (int) (clone $baseFinalQuery)->finalAssyUnclassified()->sum('quantity');
+        $pcsRework = (int) (clone $reworkBaseQuery)->sum('quantity');
+
+        // 4. Query data defect utama sesuai category yang dipilih
+        if ($selectedCategory === 'rework') {
+            $query = (clone $reworkBaseQuery);
+        } else {
+            $query = (clone $baseFinalQuery)->with(['finalInspectType', 'areaDitemukanRef']);
+
+            if ($selectedCategory === 'internal') {
+                $query->finalAssyInternal();
+            } elseif ($selectedCategory === 'assembly') {
+                $query->finalAssyAssembly();
+            } elseif ($selectedCategory === 'unclassified') {
+                $query->finalAssyUnclassified();
+            } else {
+                $query->finalAssyReport();
             }
         }
 
-        // Terapkan Filter Jenis Defect
-        if ($selectedDefect && $selectedDefect !== 'all') {
-            $query->where('jenis_defect', $selectedDefect);
-        }
-
-        // Terapkan Filter Line (Mobil)
-        if ($selectedLine && $selectedLine !== 'all') {
-            $query->where('jenis_mobil', $selectedLine);
-        }
-
-        // Terapkan Filter Konveyor
-        if ($selectedConveyor && $selectedConveyor !== 'all') {
-            $query->where('conveyor', $selectedConveyor);
-        }
-
-        // Terapkan Filter Pattern
-        if ($selectedPattern && $selectedPattern !== 'all') {
-            $query->where('pattern', $selectedPattern);
-        }
-
-        // 4. Ambil opsi filter unik langsung dari DB
+        // 5. Opsi filter unik
         $defectOptions = [
             'INSER CIRCUIT',
             'DAMAGE/DEFORM/BROKEN PART',
@@ -102,23 +113,62 @@ class ReportController extends Controller
 
         $lineOptions = ['TOYOTA', 'NISSAN', 'MAZDA'];
 
-        // 5. Paginate Data (10 baris per halaman)
+        // 6. Paginate Data (10 baris per halaman)
         $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
 
         return view('final_assy', [
-            'records' => $records,
-            'defectOptions' => $defectOptions,
-            'lineOptions' => $lineOptions,
-            'dateRange' => $dateRange,
-            'selectedDefect' => $selectedDefect,
-            'selectedLine' => $selectedLine,
-            'selectedConveyor' => $selectedConveyor,
-            'selectedPattern' => $selectedPattern,
-            'currentPage' => $records->currentPage(),
-            'totalPages' => $records->lastPage(),
-            'totalItems' => $records->total(),
-            'allFilteredRecords' => $query->orderBy('waktu', 'desc')->get()
+            'records'                 => $records,
+            'defectOptions'           => $defectOptions,
+            'lineOptions'             => $lineOptions,
+            'dateRange'               => $dateRange,
+            'selectedDefect'          => $selectedDefect,
+            'selectedLine'            => $selectedLine,
+            'selectedConveyor'        => $selectedConveyor,
+            'selectedPattern'         => $selectedPattern,
+            'selectedCategory'        => $selectedCategory,
+            'totalFinalAssyNonRework' => $totalFinalAssyNonRework,
+            'totalInternal'           => $totalInternal,
+            'totalAssembly'           => $totalAssembly,
+            'totalUnclassified'       => $totalUnclassified,
+            'totalRework'             => $totalRework,
+            'pcsFinalAssyNonRework'   => $pcsFinalAssyNonRework,
+            'pcsInternal'             => $pcsInternal,
+            'pcsAssembly'             => $pcsAssembly,
+            'pcsUnclassified'         => $pcsUnclassified,
+            'pcsRework'               => $pcsRework,
+            'reworkRecords'           => $reworkRecords,
+            'currentPage'             => $records->currentPage(),
+            'totalPages'              => $records->lastPage(),
+            'totalItems'              => $records->total(),
+            'allFilteredRecords'      => $query->orderBy('waktu', 'desc')->get()
         ]);
+    }
+
+    /**
+     * Submenu Final Assy: Internal Defect
+     */
+    public function finalAssyInternal(Request $request)
+    {
+        $request->merge(['category' => 'internal']);
+        return $this->index($request);
+    }
+
+    /**
+     * Submenu Final Assy: Assembly Defect
+     */
+    public function finalAssyAssembly(Request $request)
+    {
+        $request->merge(['category' => 'assembly']);
+        return $this->index($request);
+    }
+
+    /**
+     * Submenu Final Assy: Rework (Record-only)
+     */
+    public function finalAssyRework(Request $request)
+    {
+        $request->merge(['category' => 'rework']);
+        return $this->index($request);
     }
 
     /**
@@ -137,42 +187,46 @@ class ReportController extends Controller
             \Log::warning('PreAssy: External API sync skipped - ' . $e->getMessage());
         }
 
-        // 1. Buat Query awal
-        $query = Defect::with(['carline', 'inspectProcessType'])->where('jenis_assy', 'Pre Assy');
-
-        // 2. Ambil parameter filter
+        // 1. Ambil parameter filter
         $dateRange = $request->input('date_range');
         $selectedDefect = $request->input('defect');
         $selectedLine = $request->input('line');
         $selectedCarline = $request->input('carline');
+        $selectedCategory = strtolower((string) $request->input('category', 'all'));
+        if (!in_array($selectedCategory, ['all', 'internal', 'assembly', 'process', 'unknown'], true)) {
+            $selectedCategory = 'all';
+        }
 
-        // 3. Terapkan Filter Tanggal
+        // 2. Base query Pre Assy dengan filter bersama
+        $basePreQuery = Defect::query()->where('jenis_assy', 'Pre Assy');
+
+        // Terapkan Filter Tanggal
         if ($dateRange) {
             $dates = explode(' to ', $dateRange);
             if (count($dates) === 2) {
                 $startDate = Carbon::parse($dates[0])->startOfDay();
                 $endDate = Carbon::parse($dates[1])->endOfDay();
-                $query->whereBetween('waktu', [$startDate, $endDate]);
+                $basePreQuery->whereBetween('waktu', [$startDate, $endDate]);
             } else if (count($dates) === 1) {
                 $startDate = Carbon::parse($dates[0])->startOfDay();
                 $endDate = Carbon::parse($dates[0])->endOfDay();
-                $query->whereBetween('waktu', [$startDate, $endDate]);
+                $basePreQuery->whereBetween('waktu', [$startDate, $endDate]);
             }
         }
 
         // Terapkan Filter Jenis Defect
         if ($selectedDefect && $selectedDefect !== 'all') {
-            $query->where('jenis_defect', $selectedDefect);
+            $basePreQuery->where('jenis_defect', $selectedDefect);
         }
 
         // Terapkan Filter Line (Mobil - untuk backward compatibility jika ada data lama)
         if ($selectedLine && $selectedLine !== 'all') {
-            $query->where('jenis_mobil', $selectedLine);
+            $basePreQuery->where('jenis_mobil', $selectedLine);
         }
 
         // Terapkan Filter Carline (dukung carline_id atau nama carline / conveyor lama)
         if ($selectedCarline && $selectedCarline !== 'all') {
-            $query->where(function ($q) use ($selectedCarline) {
+            $basePreQuery->where(function ($q) use ($selectedCarline) {
                 if (is_numeric($selectedCarline)) {
                     $q->where('carline_id', $selectedCarline);
                 } else {
@@ -183,7 +237,26 @@ class ReportController extends Controller
             });
         }
 
-        // 4. Ambil opsi filter unik langsung dari DB
+        // 3. Invarian Mutlak Pre Assy:
+        // Internal Defect (Inspektor) + Assembly Defect (Operator) + Tidak Diketahui = Total Pre Assy
+        $totalPreAssy = (clone $basePreQuery)->count();
+        $totalInternal = (clone $basePreQuery)->preAssyInternal()->count();
+        $totalAssembly = (clone $basePreQuery)->preAssyAssembly()->count();
+        $totalProcess = $totalAssembly; // Backward-compatibility
+        $totalUnknown = (clone $basePreQuery)->preAssyUnknown()->count();
+
+        // 4. Query data defect utama sesuai category yang dipilih
+        $query = (clone $basePreQuery)->with(['carline', 'inspectProcessType']);
+
+        if ($selectedCategory === 'internal') {
+            $query->preAssyInternal();
+        } elseif ($selectedCategory === 'assembly' || $selectedCategory === 'process') {
+            $query->preAssyAssembly();
+        } elseif ($selectedCategory === 'unknown') {
+            $query->preAssyUnknown();
+        }
+
+        // 5. Opsi filter unik langsung dari DB
         $defectOptions = [
             'CORE',
             'TERMINAL',
@@ -199,23 +272,47 @@ class ReportController extends Controller
         $lineOptions = ['TOYOTA', 'NISSAN', 'MAZDA'];
         $carlineOptions = Carline::whereNull('car_type_id')->orderBy('name')->get();
 
-        // 5. Paginate Data (10 baris per halaman)
+        // 6. Paginate Data (10 baris per halaman)
         $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
 
         return view('pre_assy', [
-            'records' => $records,
-            'defectOptions' => $defectOptions,
-            'lineOptions' => $lineOptions,
-            'carlineOptions' => $carlineOptions,
-            'dateRange' => $dateRange,
-            'selectedDefect' => $selectedDefect,
-            'selectedLine' => $selectedLine,
-            'selectedCarline' => $selectedCarline,
-            'currentPage' => $records->currentPage(),
-            'totalPages' => $records->lastPage(),
-            'totalItems' => $records->total(),
+            'records'            => $records,
+            'defectOptions'      => $defectOptions,
+            'lineOptions'        => $lineOptions,
+            'carlineOptions'     => $carlineOptions,
+            'dateRange'          => $dateRange,
+            'selectedDefect'     => $selectedDefect,
+            'selectedLine'       => $selectedLine,
+            'selectedCarline'    => $selectedCarline,
+            'selectedCategory'   => $selectedCategory,
+            'totalPreAssy'       => $totalPreAssy,
+            'totalInternal'      => $totalInternal,
+            'totalAssembly'      => $totalAssembly,
+            'totalProcess'       => $totalProcess,
+            'totalUnknown'       => $totalUnknown,
+            'currentPage'        => $records->currentPage(),
+            'totalPages'         => $records->lastPage(),
+            'totalItems'         => $records->total(),
             'allFilteredRecords' => $query->orderBy('waktu', 'desc')->get()
         ]);
+    }
+
+    /**
+     * Submenu Pre Assy: Internal Defect
+     */
+    public function preAssyInternalCategory(Request $request)
+    {
+        $request->merge(['category' => 'internal']);
+        return $this->preAssy($request);
+    }
+
+    /**
+     * Submenu Pre Assy: Assembly Defect
+     */
+    public function preAssyAssemblyCategory(Request $request)
+    {
+        $request->merge(['category' => 'assembly']);
+        return $this->preAssy($request);
     }
 
     /**
@@ -303,6 +400,149 @@ class ReportController extends Controller
     public function exportFinalAssy(Request $request)
     {
         return Excel::download(new FinalAssyExport($request), 'report_final_assy_' . now()->format('Y-m-d') . '.xlsx');
+    }
+
+    /**
+     * Endpoint data grafik stacked bar Final Assy (Sumbu Y = SUM(quantity) PCS).
+     * Rework strictly excluded. Top 15 defect types + "Lainnya".
+     */
+    public function finalAssyChartData(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $baseQuery = Defect::query()->filterFinalAssy($request);
+
+        // Agregasi per jenis_defect untuk 3 kategori non-rework
+        $internalData = (clone $baseQuery)->finalAssyInternal()
+            ->selectRaw('jenis_defect, SUM(quantity) as total_pcs, COUNT(*) as total_count')
+            ->groupBy('jenis_defect')
+            ->get()
+            ->keyBy('jenis_defect');
+
+        $assemblyData = (clone $baseQuery)->finalAssyAssembly()
+            ->selectRaw('jenis_defect, SUM(quantity) as total_pcs, COUNT(*) as total_count')
+            ->groupBy('jenis_defect')
+            ->get()
+            ->keyBy('jenis_defect');
+
+        $unclassifiedData = (clone $baseQuery)->finalAssyUnclassified()
+            ->selectRaw('jenis_defect, SUM(quantity) as total_pcs, COUNT(*) as total_count')
+            ->groupBy('jenis_defect')
+            ->get()
+            ->keyBy('jenis_defect');
+
+        // Kumpulkan semua jenis defect unik
+        $allDefects = $internalData->keys()
+            ->merge($assemblyData->keys())
+            ->merge($unclassifiedData->keys())
+            ->unique();
+
+        // Hitung total PCS tiap jenis defect untuk Pareto sorting
+        $defectTotals = [];
+        foreach ($allDefects as $defectName) {
+            $intPcs = (int) ($internalData->get($defectName)?->total_pcs ?? 0);
+            $asmPcs = (int) ($assemblyData->get($defectName)?->total_pcs ?? 0);
+            $uncPcs = (int) ($unclassifiedData->get($defectName)?->total_pcs ?? 0);
+            $defectTotals[$defectName] = $intPcs + $asmPcs + $uncPcs;
+        }
+
+        // Urutkan terbesar ke terkecil (Pareto)
+        arsort($defectTotals);
+
+        // Batasi 15 teratas + "Lainnya"
+        $topLimit = 15;
+        $topDefects = array_slice(array_keys($defectTotals), 0, $topLimit);
+        $otherDefects = array_slice(array_keys($defectTotals), $topLimit);
+
+        $labels = [];
+        $internalPcs = [];
+        $internalCounts = [];
+        $assemblyPcs = [];
+        $assemblyCounts = [];
+        $unclassifiedPcs = [];
+        $unclassifiedCounts = [];
+
+        foreach ($topDefects as $defectName) {
+            $labelName = ($defectName === '' || $defectName === null) ? 'Tidak Diketahui' : (string) $defectName;
+            $labels[] = $labelName;
+
+            $iPcs = (int) ($internalData->get($defectName)?->total_pcs ?? 0);
+            $iCnt = (int) ($internalData->get($defectName)?->total_count ?? 0);
+            $internalPcs[] = $iPcs;
+            $internalCounts[] = $iCnt;
+
+            $aPcs = (int) ($assemblyData->get($defectName)?->total_pcs ?? 0);
+            $aCnt = (int) ($assemblyData->get($defectName)?->total_count ?? 0);
+            $assemblyPcs[] = $aPcs;
+            $assemblyCounts[] = $aCnt;
+
+            $uPcs = (int) ($unclassifiedData->get($defectName)?->total_pcs ?? 0);
+            $uCnt = (int) ($unclassifiedData->get($defectName)?->total_count ?? 0);
+            $unclassifiedPcs[] = $uPcs;
+            $unclassifiedCounts[] = $uCnt;
+        }
+
+        if (!empty($otherDefects)) {
+            $otherIPcs = 0; $otherICnt = 0;
+            $otherAPcs = 0; $otherACnt = 0;
+            $otherUPcs = 0; $otherUCnt = 0;
+
+            foreach ($otherDefects as $defectName) {
+                $otherIPcs += (int) ($internalData->get($defectName)?->total_pcs ?? 0);
+                $otherICnt += (int) ($internalData->get($defectName)?->total_count ?? 0);
+
+                $otherAPcs += (int) ($assemblyData->get($defectName)?->total_pcs ?? 0);
+                $otherACnt += (int) ($assemblyData->get($defectName)?->total_count ?? 0);
+
+                $otherUPcs += (int) ($unclassifiedData->get($defectName)?->total_pcs ?? 0);
+                $otherUCnt += (int) ($unclassifiedData->get($defectName)?->total_count ?? 0);
+            }
+
+            $labels[] = 'Lainnya';
+            $internalPcs[] = $otherIPcs;
+            $internalCounts[] = $otherICnt;
+            $assemblyPcs[] = $otherAPcs;
+            $assemblyCounts[] = $otherACnt;
+            $unclassifiedPcs[] = $otherUPcs;
+            $unclassifiedCounts[] = $otherUCnt;
+        }
+
+        $datasets = [
+            [
+                'label' => 'Internal Defect',
+                'backgroundColor' => 'rgba(37, 99, 235, 0.85)', // blue-600
+                'borderColor' => '#1d4ed8',
+                'borderWidth' => 1,
+                'data' => $internalPcs,
+                'counts' => $internalCounts,
+            ],
+            [
+                'label' => 'Assembly Defect',
+                'backgroundColor' => 'rgba(16, 185, 129, 0.85)', // emerald-500
+                'borderColor' => '#059669',
+                'borderWidth' => 1,
+                'data' => $assemblyPcs,
+                'counts' => $assemblyCounts,
+            ],
+            [
+                'label' => 'Belum Terklasifikasi',
+                'backgroundColor' => 'rgba(245, 158, 11, 0.85)', // amber-500
+                'borderColor' => '#d97706',
+                'borderWidth' => 1,
+                'data' => $unclassifiedPcs,
+                'counts' => $unclassifiedCounts,
+            ],
+        ];
+
+        return response()->json([
+            'labels' => $labels,
+            'datasets' => $datasets,
+            'summary' => [
+                'total_pcs' => array_sum($internalPcs) + array_sum($assemblyPcs) + array_sum($unclassifiedPcs),
+                'total_count' => array_sum($internalCounts) + array_sum($assemblyCounts) + array_sum($unclassifiedCounts),
+                'internal_pcs' => array_sum($internalPcs),
+                'assembly_pcs' => array_sum($assemblyPcs),
+                'unclassified_pcs' => array_sum($unclassifiedPcs),
+            ],
+        ]);
     }
 
     /**
@@ -977,7 +1217,18 @@ class ReportController extends Controller
      */
     public function finalAssyLive(Request $request)
     {
-        $query = Defect::with('finalInspectType')->finalAssyReport();
+        $selectedCategory = $request->input('category', 'all');
+        $query = Defect::with(['finalInspectType', 'areaDitemukanRef']);
+
+        if ($selectedCategory === 'internal') {
+            $query->finalAssyInternal();
+        } elseif ($selectedCategory === 'assembly') {
+            $query->finalAssyAssembly();
+        } elseif ($selectedCategory === 'unclassified') {
+            $query->finalAssyUnclassified();
+        } else {
+            $query->finalAssyReport();
+        }
 
         $dateRange        = $request->input('date_range');
         $selectedDefect   = $request->input('defect');
@@ -1009,9 +1260,25 @@ class ReportController extends Controller
 
         $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
 
+        $items = collect($records->items())->map(function ($item) {
+            $array = $item->toArray();
+            $katReport = $item->areaDitemukanRef?->kategori_report ?: $item->areaDitemukanRef?->tipe;
+            if ($katReport === 'inspeksi') {
+                $array['category_label'] = 'Internal Defect';
+                $array['category_badge_class'] = 'border-blue-200 bg-blue-50 text-blue-700';
+            } elseif ($katReport === 'assembly') {
+                $array['category_label'] = 'Assembly Defect';
+                $array['category_badge_class'] = 'border-emerald-200 bg-emerald-50 text-emerald-700';
+            } else {
+                $array['category_label'] = 'Belum Terklasifikasi';
+                $array['category_badge_class'] = 'border-amber-200 bg-amber-50 text-amber-700';
+            }
+            return $array;
+        });
+
         return response()->json([
             'success' => true,
-            'data'    => $records->items(),
+            'data'    => $items,
             'total'   => $records->total()
         ]);
     }
@@ -1021,7 +1288,16 @@ class ReportController extends Controller
      */
     public function preAssyLive(Request $request)
     {
+        $selectedCategory = $request->input('category', 'all');
         $query = Defect::with(['carline', 'inspectProcessType'])->where('jenis_assy', 'Pre Assy');
+
+        if ($selectedCategory === 'internal') {
+            $query->preAssyInternal();
+        } elseif ($selectedCategory === 'assembly' || $selectedCategory === 'process') {
+            $query->preAssyAssembly();
+        } elseif ($selectedCategory === 'unknown') {
+            $query->preAssyUnknown();
+        }
 
         $dateRange        = $request->input('date_range');
         $selectedDefect   = $request->input('defect');
@@ -1061,6 +1337,16 @@ class ReportController extends Controller
             $array = $item->toArray();
             $array['carline_name'] = $item->carline?->name ?? $item->conveyor ?? '-';
             $array['inspect_process_type_name'] = $item->inspectProcessType?->name ?? '-';
+            if ($item->ditemukan_oleh === 'Inspektor') {
+                $array['ditemukan_label'] = 'Internal Defect (Inspektor)';
+                $array['ditemukan_badge_class'] = 'border-blue-200 bg-blue-50 text-blue-700';
+            } elseif ($item->ditemukan_oleh === 'Operator') {
+                $array['ditemukan_label'] = 'Assembly Defect (Operator)';
+                $array['ditemukan_badge_class'] = 'border-amber-200 bg-amber-50 text-amber-700';
+            } else {
+                $array['ditemukan_label'] = 'Tidak Diketahui';
+                $array['ditemukan_badge_class'] = 'border-gray-200 bg-gray-50 text-gray-600';
+            }
             return $array;
         });
 

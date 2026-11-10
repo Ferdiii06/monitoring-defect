@@ -8,7 +8,9 @@
     editId: null,
     editName: '',
     editTipe: '{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}',
+    editKategoriReport: '{{ \App\Models\AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI }}',
     originalTipe: '{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}',
+    originalKategoriReport: '{{ \App\Models\AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI }}',
     editDefectsCount: 0
 }">
     <!-- Header -->
@@ -65,11 +67,22 @@
                 </div>
 
                 <div>
-                    <label for="tipe" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Tipe Area <span class="text-red-500">*</span></label>
+                    <label for="tipe" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Tipe Sistem <span class="text-red-500">*</span></label>
                     <select id="tipe" name="tipe" required
                         class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
-                        <option value="{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}" selected>Internal Defect</option>
+                        <option value="{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}" selected>Internal Defect (Operasional)</option>
                         <option value="{{ \App\Models\AreaDitemukan::TIPE_REWORK }}">Rework</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="kategori_report" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Kategori Report F/A <span class="text-red-500">*</span></label>
+                    <select id="kategori_report" name="kategori_report" required
+                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
+                        <option value="{{ \App\Models\AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI }}" selected>Belum Diklasifikasi</option>
+                        <option value="{{ \App\Models\AreaDitemukan::REPORT_INSPEKSI }}">Inspeksi (Internal Defect)</option>
+                        <option value="{{ \App\Models\AreaDitemukan::REPORT_ASSEMBLY }}">Assembly (Assembly Defect)</option>
+                        <option value="{{ \App\Models\AreaDitemukan::REPORT_REWORK }}">Rework</option>
                     </select>
                 </div>
 
@@ -93,7 +106,8 @@
                             <tr class="border-b border-gray-200">
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2 w-12">No</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Nama Area</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Tipe</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Tipe Sistem</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Kategori Report F/A</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Data Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2 w-32">Aksi</th>
                             </tr>
@@ -107,14 +121,38 @@
                                             {{ $area->name }}
                                         </span>
                                     </td>
+                                    <!-- Badge Tipe Sistem Operasional -->
                                     <td class="py-3.5 px-4">
                                         @if($area->tipe === \App\Models\AreaDitemukan::TIPE_REWORK)
-                                            <span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                                            <span class="inline-block bg-purple-50 text-purple-700 border border-purple-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
                                                 Rework
                                             </span>
                                         @else
                                             <span class="inline-block bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
                                                 Internal Defect
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <!-- Badge Kategori Report Final Assy -->
+                                    <td class="py-3.5 px-4">
+                                        @php
+                                            $katReport = $area->kategori_report ?? \App\Models\AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI;
+                                        @endphp
+                                        @if($katReport === \App\Models\AreaDitemukan::REPORT_INSPEKSI)
+                                            <span class="inline-block bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                                                Inspeksi (Internal)
+                                            </span>
+                                        @elseif($katReport === \App\Models\AreaDitemukan::REPORT_ASSEMBLY)
+                                            <span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                                                Assembly
+                                            </span>
+                                        @elseif($katReport === \App\Models\AreaDitemukan::REPORT_REWORK)
+                                            <span class="inline-block bg-purple-50 text-purple-700 border border-purple-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                                                Rework
+                                            </span>
+                                        @else
+                                            <span class="inline-block bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                                                Belum Diklasifikasi
                                             </span>
                                         @endif
                                     </td>
@@ -131,7 +169,7 @@
                                         <div class="inline-flex items-center space-x-1.5">
                                             <!-- Tombol Edit -->
                                             <button type="button"
-                                                @click="editModal = true; editId = {{ $area->id }}; editName = '{{ addslashes($area->name) }}'; editTipe = '{{ $area->tipe }}'; originalTipe = '{{ $area->tipe }}'; editDefectsCount = {{ $area->defects_count }};"
+                                                @click="editModal = true; editId = {{ $area->id }}; editName = '{{ addslashes($area->name) }}'; editTipe = '{{ $area->tipe }}'; editKategoriReport = '{{ $area->kategori_report ?? \App\Models\AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI }}'; originalTipe = '{{ $area->tipe }}'; originalKategoriReport = '{{ $area->kategori_report ?? \App\Models\AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI }}'; editDefectsCount = {{ $area->defects_count }};"
                                                 class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">
                                                 Edit
                                             </button>
@@ -155,7 +193,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="py-10 text-center text-xs text-gray-400 font-medium">Belum ada data area ditemukan.</td>
+                                    <td colspan="6" class="py-10 text-center text-xs text-gray-400 font-medium">Belum ada data area ditemukan.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -177,7 +215,7 @@
             </div>
 
             <form :action="'{{ url('/master/area-ditemukans') }}/' + editId" method="POST"
-                @submit="if (editDefectsCount > 0 && editTipe !== originalTipe) { if (!confirm('Area ini memiliki ' + editDefectsCount + ' data defect terkait.\n\nPeringatan: Perubahan tipe ini ikut memindahkan data lama ke kategori lain di dashboard nanti.\n\nApakah Anda yakin ingin melanjutkan?')) { $event.preventDefault(); } }"
+                @submit="if (editDefectsCount > 0 && editTipe !== originalTipe) { if (!confirm('Area ini memiliki ' + editDefectsCount + ' data defect terkait.\n\nPeringatan: Perubahan tipe operasional ini ikut memindahkan data lama ke kategori lain di dashboard nanti.\n\nApakah Anda yakin ingin melanjutkan?')) { $event.preventDefault(); } }"
                 class="space-y-4">
                 @csrf
                 @method('PUT')
@@ -193,14 +231,25 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Tipe Area <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Tipe Sistem <span class="text-red-500">*</span></label>
                     <select name="tipe" x-model="editTipe" required
                         class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
-                        <option value="{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}">Internal Defect</option>
+                        <option value="{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}">Internal Defect (Operasional)</option>
                         <option value="{{ \App\Models\AreaDitemukan::TIPE_REWORK }}">Rework</option>
                     </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Kategori Report F/A <span class="text-red-500">*</span></label>
+                    <select name="kategori_report" x-model="editKategoriReport" required
+                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
+                        <option value="{{ \App\Models\AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI }}">Belum Diklasifikasi</option>
+                        <option value="{{ \App\Models\AreaDitemukan::REPORT_INSPEKSI }}">Inspeksi (Internal Defect)</option>
+                        <option value="{{ \App\Models\AreaDitemukan::REPORT_ASSEMBLY }}">Assembly (Assembly Defect)</option>
+                        <option value="{{ \App\Models\AreaDitemukan::REPORT_REWORK }}">Rework</option>
+                    </select>
                     <div x-show="editDefectsCount > 0 && editTipe !== originalTipe" class="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                        <strong>Peringatan:</strong> Area ini memiliki <span x-text="editDefectsCount"></span> data defect. Mengubah tipe akan memindahkan data lama ke kategori lain di dashboard.
+                        <strong>Peringatan:</strong> Area ini memiliki <span x-text="editDefectsCount"></span> data defect. Mengubah tipe operasional akan mempengaruhi perhitungan mode internal/rework di dashboard.
                     </div>
                 </div>
 

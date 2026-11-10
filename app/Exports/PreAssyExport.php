@@ -32,7 +32,17 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
 
     public function query()
     {
+        $selectedCategory = strtolower((string) $this->request->input('category', 'all'));
+
         $query = Defect::with(['carline', 'inspectProcessType'])->where('jenis_assy', 'Pre Assy');
+
+        if ($selectedCategory === 'internal') {
+            $query->preAssyInternal();
+        } elseif ($selectedCategory === 'assembly' || $selectedCategory === 'process') {
+            $query->preAssyAssembly();
+        } elseif ($selectedCategory === 'unknown') {
+            $query->preAssyUnknown();
+        }
 
         $dateRange = $this->request->input('date_range');
         $selectedDefect = $this->request->input('defect');
@@ -84,7 +94,7 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
             'Waktu',
             'User',
             'Shift',
-            'Ditemukan Oleh',
+            'Kategori Sumber',
             'Jenis Assy',
             'Carline',
             'Inspect Process Type',
@@ -99,12 +109,18 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
 
     public function map($row): array
     {
+        $kategoriSumber = match ($row->ditemukan_oleh) {
+            'Inspektor' => 'Internal Defect (Inspektor)',
+            'Operator'  => 'Assembly Defect (Operator)',
+            default     => 'Tidak Diketahui',
+        };
+
         return [
             $row->id,
             Carbon::parse($row->waktu)->format('Y-m-d H:i:s'),
             $row->user_name,
             $row->shift ?? '-',
-            $row->ditemukan_oleh ?? '-',
+            $kategoriSumber,
             $row->jenis_assy,
             $row->carline?->name ?? $row->conveyor ?? '-',
             $row->inspectProcessType?->name ?? '-',
