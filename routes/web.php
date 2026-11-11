@@ -186,6 +186,17 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
                 Route::delete('/{id}', [\App\Http\Controllers\NameplateController::class, 'destroy'])->name('destroy');
             });
 
+            // Nameplate Settings (Carline Configuration)
+            Route::prefix('nameplate-settings')->name('nameplate_settings.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\NameplateSettingController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\NameplateSettingController::class, 'store'])->name('store');
+                Route::get('/export', [\App\Http\Controllers\NameplateSettingController::class, 'export'])->name('export');
+                Route::get('/template', [\App\Http\Controllers\NameplateSettingController::class, 'template'])->name('template');
+                Route::post('/import', [\App\Http\Controllers\NameplateSettingController::class, 'import'])->name('import');
+                Route::post('/test-scan', [\App\Http\Controllers\NameplateSettingController::class, 'testScan'])->name('test_scan');
+                Route::put('/{id}', [\App\Http\Controllers\NameplateSettingController::class, 'update'])->name('update');
+            });
+
 
         });
 

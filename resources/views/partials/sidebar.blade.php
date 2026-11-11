@@ -263,9 +263,9 @@
                                 <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.kanban_format.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 4h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 <span>Format Kanban</span>
                             </a>
-                            <a href="{{ route('admin.master.nameplates.index') }}" 
-                               class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.nameplates.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
-                                <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.nameplates.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+                            <a href="{{ route('admin.master.nameplate_settings.index') }}" 
+                               class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.nameplate_settings.*') || request()->routeIs('admin.master.nameplates.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                                <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.nameplate_settings.*') || request()->routeIs('admin.master.nameplates.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
                                 <span>Nameplate (HTScan)</span>
                             </a>
                         </div>
