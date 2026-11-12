@@ -394,4 +394,119 @@ class FinalAssyReportInvariantTest extends TestCase
         $resPa = $this->actingAsAdmin()->get(route('pre_assy.export', ['category' => 'all']));
         $resPa->assertStatus(200);
     }
+
+    /**
+     * Verifikasi fitur Edit Pre Assy pada submenu "All":
+     * - Defect "Tidak Diketahui" (ditemukan_oleh = null, carline_id = null) dapat diedit tanpa validasi error.
+     * - Nilai conveyor tidak terhapus jika carline_id kosong.
+     * - Nilai ditemukan_oleh tetap null (Tidak Diketahui) saat diupdate kosong.
+     * - Invarian Pre Assy (Internal + Assembly + Tidak Diketahui = Total Pre Assy) tetap terjaga.
+     */
+    public function test_pre_assy_all_submenu_edit_and_update_supports_unknown_defect_and_preserves_invariant(): void
+    {
+        $baseTime = Carbon::now();
+        $carline = Carline::create(['name' => 'CARLINE_PA_01']);
+
+        // 1. Defect Internal (Inspektor)
+        $dInternal = Defect::create([
+            'waktu'          => $baseTime,
+            'user_name'      => 'Pre Insp',
+            'jenis_assy'     => 'Pre Assy',
+            'ditemukan_oleh' => 'Inspektor',
+            'carline_id'     => $carline->id,
+            'jenis_defect'   => 'CORE',
+            'jenis_sub_defect' => 'CUT WIRE',
+            'quantity'       => 1,
+        ]);
+
+        // 2. Defect Assembly (Operator)
+        $dAssembly = Defect::create([
+            'waktu'          => $baseTime,
+            'user_name'      => 'Pre Op',
+            'jenis_assy'     => 'Pre Assy',
+            'ditemukan_oleh' => 'Operator',
+            'carline_id'     => $carline->id,
+            'jenis_defect'   => 'TERMINAL',
+            'jenis_sub_defect' => 'DEFORM',
+            'quantity'       => 2,
+        ]);
+
+        // 3. Defect Tidak Diketahui (NULL ditemukan_oleh dan NULL carline_id dengan conveyor warisan)
+        $dUnknown = Defect::create([
+            'waktu'          => $baseTime,
+            'user_name'      => 'Pre Anon',
+            'jenis_assy'     => 'Pre Assy',
+            'ditemukan_oleh' => null,
+            'carline_id'     => null,
+            'conveyor'       => 'LEGACY-PA-CONVEYOR',
+            'jenis_defect'   => 'CRIMPING',
+            'jenis_sub_defect' => 'LOOSE',
+            'quantity'       => 3,
+        ]);
+
+        // 4. Cek Invarian Awal
+        $this->assertEquals(3, Defect::where('jenis_assy', 'Pre Assy')->count());
+        $this->assertEquals(1, Defect::where('jenis_assy', 'Pre Assy')->preAssyInternal()->count());
+        $this->assertEquals(1, Defect::where('jenis_assy', 'Pre Assy')->preAssyAssembly()->count());
+        $this->assertEquals(1, Defect::where('jenis_assy', 'Pre Assy')->preAssyUnknown()->count());
+
+        // 5. Test Admin membuka halaman Edit Defect Tidak Diketahui
+        $resEdit = $this->actingAsAdmin()->get(route('admin.report.edit', $dUnknown->id));
+        $resEdit->assertStatus(200);
+        $resEdit->assertSee('Edit Report');
+
+        // 6. Test Admin mengupdate Defect Tidak Diketahui tanpa mengubah ditemukan_oleh (tetap kosong)
+        $updatePayload = [
+            'tanggal'        => $baseTime->format('Y-m-d'),
+            'jam'            => $baseTime->format('H:i'),
+            'type'           => 'Pre Assy',
+            'jenis_defect'   => 'CRIMPING',
+            'sub_defect'     => 'LOOSE',
+            'jumlah'         => 10,
+            'carline_id'     => '',
+            'ditemukan_oleh' => '',
+            'no_terminal'    => 'TERM-999',
+        ];
+
+        $resUpdate = $this->actingAsAdmin()->put(route('admin.report.update', $dUnknown->id), $updatePayload);
+        $resUpdate->assertSessionHasNoErrors();
+        $resUpdate->assertRedirect(route('recent_defects.index'));
+
+        // 7. Verifikasi defect tersimpan dengan benar: quantity berubah, ditemukan_oleh tetap null, conveyor tidak terhapus
+        $freshUnknown = $dUnknown->fresh();
+        $this->assertEquals(10, $freshUnknown->quantity);
+        $this->assertNull($freshUnknown->ditemukan_oleh);
+        $this->assertNull($freshUnknown->carline_id);
+        $this->assertEquals('LEGACY-PA-CONVEYOR', $freshUnknown->conveyor);
+        $this->assertEquals('TERM-999', $freshUnknown->no_terminal);
+
+        // 8. Verifikasi Invarian Pre Assy tetap utuh setelah edit
+        $this->assertEquals(3, Defect::where('jenis_assy', 'Pre Assy')->count());
+        $this->assertEquals(1, Defect::where('jenis_assy', 'Pre Assy')->preAssyInternal()->count());
+        $this->assertEquals(1, Defect::where('jenis_assy', 'Pre Assy')->preAssyAssembly()->count());
+        $this->assertEquals(1, Defect::where('jenis_assy', 'Pre Assy')->preAssyUnknown()->count());
+
+        // Invarian mutlak
+        $this->assertEquals(
+            Defect::where('jenis_assy', 'Pre Assy')->count(),
+            Defect::where('jenis_assy', 'Pre Assy')->preAssyInternal()->count()
+            + Defect::where('jenis_assy', 'Pre Assy')->preAssyAssembly()->count()
+            + Defect::where('jenis_assy', 'Pre Assy')->preAssyUnknown()->count()
+        );
+
+        // 9. Test Admin mengupdate defect internal tetap berjalan normal
+        $resUpdateInternal = $this->actingAsAdmin()->put(route('admin.report.update', $dInternal->id), [
+            'tanggal'        => $baseTime->format('Y-m-d'),
+            'jam'            => $baseTime->format('H:i'),
+            'type'           => 'Pre Assy',
+            'jenis_defect'   => 'CORE',
+            'sub_defect'     => 'CUT WIRE',
+            'jumlah'         => 7,
+            'carline_id'     => $carline->id,
+            'ditemukan_oleh' => 'Inspektor',
+        ]);
+        $resUpdateInternal->assertSessionHasNoErrors();
+        $this->assertEquals(7, $dInternal->fresh()->quantity);
+        $this->assertEquals('Inspektor', $dInternal->fresh()->ditemukan_oleh);
+    }
 }

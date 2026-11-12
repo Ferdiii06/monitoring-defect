@@ -262,7 +262,7 @@
                 <!-- DITEMUKAN OLEH (Card Segmented Picker 2 Opsi - Khusus Pre Assy) -->
                 <template x-if="form.type === 'Pre Assy'">
                     <div class="space-y-1.5">
-                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">DITEMUKAN OLEH <span class="text-brand">*</span></label>
+                        <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">DITEMUKAN OLEH <span class="text-brand" x-show="!isEdit">*</span><span class="text-gray-400 font-normal lowercase" x-show="isEdit">(opsional / kosong = tidak diketahui)</span></label>
                         <input type="hidden" name="ditemukan_oleh" :value="form.ditemukan_oleh">
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button"
@@ -411,9 +411,9 @@
                         <span class="font-extrabold text-teal-800 font-mono tabular-nums" x-text="form.inspect_quantity + ' Unit'"></span>
                     </div>
 
-                    <div x-show="form.type === 'Pre Assy' && form.ditemukan_oleh" class="flex justify-between items-center">
+                    <div x-show="form.type === 'Pre Assy'" class="flex justify-between items-center">
                         <span class="text-gray-500 font-medium text-[11px]">Ditemukan Oleh:</span>
-                        <span class="font-bold text-gray-900" x-text="form.ditemukan_oleh"></span>
+                        <span class="font-bold text-gray-900" x-text="form.ditemukan_oleh ? form.ditemukan_oleh : 'Tidak Diketahui'"></span>
                     </div>
 
                     <div x-show="showFinalInspectType && form.final_inspect_type_id" class="flex justify-between items-center">
@@ -517,6 +517,8 @@
             step: 1,
             errorMessage: '',
             isSubmitting: false,
+            isEdit: {{ isset($defect) ? 'true' : 'false' }},
+            initialCarlineId: '{{ old("carline_id", $defect->carline_id ?? "") }}',
             conveyorMap: conveyorMap,
             preAssyCarlines: preAssyCarlines,
             inspectProcessTypesList: inspectProcessTypesList,
@@ -553,7 +555,7 @@
             },
 
             get selectedCarlineName() {
-                if (!this.form.carline_id) return '-';
+                if (!this.form.carline_id) return '{{ isset($defect) && $defect->conveyor ? $defect->conveyor : "-" }}';
                 const c = this.preAssyCarlines.find(item => String(item.id) === String(this.form.carline_id));
                 return c ? c.name : '-';
             },
@@ -652,7 +654,7 @@
                     return false;
                 }
 
-                if (this.form.type === 'Pre Assy' && !this.form.ditemukan_oleh) {
+                if (this.form.type === 'Pre Assy' && !this.isEdit && !this.form.ditemukan_oleh) {
                     return false;
                 }
 
@@ -672,7 +674,7 @@
                         return false;
                     }
                 } else if (this.form.type === 'Pre Assy') {
-                    if (!this.form.carline_id) {
+                    if (!this.form.carline_id && (!this.isEdit || this.initialCarlineId)) {
                         return false;
                     }
                 } else {

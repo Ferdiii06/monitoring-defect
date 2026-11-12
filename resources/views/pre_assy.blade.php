@@ -464,48 +464,50 @@
             const conveyorSelect = document.getElementById("conveyorSelect");
             const selectedConveyor = @json($selectedConveyor ?? 'all');
 
-            function populateConveyors(mobil, selectedVal) {
-                // Clear and add base option
-                conveyorSelect.innerHTML = '';
-                
-                if (mobil && mobil !== 'all') {
-                    const optAll = document.createElement("option");
-                    optAll.value = "all";
-                    optAll.textContent = "Semua Konveyor";
-                    if (selectedVal === 'all') {
-                        optAll.selected = true;
-                    }
-                    conveyorSelect.appendChild(optAll);
-
-                    const list = conveyorsByMobil[mobil] || [];
-                    list.forEach(item => {
-                        const opt = document.createElement("option");
-                        opt.value = item;
-                        opt.textContent = item;
-                        if (item === selectedVal) {
-                            opt.selected = true;
+            if (mobilSelect && conveyorSelect) {
+                function populateConveyors(mobil, selectedVal) {
+                    // Clear and add base option
+                    conveyorSelect.innerHTML = '';
+                    
+                    if (mobil && mobil !== 'all') {
+                        const optAll = document.createElement("option");
+                        optAll.value = "all";
+                        optAll.textContent = "Semua Konveyor";
+                        if (selectedVal === 'all') {
+                            optAll.selected = true;
                         }
-                        conveyorSelect.appendChild(opt);
-                    });
-                    conveyorSelect.disabled = false;
-                } else {
-                    const optPlaceholder = document.createElement("option");
-                    optPlaceholder.value = "all";
-                    optPlaceholder.textContent = "Pilih Mobil Terlebih Dahulu";
-                    optPlaceholder.selected = true;
-                    conveyorSelect.appendChild(optPlaceholder);
-                    conveyorSelect.disabled = true;
+                        conveyorSelect.appendChild(optAll);
+
+                        const list = conveyorsByMobil[mobil] || [];
+                        list.forEach(item => {
+                            const opt = document.createElement("option");
+                            opt.value = item;
+                            opt.textContent = item;
+                            if (item === selectedVal) {
+                                opt.selected = true;
+                            }
+                            conveyorSelect.appendChild(opt);
+                        });
+                        conveyorSelect.disabled = false;
+                    } else {
+                        const optPlaceholder = document.createElement("option");
+                        optPlaceholder.value = "all";
+                        optPlaceholder.textContent = "Pilih Mobil Terlebih Dahulu";
+                        optPlaceholder.selected = true;
+                        conveyorSelect.appendChild(optPlaceholder);
+                        conveyorSelect.disabled = true;
+                    }
                 }
+
+                // Listen to mobil changes
+                mobilSelect.addEventListener("change", function () {
+                    populateConveyors(this.value, 'all');
+                    this.form.submit();
+                });
+
+                // Initialize on load
+                populateConveyors(mobilSelect.value, selectedConveyor);
             }
-
-            // Listen to mobil changes
-            mobilSelect.addEventListener("change", function () {
-                populateConveyors(this.value, 'all');
-                this.form.submit();
-            });
-
-            // Initialize on load
-            populateConveyors(mobilSelect.value, selectedConveyor);
         });
 
         // Excel exporter via URL redirect
