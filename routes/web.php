@@ -66,6 +66,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/analytics', [DashboardController::class, 'analytics'])->name('admin.dashboard.analytics');
         Route::get('/dashboard/pareto-drilldown', [DashboardController::class, 'paretoDrilldown'])->name('admin.dashboard.pareto_drilldown');
+        Route::get('/dashboard/top5-area-final', [DashboardController::class, 'apiTop5AreaFinal'])->name('admin.dashboard.top5_area_final');
 
         // Add Account routes
         Route::get('/add-account', [\App\Http\Controllers\AccountController::class, 'index'])->name('account.create');
@@ -89,6 +90,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
             Route::get('/internal', [\App\Http\Controllers\ReportController::class, 'preAssyInternalCategory'])->name('internal');
             Route::get('/assembly', [\App\Http\Controllers\ReportController::class, 'preAssyAssemblyCategory'])->name('assembly');
             Route::get('/export', [\App\Http\Controllers\ReportController::class, 'exportPreAssy'])->name('export');
+            Route::get('/chart-data', [\App\Http\Controllers\ReportController::class, 'preAssyChartData'])->name('chart_data');
         });
 
         // Log System route

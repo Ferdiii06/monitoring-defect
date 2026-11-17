@@ -111,157 +111,19 @@ class Defect extends Model
     }
 
     /**
-     * Ambil daftar nama area bertipe rework (dimemoize per request via helper once()).
-     *
-     * @return array<int, string>
+     * Scope data input operator (rework_group_id IS NULL).
      */
-    public static function getReworkAreaNames(): array
+    public function scopeOperatorInput($query)
     {
-        return once(function () {
-            try {
-                if (Schema::hasTable('area_ditemukans')) {
-                    $tipeRework = defined(AreaDitemukan::class . '::TIPE_REWORK')
-                        ? AreaDitemukan::TIPE_REWORK
-                        : 'rework';
-
-                    return AreaDitemukan::where('tipe', $tipeRework)
-                        ->pluck('name')
-                        ->filter(fn($n) => filled($n))
-                        ->values()
-                        ->toArray();
-                }
-            } catch (\Throwable $e) {
-                report($e);
-                return [];
-            }
-
-            return [];
-        });
+        return $query->whereNull('rework_group_id');
     }
 
     /**
-     * Scope query berdasarkan mode dashboard (internal, rework, all).
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string|null $mode 'internal'|'rework'|'all'
-     * @param string|null $jenisAssy 'Final Assy'|'Pre Assy'|null
-     * @return \Illuminate\Database\Eloquent\Builder
+     * Scope data record rework (rework_group_id IS NOT NULL).
      */
-    public function scopeByDashboardMode($query, ?string $mode = 'internal', ?string $jenisAssy = null)
+    public function scopeReworkRecord($query)
     {
-        $mode = in_array($mode, ['all', 'internal', 'rework'], true) ? $mode : 'internal';
-
-        // Pre Assy: Rework tidak berlaku di Pre Assy.
-        // Bila jenisAssy eksplisit Pre Assy:
-        // - Mode 'rework' mengecualikan Pre Assy seluruhnya (0 baris).
-        // - Mode 'internal' dan 'all': operator (rework_group_id IS NULL) DAN area non-rework (termasuk NULL).
-        if ($jenisAssy === 'Pre Assy') {
-            if ($mode === 'rework') {
-                return $query->whereRaw('1 = 0');
-            }
-
-            $query->whereNull('rework_group_id');
-            $reworkAreaNames = static::getReworkAreaNames();
-            if (!empty($reworkAreaNames)) {
-                $query->where(function ($q) use ($reworkAreaNames) {
-                    $q->whereNull('area_ditemukan')
-                      ->orWhereNotIn('area_ditemukan', $reworkAreaNames);
-                });
-            }
-            return $query;
-        }
-
-        // Ambil daftar nama area bertipe rework dari master area_ditemukans (memoized)
-        $reworkAreaNames = static::getReworkAreaNames();
-
-        // Bila query khusus untuk Final Assy
-        if ($jenisAssy === 'Final Assy') {
-            if ($mode === 'rework') {
-                if (empty($reworkAreaNames)) {
-                    return $query->whereRaw('1 = 0');
-                }
-                return $query->whereNotNull('rework_group_id')
-                    ->whereIn('area_ditemukan', $reworkAreaNames);
-            }
-
-            if ($mode === 'internal') {
-                $query->whereNull('rework_group_id');
-                if (empty($reworkAreaNames)) {
-                    return $query;
-                }
-                return $query->where(function ($q) use ($reworkAreaNames) {
-                    $q->whereNull('area_ditemukan')
-                      ->orWhereNotIn('area_ditemukan', $reworkAreaNames);
-                });
-            }
-
-            // Mode 'all' Final Assy: union data SAH saja
-            // (internal: operator DAN non-rework area) + (rework: rework_group_id IS NOT NULL DAN area rework)
-            return $query->where(function ($q) use ($reworkAreaNames) {
-                $q->where(function ($sub) use ($reworkAreaNames) {
-                    $sub->whereNull('rework_group_id');
-                    if (!empty($reworkAreaNames)) {
-                        $sub->where(function ($areaSub) use ($reworkAreaNames) {
-                            $areaSub->whereNull('area_ditemukan')
-                              ->orWhereNotIn('area_ditemukan', $reworkAreaNames);
-                        });
-                    }
-                });
-
-                if (!empty($reworkAreaNames)) {
-                    $q->orWhere(function ($sub) use ($reworkAreaNames) {
-                        $sub->whereNotNull('rework_group_id')
-                            ->whereIn('area_ditemukan', $reworkAreaNames);
-                    });
-                }
-            });
-        }
-
-        // Bila query global (campuran Pre Assy dan Final Assy, jenisAssy === null)
-        if ($mode === 'rework') {
-            // Rework hanya Final Assy, ber-group rework, dan area bertipe rework (Pre Assy dikecualikan seluruhnya)
-            if (empty($reworkAreaNames)) {
-                return $query->whereRaw('1 = 0');
-            }
-            return $query->where('jenis_assy', 'Final Assy')
-                ->whereNotNull('rework_group_id')
-                ->whereIn('area_ditemukan', $reworkAreaNames);
-        }
-
-        if ($mode === 'internal') {
-            // Mode 'internal' untuk query global:
-            // Wajib diinput operator (rework_group_id IS NULL) DAN area_ditemukan NULL atau BUKAN tipe rework
-            $query->whereNull('rework_group_id');
-            if (empty($reworkAreaNames)) {
-                return $query;
-            }
-            return $query->where(function ($q) use ($reworkAreaNames) {
-                $q->whereNull('area_ditemukan')
-                  ->orWhereNotIn('area_ditemukan', $reworkAreaNames);
-            });
-        }
-
-        // Mode 'all' global: union data SAH saja
-        // internal sah (Pre Assy & Final Assy) + rework sah (Final Assy only)
-        return $query->where(function ($q) use ($reworkAreaNames) {
-            $q->where(function ($sub) use ($reworkAreaNames) {
-                $sub->whereNull('rework_group_id');
-                if (!empty($reworkAreaNames)) {
-                    $sub->where(function ($areaSub) use ($reworkAreaNames) {
-                        $areaSub->whereNull('area_ditemukan')
-                          ->orWhereNotIn('area_ditemukan', $reworkAreaNames);
-                    });
-                }
-            });
-
-            if (!empty($reworkAreaNames)) {
-                $q->orWhere(function ($sub) use ($reworkAreaNames) {
-                    $sub->where('jenis_assy', 'Final Assy')
-                        ->whereNotNull('rework_group_id')
-                        ->whereIn('area_ditemukan', $reworkAreaNames);
-                });
-            }
-        });
+        return $query->whereNotNull('rework_group_id');
     }
 
     /**
@@ -336,79 +198,110 @@ class Defect extends Model
     }
 
     /**
+     * Scope Defect Riil (mengecualikan Zero Defect / kuantitas 0).
+     */
+    public function scopeActualDefect($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('jenis_defect')
+              ->orWhere('jenis_defect', '!=', 'Zero Defect');
+        })->where('quantity', '>', 0);
+    }
+
+    /**
      * Scope for Final Assy report queries (operator only, strictly excludes rework).
      */
     public function scopeFinalAssyReport($query)
     {
-        return $query->where('jenis_assy', 'Final Assy')->whereNull('rework_group_id');
+        return $query->where('jenis_assy', 'Final Assy')->operatorInput();
     }
 
     /**
-     * Scope Final Assy: Internal Defect (Area dengan kategori_report Inspeksi).
+     * Scope Final Assy: Internal Defect
+     * operatorInput + Final Assy + actualDefect + area internal (termasuk NULL/kosong/tidak dikenal).
      */
-    public function scopeFinalAssyInternal($query)
+    public function scopeFinalAssyInternalDefect($query)
     {
-        return $query->finalAssyReport()
-            ->whereHas('areaDitemukanRef', function ($q) {
-                $q->where('kategori_report', AreaDitemukan::REPORT_INSPEKSI);
-            });
-    }
-
-    /**
-     * Scope Final Assy: Assembly Defect (Area dengan kategori_report Assembly).
-     */
-    public function scopeFinalAssyAssembly($query)
-    {
-        return $query->finalAssyReport()
-            ->whereHas('areaDitemukanRef', function ($q) {
-                $q->where('kategori_report', AreaDitemukan::REPORT_ASSEMBLY);
-            });
-    }
-
-    /**
-     * Scope Final Assy: Belum Terklasifikasi.
-     * Mencakup: area_ditemukan NULL/kosong, area tidak ada di master area_ditemukans,
-     * area dengan kategori_report 'belum_diklasifikasi', atau area dengan kategori selain inspeksi/assembly.
-     *
-     * Invarian mutlak: Internal + Assembly + Belum Terklasifikasi = Total Final Assy (non-rework).
-     */
-    public function scopeFinalAssyUnclassified($query)
-    {
-        return $query->finalAssyReport()
+        return $query->operatorInput()
+            ->where('jenis_assy', 'Final Assy')
+            ->actualDefect()
             ->where(function ($q) {
                 $q->whereNull('area_ditemukan')
                   ->orWhere('area_ditemukan', '')
                   ->orWhereDoesntHave('areaDitemukanRef')
                   ->orWhereHas('areaDitemukanRef', function ($sub) {
-                      $sub->whereNotIn('kategori_report', [AreaDitemukan::REPORT_INSPEKSI, AreaDitemukan::REPORT_ASSEMBLY]);
+                      $sub->where('tipe', '!=', AreaDitemukan::TIPE_ASSEMBLY_DEFECT);
                   });
             });
     }
 
     /**
-     * Scope Pre Assy: Internal Defect (ditemukan oleh Inspektor).
+     * Scope Final Assy: Assembly Defect
+     * operatorInput + Final Assy + actualDefect + area bertipe assembly_defect.
      */
-    public function scopePreAssyInternal($query)
+    public function scopeFinalAssyAssemblyDefect($query)
     {
-        return $query->where('jenis_assy', 'Pre Assy')
+        return $query->operatorInput()
+            ->where('jenis_assy', 'Final Assy')
+            ->actualDefect()
+            ->whereHas('areaDitemukanRef', function ($sub) {
+                $sub->where('tipe', AreaDitemukan::TIPE_ASSEMBLY_DEFECT);
+            });
+    }
+
+    /**
+     * Scope Pre Assy: Internal Defect oleh Inspektor.
+     * operatorInput + Pre Assy + actualDefect + ditemukan_oleh = 'Inspektor'.
+     */
+    public function scopePreAssyInspektor($query)
+    {
+        return $query->operatorInput()
+            ->where('jenis_assy', 'Pre Assy')
+            ->actualDefect()
             ->where('ditemukan_oleh', 'Inspektor');
     }
 
     /**
-     * Scope Pre Assy: Assembly Defect (ditemukan oleh Operator).
+     * Alias backward-compatibility untuk Pre Assy Inspektor.
      */
-    public function scopePreAssyAssembly($query)
+    public function scopePreAssyByInspektor($query)
     {
-        return $query->where('jenis_assy', 'Pre Assy')
+        return $this->scopePreAssyInspektor($query);
+    }
+
+    public function scopePreAssyInternal($query)
+    {
+        return $this->scopePreAssyInspektor($query);
+    }
+
+    /**
+     * Scope Pre Assy: Internal Defect oleh Operator.
+     * operatorInput + Pre Assy + actualDefect + ditemukan_oleh = 'Operator'.
+     */
+    public function scopePreAssyOperator($query)
+    {
+        return $query->operatorInput()
+            ->where('jenis_assy', 'Pre Assy')
+            ->actualDefect()
             ->where('ditemukan_oleh', 'Operator');
     }
 
     /**
-     * Scope Pre Assy: Process Defect (alias untuk backward-compatibility).
+     * Alias backward-compatibility untuk Pre Assy Operator.
      */
+    public function scopePreAssyByOperator($query)
+    {
+        return $this->scopePreAssyOperator($query);
+    }
+
+    public function scopePreAssyAssembly($query)
+    {
+        return $this->scopePreAssyOperator($query);
+    }
+
     public function scopePreAssyProcess($query)
     {
-        return $this->scopePreAssyAssembly($query);
+        return $this->scopePreAssyOperator($query);
     }
 
     /**
@@ -416,7 +309,9 @@ class Defect extends Model
      */
     public function scopePreAssyUnknown($query)
     {
-        return $query->where('jenis_assy', 'Pre Assy')
+        return $query->operatorInput()
+            ->where('jenis_assy', 'Pre Assy')
+            ->actualDefect()
             ->where(function ($q) {
                 $q->whereNull('ditemukan_oleh')
                   ->orWhereNotIn('ditemukan_oleh', ['Inspektor', 'Operator']);

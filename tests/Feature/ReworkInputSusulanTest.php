@@ -22,7 +22,7 @@ class ReworkInputSusulanTest extends TestCase
 
         AreaDitemukan::firstOrCreate([
             'name' => 'RWK',
-            'tipe' => 'rework',
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
     }
 
@@ -70,6 +70,7 @@ class ReworkInputSusulanTest extends TestCase
             'nameplate'      => 'NP-OLD-001',
             'nameplate_baru' => 'np-new-999',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-05',
             'jam_in'         => '08:30',
             'jam_out'        => '09:15',
@@ -111,6 +112,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-MIDNIGHT-001',
             'nameplate'      => 'NP-MIDNIGHT',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-04',
             'jam_in'         => '23:45',
             'jam_out'        => '00:30',
@@ -140,6 +142,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-FUTURE-001',
             'nameplate'      => 'NP-FUTURE',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-06',
             'jam_in'         => '15:30',
             'jam_out'        => '16:00',
@@ -163,6 +166,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-FUTURE-OUT',
             'nameplate'      => 'NP-FUTURE',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-06',
             'jam_in'         => '13:00',
             'jam_out'        => '15:00',
@@ -186,6 +190,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-EQUAL-001',
             'nameplate'      => 'NP-EQUAL',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-05',
             'jam_in'         => '10:00',
             'jam_out'        => '10:00',
@@ -210,6 +215,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-OLD-001',
             'nameplate'      => 'NP-OLD',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-10-28',
             'jam_in'         => '08:00',
             'jam_out'        => '09:00',
@@ -233,6 +239,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-LONG-001',
             'nameplate'      => 'NP-LONG',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-03',
             'tanggal_out'    => '2026-11-05',
             'jam_in'         => '08:00',
@@ -258,6 +265,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-NO-SHIFT',
             'nameplate'      => 'NP-001',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-05',
             'jam_in'         => '08:00',
             'jam_out'        => '09:00',
@@ -272,6 +280,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-INVALID-SHIFT',
             'nameplate'      => 'NP-001',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-05',
             'jam_in'         => '08:00',
             'jam_out'        => '09:00',
@@ -293,6 +302,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-LIVE-001',
             'nameplate'      => 'NP-LIVE-001',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
         ]);
 
         $response->assertRedirect(route('rework.index'));
@@ -320,6 +330,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-VIEW-SUSULAN',
             'nameplate'      => 'NP-VIEW-SUSULAN',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-05',
             'jam_in'         => '09:00',
             'jam_out'        => '09:30',
@@ -353,6 +364,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-EXP-SUSULAN',
             'nameplate'      => 'NP-EXP-SUSULAN',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-05',
             'jam_in'         => '09:00',
             'jam_out'        => '09:30',
@@ -365,6 +377,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-EXP-LIVE',
             'nameplate'      => 'NP-EXP-LIVE',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
         ]);
 
         $export = new ReworkHistoryExport(new Request());
@@ -399,6 +412,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-DASHBOARD-001',
             'nameplate'      => 'NP-DASHBOARD',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-05',
             'jam_in'         => '10:00',
             'jam_out'        => '10:45',
@@ -438,6 +452,7 @@ class ReworkInputSusulanTest extends TestCase
             'kanban_assy'    => 'KB-DEL-SUSULAN',
             'nameplate'      => 'NP-DEL-SUSULAN',
             'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => 'RWK',
             'tanggal'        => '2026-11-05',
             'jam_in'         => '08:00',
             'jam_out'        => '08:30',

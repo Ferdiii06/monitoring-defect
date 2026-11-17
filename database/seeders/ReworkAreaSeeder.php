@@ -2,21 +2,16 @@
 
 namespace Database\Seeders;
 
-use App\Models\AreaDitemukan;
 use Illuminate\Database\Seeder;
 
 class ReworkAreaSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     * Revisi IDRECT Batch 1: Dinetralkan. Rework tidak memiliki area tersendiri lagi.
      */
     public function run(): void
     {
-        if (!AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->exists()) {
-            AreaDitemukan::create([
-                'name' => 'REWORK',
-                'tipe' => AreaDitemukan::TIPE_REWORK,
-            ]);
-        }
+        // No-op: Rework tidak lagi memiliki master area khusus di Batch 1.
     }
 }

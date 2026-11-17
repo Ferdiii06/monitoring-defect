@@ -98,8 +98,15 @@ class DefectApiController extends Controller
     public function getStats(Request $request)
     {
         try {
-            $mode = $request->query('mode', 'internal');
-            $currentMode = in_array($mode, ['all', 'internal', 'rework'], true) ? $mode : 'internal';
+            $rawMode = strtolower((string) $request->query('mode', 'total'));
+            $currentMode = match ($rawMode) {
+                'all'      => 'total',
+                'internal' => 'final',
+                'rework'   => 'final',
+                'final'    => 'final',
+                'pre'      => 'pre',
+                default    => 'total',
+            };
 
             $totalUsers = 0;
             $activeUsers = 0;
@@ -152,49 +159,35 @@ class DefectApiController extends Controller
                 $activeUsers = max(1, $recentOperators);
             }
 
-            $reworkHarness = null;
-            $reworkDpm = null;
-            $internalDefect = null;
-            $reworkDefect = null;
-            $internalPercent = null;
-            $reworkPercent = null;
-
-            if ($currentMode === 'rework') {
-                $reworkHarness = (int) \App\Models\Defect::byDashboardMode('rework', 'Final Assy')
-                    ->whereNotNull('rework_group_id')
-                    ->distinct('rework_group_id')
-                    ->count('rework_group_id');
-                $totalDef = (int) \App\Models\Defect::byDashboardMode('rework', 'Final Assy')->sum('quantity');
-                $reworkDpm = $reworkHarness > 0 ? round(($totalDef / $reworkHarness) * 1000000, 2) : null;
-            } elseif ($currentMode === 'all') {
-                $internalDefect = (int) \App\Models\Defect::byDashboardMode('internal')->sum('quantity');
-                $reworkDefect = (int) \App\Models\Defect::byDashboardMode('rework')->sum('quantity');
-                $reworkHarness = (int) \App\Models\Defect::byDashboardMode('rework', 'Final Assy')
-                    ->whereNotNull('rework_group_id')
-                    ->distinct('rework_group_id')
-                    ->count('rework_group_id');
-                $sumDefect = $internalDefect + $reworkDefect;
-                $internalPercent = $sumDefect > 0 ? round(($internalDefect / $sumDefect) * 100, 2) : 0.0;
-                $reworkPercent = $sumDefect > 0 ? round(($reworkDefect / $sumDefect) * 100, 2) : 0.0;
+            // Query metrik defect hanya membaca data operator (rework_group_id IS NULL)
+            $baseQuery = \App\Models\Defect::operatorInput();
+            if ($currentMode === 'final') {
+                $baseQuery->where('jenis_assy', 'Final Assy');
+            } elseif ($currentMode === 'pre') {
+                $baseQuery->where('jenis_assy', 'Pre Assy');
             }
 
+            $totalDefect = (int) (clone $baseQuery)->sum('quantity');
+            $defectToday = (int) (clone $baseQuery)->whereDate('waktu', Carbon::today())->sum('quantity');
+
             return response()->json([
-                'totalDefect'      => (int) \App\Models\Defect::byDashboardMode($currentMode)->sum('quantity'),
-                'defectToday'      => (int) \App\Models\Defect::byDashboardMode($currentMode)->whereDate('waktu', Carbon::today())->sum('quantity'),
+                'mode'             => $currentMode,
+                'totalDefect'      => $totalDefect,
+                'defectToday'      => $defectToday,
                 'activeUsers'      => (int) $activeUsers,
                 'totalUsers'       => (int) $totalUsers,
-                'reworkHarness'    => $reworkHarness,
-                'reworkDpm'        => $reworkDpm,
-                'internal_defect'  => $internalDefect,
-                'rework_defect'    => $reworkDefect,
-                'rework_harness'   => $reworkHarness,
-                'internal_percent' => $internalPercent,
-                'rework_percent'   => $reworkPercent,
+                'reworkHarness'    => null,
+                'reworkDpm'        => null,
+                'internal_defect'  => $totalDefect,
+                'rework_defect'    => 0,
+                'rework_harness'   => 0,
+                'internal_percent' => $totalDefect > 0 ? 100.0 : 0.0,
+                'rework_percent'   => 0.0,
                 // CamelCase aliases
-                'internalDefect'   => $internalDefect,
-                'reworkDefect'     => $reworkDefect,
-                'internalPercent'  => $internalPercent,
-                'reworkPercent'    => $reworkPercent,
+                'internalDefect'   => $totalDefect,
+                'reworkDefect'     => 0,
+                'internalPercent'  => $totalDefect > 0 ? 100.0 : 0.0,
+                'reworkPercent'    => 0.0,
             ]);
 
         } catch (\Throwable $e) {

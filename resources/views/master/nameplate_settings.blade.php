@@ -357,43 +357,7 @@
 
             <!-- Right Pagination -->
             <div class="flex items-center space-x-1">
-                {{-- Previous Page Link --}}
-                @if ($settings->onFirstPage())
-                    <span class="px-3 py-1.5 text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed select-none">
-                        Previous
-                    </span>
-                @else
-                    <a href="{{ $settings->previousPageUrl() }}" 
-                       class="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition shadow-2xs">
-                        Previous
-                    </a>
-                @endif
-
-                {{-- Pagination Elements --}}
-                @foreach ($settings->getUrlRange(max(1, $settings->currentPage() - 2), min($settings->lastPage(), $settings->currentPage() + 2)) as $page => $url)
-                    @if ($page == $settings->currentPage())
-                        <span class="px-3 py-1.5 text-xs font-bold text-white bg-[#8b0000] rounded-lg shadow-xs select-none">
-                            {{ $page }}
-                        </span>
-                    @else
-                        <a href="{{ $url }}" 
-                           class="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition shadow-2xs">
-                            {{ $page }}
-                        </a>
-                    @endif
-                @endforeach
-
-                {{-- Next Page Link --}}
-                @if ($settings->hasMorePages())
-                    <a href="{{ $settings->nextPageUrl() }}" 
-                       class="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition shadow-2xs">
-                        Next
-                    </a>
-                @else
-                    <span class="px-3 py-1.5 text-xs font-semibold text-gray-400 bg-gray-100 border border-gray-200 rounded-lg cursor-not-allowed select-none">
-                        Next
-                    </span>
-                @endif
+                {{ $settings->links('components.pagination-sliding') }}
             </div>
         </div>
     </div>
@@ -499,7 +463,7 @@
                         </label>
                         <div class="sm:col-span-8 relative flex items-center">
                             <input type="text" name="assy_no" x-model="formData.assy_no" maxlength="100"
-                                   placeholder="Contoh: 1,8 atau 1-8"
+                                   placeholder="Contoh: Digit ke 1-8"
                                    class="w-full pr-9 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] font-mono bg-white">
                             <!-- TODO: konfirmasi ke pemilik sistem -->
                             <div x-data="{ tip: false }" class="absolute right-2.5 flex items-center">
@@ -509,7 +473,7 @@
                                 </button>
                                 <div x-show="tip" x-cloak
                                      class="absolute right-0 bottom-full mb-1.5 z-50 w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl leading-relaxed">
-                                    Aturan posisi dan panjang nomor assy pada barcode. Contoh: 1,8 atau 1-8 (mulai karakter ke-1 sebanyak 8 karakter, misal 50060938).
+                                    Isi digit ke berapa pada barcode. Contoh: 1-8 artinya digit ke-1 sampai ke-8; 9 artinya hanya digit ke-9.
                                 </div>
                             </div>
                         </div>
@@ -522,7 +486,7 @@
                         </label>
                         <div class="sm:col-span-8 relative flex items-center">
                             <input type="text" name="suffix" x-model="formData.suffix" maxlength="100"
-                                   placeholder="Contoh: 9,2 atau 9-10"
+                                   placeholder="Contoh: Digit ke 9-10"
                                    class="w-full pr-9 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] font-mono bg-white">
                             <!-- TODO: konfirmasi ke pemilik sistem -->
                             <div x-data="{ tip: false }" class="absolute right-2.5 flex items-center">
@@ -532,7 +496,7 @@
                                 </button>
                                 <div x-show="tip" x-cloak
                                      class="absolute right-0 bottom-full mb-1.5 z-50 w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl leading-relaxed">
-                                    Aturan posisi dan panjang karakter suffix/varian. Contoh: 9,2 atau 9-10 (mulai karakter ke-9 sebanyak 2 karakter, misal 01).
+                                    Isi digit ke berapa pada barcode. Contoh: 1-8 artinya digit ke-1 sampai ke-8; 9 artinya hanya digit ke-9.
                                 </div>
                             </div>
                         </div>
@@ -545,7 +509,7 @@
                         </label>
                         <div class="sm:col-span-8 relative flex items-center">
                             <input type="text" name="level" x-model="formData.level" maxlength="100"
-                                   placeholder="Contoh: 11,2"
+                                   placeholder="Contoh: Digit ke 11-12"
                                    class="w-full pr-9 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] font-mono bg-white">
                             <!-- TODO: konfirmasi ke pemilik sistem -->
                             <div x-data="{ tip: false }" class="absolute right-2.5 flex items-center">
@@ -555,7 +519,7 @@
                                 </button>
                                 <div x-show="tip" x-cloak
                                      class="absolute right-0 bottom-full mb-1.5 z-50 w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl leading-relaxed">
-                                    Aturan posisi level perubahan desain / engineering change level pada barcode jika ada. Contoh: 11,2.
+                                    Isi digit ke berapa pada barcode. Contoh: 1-8 artinya digit ke-1 sampai ke-8; 9 artinya hanya digit ke-9.
                                 </div>
                             </div>
                         </div>
@@ -568,7 +532,7 @@
                         </label>
                         <div class="sm:col-span-8 relative flex items-center">
                             <input type="text" name="date_field" x-model="formData.date_field" maxlength="100"
-                                   placeholder="Contoh: 11,6 atau 11-16"
+                                   placeholder="Contoh: Digit ke 11-16"
                                    class="w-full pr-9 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] font-mono bg-white">
                             <!-- TODO: konfirmasi ke pemilik sistem -->
                             <div x-data="{ tip: false }" class="absolute right-2.5 flex items-center">
@@ -578,7 +542,7 @@
                                 </button>
                                 <div x-show="tip" x-cloak
                                      class="absolute right-0 bottom-full mb-1.5 z-50 w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl leading-relaxed">
-                                    Aturan posisi kode tanggal produksi pada barcode nameplate. Contoh: 11,6 atau 11-16 (mulai karakter ke-11 sebanyak 6 digit).
+                                    Isi digit ke berapa pada barcode. Contoh: 1-8 artinya digit ke-1 sampai ke-8; 9 artinya hanya digit ke-9.
                                 </div>
                             </div>
                         </div>
@@ -591,7 +555,7 @@
                         </label>
                         <div class="sm:col-span-8 relative flex items-center">
                             <input type="text" name="sequence_label" x-model="formData.sequence_label" maxlength="100"
-                                   placeholder="Contoh: 17,4 atau 17-20"
+                                   placeholder="Contoh: Digit ke 17-20"
                                    class="w-full pr-9 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] font-mono bg-white">
                             <!-- TODO: konfirmasi ke pemilik sistem -->
                             <div x-data="{ tip: false }" class="absolute right-2.5 flex items-center">
@@ -601,7 +565,7 @@
                                 </button>
                                 <div x-show="tip" x-cloak
                                      class="absolute right-0 bottom-full mb-1.5 z-50 w-64 p-2.5 bg-gray-900 text-white text-[11px] rounded-lg shadow-xl leading-relaxed">
-                                    Aturan posisi nomor seri atau sequence label pada barcode nameplate. Contoh: 17,4 (mulai karakter ke-17 sebanyak 4 digit, misal 0001).
+                                    Isi digit ke berapa pada barcode. Contoh: 1-8 artinya digit ke-1 sampai ke-8; 9 artinya hanya digit ke-9.
                                 </div>
                             </div>
                         </div>

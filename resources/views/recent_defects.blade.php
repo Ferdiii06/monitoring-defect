@@ -30,13 +30,13 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 h-screen overflow-hidden flex">
+<body class="bg-gray-50 text-gray-800 min-h-screen min-h-[100dvh] flex">
 
     <!-- Left Sidebar -->
     @include('partials.sidebar')
 
     <!-- Main Content Area -->
-    <main class="flex-1 overflow-y-auto px-10 py-8 flex flex-col justify-start">
+    <main class="flex-1 min-w-0 px-4 sm:px-8 lg:px-10 py-6 sm:py-8 flex flex-col justify-start">
         
         <!-- Header Section -->
         <header class="flex justify-between items-center mb-8">
@@ -129,7 +129,7 @@
                         <!-- Conveyor Select -->
                         <div class="relative min-w-[150px]">
                             <select id="conveyorSelect" name="conveyor" onchange="this.form.submit()" class="peer w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer disabled:bg-gray-100 disabled:border-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
-                                <option value="all">Semua Konveyor</option>
+                                <option value="all">Semua Conveyor</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000] peer-disabled:text-gray-300">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -169,7 +169,7 @@
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Ditemukan Oleh</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Assy</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Konveyor</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Conveyor</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Sub Defect</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Quantity</th>
@@ -271,47 +271,7 @@
                     Menampilkan <span id="visible-count">{{ count($records) }}</span> dari <span id="total-count">{{ $totalItems }}</span> entri
                 </span>
                 
-                <!-- Pagination Buttons -->
-                <div class="flex items-center space-x-1">
-                    <!-- Prev Page -->
-                    @if($currentPage > 1)
-                        <a href="?{{ http_build_query(array_merge(request()->query(), ['page' => $currentPage - 1])) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition-colors text-xs font-semibold">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                        </a>
-                    @else
-                        <span class="w-8 h-8 rounded-lg border border-gray-200 text-gray-300 flex items-center justify-center text-xs font-semibold cursor-not-allowed">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                        </span>
-                    @endif
-
-                    <!-- Page Numbers -->
-                    @for($p = 1; $p <= $totalPages; $p++)
-                        @if($p === $currentPage)
-                            <span class="w-8 h-8 rounded-lg bg-[#8b0000] text-white flex items-center justify-center text-xs font-bold shadow-sm">{{ $p }}</span>
-                        @else
-                            <a href="?{{ http_build_query(array_merge(request()->query(), ['page' => $p])) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors text-xs font-semibold">{{ $p }}</a>
-                        @endif
-                    @endfor
-
-                    <!-- Next Page -->
-                    @if($currentPage < $totalPages)
-                        <a href="?{{ http_build_query(array_merge(request()->query(), ['page' => $currentPage + 1])) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition-colors text-xs font-semibold">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7-7"></path>
-                            </svg>
-                        </a>
-                    @else
-                        <span class="w-8 h-8 rounded-lg border border-gray-200 text-gray-300 flex items-center justify-center text-xs font-semibold cursor-not-allowed">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                        </span>
-                    @endif
-                </div>
+                {{ $records->links('components.pagination-sliding') }}
             </div>
 
         </section>
@@ -461,7 +421,7 @@
                 if (mobil && mobil !== 'all') {
                     const optAll = document.createElement("option");
                     optAll.value = "all";
-                    optAll.textContent = "Semua Konveyor";
+                    optAll.textContent = "Semua Conveyor";
                     if (selectedVal === 'all') {
                         optAll.selected = true;
                     }

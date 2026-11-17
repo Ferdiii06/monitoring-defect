@@ -215,6 +215,27 @@
                                             @endif
                                         </div>
                                     @endif
+                                    @if(filled($first?->area_ditemukan))
+                                        @php
+                                            $areaModel = \App\Models\AreaDitemukan::where('name', $first?->area_ditemukan)->first();
+                                            $isFinalAssyArea = $areaModel && $areaModel->kategori === \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY;
+                                            $areaTipe = $isFinalAssyArea ? $areaModel->tipe : null;
+                                            $badgeTipeLabel = ($areaTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
+                                                ? 'Assembly Defect'
+                                                : ($isFinalAssyArea ? 'Internal Defect' : '-');
+                                            $badgeTipeClass = ($areaTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
+                                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                : ($isFinalAssyArea ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-gray-100 text-gray-500 border-gray-200');
+                                        @endphp
+                                        <div class="pt-1 flex items-center gap-1 flex-wrap">
+                                            <span class="inline-block bg-gray-100 text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                                Area: {{ $first?->area_ditemukan }}
+                                            </span>
+                                            <span class="inline-block border text-[10px] font-bold px-1.5 py-0.5 rounded {{ $badgeTipeClass }}">
+                                                {{ $badgeTipeLabel }}
+                                            </span>
+                                        </div>
+                                    @endif
                                 </div>
                             </td>
 

@@ -188,11 +188,80 @@ class NameplateSettingsImport implements ToCollection
                 $assyCustomerBool = in_array($lower, ['yes', '1', 'true', 'ya', 'y'], true);
             }
 
-            $assyNoVal  = filled($rawAssyNo) ? mb_substr(trim((string) $rawAssyNo), 0, 100) : null;
-            $suffixVal  = filled($rawSuffix) ? mb_substr(trim((string) $rawSuffix), 0, 100) : null;
-            $levelVal   = filled($rawLevel) ? mb_substr(trim((string) $rawLevel), 0, 100) : null;
-            $dateFldVal = filled($rawDate) ? mb_substr(trim((string) $rawDate), 0, 100) : null;
-            $seqVal     = filled($rawSeq) ? mb_substr(trim((string) $rawSeq), 0, 100) : null;
+            // Validasi & normalisasi kolom posisi/rentang digit jika ada di file
+            $positionCols = [
+                'assy_no'        => ['col' => $hasAssyNoCol, 'val' => $rawAssyNo, 'label' => 'Assy No.'],
+                'suffix'         => ['col' => $hasSuffixCol, 'val' => $rawSuffix, 'label' => 'Suffix'],
+                'level'          => ['col' => $hasLevelCol, 'val' => $rawLevel, 'label' => 'Level'],
+                'date_field'     => ['col' => $hasDateFieldCol, 'val' => $rawDate, 'label' => 'Date'],
+                'sequence_label' => ['col' => $hasSeqLabelCol, 'val' => $rawSeq, 'label' => 'Sequence Label'],
+            ];
+
+            $normalizedPositions = [];
+            $hasPositionError = false;
+
+            foreach ($positionCols as $pKey => $pData) {
+                if (!$pData['col']) {
+                    $normalizedPositions[$pKey] = null;
+                    continue;
+                }
+
+                $rawP = $pData['val'];
+                if (!filled($rawP)) {
+                    $normalizedPositions[$pKey] = null;
+                    continue;
+                }
+
+                $trimmedP = trim((string) $rawP);
+                if (mb_strlen($trimmedP) > 100) {
+                    $this->failedCount++;
+                    $this->failedRows[] = [
+                        'row'     => $excelRowNum,
+                        'carline' => $carlineVal,
+                        'reason'  => "Kolom {$pData['label']} maksimal 100 karakter.",
+                    ];
+                    $hasPositionError = true;
+                    break;
+                }
+
+                if (preg_match('/^([1-9]\d*)$/', $trimmedP, $m)) {
+                    $normalizedPositions[$pKey] = $m[1];
+                } elseif (preg_match('/^([1-9]\d*)\s*-\s*([1-9]\d*)$/', $trimmedP, $m)) {
+                    $a = (int) $m[1];
+                    $b = (int) $m[2];
+                    if ($a <= $b) {
+                        $normalizedPositions[$pKey] = "{$a}-{$b}";
+                    } else {
+                        $this->failedCount++;
+                        $this->failedRows[] = [
+                            'row'     => $excelRowNum,
+                            'carline' => $carlineVal,
+                            'reason'  => "Format {$pData['label']} harus 'Digit ke' awal-akhir, mis. 1-8, atau satu digit, mis. 9.",
+                        ];
+                        $hasPositionError = true;
+                        break;
+                    }
+                } else {
+                    $this->failedCount++;
+                    $this->failedRows[] = [
+                        'row'     => $excelRowNum,
+                        'carline' => $carlineVal,
+                        'reason'  => "Format {$pData['label']} harus 'Digit ke' awal-akhir, mis. 1-8, atau satu digit, mis. 9.",
+                    ];
+                    $hasPositionError = true;
+                    break;
+                }
+            }
+
+            if ($hasPositionError) {
+                continue;
+            }
+
+            $assyNoVal  = $normalizedPositions['assy_no'];
+            $suffixVal  = $normalizedPositions['suffix'];
+            $levelVal   = $normalizedPositions['level'];
+            $dateFldVal = $normalizedPositions['date_field'];
+            $seqVal     = $normalizedPositions['sequence_label'];
 
             // 3. Upsert dalam DB transaction
             try {

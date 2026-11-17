@@ -67,7 +67,7 @@ class ReworkController extends Controller
             ->orderBy('name')
             ->get();
 
-        $areas = AreaDitemukan::orderBy('name')->get();
+        $areas = AreaDitemukan::finalAssy()->orderBy('name')->get();
         $carTypes = CarType::with(['carlines' => fn($q) => $q->orderBy('name')])->orderBy('name')->get();
 
         return view('rework.index', compact('paginatedGroups', 'defectsByGroup', 'finalAssySubDefects', 'isAdmin', 'areas', 'carTypes'));
@@ -104,7 +104,17 @@ class ReworkController extends Controller
             'no_defective_tag'     => 'nullable|string|max:255',
             'ujung'                => 'nullable|string|max:255',
             'status_4m'            => 'nullable|string|max:50',
-            'area_ditemukan'       => 'nullable|string|max:255',
+            'area_ditemukan'       => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    $area = AreaDitemukan::where('name', trim((string) $value))->first();
+                    if (!$area || $area->kategori === AreaDitemukan::KATEGORI_PRE_ASSY) {
+                        $fail('Area ditemukan harus merupakan area kategori Final Assy.');
+                    }
+                },
+            ],
             'posisi_detail_rework' => 'nullable|string',
             'fc_h'                 => 'nullable|string|max:255',
             'fc_w'                 => 'nullable|string|max:255',
@@ -119,6 +129,7 @@ class ReworkController extends Controller
             'sub_defect_ids.required' => 'Minimal satu defect harus dipilih.',
             'sub_defect_ids.min'      => 'Minimal satu defect harus dipilih.',
             'sub_defect_ids.*.exists' => 'Defect yang dipilih tidak valid.',
+            'area_ditemukan.required' => 'Area ditemukan wajib dipilih.',
         ];
 
         if ($isSusulan) {
@@ -224,18 +235,8 @@ class ReworkController extends Controller
             }
         }
 
-        // Master area rework check: gunakan area yang dipilih jika ada, fallback ke default rework area
-        $reworkArea = $request->filled('area_ditemukan')
-            ? trim((string) $request->input('area_ditemukan'))
-            : AreaDitemukan::getDefaultReworkAreaName();
-
-        if (!$reworkArea) {
-            return back()
-                ->withErrors([
-                    'area_ditemukan' => 'Area bertipe Rework belum diatur. Hubungi admin untuk menambahkannya di Master Data > Area Ditemukan.',
-                ])
-                ->withInput();
-        }
+        // BATCH 5: Area Ditemukan wajib dipilih
+        $reworkArea = trim((string) $validated['area_ditemukan']);
 
         [$resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil] = $this->resolveConveyorAndCarline($request);
 
@@ -390,7 +391,7 @@ class ReworkController extends Controller
         })->values();
 
         $returnUrl = $isAdmin ? $this->sanitizeAdminReturnUrl($request->input('return_url')) : null;
-        $areas = AreaDitemukan::orderBy('name')->get();
+        $areas = AreaDitemukan::finalAssy()->orderBy('name')->get();
         $carTypes = CarType::with(['carlines' => fn($q) => $q->orderBy('name')])->orderBy('name')->get();
 
         return view('rework.edit', compact('defects', 'first', 'groupId', 'finalAssySubDefects', 'currentDefects', 'isAdmin', 'returnUrl', 'areas', 'carTypes'));
@@ -430,7 +431,22 @@ class ReworkController extends Controller
             'no_defective_tag'     => 'nullable|string|max:255',
             'ujung'                => 'nullable|string|max:255',
             'status_4m'            => 'nullable|string|max:50',
-            'area_ditemukan'       => 'nullable|string|max:255',
+            'area_ditemukan'       => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($first) {
+                    if (!$value) return;
+                    $trimmed = trim((string) $value);
+                    if ($first && $first->area_ditemukan === $trimmed) {
+                        return;
+                    }
+                    $area = AreaDitemukan::where('name', $trimmed)->first();
+                    if (!$area || $area->kategori === AreaDitemukan::KATEGORI_PRE_ASSY) {
+                        $fail('Area ditemukan harus merupakan area kategori Final Assy.');
+                    }
+                },
+            ],
             'posisi_detail_rework' => 'nullable|string',
             'fc_h'                 => 'nullable|string|max:255',
             'fc_w'                 => 'nullable|string|max:255',
@@ -467,17 +483,15 @@ class ReworkController extends Controller
             }
         }
 
-        // Resolusi area rework deterministik: dari input jika filled, atau first area_ditemukan, atau default rework area
+        // BATCH 5: Resolusi area rework
         $reworkArea = $request->filled('area_ditemukan')
             ? trim((string) $request->input('area_ditemukan'))
-            : ($first->area_ditemukan ?: AreaDitemukan::getDefaultReworkAreaName());
+            : ($first->area_ditemukan ?: AreaDitemukan::finalAssy()->orderBy('id')->value('name'));
 
         if (!$reworkArea) {
-            return back()
-                ->withErrors([
-                    'area_ditemukan' => 'Area bertipe Rework belum diatur. Hubungi admin untuk menambahkannya di Master Data > Area Ditemukan.',
-                ])
-                ->withInput();
+            return back()->withErrors([
+                'area_ditemukan' => 'Area ditemukan belum diatur. Hubungi admin untuk menambahkannya di Master Data > Area Ditemukan.',
+            ])->withInput();
         }
 
         $hasConveyorOrCarlineInput = $request->has('conveyor') || $request->has('carline') || $request->has('carline_id') || $request->has('jenis_mobil');

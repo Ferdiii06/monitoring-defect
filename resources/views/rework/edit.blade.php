@@ -205,12 +205,12 @@
                     <!-- Field: Conveyor -->
                     <div class="space-y-1.5">
                         <label for="conveyor" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                            Konveyor <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
+                            Conveyor <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
                         </label>
                         <select id="conveyor"
                                 name="conveyor"
                                 class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
-                            <option value="">Pilih Konveyor (Opsional)...</option>
+                            <option value="">Pilih Conveyor (Opsional)...</option>
                         </select>
                     </div>
                 </div>
@@ -280,21 +280,28 @@
                     <!-- Area Ditemukan -->
                     <div class="space-y-1.5">
                         <label for="area_ditemukan" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                            Area Ditemukan
+                            Area Ditemukan <span class="text-brand">*</span>
                         </label>
                         <select id="area_ditemukan"
                                 name="area_ditemukan"
                                 class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
+                            <option value="" disabled {{ old('area_ditemukan', $first->area_ditemukan ?? '') ? '' : 'selected' }}>Pilih Area Ditemukan...</option>
                             @if(isset($areas) && $areas->isNotEmpty())
+                                @php
+                                    $hasFirstArea = $first->area_ditemukan && $areas->contains('name', $first->area_ditemukan);
+                                @endphp
+                                @if(!$hasFirstArea && filled($first->area_ditemukan))
+                                    <option value="{{ $first->area_ditemukan }}" selected>
+                                        {{ $first->area_ditemukan }} (Data Lama)
+                                    </option>
+                                @endif
                                 @foreach($areas as $area)
                                     <option value="{{ $area->name }}" {{ old('area_ditemukan', $first->area_ditemukan) === $area->name ? 'selected' : '' }}>
-                                        {{ $area->name }} ({{ $area->tipe === 'rework' ? 'Rework' : 'Internal' }})
+                                        {{ $area->name }} ({{ $area->tipe === 'assembly_defect' ? 'Assembly Defect' : 'Internal Defect' }})
                                     </option>
                                 @endforeach
                             @elseif($first->area_ditemukan)
                                 <option value="{{ $first->area_ditemukan }}" selected>{{ $first->area_ditemukan }}</option>
-                            @else
-                                <option value="">Default Area Rework</option>
                             @endif
                         </select>
                     </div>
@@ -467,7 +474,7 @@
         const chipsContainer = document.getElementById('selected_defects_container');
         const reworkEditForm = document.getElementById('rework_edit_form');
 
-        // Cascading dropdown Carline -> Konveyor (Opsional)
+        // Cascading dropdown Carline -> Conveyor (Opsional)
         const conveyorMap = @json($carTypes ? $carTypes->mapWithKeys(fn($ct) => [$ct->name => $ct->carlines->pluck('name')]) : []);
         const carlineSelect = document.getElementById('carline');
         const conveyorSelect = document.getElementById('conveyor');
@@ -487,7 +494,7 @@
                 return;
             }
 
-            defaultOpt.textContent = 'Pilih Konveyor (Opsional)...';
+            defaultOpt.textContent = 'Pilih Conveyor (Opsional)...';
             conveyorSelect.appendChild(defaultOpt);
             conveyorSelect.disabled = false;
 

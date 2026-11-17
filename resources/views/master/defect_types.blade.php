@@ -10,7 +10,7 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 h-screen overflow-hidden flex" x-data="{ 
+<body class="bg-gray-50 text-gray-800 min-h-screen min-h-[100dvh] flex" x-data="{ 
     editModal: false, 
     editId: null, 
     editName: '', 
@@ -21,7 +21,7 @@
     @include('partials.sidebar')
 
     <!-- Main Content Area -->
-    <main class="flex-1 overflow-y-auto px-10 py-8 flex flex-col justify-start">
+    <main class="flex-1 min-w-0 px-4 sm:px-8 lg:px-10 py-6 sm:py-8 flex flex-col justify-start">
         
         <!-- Header -->
         <header class="flex justify-between items-center mb-8">

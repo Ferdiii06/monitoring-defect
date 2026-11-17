@@ -46,6 +46,7 @@ class ReworkFormTest extends TestCase
         ])->post(route('rework.store_in'), [
             'kanban_assy'    => '  KB-12345  ',
             'nameplate'      => '  np-abcdef  ',
+            'area_ditemukan' => 'RWK',
             'sub_defect_ids' => [$sub1->id, $sub2->id],
         ]);
 
@@ -93,6 +94,7 @@ class ReworkFormTest extends TestCase
     public function test_in_tanpa_defect_tanpa_kanban_atau_tanpa_np_ditolak(): void
     {
         $sub1 = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
+        $area = AreaDitemukan::firstOrCreate(['name' => 'CK'], ['tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         $session = [
             'logged_in'     => true,
@@ -105,6 +107,7 @@ class ReworkFormTest extends TestCase
         $resNoKanban = $this->withSession($session)->post(route('rework.store_in'), [
             'kanban_assy'    => '   ',
             'nameplate'      => 'NP-123',
+            'area_ditemukan' => $area->name,
             'sub_defect_ids' => [$sub1->id],
         ]);
         $resNoKanban->assertSessionHasErrors(['kanban_assy']);
@@ -113,6 +116,7 @@ class ReworkFormTest extends TestCase
         $resNoNp = $this->withSession($session)->post(route('rework.store_in'), [
             'kanban_assy'    => 'KB-123',
             'nameplate'      => '   ',
+            'area_ditemukan' => $area->name,
             'sub_defect_ids' => [$sub1->id],
         ]);
         $resNoNp->assertSessionHasErrors(['nameplate']);
@@ -121,6 +125,7 @@ class ReworkFormTest extends TestCase
         $resNoDefect = $this->withSession($session)->post(route('rework.store_in'), [
             'kanban_assy'    => 'KB-123',
             'nameplate'      => 'NP-123',
+            'area_ditemukan' => $area->name,
             'sub_defect_ids' => [],
         ]);
         $resNoDefect->assertSessionHasErrors(['sub_defect_ids']);
@@ -132,9 +137,18 @@ class ReworkFormTest extends TestCase
         $resPreAssy = $this->withSession($session)->post(route('rework.store_in'), [
             'kanban_assy'    => 'KB-123',
             'nameplate'      => 'NP-123',
+            'area_ditemukan' => $area->name,
             'sub_defect_ids' => [$preSub->id],
         ]);
         $resPreAssy->assertSessionHasErrors(['sub_defect_ids']);
+
+        // 5. Tanpa Area Ditemukan (Batch 5: required)
+        $resNoArea = $this->withSession($session)->post(route('rework.store_in'), [
+            'kanban_assy'    => 'KB-123',
+            'nameplate'      => 'NP-123',
+            'sub_defect_ids' => [$sub1->id],
+        ]);
+        $resNoArea->assertSessionHasErrors(['area_ditemukan']);
 
         $this->assertEquals(0, Defect::count());
     }
@@ -339,12 +353,9 @@ class ReworkFormTest extends TestCase
         $this->assertEquals(0, Defect::count());
     }
 
-    public function test_gagal_bila_tidak_ada_area_rework_dan_tidak_ada_baris_tersimpan(): void
+    public function test_in_rework_menolak_jika_area_ditemukan_tidak_dipilih(): void
     {
         $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
-
-        // Pastikan tidak ada master area bertipe rework
-        AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->delete();
 
         $session = [
             'logged_in'     => true,
@@ -359,34 +370,26 @@ class ReworkFormTest extends TestCase
             'sub_defect_ids' => [$sub->id],
         ]);
 
-        // Harus redirect back dan memiliki session error pada area_ditemukan
         $response->assertRedirect();
         $response->assertSessionHasErrors(['area_ditemukan']);
-
-        $expectedMessage = 'Area bertipe Rework belum diatur. Hubungi admin untuk menambahkannya di Master Data > Area Ditemukan.';
-        $this->assertEquals($expectedMessage, session('errors')->first('area_ditemukan'));
-
-        // Input lama harus dipertahankan (withInput)
-        $this->assertEquals('KB-NO-AREA', session('_old_input.kanban_assy'));
-        $this->assertEquals('NP-NO-AREA', session('_old_input.nameplate'));
-        $this->assertEquals([$sub->id], session('_old_input.sub_defect_ids'));
-
-        // Tidak boleh ada data defect yang tersimpan
+        $this->assertEquals('Area ditemukan wajib dipilih.', session('errors')->first('area_ditemukan'));
         $this->assertEquals(0, Defect::count());
-
-        // Pastikan pesan error tampil di blade /rework
-        $indexResponse = $this->withSession($session)->get(route('rework.index'));
-        $indexResponse->assertStatus(200);
-        $indexResponse->assertSee($expectedMessage);
     }
 
-    public function test_sukses_dan_area_ditemukan_terisi_nama_area_rework_bila_ada(): void
+    public function test_rework_dengan_area_assembly_defect_dan_internal_defect_tersimpan_dan_terender_dengan_badge_yang_benar(): void
     {
         $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
 
-        AreaDitemukan::create([
-            'name' => 'AREA_REWORK_MAIN',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+        $areaAssy = AreaDitemukan::create([
+            'name'     => 'AREA_LINE_ASSY',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
+        ]);
+
+        $areaInt = AreaDitemukan::create([
+            'name'     => 'AREA_CHECKER',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $session = [
@@ -396,56 +399,39 @@ class ReworkFormTest extends TestCase
             'current_shift' => '1A',
         ];
 
-        $response = $this->withSession($session)->post(route('rework.store_in'), [
-            'kanban_assy'    => 'KB-SUCCESS',
-            'nameplate'      => 'NP-SUCCESS',
+        // 1. Simpan rework dengan area Assembly Defect
+        $resAssy = $this->withSession($session)->post(route('rework.store_in'), [
+            'kanban_assy'    => 'KB-ASSY-001',
+            'nameplate'      => 'NP-ASSY-001',
+            'area_ditemukan' => $areaAssy->name,
             'sub_defect_ids' => [$sub->id],
         ]);
-
-        $response->assertRedirect(route('rework.index'));
-        $response->assertSessionHas('success');
-
-        $this->assertEquals(1, Defect::count());
-        $defect = Defect::first();
-        $this->assertNotNull($defect->area_ditemukan);
-        $this->assertEquals('AREA_REWORK_MAIN', $defect->area_ditemukan);
-    }
-
-    public function test_bila_ada_dua_area_rework_yang_terpilih_konsisten_id_terkecil(): void
-    {
-        $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
-
-        $area1 = AreaDitemukan::create([
-            'name' => 'AREA_REWORK_ID_KECIL',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+        $resAssy->assertRedirect(route('rework.index'));
+        $this->assertDatabaseHas('defects', [
+            'kanban_assy'    => 'KB-ASSY-001',
+            'area_ditemukan' => $areaAssy->name,
         ]);
 
-        $area2 = AreaDitemukan::create([
-            'name' => 'AREA_REWORK_ID_BESAR',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
-        ]);
-
-        $this->assertTrue($area1->id < $area2->id);
-
-        $session = [
-            'logged_in'     => true,
-            'user_name'     => 'reworkA',
-            'user_role'     => 'Rework',
-            'current_shift' => '1A',
-        ];
-
-        $response = $this->withSession($session)->post(route('rework.store_in'), [
-            'kanban_assy'    => 'KB-CONSISTENT',
-            'nameplate'      => 'NP-CONSISTENT',
+        // 2. Simpan rework dengan area Internal Defect
+        $resInt = $this->withSession($session)->post(route('rework.store_in'), [
+            'kanban_assy'    => 'KB-INT-001',
+            'nameplate'      => 'NP-INT-001',
+            'area_ditemukan' => $areaInt->name,
             'sub_defect_ids' => [$sub->id],
         ]);
+        $resInt->assertRedirect(route('rework.index'));
+        $this->assertDatabaseHas('defects', [
+            'kanban_assy'    => 'KB-INT-001',
+            'area_ditemukan' => $areaInt->name,
+        ]);
 
-        $response->assertRedirect(route('rework.index'));
-        $this->assertEquals(1, Defect::count());
-
-        $defect = Defect::first();
-        // Harus memilih $area1 karena memiliki id terkecil
-        $this->assertEquals('AREA_REWORK_ID_KECIL', $defect->area_ditemukan);
+        // 3. Render di halaman index rework, pastikan badge tampil
+        $indexRes = $this->withSession($session)->get(route('rework.index'));
+        $indexRes->assertStatus(200);
+        $indexRes->assertSee('AREA_LINE_ASSY');
+        $indexRes->assertSee('Assembly');
+        $indexRes->assertSee('AREA_CHECKER');
+        $indexRes->assertSee('Internal');
     }
 
     public function test_edit_tidak_membuat_area_ditemukan_null(): void
@@ -582,7 +568,7 @@ class ReworkFormTest extends TestCase
     public function test_simpan_in_dengan_conveyor_dan_carline_tersimpan_di_database(): void
     {
         $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
-        AreaDitemukan::create(['name' => 'RWK', 'tipe' => 'rework']);
+        AreaDitemukan::create(['name' => 'RWK', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         $carType = CarType::create(['name' => 'TOYOTA']);
         $carline = Carline::create([
@@ -598,6 +584,7 @@ class ReworkFormTest extends TestCase
         ])->post(route('rework.store_in'), [
             'kanban_assy'    => 'KB-CONV-01',
             'nameplate'      => 'NP-CONV-01',
+            'area_ditemukan' => 'RWK',
             'sub_defect_ids' => [$sub->id],
             'carline'        => 'TOYOTA',
             'conveyor'       => '664W-C5',
@@ -617,7 +604,7 @@ class ReworkFormTest extends TestCase
     public function test_validasi_kombinasi_conveyor_dan_carline_tidak_valid(): void
     {
         $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
-        AreaDitemukan::create(['name' => 'RWK', 'tipe' => 'rework']);
+        AreaDitemukan::create(['name' => 'RWK', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         $toyota = CarType::create(['name' => 'TOYOTA']);
         $nissan = CarType::create(['name' => 'NISSAN']);
@@ -635,6 +622,7 @@ class ReworkFormTest extends TestCase
         ])->from(route('rework.index'))->post(route('rework.store_in'), [
             'kanban_assy'    => 'KB-INVALID-01',
             'nameplate'      => 'NP-INVALID-01',
+            'area_ditemukan' => 'RWK',
             'sub_defect_ids' => [$sub->id],
             'carline'        => 'NISSAN',
             'conveyor'       => '664W-C5',
@@ -648,7 +636,7 @@ class ReworkFormTest extends TestCase
     public function test_simpan_in_dengan_conveyor_saja_mengisi_carline_id_dan_jenis_mobil_secara_otomatis(): void
     {
         $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
-        AreaDitemukan::create(['name' => 'RWK', 'tipe' => 'rework']);
+        AreaDitemukan::create(['name' => 'RWK', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         $mazda = CarType::create(['name' => 'MAZDA']);
         $carline = Carline::create([
@@ -664,6 +652,7 @@ class ReworkFormTest extends TestCase
         ])->post(route('rework.store_in'), [
             'kanban_assy'    => 'KB-AUTO-01',
             'nameplate'      => 'NP-AUTO-01',
+            'area_ditemukan' => 'RWK',
             'sub_defect_ids' => [$sub->id],
             'conveyor'       => 'J72A-12B.LHD',
         ]);
@@ -674,5 +663,112 @@ class ReworkFormTest extends TestCase
         $this->assertEquals('J72A-12B.LHD', $defect->conveyor);
         $this->assertEquals($carline->id, $defect->carline_id);
         $this->assertEquals('MAZDA', $defect->jenis_mobil);
+    }
+
+    public function test_in_rework_menolak_area_pre_assy(): void
+    {
+        $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
+        $preArea = AreaDitemukan::create([
+            'name'     => 'AREA_PRE_CRIMPING',
+            'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        $response = $this->withSession([
+            'logged_in'     => true,
+            'user_name'     => 'reworkA',
+            'user_role'     => 'Rework',
+            'current_shift' => '1A',
+        ])->post(route('rework.store_in'), [
+            'kanban_assy'    => 'KB-REJECT-PRE',
+            'nameplate'      => 'NP-REJECT-PRE',
+            'area_ditemukan' => $preArea->name,
+            'sub_defect_ids' => [$sub->id],
+        ]);
+
+        $response->assertSessionHasErrors(['area_ditemukan']);
+        $this->assertEquals(0, Defect::where('kanban_assy', 'KB-REJECT-PRE')->count());
+    }
+
+    public function test_dropdown_rework_hanya_memuat_area_final_assy(): void
+    {
+        AreaDitemukan::create([
+            'name'     => 'AREA_PRE_FORBIDDEN',
+            'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        AreaDitemukan::create([
+            'name'     => 'AREA_FINAL_ALLOWED',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        $response = $this->withSession([
+            'logged_in'     => true,
+            'user_name'     => 'reworkA',
+            'user_role'     => 'Rework',
+            'current_shift' => '1A',
+        ])->get(route('rework.index'));
+
+        $response->assertOk();
+        $response->assertSee('AREA_FINAL_ALLOWED');
+        $response->assertDontSee('AREA_PRE_FORBIDDEN');
+    }
+
+    public function test_legacy_rework_dengan_area_pre_assy_tetap_dapat_dirender_dan_diedit(): void
+    {
+        $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
+        $legacyPreArea = AreaDitemukan::create([
+            'name'     => 'LEGACY_PRE_AREA',
+            'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        $groupId = 'uuid-legacy-pre-rework';
+        $waktuIn = now()->subMinutes(20);
+
+        Defect::create([
+            'rework_group_id'     => $groupId,
+            'waktu'               => $waktuIn,
+            'waktu_in'            => $waktuIn,
+            'status_rework'       => 'Berjalan',
+            'kanban_assy'         => 'KB-LEGACY-01',
+            'nameplate_lama'      => 'NP-LEGACY-01',
+            'user_name'           => 'reworkA',
+            'shift'               => '1A',
+            'jenis_assy'          => 'Final Assy',
+            'quantity'            => 1,
+            'defect_type_id'      => $sub->defect_type_id,
+            'sub_defect_type_id'  => $sub->id,
+            'jenis_defect'        => 'WIRING',
+            'jenis_sub_defect'    => $sub->name,
+            'area_ditemukan'      => $legacyPreArea->name,
+        ]);
+
+        $session = [
+            'logged_in'     => true,
+            'user_name'     => 'reworkA',
+            'user_role'     => 'Rework',
+            'current_shift' => '1A',
+        ];
+
+        // 1. Render halaman edit berhasil dan menampilkan opsi data lama
+        $editRes = $this->withSession($session)->get(route('rework.edit', $groupId));
+        $editRes->assertOk();
+        $editRes->assertSee('LEGACY_PRE_AREA');
+        $editRes->assertSee('Data Lama');
+
+        // 2. Simpan update dengan area legacy tetap diizinkan
+        $updateRes = $this->withSession($session)->put(route('rework.update', $groupId), [
+            'kanban_assy'    => 'KB-LEGACY-01-EDITED',
+            'nameplate'      => 'NP-LEGACY-01',
+            'sub_defect_ids' => [$sub->id],
+            'area_ditemukan' => $legacyPreArea->name,
+        ]);
+
+        $updateRes->assertRedirect(route('rework.index'));
+        $this->assertEquals('KB-LEGACY-01-EDITED', Defect::where('rework_group_id', $groupId)->value('kanban_assy'));
+        $this->assertEquals($legacyPreArea->name, Defect::where('rework_group_id', $groupId)->value('area_ditemukan'));
     }
 }

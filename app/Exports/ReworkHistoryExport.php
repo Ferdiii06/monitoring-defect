@@ -66,6 +66,7 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             '#End',
             '4M Status',
             'Area Ditemukan',
+            'Tipe Area',
             'Posisi & Detail Rework',
             'F C/H',
             'F C/W',
@@ -89,6 +90,12 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
         $status = in_array($row->status_rework, ['Selesai', 'CLOSE'], true) ? 'CLOSE' : 'OPEN';
         $carline = $row->jenis_mobil ?: ($row->carline?->carType?->name ?: $row->carline?->name) ?: '-';
         $conveyor = $row->conveyor ?: ($row->carline?->name) ?: '-';
+        $areaModel = $row->area_ditemukan ? \App\Models\AreaDitemukan::where('name', $row->area_ditemukan)->first() : null;
+        if ($areaModel && $areaModel->kategori === \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY) {
+            $tipeAreaLabel = ($areaModel->tipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT) ? 'Assembly Defect' : 'Internal Defect';
+        } else {
+            $tipeAreaLabel = '-';
+        }
 
         return [
             $row->id,
@@ -106,6 +113,7 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             $row->ujung ?? '-',
             $row->status_4m ?? 'NO',
             $row->area_ditemukan ?? '-',
+            $tipeAreaLabel,
             $row->posisi_detail_rework ?? '-',
             $row->fc_h ?? '-',
             $row->fc_w ?? '-',

@@ -297,12 +297,12 @@
                             <!-- Field: Conveyor -->
                             <div class="space-y-1.5">
                                 <label for="conveyor" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                                    Konveyor <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
+                                    Conveyor <span class="text-xs font-normal text-gray-400 lowercase">(opsional)</span>
                                 </label>
                                 <select id="conveyor"
                                         name="conveyor"
                                         class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
-                                    <option value="">Pilih Konveyor (Opsional)...</option>
+                                    <option value="">Pilih Conveyor (Opsional)...</option>
                                 </select>
                                 <p id="conveyor_scan_hint" class="text-[11px] text-gray-500 font-medium hidden"></p>
                             </div>
@@ -357,19 +357,19 @@
                             <!-- Area Ditemukan -->
                             <div class="space-y-1.5">
                                 <label for="area_ditemukan" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
-                                    Area Ditemukan
+                                    Area Ditemukan <span class="text-brand">*</span>
                                 </label>
                                 <select id="area_ditemukan"
                                         name="area_ditemukan"
+                                        required
                                         class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer">
+                                    <option value="" disabled {{ old('area_ditemukan') ? '' : 'selected' }}>Pilih Area Ditemukan...</option>
                                     @if(isset($areas) && $areas->isNotEmpty())
                                         @foreach($areas as $area)
                                             <option value="{{ $area->name }}" {{ old('area_ditemukan') === $area->name ? 'selected' : '' }}>
-                                                {{ $area->name }} ({{ $area->tipe === 'rework' ? 'Rework' : 'Internal' }})
+                                                {{ $area->name }} ({{ $area->tipe === 'assembly_defect' ? 'Assembly Defect' : 'Internal Defect' }})
                                             </option>
                                         @endforeach
-                                    @else
-                                        <option value="">Default Area Rework</option>
                                     @endif
                                 </select>
                             </div>
@@ -550,6 +550,27 @@
                                                         Conv: {{ $conveyorDisplay }}
                                                     </span>
                                                 @endif
+                                            </div>
+                                        @endif
+                                        @if(filled($first->area_ditemukan))
+                                            @php
+                                                $areaModel = \App\Models\AreaDitemukan::where('name', $first->area_ditemukan)->first();
+                                                $isFinalAssyArea = $areaModel && $areaModel->kategori === \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY;
+                                                $areaTipe = $isFinalAssyArea ? $areaModel->tipe : null;
+                                                $badgeTipeLabel = ($areaTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
+                                                    ? 'Assembly'
+                                                    : ($isFinalAssyArea ? 'Internal' : '-');
+                                                $badgeTipeClass = ($areaTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
+                                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                    : ($isFinalAssyArea ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-gray-100 text-gray-500 border-gray-200');
+                                            @endphp
+                                            <div class="flex items-center gap-1.5 flex-wrap text-[11px] font-semibold text-gray-700 pt-0.5">
+                                                <span class="inline-block bg-gray-100 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">
+                                                    Area: {{ $first->area_ditemukan }}
+                                                </span>
+                                                <span class="inline-block border text-[10px] font-bold px-2 py-0.5 rounded tracking-wide {{ $badgeTipeClass }}">
+                                                    {{ $badgeTipeLabel }}
+                                                </span>
                                             </div>
                                         @endif
                                         @if($isAdmin)
@@ -760,7 +781,7 @@
         const dropdown = document.getElementById('dropdown_results');
         const chipsContainer = document.getElementById('selected_defects_container');
 
-        // Cascading dropdown Carline -> Konveyor (Opsional)
+        // Cascading dropdown Carline -> Conveyor (Opsional)
         const conveyorMap = @json($carTypes ? $carTypes->mapWithKeys(fn($ct) => [$ct->name => $ct->carlines->pluck('name')]) : []);
         const carlineSelect = document.getElementById('carline');
         const conveyorSelect = document.getElementById('conveyor');
@@ -844,7 +865,7 @@
                             if (kanbanInfoMsg) kanbanInfoMsg.textContent = infoMsg;
                         }
 
-                        // 2. Auto-pilih Jenis Mobil dan Konveyor HANYA jika dropdown masih kosong
+                        // 2. Auto-pilih Jenis Mobil dan Conveyor HANYA jika dropdown masih kosong
                         if (carlineSelect && !carlineSelect.value && data.car_type_nama) {
                             carlineSelect.value = data.car_type_nama;
                             updateConveyors(data.car_type_nama, data.carline_nama || '');
@@ -855,10 +876,10 @@
                         // Peringatan kuning jika ditemukan_di_master = false
                         if (kanbanWarningBox) kanbanWarningBox.classList.remove('hidden');
 
-                        // Jika ada kode conveyor hasil scan kanban, tampilkan teks bantu di bawah dropdown Konveyor
+                        // Jika ada kode conveyor hasil scan kanban, tampilkan teks bantu di bawah dropdown Conveyor
                         // JANGAN menebak / auto-pilih
                         if (data.conveyor && conveyorScanHint) {
-                            conveyorScanHint.textContent = 'Hasil scan kanban: ' + data.conveyor + ' (silakan pilih konveyor yang sesuai)';
+                            conveyorScanHint.textContent = 'Hasil scan kanban: ' + data.conveyor + ' (silakan pilih conveyor yang sesuai)';
                             conveyorScanHint.classList.remove('hidden');
                         }
                     }
@@ -883,7 +904,7 @@
                 return;
             }
 
-            defaultOpt.textContent = 'Pilih Konveyor (Opsional)...';
+            defaultOpt.textContent = 'Pilih Conveyor (Opsional)...';
             conveyorSelect.appendChild(defaultOpt);
             conveyorSelect.disabled = false;
 

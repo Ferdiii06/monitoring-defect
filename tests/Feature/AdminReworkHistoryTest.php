@@ -91,7 +91,7 @@ class AdminReworkHistoryTest extends TestCase
         // 1. Setup master data
         $reworkArea = AreaDitemukan::create([
             'name' => 'REWORK AREA 1',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $defectType = DefectType::create([
@@ -178,7 +178,7 @@ class AdminReworkHistoryTest extends TestCase
     {
         $reworkArea = AreaDitemukan::create([
             'name' => 'REWORK AREA 1',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $groupId = (string) Str::uuid();
@@ -220,7 +220,7 @@ class AdminReworkHistoryTest extends TestCase
     {
         $reworkArea = AreaDitemukan::create([
             'name' => 'REWORK AREA 1',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $defectType = DefectType::create([
@@ -287,7 +287,7 @@ class AdminReworkHistoryTest extends TestCase
     {
         $reworkArea = AreaDitemukan::create([
             'name' => 'REWORK AREA 1',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $defectType = DefectType::create([
@@ -347,15 +347,17 @@ class AdminReworkHistoryTest extends TestCase
 
     public function test_update_adds_defect_with_deterministic_rework_area_id_terkecil(): void
     {
+        AreaDitemukan::query()->delete();
+
         // Two rework areas with different IDs
         $areaBesar = AreaDitemukan::create([
             'name' => 'AREA_REWORK_BESAR',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $areaKecil = AreaDitemukan::create([
             'name' => 'AREA_REWORK_KECIL',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         // Ensure $areaKecil has smaller id
@@ -417,8 +419,8 @@ class AdminReworkHistoryTest extends TestCase
 
     public function test_update_fails_when_template_has_no_area_and_master_rework_area_empty(): void
     {
-        // Delete all rework areas
-        AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->delete();
+        // Delete all areas
+        AreaDitemukan::query()->delete();
 
         $defectType = DefectType::create([
             'name' => 'WIRING',
@@ -463,7 +465,7 @@ class AdminReworkHistoryTest extends TestCase
         ]);
 
         $resPut->assertSessionHasErrors([
-            'area_ditemukan' => 'Area bertipe Rework belum diatur. Hubungi admin untuk menambahkannya di Master Data > Area Ditemukan.',
+            'area_ditemukan' => 'Area ditemukan belum diatur. Hubungi admin untuk menambahkannya di Master Data > Area Ditemukan.',
         ]);
 
         // Verifikasi tidak ada baris baru tersimpan
@@ -474,7 +476,7 @@ class AdminReworkHistoryTest extends TestCase
     {
         $reworkArea = AreaDitemukan::create([
             'name' => 'REWORK AREA 1',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $defectType = DefectType::create([
@@ -553,7 +555,7 @@ class AdminReworkHistoryTest extends TestCase
     {
         $reworkArea = AreaDitemukan::create([
             'name' => 'REWORK AREA 1',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $group1 = (string) Str::uuid();
@@ -660,7 +662,7 @@ class AdminReworkHistoryTest extends TestCase
     {
         $reworkArea = AreaDitemukan::create([
             'name' => 'REWORK AREA 1',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $defectType = DefectType::create([
@@ -699,6 +701,7 @@ class AdminReworkHistoryTest extends TestCase
         $this->assertContains('Group ID', $headings);
         $this->assertContains('Kanban Assy', $headings);
         $this->assertContains('Status Rework', $headings);
+        $this->assertContains('Tipe Area', $headings);
 
         $rows = $export->query()->get();
         $this->assertCount(1, $rows);
@@ -709,12 +712,67 @@ class AdminReworkHistoryTest extends TestCase
         $this->assertEquals('KB-EXPORT-TEST', $mapped[6]);
         $this->assertEquals('NP-EXPORT-TEST', $mapped[7]);
         $this->assertEquals($reworkArea->name, $mapped[14]);
-        $this->assertEquals('rework_exp_user', $mapped[21]);
-        $this->assertEquals('1A', $mapped[22]);
-        $this->assertEquals('1A', $mapped[23]); // code derived
-        $this->assertEquals('TERMINAL DEFECT', $mapped[24]);
-        $this->assertEquals('1.A - TERMINAL BENGKOK', $mapped[25]);
-        $this->assertEquals(1, $mapped[26]);
+        $this->assertEquals('Internal Defect', $mapped[15]);
+        $this->assertEquals('rework_exp_user', $mapped[22]);
+        $this->assertEquals('1A', $mapped[23]);
+        $this->assertEquals('1A', $mapped[24]); // code derived
+        $this->assertEquals('TERMINAL DEFECT', $mapped[25]);
+        $this->assertEquals('1.A - TERMINAL BENGKOK', $mapped[26]);
+        $this->assertEquals(1, $mapped[27]);
+    }
+
+    public function test_rework_history_export_dan_view_menampilkan_strip_untuk_tipe_area_pre_assy(): void
+    {
+        $preArea = AreaDitemukan::create([
+            'name'     => 'PRE_AREA_REWORK_LEGACY',
+            'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        $defectType = DefectType::create([
+            'name' => 'TERMINAL DEFECT 2',
+            'type' => 'Final Assy',
+        ]);
+
+        $subDefect = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '1.B - BENT',
+            'code'           => '1B',
+        ]);
+
+        $groupId = 'group-pre-export-test';
+        $defect = Defect::create([
+            'rework_group_id'     => $groupId,
+            'waktu'               => Carbon::now()->subMinutes(10),
+            'waktu_in'            => Carbon::now()->subMinutes(10),
+            'status_rework'       => 'OPEN',
+            'kanban_assy'         => 'KB-PRE-EXP-TEST',
+            'nameplate_lama'      => 'NP-PRE-EXP-TEST',
+            'area_ditemukan'      => $preArea->name,
+            'user_name'           => 'rework_exp_user',
+            'shift'               => '1A',
+            'jenis_assy'          => 'Final Assy',
+            'quantity'            => 1,
+            'defect_type_id'      => $defectType->id,
+            'sub_defect_type_id'  => $subDefect->id,
+            'jenis_defect'        => 'TERMINAL DEFECT 2',
+            'jenis_sub_defect'    => '1.B - BENT',
+        ]);
+
+        // 1. Export Excel: Tipe Area harus '-'
+        $request = new \Illuminate\Http\Request(['search' => 'KB-PRE-EXP-TEST']);
+        $export = new \App\Exports\ReworkHistoryExport($request);
+        $rows = $export->query()->get();
+        $this->assertCount(1, $rows);
+        $mapped = $export->map($rows->first());
+        $this->assertEquals('-', $mapped[15]);
+
+        // 2. View Admin Rework History: Tipe Area harus '-'
+        $resView = $this->actingAsAdmin()->get('/admin/rework-history?search=KB-PRE-EXP-TEST');
+        $resView->assertOk();
+        $resView->assertSee('PRE_AREA_REWORK_LEGACY');
+        // Badge untuk pre assy tipe area di riwayat menampilkan '-'
+        $this->assertMatchesRegularExpression('/PRE_AREA_REWORK_LEGACY.*?>\s*-\s*<\/span>/s', $resView->getContent());
     }
 
     public function test_recent_defects_displays_rework_edit_and_active_delete_for_all_rows(): void
@@ -774,7 +832,7 @@ class AdminReworkHistoryTest extends TestCase
     {
         $reworkArea = AreaDitemukan::create([
             'name' => 'AREA KHUSUS REWORK',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $internalArea = AreaDitemukan::create([
@@ -947,7 +1005,7 @@ class AdminReworkHistoryTest extends TestCase
     {
         $area = AreaDitemukan::create([
             'name' => 'REWORK AREA ORIG',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $reworkGroupId = (string) Str::uuid();
@@ -1147,7 +1205,7 @@ class AdminReworkHistoryTest extends TestCase
     {
         $area = AreaDitemukan::create([
             'name' => 'REWORK AREA 1',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
         $defectType = DefectType::create([
             'name' => 'WIRING',

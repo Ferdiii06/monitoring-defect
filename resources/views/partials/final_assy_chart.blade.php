@@ -9,7 +9,7 @@
                 </span>
             </div>
             <p class="text-xs text-gray-500 mt-0.5">
-                Distribusi kuantitas defect (Top 15 Pareto + Lainnya) stacked per kategori: Internal, Assembly, dan Belum Terklasifikasi. Rework dikecualikan.
+                Distribusi kuantitas defect (Top 15 Pareto + Lainnya) stacked per kategori: Internal dan Assembly. Rework dikecualikan.
             </p>
         </div>
         <div id="chartTotalSummary" class="text-right text-xs font-semibold text-gray-600 hidden sm:block">

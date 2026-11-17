@@ -82,8 +82,10 @@ class FinalAssyChartTest extends TestCase
             'datasets' => [
                 '*' => ['label', 'backgroundColor', 'borderColor', 'borderWidth', 'data', 'counts']
             ],
-            'summary' => ['total_pcs', 'total_count', 'internal_pcs', 'assembly_pcs', 'unclassified_pcs']
+            'summary' => ['total_pcs', 'total_count', 'internal_pcs', 'assembly_pcs']
         ]);
+        $this->assertCount(2, $adminRes->json('datasets'));
+        $this->assertEquals(['Internal Defect', 'Assembly Defect'], array_column($adminRes->json('datasets'), 'label'));
     }
 
     /**
@@ -94,9 +96,9 @@ class FinalAssyChartTest extends TestCase
      */
     public function test_chart_pcs_mathematical_invariant_matches_report_scope(): void
     {
-        $areaInspeksi = AreaDitemukan::create(['name' => 'CK_INSPEKSI', 'tipe' => AreaDitemukan::TIPE_INSPEKSI]);
-        $areaAssembly = AreaDitemukan::create(['name' => 'LINE_ASSEMBLY', 'tipe' => AreaDitemukan::TIPE_ASSEMBLY]);
-        $areaUnclassified = AreaDitemukan::create(['name' => 'STASIUN_BARU', 'tipe' => AreaDitemukan::TIPE_BELUM_DIKLASIFIKASI]);
+        $areaInspeksi = AreaDitemukan::create(['name' => 'CK_INSPEKSI', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+        $areaAssembly = AreaDitemukan::create(['name' => 'LINE_ASSEMBLY', 'tipe' => AreaDitemukan::TIPE_ASSEMBLY_DEFECT]);
+        $areaUnclassified = AreaDitemukan::create(['name' => 'STASIUN_BARU', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         // 1 defect Internal (quantity = 3)
         $this->createDefect([
@@ -114,7 +116,7 @@ class FinalAssyChartTest extends TestCase
             'quantity' => 7,
         ]);
 
-        // 1 defect Belum Terklasifikasi (quantity = 4)
+        // 1 defect Belum Terklasifikasi / area baru (quantity = 4) -> otomatis internal defect
         $this->createDefect([
             'area_ditemukan' => $areaUnclassified->name,
             'rework_group_id' => null,
@@ -129,17 +131,19 @@ class FinalAssyChartTest extends TestCase
         $expectedTotalPcs = (int) Defect::finalAssyReport()->sum('quantity');
         $expectedTotalCount = (int) Defect::finalAssyReport()->count();
 
+        // Di tabel/report total = 3 + 7 + 4 = 14
         $this->assertEquals(14, $expectedTotalPcs);
         $this->assertEquals(3, $expectedTotalCount);
 
-        $this->assertEquals(3, $summary['internal_pcs']);
+        // Di Batch 2: semua defect operator masuk grafik (Internal: 3 + 4 = 7, Assembly: 7)
+        $this->assertEquals(7, $summary['internal_pcs']);
         $this->assertEquals(7, $summary['assembly_pcs']);
-        $this->assertEquals(4, $summary['unclassified_pcs']);
-        $this->assertEquals($expectedTotalPcs, $summary['total_pcs']);
-        $this->assertEquals($expectedTotalCount, $summary['total_count']);
+        $this->assertArrayNotHasKey('unclassified_pcs', $summary);
+        $this->assertEquals(14, $summary['total_pcs']);
+        $this->assertEquals(3, $summary['total_count']);
         $this->assertEquals(
             $summary['total_pcs'],
-            $summary['internal_pcs'] + $summary['assembly_pcs'] + $summary['unclassified_pcs']
+            $summary['internal_pcs'] + $summary['assembly_pcs']
         );
     }
 
@@ -189,8 +193,8 @@ class FinalAssyChartTest extends TestCase
      */
     public function test_rework_records_are_strictly_excluded_from_chart(): void
     {
-        $areaInspeksi = AreaDitemukan::create(['name' => 'CK_INSPEKSI', 'tipe' => AreaDitemukan::TIPE_INSPEKSI]);
-        $areaRework = AreaDitemukan::create(['name' => 'REWORK', 'tipe' => AreaDitemukan::TIPE_REWORK]);
+        $areaInspeksi = AreaDitemukan::create(['name' => 'CK_INSPEKSI', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+        $areaRework = AreaDitemukan::create(['name' => 'REWORK', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         // Defect sah reguler
         $this->createDefect([
@@ -221,11 +225,11 @@ class FinalAssyChartTest extends TestCase
 
     /**
      * 5. Test Kasus Area NULL dan Orphan:
-     * Defect dengan area NULL atau tidak terdaftar di master masuk ke Belum Terklasifikasi.
+     * Defect dengan area NULL atau tidak terdaftar di master dikecualikan dari grafik.
      */
     public function test_null_and_orphan_areas_fall_into_unclassified_category(): void
     {
-        // Area NULL
+        // Area NULL -> otomatis internal defect
         $this->createDefect([
             'area_ditemukan' => null,
             'rework_group_id' => null,
@@ -233,7 +237,7 @@ class FinalAssyChartTest extends TestCase
             'quantity' => 4,
         ]);
 
-        // Area Orphan (tidak ada di tabel area_ditemukans)
+        // Area Orphan (tidak ada di tabel area_ditemukans) -> otomatis internal defect
         $this->createDefect([
             'area_ditemukan' => 'STASIUN_HANTU_TIDAK_ADA',
             'rework_group_id' => null,
@@ -244,22 +248,18 @@ class FinalAssyChartTest extends TestCase
         $res = $this->actingAsAdmin()->getJson(route('final_assy.chart_data'));
         $res->assertOk();
 
-        $labels = $res->json('labels');
-        $this->assertEquals(['INSER CIRCUIT'], $labels);
-
+        // Di Batch 2: area NULL dan orphan otomatis masuk Internal Defect
+        $this->assertEquals(['INSER CIRCUIT'], $res->json('labels'));
         $datasets = $res->json('datasets');
-        // Dataset 0: Internal (0 PCS)
-        $this->assertEquals([0], $datasets[0]['data']);
-        // Dataset 1: Assembly (0 PCS)
-        $this->assertEquals([0], $datasets[1]['data']);
-        // Dataset 2: Belum Terklasifikasi (4 + 6 = 10 PCS, 2 temuan)
-        $this->assertEquals('Belum Terklasifikasi', $datasets[2]['label']);
-        $this->assertEquals([10], $datasets[2]['data']);
-        $this->assertEquals([2], $datasets[2]['counts']);
+        $this->assertCount(2, $datasets);
+        $this->assertEquals('Internal Defect', $datasets[0]['label']);
+        $this->assertEquals('Assembly Defect', $datasets[1]['label']);
 
-        $this->assertEquals(10, $res->json('summary.unclassified_pcs'));
-        $this->assertEquals(0, $res->json('summary.internal_pcs'));
+        $this->assertEquals(10, $res->json('summary.total_pcs'));
+        $this->assertEquals(2, $res->json('summary.total_count'));
+        $this->assertEquals(10, $res->json('summary.internal_pcs'));
         $this->assertEquals(0, $res->json('summary.assembly_pcs'));
+        $this->assertArrayNotHasKey('unclassified_pcs', $res->json('summary'));
     }
 
     /**
@@ -451,7 +451,7 @@ class FinalAssyChartTest extends TestCase
     }
 
     /**
-     * 11. Test Pre Assy Mengganti Semua Label "Process Defect" Menjadi "Assembly Defect"
+     * 11. Test Pre Assy Menggunakan Label "Ditemukan oleh Operator" dan "Ditemukan oleh Inspektor"
      */
     public function test_pre_assy_replaces_process_defect_with_assembly_defect(): void
     {
@@ -466,10 +466,21 @@ class FinalAssyChartTest extends TestCase
             'inspect_quantity' => 10,
         ]);
 
+        Defect::create([
+            'waktu'            => Carbon::now(),
+            'user_name'        => 'Inspektor QA',
+            'jenis_assy'       => 'Pre Assy',
+            'ditemukan_oleh'   => 'Inspektor',
+            'jenis_defect'     => 'CORE',
+            'jenis_sub_defect' => 'DEFECT',
+            'quantity'         => 2,
+            'inspect_quantity' => 10,
+        ]);
+
         $res = $this->actingAsAdmin()->get(route('pre_assy.index'));
         $res->assertOk();
-        $res->assertSee('Assembly Defect');
-        $res->assertSee('Assembly Defect (Operator)');
+        $res->assertSee('Ditemukan oleh Operator');
+        $res->assertSee('Ditemukan oleh Inspektor');
         $res->assertDontSee('Process Defect');
     }
 
@@ -500,16 +511,110 @@ class FinalAssyChartTest extends TestCase
     }
 
     /**
-     * 13. Test Halaman Master Kanban Memuat Tombol "Atur Format Urutan" dan "Import Excel / CSV"
+     * 14. Test Pre Assy Chart Data Endpoint & Zero Defect Exclusion
      */
-    public function test_master_kanban_view_contains_features(): void
+    public function test_pre_assy_chart_data_endpoint_and_zero_defect_exclusion(): void
     {
-        $res = $this->actingAsAdmin()->get(route('admin.master.assy_numbers.index'));
-        $res->assertOk();
+        // a. Guest tanpa login
+        $guestRes = $this->getJson(route('pre_assy.chart_data'));
+        $guestRes->assertStatus(302);
 
-        $res->assertSee('Master Kanban');
-        $res->assertSee('Atur Format Urutan');
-        $res->assertSee(route('admin.master.kanban_format.index'));
-        $res->assertSee('Import Excel / CSV');
+        // b. Operator QA (non-admin)
+        $opRes = $this->actingAsOperator()->getJson(route('pre_assy.chart_data'));
+        $opRes->assertStatus(403);
+
+        // Defect data
+        Defect::create([
+            'waktu'            => Carbon::now(),
+            'user_name'        => 'QC Inspector',
+            'jenis_assy'       => 'Pre Assy',
+            'ditemukan_oleh'   => 'Inspektor',
+            'jenis_defect'     => 'CRIMPING BEND',
+            'jenis_sub_defect' => 'LOCK',
+            'quantity'         => 5,
+            'inspect_quantity' => 10,
+        ]);
+
+        Defect::create([
+            'waktu'            => Carbon::now(),
+            'user_name'        => 'Operator',
+            'jenis_assy'       => 'Pre Assy',
+            'ditemukan_oleh'   => 'Operator',
+            'jenis_defect'     => 'STRIP DEFECT',
+            'jenis_sub_defect' => 'CORE',
+            'quantity'         => 3,
+            'inspect_quantity' => 10,
+        ]);
+
+        // Zero Defect (harus dikecualikan dari chart)
+        Defect::create([
+            'waktu'            => Carbon::now(),
+            'user_name'        => 'Operator',
+            'jenis_assy'       => 'Pre Assy',
+            'ditemukan_oleh'   => 'Operator',
+            'jenis_defect'     => 'Zero Defect',
+            'jenis_sub_defect' => '-',
+            'quantity'         => 0,
+            'inspect_quantity' => 50,
+        ]);
+
+        // c. Administrator
+        $adminRes = $this->actingAsAdmin()->getJson(route('pre_assy.chart_data'));
+        $adminRes->assertOk();
+        $adminRes->assertJsonStructure([
+            'labels',
+            'datasets' => [
+                '*' => ['label', 'backgroundColor', 'borderColor', 'borderWidth', 'data', 'counts']
+            ],
+            'summary' => ['total_pcs', 'total_count', 'inspektor_pcs', 'operator_pcs']
+        ]);
+        $this->assertCount(2, $adminRes->json('datasets'));
+        $this->assertEquals(['Ditemukan oleh Inspektor', 'Ditemukan oleh Operator'], array_column($adminRes->json('datasets'), 'label'));
+
+        $data = $adminRes->json();
+        // Pastikan total_pcs = 5 + 3 = 8 (Zero Defect tidak ikut)
+        $this->assertEquals(8, $data['summary']['total_pcs']);
+        $this->assertEquals(2, $data['summary']['total_count']);
+        $this->assertNotContains('Zero Defect', $data['labels']);
+    }
+
+    /**
+     * 15. Test Final Assy Chart Excludes Zero Defect
+     */
+    public function test_final_assy_chart_excludes_zero_defect(): void
+    {
+        AreaDitemukan::updateOrCreate(
+            ['name' => 'CK'],
+            ['tipe' => AreaDitemukan::TIPE_INSPEKSI, 'kategori_report' => AreaDitemukan::REPORT_INSPEKSI]
+        );
+
+        Defect::create([
+            'waktu'            => Carbon::now(),
+            'user_name'        => 'QC Inspector',
+            'jenis_assy'       => 'Final Assy',
+            'area_ditemukan'   => 'CK',
+            'jenis_defect'     => 'MISSING PART',
+            'jenis_sub_defect' => 'HOUSING',
+            'quantity'         => 4,
+            'inspect_quantity' => 10,
+        ]);
+
+        Defect::create([
+            'waktu'            => Carbon::now(),
+            'user_name'        => 'QC Inspector',
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'Zero Defect',
+            'jenis_sub_defect' => '-',
+            'quantity'         => 0,
+            'inspect_quantity' => 100,
+        ]);
+
+        $adminRes = $this->actingAsAdmin()->getJson(route('final_assy.chart_data'));
+        $adminRes->assertOk();
+        $data = $adminRes->json();
+
+        $this->assertEquals(4, $data['summary']['total_pcs']);
+        $this->assertEquals(1, $data['summary']['total_count']);
+        $this->assertNotContains('Zero Defect', $data['labels']);
     }
 }

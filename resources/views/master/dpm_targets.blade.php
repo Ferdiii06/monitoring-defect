@@ -72,10 +72,10 @@
                     </select>
                 </div>
 
-                <!-- 1b. Konveyor / Carline Scope -->
+                <!-- 1b. Conveyor / Carline Scope -->
                 <div x-show="addForm.jenis_assy === 'Final Assy'">
                     <label for="add_conveyor_group" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
-                        Konveyor <span class="text-gray-400 font-normal normal-case">(Opsional)</span>
+                        Conveyor <span class="text-gray-400 font-normal normal-case">(Opsional)</span>
                     </label>
                     <select id="add_conveyor_group" name="conveyor_group" x-model="addForm.conveyor_group" :disabled="addForm.jenis_assy !== 'Final Assy'"
                         class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
@@ -84,7 +84,7 @@
                             <option value="{{ $conv }}">{{ $conv }}</option>
                         @endforeach
                     </select>
-                    <p class="text-[10px] font-medium text-gray-400 mt-1">Kosongkan untuk target default seluruh konveyor Final Assy.</p>
+                    <p class="text-[10px] font-medium text-gray-400 mt-1">Kosongkan untuk target default seluruh conveyor Final Assy.</p>
                 </div>
 
                 <div x-show="addForm.jenis_assy === 'Pre Assy'" x-cloak>
@@ -198,7 +198,7 @@
                     <thead>
                         <tr class="border-b border-gray-100 bg-gray-50/50">
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3 w-12">No</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Konveyor</th>
+                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Conveyor</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Periode Target</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Durasi</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-right">Target DPM</th>
@@ -363,10 +363,10 @@
                     </select>
                 </div>
 
-                <!-- Konveyor / Carline Scope (Edit) -->
+                <!-- Conveyor / Carline Scope (Edit) -->
                 <div x-show="editForm.jenis_assy === 'Final Assy'">
                     <label for="edit_conveyor_group" class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
-                        Konveyor <span class="text-gray-400 font-normal normal-case">(Opsional)</span>
+                        Conveyor <span class="text-gray-400 font-normal normal-case">(Opsional)</span>
                     </label>
                     <select id="edit_conveyor_group" name="conveyor_group" x-model="editForm.conveyor_group" :disabled="editForm.jenis_assy !== 'Final Assy'"
                         class="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-gray-800 bg-gray-50/70 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer transition shadow-xs">
@@ -375,7 +375,7 @@
                             <option value="{{ $conv }}">{{ $conv }}</option>
                         @endforeach
                     </select>
-                    <p class="text-[10px] font-medium text-gray-400 mt-1">Kosongkan untuk target default seluruh konveyor Final Assy.</p>
+                    <p class="text-[10px] font-medium text-gray-400 mt-1">Kosongkan untuk target default seluruh conveyor Final Assy.</p>
                 </div>
 
                 <div x-show="editForm.jenis_assy === 'Pre Assy'" x-cloak>

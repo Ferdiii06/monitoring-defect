@@ -115,7 +115,7 @@ class KanbanCodeParser
         }
 
         if (!preg_match('/^' . self::COMPONENT_PATTERNS['conveyor'] . '$/', $cleanConveyor)) {
-            throw new \InvalidArgumentException("Konveyor '{$conveyor}' tidak valid. Hanya karakter alfanumerik tanpa tanda hubung yang diizinkan.");
+            throw new \InvalidArgumentException("Conveyor '{$conveyor}' tidak valid. Hanya karakter alfanumerik tanpa tanda hubung yang diizinkan.");
         }
 
         if (!preg_match('/^' . self::COMPONENT_PATTERNS['serial'] . '$/', $cleanSerial)) {

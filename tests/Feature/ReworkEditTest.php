@@ -21,7 +21,7 @@ class ReworkEditTest extends TestCase
 
         AreaDitemukan::create([
             'name' => 'AREA REWORK TEST',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
     }
 

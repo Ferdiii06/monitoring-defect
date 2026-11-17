@@ -28,41 +28,9 @@ class AreaDitemukanController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name'            => 'required|string|max:255|unique:area_ditemukans,name',
-            'tipe'            => ['nullable', Rule::in([
-                AreaDitemukan::TIPE_INTERNAL_DEFECT,
-                AreaDitemukan::TIPE_REWORK,
-                AreaDitemukan::TIPE_INSPEKSI,
-                AreaDitemukan::TIPE_ASSEMBLY,
-                AreaDitemukan::TIPE_BELUM_DIKLASIFIKASI,
-            ])],
-            'kategori_report' => ['nullable', Rule::in([
-                AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI,
-                AreaDitemukan::REPORT_INSPEKSI,
-                AreaDitemukan::REPORT_ASSEMBLY,
-                AreaDitemukan::REPORT_REWORK,
-            ])],
-        ]);
+        $data = $this->validateAreaInput($request);
 
-        $inputTipe = $validated['tipe'] ?? AreaDitemukan::TIPE_INTERNAL_DEFECT;
-        $inputKat  = $validated['kategori_report'] ?? null;
-
-        if ($inputKat === null) {
-            if (in_array($inputTipe, [AreaDitemukan::TIPE_INSPEKSI, AreaDitemukan::TIPE_ASSEMBLY, AreaDitemukan::TIPE_BELUM_DIKLASIFIKASI], true)) {
-                $inputKat = $inputTipe;
-                $inputTipe = AreaDitemukan::TIPE_INTERNAL_DEFECT;
-            } elseif ($inputTipe === AreaDitemukan::TIPE_REWORK) {
-                $inputKat = AreaDitemukan::REPORT_REWORK;
-            } else {
-                $inputKat = AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI;
-            }
-        }
-
-        $validated['tipe'] = $inputTipe;
-        $validated['kategori_report'] = $inputKat;
-
-        AreaDitemukan::create($validated);
+        AreaDitemukan::create($data);
 
         return redirect()->route('admin.master.area_ditemukans.index')->with('success', 'Area Ditemukan berhasil ditambahkan!');
     }
@@ -72,53 +40,77 @@ class AreaDitemukanController extends Controller
         $area = AreaDitemukan::findOrFail($id);
         $defectsCount = Defect::where('area_ditemukan', $area->name)->count();
 
-        $validated = $request->validate([
-            'name'            => 'required|string|max:255|unique:area_ditemukans,name,' . $id,
-            'tipe'            => ['nullable', Rule::in([
-                AreaDitemukan::TIPE_INTERNAL_DEFECT,
-                AreaDitemukan::TIPE_REWORK,
-                AreaDitemukan::TIPE_INSPEKSI,
-                AreaDitemukan::TIPE_ASSEMBLY,
-                AreaDitemukan::TIPE_BELUM_DIKLASIFIKASI,
-            ])],
-            'kategori_report' => ['nullable', Rule::in([
-                AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI,
-                AreaDitemukan::REPORT_INSPEKSI,
-                AreaDitemukan::REPORT_ASSEMBLY,
-                AreaDitemukan::REPORT_REWORK,
-            ])],
-        ]);
+        $data = $this->validateAreaInput($request, (int) $id);
 
-        $inputTipe = $validated['tipe'] ?? $area->tipe;
-        $inputKat  = $validated['kategori_report'] ?? null;
-
-        if ($inputKat === null) {
-            if (in_array($inputTipe, [AreaDitemukan::TIPE_INSPEKSI, AreaDitemukan::TIPE_ASSEMBLY, AreaDitemukan::TIPE_BELUM_DIKLASIFIKASI], true)) {
-                $inputKat = $inputTipe;
-                $inputTipe = AreaDitemukan::TIPE_INTERNAL_DEFECT;
-            } elseif ($inputTipe === AreaDitemukan::TIPE_REWORK) {
-                $inputKat = AreaDitemukan::REPORT_REWORK;
-            } else {
-                $inputKat = $area->kategori_report ?? AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI;
-            }
-        }
-
-        $validated['tipe'] = $inputTipe;
-        $validated['kategori_report'] = $inputKat;
-
-        if ($defectsCount > 0 && trim($validated['name']) !== $area->name) {
-            return redirect()->back()->withErrors([
+        if ($defectsCount > 0 && trim($data['name']) !== $area->name) {
+            return redirect()->back()->withInput()->withErrors([
                 'name' => 'Nama area tidak dapat diubah karena sudah digunakan pada ' . $defectsCount . ' data defect.',
             ]);
         }
 
         if ($defectsCount > 0) {
-            $validated['name'] = $area->name;
+            $data['name'] = $area->name;
         }
 
-        $area->update($validated);
+        $area->update($data);
 
         return redirect()->route('admin.master.area_ditemukans.index')->with('success', 'Area Ditemukan berhasil diperbarui!');
+    }
+
+    /**
+     * Validasi Kategori Area dan Tipe Area (Batch 1: Tipe hanya assembly_defect / internal_defect).
+     */
+    private function validateAreaInput(Request $request, ?int $id = null): array
+    {
+        $uniqueRule = $id ? 'unique:area_ditemukans,name,' . $id : 'unique:area_ditemukans,name';
+
+        $allowedKategori = [
+            AreaDitemukan::KATEGORI_FINAL_ASSY,
+            AreaDitemukan::KATEGORI_PRE_ASSY,
+        ];
+
+        $allowedTipe = [
+            AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
+        ];
+
+        $kategoriInput = $request->input('kategori', AreaDitemukan::KATEGORI_FINAL_ASSY);
+        $isPreAssy = ($kategoriInput === AreaDitemukan::KATEGORI_PRE_ASSY);
+
+        $rules = [
+            'name'     => ['required', 'string', 'max:255', $uniqueRule],
+            'kategori' => ['nullable', 'string', Rule::in($allowedKategori)],
+            'tipe'     => $isPreAssy
+                ? ['nullable', 'string', Rule::in($allowedTipe)]
+                : ['required', 'string', Rule::in($allowedTipe)],
+        ];
+
+        $messages = [
+            'name.required' => 'Nama area wajib diisi.',
+            'name.unique'   => 'Nama area sudah digunakan.',
+            'name.max'      => 'Nama area maksimal 255 karakter.',
+            'kategori.in'   => 'Kategori area harus Final Assy atau Pre Assy.',
+            'tipe.required' => 'Tipe area wajib dipilih untuk Final Assy.',
+            'tipe.in'       => 'Tipe area yang dipilih tidak valid. Pilih Internal Defect atau Assembly Defect.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
+
+        $kategori = $validated['kategori'] ?? AreaDitemukan::KATEGORI_FINAL_ASSY;
+
+        // Pre Assy: tipe tidak dipakai dan selalu diset internal_defect agar konsisten di DB
+        if ($kategori === AreaDitemukan::KATEGORI_PRE_ASSY) {
+            $tipe = AreaDitemukan::TIPE_INTERNAL_DEFECT;
+        } else {
+            // Final Assy: tipe wajib dipilih oleh admin
+            $tipe = $validated['tipe'];
+        }
+
+        return [
+            'name'     => trim($validated['name']),
+            'kategori' => $kategori,
+            'tipe'     => $tipe,
+        ];
     }
 
     public function destroy($id)

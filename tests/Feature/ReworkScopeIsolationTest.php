@@ -60,7 +60,7 @@ class ReworkScopeIsolationTest extends TestCase
 
         $areaRework = AreaDitemukan::create([
             'name' => 'AREA-RWK',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         // (a) Operator + area internal
@@ -139,59 +139,53 @@ class ReworkScopeIsolationTest extends TestCase
         ]);
 
         // ==========================================
-        // 1. Verifikasi Mode Internal (Scope Eloquent)
+        // 1. Verifikasi Operator Input (Scope operatorInput)
         // ==========================================
-        $internalQuery = Defect::byDashboardMode('internal', 'Final Assy')->get();
-        $internalIds = $internalQuery->pluck('id')->all();
+        $operatorQuery = Defect::operatorInput()->where('jenis_assy', 'Final Assy')->get();
+        $operatorIds = $operatorQuery->pluck('id')->all();
 
-        // (a) Masuk internal
-        $this->assertContains($rowA->id, $internalIds, 'Baris (a) operator + area internal harus masuk mode internal');
-        // (b) Masuk internal
-        $this->assertContains($rowB->id, $internalIds, 'Baris (b) operator + area NULL harus masuk mode internal');
-        // (c) Operator + area rework TIDAK masuk internal
-        $this->assertNotContains($rowC->id, $internalIds, 'Baris (c) operator + area rework TIDAK boleh masuk mode internal');
-        // (d) Rework + area rework TIDAK masuk internal
-        $this->assertNotContains($rowD->id, $internalIds, 'Baris (d) rework + area rework TIDAK boleh masuk mode internal');
-        // (e) Rework + area internal TIDAK masuk internal
-        $this->assertNotContains($rowE->id, $internalIds, 'Baris (e) rework + area internal TIDAK boleh masuk mode internal');
+        // (a) Masuk operator input
+        $this->assertContains($rowA->id, $operatorIds, 'Baris (a) operator + area internal harus masuk operatorInput');
+        // (b) Masuk operator input
+        $this->assertContains($rowB->id, $operatorIds, 'Baris (b) operator + area NULL harus masuk operatorInput');
+        // (c) Masuk operator input (karena rework_group_id IS NULL)
+        $this->assertContains($rowC->id, $operatorIds, 'Baris (c) operator harus masuk operatorInput');
+        // (d) Rework TIDAK masuk operator input
+        $this->assertNotContains($rowD->id, $operatorIds, 'Baris (d) rework TIDAK boleh masuk operatorInput');
+        // (e) Rework TIDAK masuk operator input
+        $this->assertNotContains($rowE->id, $operatorIds, 'Baris (e) rework TIDAK boleh masuk operatorInput');
 
-        $this->assertEquals(3, $internalQuery->sum('quantity'), 'Total quantity internal harus 1 + 2 = 3');
+        $this->assertEquals(6, $operatorQuery->sum('quantity'), 'Total quantity operator harus 1 + 2 + 3 = 6');
 
         // ==========================================
-        // 2. Verifikasi Mode Rework (Scope Eloquent)
+        // 2. Verifikasi Rework Record (Scope reworkRecord)
         // ==========================================
-        $reworkQuery = Defect::byDashboardMode('rework', 'Final Assy')->get();
+        $reworkQuery = Defect::reworkRecord()->where('jenis_assy', 'Final Assy')->get();
         $reworkIds = $reworkQuery->pluck('id')->all();
 
-        // (d) Rework + area rework masuk rework
-        $this->assertContains($rowD->id, $reworkIds, 'Baris (d) rework + area rework harus masuk mode rework');
+        // (d) Rework masuk reworkRecord
+        $this->assertContains($rowD->id, $reworkIds, 'Baris (d) rework harus masuk reworkRecord');
+        // (e) Rework masuk reworkRecord
+        $this->assertContains($rowE->id, $reworkIds, 'Baris (e) rework harus masuk reworkRecord');
         // (a) Tidak masuk rework
-        $this->assertNotContains($rowA->id, $reworkIds, 'Baris (a) operator TIDAK boleh masuk mode rework');
+        $this->assertNotContains($rowA->id, $reworkIds, 'Baris (a) operator TIDAK boleh masuk reworkRecord');
         // (b) Tidak masuk rework
-        $this->assertNotContains($rowB->id, $reworkIds, 'Baris (b) operator TIDAK boleh masuk mode rework');
-        // (c) Operator + area rework TIDAK masuk rework (karena bukan rework input)
-        $this->assertNotContains($rowC->id, $reworkIds, 'Baris (c) operator + area rework TIDAK boleh masuk mode rework');
-        // (e) Rework + area internal TIDAK masuk rework (karena area bukan tipe rework)
-        $this->assertNotContains($rowE->id, $reworkIds, 'Baris (e) rework + area internal TIDAK boleh masuk mode rework');
+        $this->assertNotContains($rowB->id, $reworkIds, 'Baris (b) operator TIDAK boleh masuk reworkRecord');
+        // (c) Tidak masuk rework
+        $this->assertNotContains($rowC->id, $reworkIds, 'Baris (c) operator TIDAK boleh masuk reworkRecord');
 
-        $this->assertEquals(4, $reworkQuery->sum('quantity'), 'Total quantity rework harus 4');
+        $this->assertEquals(9, $reworkQuery->sum('quantity'), 'Total quantity rework harus 4 + 5 = 9');
 
         // ==========================================
         // 3. Verifikasi Endpoint /dashboard/analytics
         // ==========================================
-        // Mode internal analytics
-        $resInternal = $this->actingAsAdmin()->getJson("/dashboard/analytics?start_date={$today}&end_date={$today}&mode=internal&assy=final&group_by=day");
-        $resInternal->assertStatus(200);
-        $dpmFinalInternal = $resInternal->json('dpm_final');
-        $this->assertCount(1, $dpmFinalInternal);
-        $this->assertEquals(3, $dpmFinalInternal[0]['total_defect']); // 1 + 2
-
-        // Mode rework analytics
-        $resRework = $this->actingAsAdmin()->getJson("/dashboard/analytics?start_date={$today}&end_date={$today}&mode=rework&assy=final&group_by=day");
-        $resRework->assertStatus(200);
-        $dpmFinalRework = $resRework->json('dpm_final');
-        $this->assertCount(1, $dpmFinalRework);
-        $this->assertEquals(4, $dpmFinalRework[0]['total_defect']); // hanya baris D
+        // Analytics hanya membaca operatorInput
+        $resFinal = $this->actingAsAdmin()->getJson("/dashboard/analytics?start_date={$today}&end_date={$today}&mode=final&assy=final&group_by=day");
+        $resFinal->assertStatus(200);
+        $dpmFinal = $resFinal->json('dpm_final');
+        $this->assertCount(1, $dpmFinal);
+        $this->assertEquals(6, $dpmFinal[0]['total_defect']); // 1 + 2 + 3
+        $this->assertEquals(0, $dpmFinal[0]['def_rework']); // rework di-nolkan di metrik dashboard
 
         // ==========================================
         // 4. Verifikasi Riwayat Rework (ReworkHistoryController::baseQuery & /admin/rework-history)

@@ -30,6 +30,11 @@ class ReworkScanAndOutIntegrationTest extends TestCase
             '*/users*' => \Illuminate\Support\Facades\Http::response(['data' => []], 200),
             '*' => \Illuminate\Support\Facades\Http::response([], 200),
         ]);
+
+        AreaDitemukan::firstOrCreate(['name' => 'CK'], [
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
     }
 
     private function actingAsRework(string $name = 'reworkStaff')
@@ -115,6 +120,7 @@ class ReworkScanAndOutIntegrationTest extends TestCase
             'nameplate'      => '82111VU020A2607060001',
             'carline'        => 'CALYA',
             'conveyor'       => '664W-C5',
+            'area_ditemukan' => 'CK',
             'sub_defect_ids' => [$sub->id],
         ]);
 
@@ -129,7 +135,7 @@ class ReworkScanAndOutIntegrationTest extends TestCase
 
     public function test_in_flow_without_scan_manual_input_still_works(): void
     {
-        AreaDitemukan::create(['name' => 'RWK', 'tipe' => 'rework']);
+        AreaDitemukan::firstOrCreate(['name' => 'RWK'], ['tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
         $carType = CarType::create(['name' => 'SIGRA']);
         $carline = Carline::create([
             'car_type_id' => $carType->id,
@@ -143,6 +149,7 @@ class ReworkScanAndOutIntegrationTest extends TestCase
             'nameplate'      => 'MANUAL-NP-001',
             'carline'        => 'SIGRA',
             'conveyor'       => '664W-C5A',
+            'area_ditemukan' => 'RWK',
             'sub_defect_ids' => [$sub->id],
         ]);
 
@@ -158,7 +165,7 @@ class ReworkScanAndOutIntegrationTest extends TestCase
 
     public function test_in_flow_when_assy_not_in_master(): void
     {
-        AreaDitemukan::create(['name' => 'RWK', 'tipe' => 'rework']);
+        AreaDitemukan::firstOrCreate(['name' => 'RWK'], ['tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         // 1. Endpoint lookup return ditemukan_di_master = false dan conveyor scan
         $lookupRes = $this->actingAsRework()->getJson(route('rework.lookup_assy', [
@@ -181,6 +188,7 @@ class ReworkScanAndOutIntegrationTest extends TestCase
         $response = $this->actingAsRework()->post(route('rework.store_in'), [
             'kanban_assy'    => '82199-UNREG.C7.009',
             'nameplate'      => '82199UNREG001',
+            'area_ditemukan' => 'RWK',
             'sub_defect_ids' => [$sub->id],
         ]);
 

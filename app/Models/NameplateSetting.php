@@ -87,9 +87,10 @@ class NameplateSetting extends Model
     }
 
     /**
-     * Ekstraksi barcode nameplate berdasarkan aturan segmentasi posisi dan panjang.
-     * Aturan segmentasi: "start,length" (contoh: "1,8" -> mulai karakter 1, panjang 8)
-     * atau "start-end" (contoh: "1-8" -> karakter 1 s/d 8).
+     * Ekstraksi barcode nameplate berdasarkan aturan segmentasi posisi digit ("Digit ke berapa").
+     * Format aturan yang didukung:
+     * - Rentang: "A-B" (contoh: "1-8" -> digit ke-1 sampai ke-8 inklusif)
+     * - Satu digit: "N" (contoh: "9" -> hanya digit ke-9)
      * Jika barcode diawali/diakhiri tanda *, tanda tersebut dibersihkan terlebih dahulu.
      */
     public static function extractBarcode(string $rawBarcode, array $rules = []): array
@@ -103,6 +104,34 @@ class NameplateSetting extends Model
             return [
                 'success' => false,
                 'message' => 'Barcode kosong atau tidak valid.',
+            ];
+        }
+
+        // Validasi format tiap aturan posisi yang diisi
+        $fieldLabels = [
+            'assy_no'        => 'Assy No.',
+            'suffix'         => 'Suffix',
+            'level'          => 'Level',
+            'date_field'     => 'Date',
+            'sequence_label' => 'Sequence Label',
+        ];
+
+        foreach ($fieldLabels as $fieldKey => $fieldLabel) {
+            $ruleVal = $rules[$fieldKey] ?? ($fieldKey === 'date_field' ? ($rules['date'] ?? null) : null);
+            if (filled($ruleVal) && !self::isValidRuleFormat($ruleVal)) {
+                return [
+                    'success' => false,
+                    'message' => "Format aturan {$fieldLabel} ('{$ruleVal}') tidak valid. Format harus 'Digit ke' awal-akhir, mis. 1-8, atau satu digit, mis. 9.",
+                ];
+            }
+        }
+
+        // Cek apakah panjang barcode mencukupi aturan posisi tertinggi
+        $maxRequired = self::getMaxRuleDigit($rules);
+        if ($maxRequired > 0 && strlen($normalized) < $maxRequired) {
+            return [
+                'success' => false,
+                'message' => "Barcode terlalu pendek (panjang: " . strlen($normalized) . " digit, aturan membutuhkan hingga digit ke-{$maxRequired}).",
             ];
         }
 
@@ -158,11 +187,10 @@ class NameplateSetting extends Model
     }
 
     /**
-     * Ekstraksi segmen string berdasarkan aturan segmentasi:
-     * - "start,length" (contoh: "1,8")
-     * - "start-end" (contoh: "1-8")
-     * - "start:length" (contoh: "1:8")
-     * - regex "/.../"
+     * Ekstraksi segmen string berdasarkan format aturan posisi "Digit ke berapa":
+     * - Satu digit: "N" (contoh: "9") -> digit ke-9 (1-based index)
+     * - Rentang: "A-B" (contoh: "1-8") -> digit ke-1 s/d digit ke-8 inklusif
+     * Format lama ("posisi,panjang", "1:8") tidak lagi didukung.
      */
     public static function extractSegment(string $string, ?string $rule): ?string
     {
@@ -172,45 +200,79 @@ class NameplateSetting extends Model
 
         $rule = trim((string) $rule);
 
-        // Format 1: "start,length" (contoh: "1,8" atau "1, 8") -> 1-based index
-        if (preg_match('/^(\d+)\s*,\s*(\d+)$/', $rule, $m)) {
-            $start = (int) $m[1] - 1;
-            $len   = (int) $m[2];
-            if ($start >= 0 && $start < strlen($string) && $len > 0) {
-                return substr($string, $start, $len);
+        // Format 1: Satu digit "N" (contoh: "9") -> 1-based index
+        if (preg_match('/^([1-9]\d*)$/', $rule, $m)) {
+            $pos = (int) $m[1] - 1;
+            if ($pos >= 0 && $pos < strlen($string)) {
+                return substr($string, $pos, 1);
             }
             return null;
         }
 
-        // Format 2: "start-end" atau "start..end" (contoh: "1-8" atau "1..8") -> 1-based index
-        if (preg_match('/^(\d+)\s*(?:-|\.\.)\s*(\d+)$/', $rule, $m)) {
+        // Format 2: Rentang "A-B" (contoh: "1-8") -> 1-based index inklusif
+        if (preg_match('/^([1-9]\d*)\s*-\s*([1-9]\d*)$/', $rule, $m)) {
             $start = (int) $m[1] - 1;
             $end   = (int) $m[2];
             $len   = $end - $start;
-            if ($start >= 0 && $start < strlen($string) && $len > 0) {
+            if ($start >= 0 && $len > 0 && ($start + $len) <= strlen($string)) {
                 return substr($string, $start, $len);
             }
             return null;
-        }
-
-        // Format 3: "start:length" (contoh: "1:8")
-        if (preg_match('/^(\d+)\s*:\s*(\d+)$/', $rule, $m)) {
-            $start = (int) $m[1] - 1;
-            $len   = (int) $m[2];
-            if ($start >= 0 && $start < strlen($string) && $len > 0) {
-                return substr($string, $start, $len);
-            }
-            return null;
-        }
-
-        // Format 4: Regular expression delimiter /.../
-        if (preg_match('/^\/.*\/[a-z]*$/i', $rule)) {
-            if (@preg_match($rule, $string, $matches)) {
-                return $matches[1] ?? ($matches[0] ?? null);
-            }
         }
 
         return null;
+    }
+
+    /**
+     * Memeriksa apakah format aturan posisi valid:
+     * - Angka bulat positif N (contoh: "9")
+     * - Rentang A-B dengan A <= B (contoh: "1-8")
+     */
+    public static function isValidRuleFormat(?string $rule): bool
+    {
+        if (!filled($rule)) {
+            return true;
+        }
+
+        $rule = trim((string) $rule);
+
+        // Satu digit positif N >= 1
+        if (preg_match('/^([1-9]\d*)$/', $rule)) {
+            return true;
+        }
+
+        // Rentang A-B dengan A <= B
+        if (preg_match('/^([1-9]\d*)\s*-\s*([1-9]\d*)$/', $rule, $m)) {
+            return (int) $m[1] <= (int) $m[2];
+        }
+
+        return false;
+    }
+
+    /**
+     * Mendapatkan posisi digit maksimum yang dibutuhkan oleh kumpulan aturan.
+     */
+    public static function getMaxRuleDigit(array $rules): int
+    {
+        $max = 0;
+        foreach (['assy_no', 'suffix', 'level', 'date_field', 'sequence_label'] as $key) {
+            $ruleVal = $rules[$key] ?? ($key === 'date_field' ? ($rules['date'] ?? null) : null);
+            if (filled($ruleVal)) {
+                $ruleVal = trim((string) $ruleVal);
+                if (preg_match('/^([1-9]\d*)\s*-\s*([1-9]\d*)$/', $ruleVal, $m)) {
+                    $end = (int) $m[2];
+                    if ($end > $max) {
+                        $max = $end;
+                    }
+                } elseif (preg_match('/^([1-9]\d*)$/', $ruleVal, $m)) {
+                    $end = (int) $m[1];
+                    if ($end > $max) {
+                        $max = $end;
+                    }
+                }
+            }
+        }
+        return $max;
     }
 
     /**

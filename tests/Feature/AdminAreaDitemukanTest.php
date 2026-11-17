@@ -2,15 +2,37 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 use App\Models\AreaDitemukan;
 use App\Models\Defect;
 use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class AdminAreaDitemukanTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        \Illuminate\Support\Facades\Http::fake([
+            '*/users*' => \Illuminate\Support\Facades\Http::response(['data' => []], 200),
+            '*' => \Illuminate\Support\Facades\Http::response([], 200),
+        ]);
+
+        // Default seeding area bawaan
+        $defaultAreas = ['CK', 'V1', 'V2', 'FC', 'WP', 'RI'];
+        foreach ($defaultAreas as $name) {
+            AreaDitemukan::updateOrCreate(
+                ['name' => $name],
+                [
+                    'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+                    'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+                ]
+            );
+        }
+    }
 
     private function actingAsAdmin()
     {
@@ -56,53 +78,73 @@ class AdminAreaDitemukanTest extends TestCase
     {
         // 1. Tambah dengan tipe Internal Defect eksplisit
         $response1 = $this->actingAsAdmin()->post('/master/area-ditemukans', [
-            'name' => 'AREA_BARU_INTERNAL',
-            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'name'     => 'AREA_BARU_INTERNAL',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $response1->assertRedirect(route('admin.master.area_ditemukans.index'));
         $response1->assertSessionHas('success');
 
         $this->assertDatabaseHas('area_ditemukans', [
-            'name' => 'AREA_BARU_INTERNAL',
-            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'name'     => 'AREA_BARU_INTERNAL',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
-        // 2. Tambah dengan tipe Rework eksplisit
+        // 2. Tambah dengan tipe Assembly Defect eksplisit
         $response2 = $this->actingAsAdmin()->post('/master/area-ditemukans', [
-            'name' => 'AREA_BARU_REWORK',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'name'     => 'AREA_BARU_ASSEMBLY',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
         ]);
 
         $response2->assertRedirect(route('admin.master.area_ditemukans.index'));
         $response2->assertSessionHas('success');
 
         $this->assertDatabaseHas('area_ditemukans', [
-            'name' => 'AREA_BARU_REWORK',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'name'     => 'AREA_BARU_ASSEMBLY',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
         ]);
     }
 
-    public function test_tambah_area_tanpa_tipe_otomatis_internal_defect(): void
+    public function test_tambah_area_pre_assy_tanpa_tipe_berhasil(): void
     {
         $response = $this->actingAsAdmin()->post('/master/area-ditemukans', [
-            'name' => 'AREA_BARU_DEFAULT',
+            'name'     => 'AREA_PRE_DEFAULT',
+            'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY,
         ]);
 
         $response->assertRedirect(route('admin.master.area_ditemukans.index'));
         $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('area_ditemukans', [
-            'name' => 'AREA_BARU_DEFAULT',
-            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'name'     => 'AREA_PRE_DEFAULT',
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY,
+        ]);
+    }
+
+    public function test_tambah_area_final_assy_tanpa_tipe_ditolak(): void
+    {
+        $response = $this->actingAsAdmin()->post('/master/area-ditemukans', [
+            'name'     => 'AREA_FINAL_NO_TIPE',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+        ]);
+
+        $response->assertSessionHasErrors(['tipe']);
+        $this->assertDatabaseMissing('area_ditemukans', [
+            'name' => 'AREA_FINAL_NO_TIPE',
         ]);
     }
 
     public function test_tambah_area_dengan_tipe_tidak_valid_ditolak(): void
     {
         $response = $this->actingAsAdmin()->post('/master/area-ditemukans', [
-            'name' => 'AREA_INVALID',
-            'tipe' => 'invalid_type',
+            'name'     => 'AREA_INVALID',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => 'invalid_type',
         ]);
 
         $response->assertSessionHasErrors(['tipe']);
@@ -111,38 +153,74 @@ class AdminAreaDitemukanTest extends TestCase
         ]);
     }
 
+    public function test_kategori_rework_ditolak_hanya_final_assy_dan_pre_assy(): void
+    {
+        $response = $this->actingAsAdmin()->post('/master/area-ditemukans', [
+            'name'     => 'AREA_REWORK_REJECT',
+            'kategori' => 'Rework',
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        $response->assertSessionHasErrors(['kategori']);
+        $this->assertDatabaseMissing('area_ditemukans', [
+            'name' => 'AREA_REWORK_REJECT',
+        ]);
+    }
+
+    public function test_pre_assy_selalu_dipaksa_internal_defect(): void
+    {
+        // Admin mencoba memilih assembly_defect untuk Pre Assy -> dipaksa internal_defect
+        $response = $this->actingAsAdmin()->post('/master/area-ditemukans', [
+            'name'     => 'PRE_FORCED_AREA',
+            'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
+        ]);
+
+        $response->assertRedirect(route('admin.master.area_ditemukans.index'));
+        $this->assertDatabaseHas('area_ditemukans', [
+            'name'     => 'PRE_FORCED_AREA',
+            'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+    }
+
     public function test_edit_tipe_area_berhasil(): void
     {
         $area = AreaDitemukan::create([
-            'name' => 'AREA_EDIT_TEST',
-            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'name'     => 'AREA_EDIT_TEST',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $response = $this->actingAsAdmin()->put("/master/area-ditemukans/{$area->id}", [
-            'name' => 'AREA_EDIT_TEST',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'name'     => 'AREA_EDIT_TEST',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
         ]);
 
         $response->assertRedirect(route('admin.master.area_ditemukans.index'));
         $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('area_ditemukans', [
-            'id'   => $area->id,
-            'name' => 'AREA_EDIT_TEST',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'id'       => $area->id,
+            'name'     => 'AREA_EDIT_TEST',
+            'tipe'     => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
         ]);
     }
 
     public function test_edit_tipe_tidak_valid_ditolak(): void
     {
         $area = AreaDitemukan::create([
-            'name' => 'AREA_EDIT_INVALID',
-            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'name'     => 'AREA_EDIT_INVALID',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $response = $this->actingAsAdmin()->put("/master/area-ditemukans/{$area->id}", [
-            'name' => 'AREA_EDIT_INVALID',
-            'tipe' => 'tipe_palsu',
+            'name'     => 'AREA_EDIT_INVALID',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => 'tipe_palsu',
         ]);
 
         $response->assertSessionHasErrors(['tipe']);
@@ -170,8 +248,9 @@ class AdminAreaDitemukanTest extends TestCase
 
         // 1. Coba ubah nama area yang sudah dipakai defect -> Harus DITOLAK di server
         $response1 = $this->actingAsAdmin()->put("/master/area-ditemukans/{$area->id}", [
-            'name' => 'CK_RENAMED',
-            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'name'     => 'CK_RENAMED',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $response1->assertSessionHasErrors(['name']);
@@ -186,8 +265,9 @@ class AdminAreaDitemukanTest extends TestCase
 
         // 2. Ubah tipe area saja (nama tetap 'CK') -> Harus BERHASIL
         $response2 = $this->actingAsAdmin()->put("/master/area-ditemukans/{$area->id}", [
-            'name' => 'CK',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'name'     => 'CK',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
         ]);
 
         $response2->assertRedirect(route('admin.master.area_ditemukans.index'));
@@ -196,7 +276,7 @@ class AdminAreaDitemukanTest extends TestCase
         $this->assertDatabaseHas('area_ditemukans', [
             'id'   => $area->id,
             'name' => 'CK',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'tipe' => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
         ]);
     }
 
@@ -226,8 +306,9 @@ class AdminAreaDitemukanTest extends TestCase
     public function test_area_yang_belum_dipakai_bisa_dihapus(): void
     {
         $area = AreaDitemukan::create([
-            'name' => 'AREA_UNUSED_TO_DELETE',
-            'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+            'name'     => 'AREA_UNUSED_TO_DELETE',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         $response = $this->actingAsAdmin()->delete("/master/area-ditemukans/{$area->id}");
@@ -240,139 +321,50 @@ class AdminAreaDitemukanTest extends TestCase
         ]);
     }
 
-    public function test_seeder_area_rework_idempotent_dan_get_rework_area_names_tidak_kosong(): void
+    public function test_seeder_area_classification_menghasilkan_6_final_dan_5_pre_assy(): void
     {
-        // Pastikan awalnya belum ada area bertipe rework
-        $this->assertEquals(0, AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->count());
+        $seeder = new \Database\Seeders\AreaDitemukanClassificationSeeder();
+        $seeder->run();
 
-        // Jalankan seeder pertama kali
-        $this->seed(\Database\Seeders\ReworkAreaSeeder::class);
+        // 6 Final Assy (CK, V1, V2, FC, WP, RI) bertipe internal_defect
+        $this->assertEquals(6, AreaDitemukan::where('kategori', AreaDitemukan::KATEGORI_FINAL_ASSY)->where('tipe', AreaDitemukan::TIPE_INTERNAL_DEFECT)->count());
 
-        // Verifikasi area 'REWORK' tersimpan dengan tipe rework
-        $this->assertDatabaseHas('area_ditemukans', [
-            'name' => 'REWORK',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
-        ]);
-        $this->assertEquals(1, AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->count());
+        // 5 Pre Assy (Manual Crimping, Join Crimping, Wonder, Cutting, Raychem) bertipe internal_defect
+        $this->assertEquals(5, AreaDitemukan::where('kategori', AreaDitemukan::KATEGORI_PRE_ASSY)->where('tipe', AreaDitemukan::TIPE_INTERNAL_DEFECT)->count());
 
-        // Verifikasi getReworkAreaNames() tidak kosong dan berisi 'REWORK'
-        $areaNames1 = Defect::getReworkAreaNames();
-        $this->assertNotEmpty($areaNames1);
-        $this->assertContains('REWORK', $areaNames1);
-
-        // Jalankan seeder kedua kali untuk membuktikan idempotensi
-        $this->seed(\Database\Seeders\ReworkAreaSeeder::class);
-
-        // Jumlah area bertipe rework tetap 1 (tidak duplikat)
-        $this->assertEquals(1, AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->count());
-
-        // getReworkAreaNames() tetap konsisten
-        $areaNames2 = Defect::getReworkAreaNames();
-        $this->assertNotEmpty($areaNames2);
-        $this->assertContains('REWORK', $areaNames2);
+        // Area REWORK tidak boleh ada
+        $this->assertDatabaseMissing('area_ditemukans', ['name' => 'REWORK']);
     }
 
-    public function test_seeder_area_rework_tidak_membuat_duplikat_jika_sudah_ada_area_bertipe_rework(): void
+    public function test_helper_assembly_names_dan_internal_names_dan_resolve_tipe_by_name(): void
     {
-        // Buat area bertipe rework bernama 'Rework Station'
         AreaDitemukan::create([
-            'name' => 'Rework Station',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
+            'name'     => 'AREA_ASSY_TEST',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
         ]);
 
-        $this->assertEquals(1, AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->count());
+        $assemblyNames = AreaDitemukan::assemblyNames();
+        $this->assertContains('AREA_ASSY_TEST', $assemblyNames);
 
-        // Jalankan ReworkAreaSeeder
-        $this->seed(\Database\Seeders\ReworkAreaSeeder::class);
+        $internalNames = AreaDitemukan::internalNames();
+        $this->assertContains('CK', $internalNames);
+        $this->assertNotContains('AREA_ASSY_TEST', $internalNames);
 
-        // Pastikan tetap hanya 1 area bertipe rework dan tidak ada baris bernama 'REWORK'
-        $this->assertEquals(1, AreaDitemukan::where('tipe', AreaDitemukan::TIPE_REWORK)->count());
-        $this->assertDatabaseMissing('area_ditemukans', [
-            'name' => 'REWORK',
-        ]);
-        $this->assertDatabaseHas('area_ditemukans', [
-            'name' => 'Rework Station',
-            'tipe' => AreaDitemukan::TIPE_REWORK,
-        ]);
+        // resolveTipeByName
+        $this->assertEquals(AreaDitemukan::TIPE_ASSEMBLY_DEFECT, AreaDitemukan::resolveTipeByName('AREA_ASSY_TEST'));
+        $this->assertEquals(AreaDitemukan::TIPE_INTERNAL_DEFECT, AreaDitemukan::resolveTipeByName('CK'));
+        // NULL atau tidak ditemukan default ke internal_defect
+        $this->assertEquals(AreaDitemukan::TIPE_INTERNAL_DEFECT, AreaDitemukan::resolveTipeByName(null));
+        $this->assertEquals(AreaDitemukan::TIPE_INTERNAL_DEFECT, AreaDitemukan::resolveTipeByName('AREA_GHAIB_NOT_FOUND'));
     }
 
-    /**
-     * Verifikasi penambahan dan pembaruan dua field terpisah: tipe sistem dan kategori_report F/A.
-     */
-    public function test_kategori_report_dan_tipe_sistem_dapat_disimpan_dan_diupdate(): void
-    {
-        // 1. Tambah dengan dua field
-        $response = $this->actingAsAdmin()->post('/master/area-ditemukans', [
-            'name'            => 'STASIUN_DUAL_FIELD',
-            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
-            'kategori_report' => AreaDitemukan::REPORT_INSPEKSI,
-        ]);
-
-        $response->assertRedirect(route('admin.master.area_ditemukans.index'));
-        $this->assertDatabaseHas('area_ditemukans', [
-            'name'            => 'STASIUN_DUAL_FIELD',
-            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
-            'kategori_report' => AreaDitemukan::REPORT_INSPEKSI,
-        ]);
-
-        $area = AreaDitemukan::where('name', 'STASIUN_DUAL_FIELD')->firstOrFail();
-
-        // 2. Update kategori_report ke assembly tanpa mengubah tipe operasional
-        $updateRes = $this->actingAsAdmin()->put("/master/area-ditemukans/{$area->id}", [
-            'name'            => 'STASIUN_DUAL_FIELD',
-            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
-            'kategori_report' => AreaDitemukan::REPORT_ASSEMBLY,
-        ]);
-
-        $updateRes->assertRedirect(route('admin.master.area_ditemukans.index'));
-        $this->assertDatabaseHas('area_ditemukans', [
-            'id'              => $area->id,
-            'name'            => 'STASIUN_DUAL_FIELD',
-            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
-            'kategori_report' => AreaDitemukan::REPORT_ASSEMBLY,
-        ]);
-    }
-
-    /**
-     * Verifikasi bahwa dashboard mode internal tidak berubah perilakunya.
-     */
-    public function test_dashboard_mode_internal_tidak_berubah_perilaku(): void
+    public function test_dropdown_dan_validasi_input_defect_memuat_area_dan_lolos_validasi(): void
     {
         $area = AreaDitemukan::create([
-            'name'            => 'AREA_DASHBOARD_TEST',
-            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
-            'kategori_report' => AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI,
-        ]);
-
-        $defect = Defect::create([
-            'waktu'            => Carbon::now(),
-            'user_name'        => 'Operator QA',
-            'jenis_assy'       => 'Final Assy',
-            'area_ditemukan'   => $area->name,
-            'rework_group_id'  => null,
-            'jenis_defect'     => 'MISSING PART',
-            'jenis_sub_defect' => 'LOCK',
-            'quantity'         => 5,
-            'inspect_quantity' => 10,
-        ]);
-
-        // Query mode internal pada dashboard
-        $internalCount = Defect::where('id', $defect->id)
-            ->byDashboardMode('internal')
-            ->count();
-
-        $this->assertEquals(1, $internalCount, 'Defect di area non-rework wajib tetap masuk ke mode internal dashboard');
-    }
-
-    /**
-     * Verifikasi bahwa form dan validasi input defect tetap memuat seluruh area dan tidak berubah perilakunya.
-     */
-    public function test_dropdown_dan_validasi_input_defect_tidak_berubah(): void
-    {
-        $area = AreaDitemukan::create([
-            'name'            => 'AREA_INPUT_TEST',
-            'tipe'            => AreaDitemukan::TIPE_INTERNAL_DEFECT,
-            'kategori_report' => AreaDitemukan::REPORT_BELUM_DIKLASIFIKASI,
+            'name'     => 'AREA_INPUT_TEST',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
         // 1. Dropdown input defect memuat area ini
@@ -398,6 +390,7 @@ class AdminAreaDitemukanTest extends TestCase
             'tanggal'          => Carbon::today()->toDateString(),
             'jam'              => '10:00',
             'area_ditemukan'   => 'AREA_INPUT_TEST',
+            'end_number'       => '1',
             'jenis_defect'     => 'MISSING PART',
             'sub_defect'       => 'LOCK',
             'jumlah'           => 1,
@@ -410,5 +403,44 @@ class AdminAreaDitemukanTest extends TestCase
             'area_ditemukan' => 'AREA_INPUT_TEST',
             'jenis_defect'   => 'MISSING PART',
         ]);
+    }
+
+    public function test_master_area_view_menampilkan_badge_dan_opsi_kategori_dan_tipe(): void
+    {
+        AreaDitemukan::create([
+            'name'     => 'PRE_VIEW_TEST',
+            'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        AreaDitemukan::create([
+            'name'     => 'FA_ASSY_VIEW_TEST',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
+        ]);
+
+        $res = $this->actingAsAdmin()->get('/master/area-ditemukans');
+        $res->assertOk();
+        $res->assertSee('Pre Assy');
+        $res->assertSee('Final Assy');
+        $res->assertSee('Internal Defect');
+        $res->assertSee('Assembly Defect');
+        $res->assertDontSee('Kategori Report');
+    }
+
+    public function test_area_pre_assy_menampilkan_strip_dan_bukan_badge_internal_atau_assembly(): void
+    {
+        AreaDitemukan::create([
+            'name'     => 'PRE_STRIP_TEST',
+            'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        $res = $this->actingAsAdmin()->get('/master/area-ditemukans');
+        $res->assertOk();
+        $content = $res->getContent();
+
+        // Pastikan baris PRE_STRIP_TEST memiliki kolom "-" untuk tipe
+        $this->assertMatchesRegularExpression('/PRE_STRIP_TEST.*?>\s*-\s*<\/span>/s', $content);
     }
 }

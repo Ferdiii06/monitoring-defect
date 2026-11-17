@@ -62,7 +62,7 @@ class AdminKanbanFormatTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Master Format Kanban');
         $response->assertSee('Nomor Assy');
-        $response->assertSee('Konveyor');
+        $response->assertSee('Conveyor');
         $response->assertSee('Serial Number');
         $response->assertSee('82111-VU020.C7.010');
 
@@ -179,7 +179,7 @@ class AdminKanbanFormatTest extends TestCase
     public function test_admin_can_reset_format_to_default(): void
     {
         // Ubah dulu ke custom
-        KanbanComponent::updateOrCreate(['component_key' => 'conveyor'], ['label' => 'Konveyor', 'sequence' => 1, 'delimiter' => ' ']);
+        KanbanComponent::updateOrCreate(['component_key' => 'conveyor'], ['label' => 'Conveyor', 'sequence' => 1, 'delimiter' => ' ']);
         KanbanComponent::updateOrCreate(['component_key' => 'assy_number'], ['label' => 'Nomor Assy', 'sequence' => 2, 'delimiter' => '.']);
         KanbanComponent::updateOrCreate(['component_key' => 'serial'], ['label' => 'Serial Number', 'sequence' => 3, 'delimiter' => '.']);
 
@@ -218,7 +218,7 @@ class AdminKanbanFormatTest extends TestCase
         // Urutan baru: 1=conveyor, 2=assy_number, 3=serial, delimiter=' ' (spasi) dan '.' (titik)
         KanbanComponent::updateOrCreate(
             ['component_key' => 'conveyor'],
-            ['label' => 'Konveyor', 'sequence' => 1, 'delimiter' => ' ']
+            ['label' => 'Conveyor', 'sequence' => 1, 'delimiter' => ' ']
         );
         KanbanComponent::updateOrCreate(
             ['component_key' => 'assy_number'],
@@ -248,7 +248,7 @@ class AdminKanbanFormatTest extends TestCase
         );
         KanbanComponent::updateOrCreate(
             ['component_key' => 'conveyor'],
-            ['label' => 'Konveyor', 'sequence' => 2, 'delimiter' => '.']
+            ['label' => 'Conveyor', 'sequence' => 2, 'delimiter' => '.']
         );
         KanbanComponent::updateOrCreate(
             ['component_key' => 'assy_number'],
@@ -278,7 +278,7 @@ class AdminKanbanFormatTest extends TestCase
         // Urutan baru: 1=conveyor, 2=assy_number, 3=serial, delimiter='.'
         KanbanComponent::updateOrCreate(
             ['component_key' => 'conveyor'],
-            ['label' => 'Konveyor', 'sequence' => 1, 'delimiter' => '.']
+            ['label' => 'Conveyor', 'sequence' => 1, 'delimiter' => '.']
         );
         KanbanComponent::updateOrCreate(
             ['component_key' => 'assy_number'],

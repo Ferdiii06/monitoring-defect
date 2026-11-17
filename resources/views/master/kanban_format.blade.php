@@ -160,7 +160,7 @@
                         <span class="font-mono font-bold text-gray-800">82111-VU020</span>
                     </div>
                     <div class="flex items-center justify-between text-[11px] py-1 border-b border-gray-100">
-                        <span class="text-gray-500">Konveyor (Alfanumerik):</span>
+                        <span class="text-gray-500">Conveyor (Alfanumerik):</span>
                         <span class="font-mono font-bold text-gray-800">C7</span>
                     </div>
                     <div class="flex items-center justify-between text-[11px] py-1">

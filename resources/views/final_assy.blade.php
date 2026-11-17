@@ -1,13 +1,29 @@
 @extends('layouts.app')
 
-@section('title', 'Report Final Assy')
+@php
+    $isSubmenuAll = in_array($selectedCategory, ['all', ''], true);
+    $headerTitle = match($selectedCategory) {
+        'internal' => 'Report Final Assy - Internal Defect',
+        'assembly' => 'Report Final Assy - Assembly Defect',
+        'rework'   => 'Report Final Assy - Riwayat Rework',
+        default    => 'Report Final Assy',
+    };
+    $headerDesc = match($selectedCategory) {
+        'internal' => 'Laporan defect Final Assy di Area Inspeksi (Internal Defect).',
+        'assembly' => 'Laporan defect Final Assy di Area Produksi (Assembly Defect).',
+        'rework'   => 'Laporan riwayat defect rework (record perbaikan terpisah).',
+        default    => 'Riwayat aktivitas defect final assy secara real-time.',
+    };
+@endphp
+
+@section('title', $headerTitle)
 
 @section('content')
         <!-- Header Section -->
         <header class="flex justify-between items-center mb-8">
             <div>
-                <h1 class="text-2xl font-black text-gray-900 tracking-tight leading-tight">Report Final Assy</h1>
-                <p class="text-xs font-semibold text-gray-500 mt-1">Riwayat aktivitas defect final assy secara real-time.</p>
+                <h1 class="text-2xl font-black text-gray-900 tracking-tight leading-tight">{{ $headerTitle }}</h1>
+                <p class="text-xs font-semibold text-gray-500 mt-1">{{ $headerDesc }}</p>
             </div>
 
             <div class="flex items-center space-x-6">
@@ -25,8 +41,9 @@
         </header>
 
         <!-- KPI Summary Cards (Invarian Final Assy) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+        @if($isSubmenuAll)
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col justify-between h-full">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total Non-Rework</span>
                     <span class="w-2 h-2 rounded-full bg-gray-400"></span>
@@ -35,7 +52,7 @@
                 <p class="text-[11px] text-gray-500 mt-1">{{ $totalFinalAssyNonRework }} temuan defect (F/A)</p>
             </div>
 
-            <div class="bg-white border border-blue-200 bg-blue-50/20 rounded-lg p-4 shadow-sm">
+            <div class="bg-white border border-blue-200 bg-blue-50/20 rounded-lg p-4 shadow-sm flex flex-col justify-between h-full">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Internal Defect</span>
                     <span class="w-2 h-2 rounded-full bg-blue-600"></span>
@@ -44,7 +61,7 @@
                 <p class="text-[11px] text-blue-600/80 mt-1">{{ $totalInternal }} temuan di Area Inspeksi</p>
             </div>
 
-            <div class="bg-white border border-emerald-200 bg-emerald-50/20 rounded-lg p-4 shadow-sm">
+            <div class="bg-white border border-emerald-200 bg-emerald-50/20 rounded-lg p-4 shadow-sm flex flex-col justify-between h-full">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Assembly Defect</span>
                     <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
@@ -53,18 +70,7 @@
                 <p class="text-[11px] text-emerald-600/80 mt-1">{{ $totalAssembly }} temuan di Area Produksi</p>
             </div>
 
-            @if(($totalUnclassified ?? 0) > 0)
-            <div class="bg-white border border-amber-200 bg-amber-50/20 rounded-lg p-4 shadow-sm">
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Belum Terklasifikasi</span>
-                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                </div>
-                <div class="text-2xl font-black text-amber-900 mt-2 font-mono tabular-nums">{{ $pcsUnclassified ?? $totalUnclassified }} <span class="text-xs font-bold text-amber-500 font-sans">PCS</span></div>
-                <p class="text-[11px] text-amber-700/80 mt-1">{{ $totalUnclassified }} temuan (area baru / unmapped)</p>
-            </div>
-            @endif
-
-            <div class="bg-white border border-purple-200 bg-purple-50/20 rounded-lg p-4 shadow-sm">
+            <div class="bg-white border border-purple-200 bg-purple-50/20 rounded-lg p-4 shadow-sm flex flex-col justify-between h-full">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Riwayat Rework</span>
                     <span class="w-2 h-2 rounded-full bg-purple-600"></span>
@@ -73,6 +79,40 @@
                 <p class="text-[11px] text-purple-600/80 mt-1">{{ $totalRework }} record perbaikan terpisah</p>
             </div>
         </div>
+        @elseif($selectedCategory === 'internal')
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white border border-blue-200 bg-blue-50/20 rounded-lg p-4 shadow-sm flex flex-col justify-between h-full">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Internal Defect</span>
+                    <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                </div>
+                <div class="text-2xl font-black text-blue-900 mt-2 font-mono tabular-nums">{{ $pcsInternal ?? $totalInternal }} <span class="text-xs font-bold text-blue-500 font-sans">PCS</span></div>
+                <p class="text-[11px] text-blue-600/80 mt-1">{{ $totalInternal }} temuan di Area Inspeksi</p>
+            </div>
+        </div>
+        @elseif($selectedCategory === 'assembly')
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white border border-emerald-200 bg-emerald-50/20 rounded-lg p-4 shadow-sm flex flex-col justify-between h-full">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">Assembly Defect</span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                </div>
+                <div class="text-2xl font-black text-emerald-900 mt-2 font-mono tabular-nums">{{ $pcsAssembly ?? $totalAssembly }} <span class="text-xs font-bold text-emerald-500 font-sans">PCS</span></div>
+                <p class="text-[11px] text-emerald-600/80 mt-1">{{ $totalAssembly }} temuan di Area Produksi</p>
+            </div>
+        </div>
+        @elseif($selectedCategory === 'rework')
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white border border-purple-200 bg-purple-50/20 rounded-lg p-4 shadow-sm flex flex-col justify-between h-full">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Riwayat Rework</span>
+                    <span class="w-2 h-2 rounded-full bg-purple-600"></span>
+                </div>
+                <div class="text-2xl font-black text-purple-900 mt-2 font-mono tabular-nums">{{ $pcsRework ?? $totalRework }} <span class="text-xs font-bold text-purple-500 font-sans">PCS</span></div>
+                <p class="text-[11px] text-purple-600/80 mt-1">{{ $totalRework }} record perbaikan terpisah</p>
+            </div>
+        </div>
+        @endif
 
         <!-- Grafik Final Assy Bar Chart (Stacked PCS per Jenis Defect) -->
         @if($selectedCategory === 'all')
@@ -83,7 +123,8 @@
         <section class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm flex-1 flex flex-col justify-between">
             
             <div>
-                <!-- Category Filter Tabs -->
+                @if($isSubmenuAll)
+                <!-- Category Filter Tabs (Hanya di submenu All) -->
                 <div class="flex flex-wrap items-center gap-2 mb-5 pb-4 border-b border-gray-100">
                     <span class="text-xs font-bold text-gray-500 mr-1">Kategori Defect:</span>
                     <a href="{{ request()->fullUrlWithQuery(['category' => 'all', 'page' => 1]) }}"
@@ -98,17 +139,12 @@
                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ $selectedCategory === 'assembly' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' }}">
                         Assembly Defect ({{ $totalAssembly }})
                     </a>
-                    @if(($totalUnclassified ?? 0) > 0)
-                    <a href="{{ request()->fullUrlWithQuery(['category' => 'unclassified', 'page' => 1]) }}"
-                       class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ $selectedCategory === 'unclassified' ? 'bg-amber-600 text-white shadow-xs' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200' }}">
-                        Belum Terklasifikasi ({{ $totalUnclassified }})
-                    </a>
-                    @endif
                     <a href="{{ request()->fullUrlWithQuery(['category' => 'rework', 'page' => 1]) }}"
                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ $selectedCategory === 'rework' ? 'bg-purple-600 text-white shadow-xs' : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200' }}">
                         Rework ({{ $totalRework }})
                     </a>
                 </div>
+                @endif
 
                 <!-- Form Filter -->
                 <form id="filterForm" method="GET" action="{{ url()->current() }}" class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
@@ -159,7 +195,7 @@
                         <!-- Conveyor Select -->
                         <div class="relative min-w-[150px]">
                             <select id="conveyorSelect" name="conveyor" onchange="this.form.submit()" class="peer w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer disabled:bg-gray-100 disabled:border-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
-                                <option value="all">Semua Konveyor</option>
+                                <option value="all">Semua Conveyor</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000] peer-disabled:text-gray-300">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -218,7 +254,7 @@
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">User</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Shift</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Mobil</th>
-                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Konveyor</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Conveyor</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Quantity Inspect Type</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Defect</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Sub Defect</th>
@@ -275,24 +311,27 @@
                                         {{ $record->actual ?? '-' }}
                                     </td>
                                     <td class="py-4 text-sm text-gray-900 px-4 font-medium">
-                                        {{ $record->area_ditemukan ?? '-' }}
+                                        {{ ($record->jenis_defect === 'Zero Defect' || empty($record->area_ditemukan)) ? '-' : $record->area_ditemukan }}
                                     </td>
                                     <td class="py-4 text-xs font-bold px-4">
                                         @php
-                                            $areaTipe = $record->areaDitemukanRef?->kategori_report ?: $record->areaDitemukanRef?->tipe;
+                                            // BATCH 2
+                                            $areaTipe = $record->areaDitemukanRef?->tipe ?? \App\Models\AreaDitemukan::resolveTipeByName($record->area_ditemukan);
                                         @endphp
-                                        @if($areaTipe === 'inspeksi')
+                                        @if($record->jenis_defect === 'Zero Defect' || $record->quantity == 0)
+                                            <span class="inline-block px-2.5 py-1 rounded border border-gray-200 bg-gray-50 text-gray-700 tracking-wider">
+                                                Zero Defect
+                                            </span>
+                                        @elseif($areaTipe === \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT)
                                             <span class="inline-block px-2.5 py-1 rounded border border-blue-200 bg-blue-50 text-blue-700 tracking-wider">
                                                 Internal Defect
                                             </span>
-                                        @elseif($areaTipe === 'assembly')
+                                        @elseif($areaTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
                                             <span class="inline-block px-2.5 py-1 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 tracking-wider">
                                                 Assembly Defect
                                             </span>
                                         @else
-                                            <span class="inline-block px-2.5 py-1 rounded border border-amber-200 bg-amber-50 text-amber-700 tracking-wider">
-                                                Belum Terklasifikasi
-                                            </span>
+                                            <span class="text-gray-400 font-medium">-</span>
                                         @endif
                                     </td>
                                     <td class="py-4 text-sm text-gray-900 px-4 font-medium">
@@ -336,47 +375,7 @@
                     Menampilkan <span id="visible-count">{{ count($records) }}</span> dari <span id="total-count">{{ $totalItems }}</span> entri
                 </span>
                 
-                <!-- Pagination Buttons -->
-                <div class="flex items-center space-x-1">
-                    <!-- Prev Page -->
-                    @if($currentPage > 1)
-                        <a href="?{{ http_build_query(array_merge(request()->query(), ['page' => $currentPage - 1])) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition-colors text-xs font-semibold">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                        </a>
-                    @else
-                        <span class="w-8 h-8 rounded-lg border border-gray-200 text-gray-300 flex items-center justify-center text-xs font-semibold cursor-not-allowed">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                        </span>
-                    @endif
-
-                    <!-- Page Numbers -->
-                    @for($p = 1; $p <= $totalPages; $p++)
-                        @if($p === $currentPage)
-                            <span class="w-8 h-8 rounded-lg bg-[#8b0000] text-white flex items-center justify-center text-xs font-bold shadow-sm">{{ $p }}</span>
-                        @else
-                            <a href="?{{ http_build_query(array_merge(request()->query(), ['page' => $p])) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center justify-center transition-colors text-xs font-semibold">{{ $p }}</a>
-                        @endif
-                    @endfor
-
-                    <!-- Next Page -->
-                    @if($currentPage < $totalPages)
-                        <a href="?{{ http_build_query(array_merge(request()->query(), ['page' => $currentPage + 1])) }}" class="w-8 h-8 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center justify-center transition-colors text-xs font-semibold">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                        </a>
-                    @else
-                        <span class="w-8 h-8 rounded-lg border border-gray-200 text-gray-300 flex items-center justify-center text-xs font-semibold cursor-not-allowed">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                        </span>
-                    @endif
-                </div>
+                {{ $records->links('components.pagination-sliding') }}
             </div>
 
         </section>
@@ -407,7 +406,7 @@
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">User</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Shift</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Mobil</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Konveyor</th>
+                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Conveyor</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Defect</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Sub Defect</th>
                             <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Area / Stasiun</th>
@@ -430,14 +429,13 @@
                                 <td class="py-3 text-xs text-gray-900 px-4 font-medium">{{ $rework->area_ditemukan ?? '-' }}</td>
                                 <td class="py-3 text-xs font-bold px-4">
                                     @php
-                                        $rTipe = $rework->areaDitemukanRef?->kategori_report ?: $rework->areaDitemukanRef?->tipe;
+                                        // BATCH 2
+                                        $rTipe = $rework->areaDitemukanRef?->tipe ?? \App\Models\AreaDitemukan::resolveTipeByName($rework->area_ditemukan);
                                     @endphp
-                                    @if($rTipe === 'inspeksi')
-                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] border border-blue-200 bg-blue-50 text-blue-700">Internal Defect (Asumsi)</span>
-                                    @elseif($rTipe === 'assembly')
+                                    @if($rTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
                                         <span class="inline-block px-2 py-0.5 rounded text-[10px] border border-emerald-200 bg-emerald-50 text-emerald-700">Assembly Defect (Asumsi)</span>
                                     @else
-                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] border border-purple-200 bg-purple-50 text-purple-700">Area Rework (Asumsi)</span>
+                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] border border-blue-200 bg-blue-50 text-blue-700">Internal Defect (Asumsi)</span>
                                     @endif
                                 </td>
                                 <td class="py-3 text-xs text-brand font-black font-mono text-center px-4">{{ $rework->quantity }}</td>
@@ -462,7 +460,7 @@
 
     <!-- Script Initializations -->
     <script>
-        // List konveyor per mobil
+        // List conveyor per mobil
         const conveyorsByMobil = {
             'TOYOTA': [
                 '664W-C5', '664W-C5C', '664W-C5A', '664W-C5B', '664W-C5D',
@@ -619,7 +617,7 @@
                 if (mobil && mobil !== 'all') {
                     const optAll = document.createElement("option");
                     optAll.value = "all";
-                    optAll.textContent = "Semua Konveyor";
+                    optAll.textContent = "Semua Conveyor";
                     if (selectedVal === 'all') {
                         optAll.selected = true;
                     }
@@ -738,8 +736,8 @@
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.end_number || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.specification || '-'}</td>
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.actual || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.area_ditemukan || '-'}</td>
-                                <td class="py-4 text-xs font-bold px-4"><span class="inline-block px-2 py-0.5 rounded border ${item.category_badge_class || 'border-amber-200 bg-amber-50 text-amber-700'} tracking-wider">${item.category_label || 'Belum Terklasifikasi'}</span></td>
+                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${(item.jenis_defect === 'Zero Defect' || item.quantity == 0) ? '-' : (item.area_ditemukan || '-')}</td>
+                                <td class="py-4 text-xs font-bold px-4"><span class="inline-block px-2 py-0.5 rounded border ${item.category_badge_class || 'border-gray-200 bg-gray-50 text-gray-600'} tracking-wider">${item.category_label || ((item.jenis_defect === 'Zero Defect' || item.quantity == 0) ? 'Zero Defect' : '-')}</span></td>
                                 <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.job_station || '-'}</td>
                                 <td class="py-4 text-sm text-teal-700 font-bold text-center px-4">${item.inspect_quantity ?? 0}</td>
                                 <td class="py-4 text-sm text-gray-900 font-bold text-center px-4">${item.quantity || 0}</td>

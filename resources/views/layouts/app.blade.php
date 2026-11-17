@@ -30,13 +30,13 @@
     </style>
     @stack('styles')
 </head>
-<body class="bg-canvas text-gray-800 h-screen overflow-hidden flex antialiased">
+<body class="bg-canvas text-gray-800 min-h-screen min-h-[100dvh] flex antialiased">
 
     <!-- Admin Left Sidebar Partial -->
     @include('partials.sidebar')
 
     <!-- Main Workspace Area -->
-    <main class="flex-1 overflow-y-auto px-6 lg:px-10 py-8 flex flex-col justify-start">
+    <main class="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 py-6 sm:py-8 flex flex-col justify-start">
         @yield('content')
     </main>
 

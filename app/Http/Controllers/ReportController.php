@@ -55,11 +55,16 @@ class ReportController extends Controller
         $baseFinalQuery = Defect::query()->filterFinalAssy($request);
 
         // 3. Invarian Mutlak Non-Rework:
-        // Internal + Assembly + Belum Terklasifikasi = Total Final Assy Non-Rework
+        // Internal + Assembly (+ data lama tanpa area jika ada) = Total Final Assy Non-Rework (Defect)
         $totalFinalAssyNonRework = (clone $baseFinalQuery)->finalAssyReport()->count();
-        $totalInternal = (clone $baseFinalQuery)->finalAssyInternal()->count();
-        $totalAssembly = (clone $baseFinalQuery)->finalAssyAssembly()->count();
-        $totalUnclassified = (clone $baseFinalQuery)->finalAssyUnclassified()->count();
+        $totalZeroDefect = (clone $baseFinalQuery)->finalAssyReport()->where(function ($q) {
+            $q->where('jenis_defect', 'Zero Defect')->orWhere('quantity', 0);
+        })->count();
+        $totalActualDefects = $totalFinalAssyNonRework - $totalZeroDefect;
+
+        $totalInternal = (clone $baseFinalQuery)->finalAssyInternalDefect()->count();
+        $totalAssembly = (clone $baseFinalQuery)->finalAssyAssemblyDefect()->count();
+        $totalUnclassified = 0;
 
         // Riwayat Rework (sebagai record riwayat, tidak di-double count ke total defect utama)
         $reworkBaseQuery = (clone $baseFinalQuery)
@@ -73,9 +78,9 @@ class ReportController extends Controller
 
         // Total PCS (sum quantity) untuk Kartu KPI (Opsi A)
         $pcsFinalAssyNonRework = (int) (clone $baseFinalQuery)->finalAssyReport()->sum('quantity');
-        $pcsInternal = (int) (clone $baseFinalQuery)->finalAssyInternal()->sum('quantity');
-        $pcsAssembly = (int) (clone $baseFinalQuery)->finalAssyAssembly()->sum('quantity');
-        $pcsUnclassified = (int) (clone $baseFinalQuery)->finalAssyUnclassified()->sum('quantity');
+        $pcsInternal = (int) (clone $baseFinalQuery)->finalAssyInternalDefect()->sum('quantity');
+        $pcsAssembly = (int) (clone $baseFinalQuery)->finalAssyAssemblyDefect()->sum('quantity');
+        $pcsUnclassified = 0;
         $pcsRework = (int) (clone $reworkBaseQuery)->sum('quantity');
 
         // 4. Query data defect utama sesuai category yang dipilih
@@ -85,11 +90,11 @@ class ReportController extends Controller
             $query = (clone $baseFinalQuery)->with(['finalInspectType', 'areaDitemukanRef']);
 
             if ($selectedCategory === 'internal') {
-                $query->finalAssyInternal();
+                $query->finalAssyInternalDefect();
             } elseif ($selectedCategory === 'assembly') {
-                $query->finalAssyAssembly();
+                $query->finalAssyAssemblyDefect();
             } elseif ($selectedCategory === 'unclassified') {
-                $query->finalAssyUnclassified();
+                $query->whereRaw('1 = 0');
             } else {
                 $query->finalAssyReport();
             }
@@ -127,6 +132,8 @@ class ReportController extends Controller
             'selectedPattern'         => $selectedPattern,
             'selectedCategory'        => $selectedCategory,
             'totalFinalAssyNonRework' => $totalFinalAssyNonRework,
+            'totalActualDefects'      => $totalActualDefects,
+            'totalZeroDefect'         => $totalZeroDefect,
             'totalInternal'           => $totalInternal,
             'totalAssembly'           => $totalAssembly,
             'totalUnclassified'       => $totalUnclassified,
@@ -238,20 +245,25 @@ class ReportController extends Controller
         }
 
         // 3. Invarian Mutlak Pre Assy:
-        // Internal Defect (Inspektor) + Assembly Defect (Operator) + Tidak Diketahui = Total Pre Assy
-        $totalPreAssy = (clone $basePreQuery)->count();
-        $totalInternal = (clone $basePreQuery)->preAssyInternal()->count();
-        $totalAssembly = (clone $basePreQuery)->preAssyAssembly()->count();
+        // Internal Defect (Inspektor) + Assembly Defect (Operator) (+ data lama tanpa penemu jika ada) = Total Defect Pre Assy
+        $totalPreAssy = (clone $basePreQuery)->operatorInput()->count();
+        $totalZeroDefect = (clone $basePreQuery)->operatorInput()->where(function ($q) {
+            $q->where('jenis_defect', 'Zero Defect')->orWhere('quantity', 0);
+        })->count();
+        $totalDefectPreAssy = $totalPreAssy - $totalZeroDefect;
+
+        $totalInternal = (clone $basePreQuery)->preAssyInspektor()->count();
+        $totalAssembly = (clone $basePreQuery)->preAssyOperator()->count();
         $totalProcess = $totalAssembly; // Backward-compatibility
         $totalUnknown = (clone $basePreQuery)->preAssyUnknown()->count();
 
         // 4. Query data defect utama sesuai category yang dipilih
-        $query = (clone $basePreQuery)->with(['carline', 'inspectProcessType']);
+        $query = (clone $basePreQuery)->operatorInput()->with(['carline', 'inspectProcessType']);
 
-        if ($selectedCategory === 'internal') {
-            $query->preAssyInternal();
-        } elseif ($selectedCategory === 'assembly' || $selectedCategory === 'process') {
-            $query->preAssyAssembly();
+        if ($selectedCategory === 'internal' || $selectedCategory === 'inspektor') {
+            $query->preAssyInspektor();
+        } elseif ($selectedCategory === 'assembly' || $selectedCategory === 'process' || $selectedCategory === 'operator') {
+            $query->preAssyOperator();
         } elseif ($selectedCategory === 'unknown') {
             $query->preAssyUnknown();
         }
@@ -286,6 +298,8 @@ class ReportController extends Controller
             'selectedCarline'    => $selectedCarline,
             'selectedCategory'   => $selectedCategory,
             'totalPreAssy'       => $totalPreAssy,
+            'totalDefectPreAssy' => $totalDefectPreAssy,
+            'totalZeroDefect'    => $totalZeroDefect,
             'totalInternal'      => $totalInternal,
             'totalAssembly'      => $totalAssembly,
             'totalProcess'       => $totalProcess,
@@ -408,22 +422,21 @@ class ReportController extends Controller
      */
     public function finalAssyChartData(Request $request): \Illuminate\Http\JsonResponse
     {
-        $baseQuery = Defect::query()->filterFinalAssy($request);
+        $baseQuery = Defect::query()->filterFinalAssy($request)
+            ->where(function ($q) {
+                $q->whereNull('jenis_defect')
+                  ->orWhere('jenis_defect', '!=', 'Zero Defect');
+            })
+            ->where('quantity', '>', 0);
 
-        // Agregasi per jenis_defect untuk 3 kategori non-rework
-        $internalData = (clone $baseQuery)->finalAssyInternal()
+        // Agregasi per jenis_defect untuk kategori non-rework (Internal & Assembly)
+        $internalData = (clone $baseQuery)->finalAssyInternalDefect()
             ->selectRaw('jenis_defect, SUM(quantity) as total_pcs, COUNT(*) as total_count')
             ->groupBy('jenis_defect')
             ->get()
             ->keyBy('jenis_defect');
 
-        $assemblyData = (clone $baseQuery)->finalAssyAssembly()
-            ->selectRaw('jenis_defect, SUM(quantity) as total_pcs, COUNT(*) as total_count')
-            ->groupBy('jenis_defect')
-            ->get()
-            ->keyBy('jenis_defect');
-
-        $unclassifiedData = (clone $baseQuery)->finalAssyUnclassified()
+        $assemblyData = (clone $baseQuery)->finalAssyAssemblyDefect()
             ->selectRaw('jenis_defect, SUM(quantity) as total_pcs, COUNT(*) as total_count')
             ->groupBy('jenis_defect')
             ->get()
@@ -432,7 +445,6 @@ class ReportController extends Controller
         // Kumpulkan semua jenis defect unik
         $allDefects = $internalData->keys()
             ->merge($assemblyData->keys())
-            ->merge($unclassifiedData->keys())
             ->unique();
 
         // Hitung total PCS tiap jenis defect untuk Pareto sorting
@@ -440,8 +452,7 @@ class ReportController extends Controller
         foreach ($allDefects as $defectName) {
             $intPcs = (int) ($internalData->get($defectName)?->total_pcs ?? 0);
             $asmPcs = (int) ($assemblyData->get($defectName)?->total_pcs ?? 0);
-            $uncPcs = (int) ($unclassifiedData->get($defectName)?->total_pcs ?? 0);
-            $defectTotals[$defectName] = $intPcs + $asmPcs + $uncPcs;
+            $defectTotals[$defectName] = $intPcs + $asmPcs;
         }
 
         // Urutkan terbesar ke terkecil (Pareto)
@@ -457,11 +468,9 @@ class ReportController extends Controller
         $internalCounts = [];
         $assemblyPcs = [];
         $assemblyCounts = [];
-        $unclassifiedPcs = [];
-        $unclassifiedCounts = [];
 
         foreach ($topDefects as $defectName) {
-            $labelName = ($defectName === '' || $defectName === null) ? 'Tidak Diketahui' : (string) $defectName;
+            $labelName = ($defectName === '' || $defectName === null) ? '-' : (string) $defectName;
             $labels[] = $labelName;
 
             $iPcs = (int) ($internalData->get($defectName)?->total_pcs ?? 0);
@@ -473,17 +482,11 @@ class ReportController extends Controller
             $aCnt = (int) ($assemblyData->get($defectName)?->total_count ?? 0);
             $assemblyPcs[] = $aPcs;
             $assemblyCounts[] = $aCnt;
-
-            $uPcs = (int) ($unclassifiedData->get($defectName)?->total_pcs ?? 0);
-            $uCnt = (int) ($unclassifiedData->get($defectName)?->total_count ?? 0);
-            $unclassifiedPcs[] = $uPcs;
-            $unclassifiedCounts[] = $uCnt;
         }
 
         if (!empty($otherDefects)) {
             $otherIPcs = 0; $otherICnt = 0;
             $otherAPcs = 0; $otherACnt = 0;
-            $otherUPcs = 0; $otherUCnt = 0;
 
             foreach ($otherDefects as $defectName) {
                 $otherIPcs += (int) ($internalData->get($defectName)?->total_pcs ?? 0);
@@ -491,9 +494,6 @@ class ReportController extends Controller
 
                 $otherAPcs += (int) ($assemblyData->get($defectName)?->total_pcs ?? 0);
                 $otherACnt += (int) ($assemblyData->get($defectName)?->total_count ?? 0);
-
-                $otherUPcs += (int) ($unclassifiedData->get($defectName)?->total_pcs ?? 0);
-                $otherUCnt += (int) ($unclassifiedData->get($defectName)?->total_count ?? 0);
             }
 
             $labels[] = 'Lainnya';
@@ -501,8 +501,6 @@ class ReportController extends Controller
             $internalCounts[] = $otherICnt;
             $assemblyPcs[] = $otherAPcs;
             $assemblyCounts[] = $otherACnt;
-            $unclassifiedPcs[] = $otherUPcs;
-            $unclassifiedCounts[] = $otherUCnt;
         }
 
         $datasets = [
@@ -522,13 +520,147 @@ class ReportController extends Controller
                 'data' => $assemblyPcs,
                 'counts' => $assemblyCounts,
             ],
+        ];
+
+        return response()->json([
+            'labels' => $labels,
+            'datasets' => $datasets,
+            'summary' => [
+                'total_pcs' => array_sum($internalPcs) + array_sum($assemblyPcs),
+                'total_count' => array_sum($internalCounts) + array_sum($assemblyCounts),
+                'internal_pcs' => array_sum($internalPcs),
+                'assembly_pcs' => array_sum($assemblyPcs),
+            ],
+        ]);
+    }
+
+    /**
+     * API Chart Data Pre Assy (Stacked PCS per Jenis Defect) untuk submenu All
+     */
+    public function preAssyChartData(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $baseQuery = Defect::query()->where('jenis_assy', 'Pre Assy')
+            ->where(function ($q) {
+                $q->whereNull('jenis_defect')
+                  ->orWhere('jenis_defect', '!=', 'Zero Defect');
+            })
+            ->where('quantity', '>', 0);
+
+        $dateRange        = $request->input('date_range');
+        $selectedDefect   = $request->input('defect');
+        $selectedLine     = $request->input('line');
+        $selectedCarline  = $request->input('carline') ?? $request->input('conveyor');
+
+        if ($dateRange) {
+            $dates = explode(' to ', $dateRange);
+            if (count($dates) === 2) {
+                $baseQuery->whereBetween('waktu', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[1])->endOfDay()]);
+            } else if (count($dates) === 1) {
+                $baseQuery->whereBetween('waktu', [Carbon::parse($dates[0])->startOfDay(), Carbon::parse($dates[0])->endOfDay()]);
+            }
+        }
+
+        if ($selectedDefect && $selectedDefect !== 'all') {
+            $baseQuery->where('jenis_defect', $selectedDefect);
+        }
+
+        if ($selectedLine && $selectedLine !== 'all') {
+            $baseQuery->where('jenis_mobil', $selectedLine);
+        }
+
+        if ($selectedCarline && $selectedCarline !== 'all') {
+            $baseQuery->where(function ($q) use ($selectedCarline) {
+                if (is_numeric($selectedCarline)) {
+                    $q->where('carline_id', $selectedCarline);
+                } else {
+                    $q->whereHas('carline', function ($sub) use ($selectedCarline) {
+                        $sub->where('name', $selectedCarline);
+                    })->orWhere('conveyor', $selectedCarline);
+                }
+            });
+        }
+
+        $inspektorData = (clone $baseQuery)->preAssyInspektor()
+            ->selectRaw('jenis_defect, SUM(quantity) as total_pcs, COUNT(*) as total_count')
+            ->groupBy('jenis_defect')
+            ->get()
+            ->keyBy('jenis_defect');
+
+        $operatorData = (clone $baseQuery)->preAssyOperator()
+            ->selectRaw('jenis_defect, SUM(quantity) as total_pcs, COUNT(*) as total_count')
+            ->groupBy('jenis_defect')
+            ->get()
+            ->keyBy('jenis_defect');
+
+        $allDefects = $inspektorData->keys()
+            ->merge($operatorData->keys())
+            ->unique();
+
+        $defectTotals = [];
+        foreach ($allDefects as $defectName) {
+            $iPcs = (int) ($inspektorData->get($defectName)?->total_pcs ?? 0);
+            $oPcs = (int) ($operatorData->get($defectName)?->total_pcs ?? 0);
+            $defectTotals[$defectName] = $iPcs + $oPcs;
+        }
+
+        arsort($defectTotals);
+
+        $topLimit = 15;
+        $topDefects = array_slice(array_keys($defectTotals), 0, $topLimit);
+        $otherDefects = array_slice(array_keys($defectTotals), $topLimit);
+
+        $labels = [];
+        $inspektorPcs = [];
+        $inspektorCounts = [];
+        $operatorPcs = [];
+        $operatorCounts = [];
+
+        foreach ($topDefects as $defectName) {
+            $labelName = ($defectName === '' || $defectName === null) ? '-' : (string) $defectName;
+            $labels[] = $labelName;
+
+            $inspektorPcs[] = (int) ($inspektorData->get($defectName)?->total_pcs ?? 0);
+            $inspektorCounts[] = (int) ($inspektorData->get($defectName)?->total_count ?? 0);
+
+            $operatorPcs[] = (int) ($operatorData->get($defectName)?->total_pcs ?? 0);
+            $operatorCounts[] = (int) ($operatorData->get($defectName)?->total_count ?? 0);
+        }
+
+        if (!empty($otherDefects)) {
+            $otherIPcs = 0; $otherICnt = 0;
+            $otherOPcs = 0; $otherOCnt = 0;
+
+            foreach ($otherDefects as $defectName) {
+                $otherIPcs += (int) ($inspektorData->get($defectName)?->total_pcs ?? 0);
+                $otherICnt += (int) ($inspektorData->get($defectName)?->total_count ?? 0);
+
+                $otherOPcs += (int) ($operatorData->get($defectName)?->total_pcs ?? 0);
+                $otherOCnt += (int) ($operatorData->get($defectName)?->total_count ?? 0);
+            }
+
+            $labels[] = 'Lainnya';
+            $inspektorPcs[] = $otherIPcs;
+            $inspektorCounts[] = $otherICnt;
+            $operatorPcs[] = $otherOPcs;
+            $operatorCounts[] = $otherOCnt;
+        }
+
+        $datasets = [
             [
-                'label' => 'Belum Terklasifikasi',
+                'label' => 'Ditemukan oleh Inspektor',
+                'backgroundColor' => 'rgba(37, 99, 235, 0.85)', // blue-600
+                'borderColor' => '#1d4ed8',
+                'borderWidth' => 1,
+                'data' => $inspektorPcs,
+                'counts' => $inspektorCounts,
+            ],
+            [
+                'label' => 'Ditemukan oleh Operator',
                 'backgroundColor' => 'rgba(245, 158, 11, 0.85)', // amber-500
                 'borderColor' => '#d97706',
                 'borderWidth' => 1,
-                'data' => $unclassifiedPcs,
-                'counts' => $unclassifiedCounts,
+                'data' => $operatorPcs,
+                'counts' => $operatorCounts,
             ],
         ];
 
@@ -536,11 +668,10 @@ class ReportController extends Controller
             'labels' => $labels,
             'datasets' => $datasets,
             'summary' => [
-                'total_pcs' => array_sum($internalPcs) + array_sum($assemblyPcs) + array_sum($unclassifiedPcs),
-                'total_count' => array_sum($internalCounts) + array_sum($assemblyCounts) + array_sum($unclassifiedCounts),
-                'internal_pcs' => array_sum($internalPcs),
-                'assembly_pcs' => array_sum($assemblyPcs),
-                'unclassified_pcs' => array_sum($unclassifiedPcs),
+                'total_pcs' => array_sum($inspektorPcs) + array_sum($operatorPcs),
+                'total_count' => array_sum($inspektorCounts) + array_sum($operatorCounts),
+                'inspektor_pcs' => array_sum($inspektorPcs),
+                'operator_pcs' => array_sum($operatorPcs),
             ],
         ]);
     }
@@ -697,6 +828,11 @@ class ReportController extends Controller
 
         $type = $request->input('type', 'Final Assy');
 
+        $allAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]);
+        $finalAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::finalAssy()->orderBy('name')->get() : collect([]);
+        $preAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::preAssy()->orderBy('name')->get() : collect([]);
+        $reworkAreas = $allAreas;
+
         return view('input_defect', [
             'type'                  => $type,
             'carTypes'              => CarType::with('carlines')->orderBy('name')->get(),
@@ -705,7 +841,10 @@ class ReportController extends Controller
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
             'finalAssyInspectTypes' => FinalAssyInspectType::orderBy('name')->get(),
-            'areaDitemukanList'     => Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]),
+            'areaDitemukanList'     => $allAreas,
+            'areaDitemukanFinal'    => $finalAreas->isNotEmpty() ? $finalAreas : $allAreas,
+            'areaDitemukanPre'      => $preAreas->isNotEmpty() ? $preAreas : $allAreas,
+            'areaDitemukanRework'   => $reworkAreas->isNotEmpty() ? $reworkAreas : $allAreas,
         ]);
     }
 
@@ -737,7 +876,9 @@ class ReportController extends Controller
 
         $allowedAreaDitemukan = Schema::hasTable('area_ditemukans')
             ? AreaDitemukan::pluck('name')->toArray()
-            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI'];
+            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI', 'Manual Crimping', 'Join Crimping', 'Wonder', 'Cutting', 'Raychem'];
+
+        $isZeroDefect = ($request->input('jenis_defect') === 'Zero Defect');
 
         $validated = $request->validate([
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
@@ -749,10 +890,10 @@ class ReportController extends Controller
             'sub_defect'               => 'nullable|string|max:255',
             'jumlah'                   => 'required|integer|min:0',
             'inspect_quantity'         => 'nullable|integer|min:0',
-            'end_number'               => 'nullable|string|max:255',
+            'end_number'               => ($isPreAssy || $isZeroDefect) ? 'nullable|string|max:255' : 'required|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => ['nullable', 'string', Rule::in($allowedAreaDitemukan)],
+            'area_ditemukan'           => $isZeroDefect ? ['nullable', 'string', Rule::in($allowedAreaDitemukan)] : ['required', 'string', Rule::in($allowedAreaDitemukan)],
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
@@ -765,7 +906,13 @@ class ReportController extends Controller
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
-            'ditemukan_oleh'           => $isPreAssy ? 'required|in:Inspektor,Operator' : 'nullable|in:Inspektor,Operator',
+            'ditemukan_oleh'           => ($isPreAssy && !$isZeroDefect) ? 'required|in:Inspektor,Operator' : 'nullable|in:Inspektor,Operator',
+        ], [
+            'end_number.required'     => 'Nomor End (#) wajib diisi.',
+            'area_ditemukan.required' => 'Area ditemukan wajib diisi.',
+            'area_ditemukan.in'       => 'Area ditemukan yang dipilih tidak valid.',
+            'ditemukan_oleh.required' => 'Ditemukan oleh wajib dipilih.',
+            'ditemukan_oleh.in'       => 'Ditemukan oleh yang dipilih tidak valid.',
         ]);
 
         $userName = session('user_name', 'Operator');
@@ -773,9 +920,22 @@ class ReportController extends Controller
 
         $isPreAssy = $validated['type'] === 'Pre Assy';
         $finalInspectTypeId = (!$isPreAssy && $isApplicable) ? ($validated['final_inspect_type_id'] ?? null) : null;
-        $isZeroDefect = ($validated['jenis_defect'] ?? '') === 'Zero Defect';
         $subDefect = $isZeroDefect ? '-' : ($validated['sub_defect'] ?? '-');
         $quantity = $isZeroDefect ? 0 : $validated['jumlah'];
+        $areaDitemukan = $isZeroDefect ? null : ($validated['area_ditemukan'] ?? null);
+
+        // Batch 4: end_number hanya untuk Final Assy non-Zero Defect; selain itu paksa null.
+        $endNumber = (!$isPreAssy && !$isZeroDefect && filled($validated['end_number'] ?? null))
+            ? trim((string) $validated['end_number'])
+            : null;
+
+        // Batch 4: specification opsional Final Assy non-Zero Defect; actual dipaksa null jika specification kosong.
+        $specification = (!$isPreAssy && !$isZeroDefect && filled($validated['specification'] ?? null))
+            ? trim((string) $validated['specification'])
+            : null;
+        $actual = ($specification !== null && filled($validated['actual'] ?? null))
+            ? trim((string) $validated['actual'])
+            : null;
 
         $defect = Defect::create([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
@@ -788,16 +948,14 @@ class ReportController extends Controller
             'jenis_sub_defect'         => $subDefect,
             'quantity'                 => $quantity,
             'inspect_quantity'         => $validated['inspect_quantity'] ?? null,
-            'end_number'               => $validated['end_number'] ?? null,
-            'specification'            => $validated['specification'] ?? null,
-            'actual'                   => $validated['actual'] ?? null,
-            'area_ditemukan'           => $validated['area_ditemukan'] ?? null,
+            'end_number'               => $endNumber,
+            'specification'            => $specification,
+            'actual'                   => $actual,
+            'area_ditemukan'           => $areaDitemukan,
             'job_station'              => $validated['job_station'] ?? null,
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
             'no_mesin'                 => $validated['no_mesin'] ?? null,
-            'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
-            'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
             'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
             'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
             // Kolom baru master data
@@ -806,7 +964,7 @@ class ReportController extends Controller
             'final_inspect_type_id'    => filled($finalInspectTypeId) ? $finalInspectTypeId : null,
             'defect_type_id'           => filled($validated['defect_type_id'] ?? null) ? $validated['defect_type_id'] : null,
             'sub_defect_type_id'       => $isZeroDefect ? null : (filled($validated['sub_defect_type_id'] ?? null) ? $validated['sub_defect_type_id'] : null),
-            'ditemukan_oleh'           => $isPreAssy ? ($validated['ditemukan_oleh'] ?? null) : null,
+            'ditemukan_oleh'           => ($isPreAssy && !$isZeroDefect) ? ($validated['ditemukan_oleh'] ?? null) : null,
         ]);
 
         $lineOrCarline = $isPreAssy ? ($defect->carline?->name ?? '-') : ($validated['jenis_mobil'] . ' (' . ($validated['conveyor'] ?? '-') . ')');
@@ -863,6 +1021,11 @@ class ReportController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk mengedit laporan ini.');
         }
 
+        $allAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]);
+        $finalAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::finalAssy()->orderBy('name')->get() : collect([]);
+        $preAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::preAssy()->orderBy('name')->get() : collect([]);
+        $reworkAreas = $allAreas;
+
         return view('input_defect', [
             'type'                  => $defect->jenis_assy,
             'defect'                => $defect,
@@ -872,7 +1035,10 @@ class ReportController extends Controller
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
             'finalAssyInspectTypes' => FinalAssyInspectType::orderBy('name')->get(),
-            'areaDitemukanList'     => Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]),
+            'areaDitemukanList'     => $allAreas,
+            'areaDitemukanFinal'    => $finalAreas->isNotEmpty() ? $finalAreas : $allAreas,
+            'areaDitemukanPre'      => $preAreas->isNotEmpty() ? $preAreas : $allAreas,
+            'areaDitemukanRework'   => $reworkAreas->isNotEmpty() ? $reworkAreas : $allAreas,
         ]);
     }
 
@@ -896,7 +1062,8 @@ class ReportController extends Controller
         }
 
         $defectType = $defect->jenis_assy;
-        $isPreAssy = $defectType === 'Pre Assy';
+        $type = $request->input('type', $defectType);
+        $isPreAssy = $type === 'Pre Assy';
 
         if ($request->has('final_inspect_type_id') && ($request->input('final_inspect_type_id') === '' || $request->input('final_inspect_type_id') === null)) {
             $request->merge(['final_inspect_type_id' => null]);
@@ -909,17 +1076,18 @@ class ReportController extends Controller
             $request->merge(['no_defective_tag' => filled($request->input('no_defective_tag')) ? trim((string) $request->input('no_defective_tag')) : null]);
         }
 
-        $type = $request->input('type', $defectType);
         $jenisMobil = $request->input('jenis_mobil', $defect->jenis_mobil);
         $conveyor = $request->input('conveyor', $defect->conveyor);
         $isApplicable = $this->isFinalInspectTypeApplicable($type, $jenisMobil, $conveyor);
 
         $allowedAreaDitemukan = Schema::hasTable('area_ditemukans')
             ? AreaDitemukan::pluck('name')->toArray()
-            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI'];
+            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI', 'Manual Crimping', 'Join Crimping', 'Wonder', 'Cutting', 'Raychem'];
         if (!empty($defect->area_ditemukan) && !in_array($defect->area_ditemukan, $allowedAreaDitemukan)) {
             $allowedAreaDitemukan[] = $defect->area_ditemukan;
         }
+
+        $isZeroDefect = ($request->input('jenis_defect') === 'Zero Defect');
 
         $validated = $request->validate([
             'type'                     => 'nullable|string|in:Final Assy,Pre Assy',
@@ -931,10 +1099,10 @@ class ReportController extends Controller
             'sub_defect'               => 'nullable|string|max:255',
             'jumlah'                   => 'required|integer|min:0',
             'inspect_quantity'         => 'nullable|integer|min:0',
-            'end_number'               => 'nullable|string|max:255',
+            'end_number'               => ($isPreAssy || $isZeroDefect) ? 'nullable|string|max:255' : 'required|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => ['nullable', 'string', Rule::in($allowedAreaDitemukan)],
+            'area_ditemukan'           => $isZeroDefect ? ['nullable', 'string', Rule::in($allowedAreaDitemukan)] : ['required', 'string', Rule::in($allowedAreaDitemukan)],
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
@@ -946,29 +1114,49 @@ class ReportController extends Controller
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
-            'ditemukan_oleh'           => 'nullable|in:Inspektor,Operator',
+            'ditemukan_oleh'           => ($isPreAssy && !$isZeroDefect) ? 'required|in:Inspektor,Operator' : 'nullable|in:Inspektor,Operator',
             'pattern'                  => 'nullable|string|max:255',
+        ], [
+            'end_number.required'     => 'Nomor End (#) wajib diisi.',
+            'area_ditemukan.required' => 'Area ditemukan wajib diisi.',
+            'area_ditemukan.in'       => 'Area ditemukan yang dipilih tidak valid.',
+            'ditemukan_oleh.required' => 'Ditemukan oleh wajib dipilih.',
+            'ditemukan_oleh.in'       => 'Ditemukan oleh yang dipilih tidak valid.',
         ]);
 
         $recordType = $validated['type'] ?? $defectType;
+        $isPreAssyRecord = $recordType === 'Pre Assy';
         $finalInspectTypeId = $this->resolveFinalInspectTypeIdForUpdate($defect, $validated, $isApplicable);
-        $isZeroDefect = ($validated['jenis_defect'] ?? '') === 'Zero Defect';
         $subDefect = $isZeroDefect ? '-' : ($validated['sub_defect'] ?? '-');
         $quantity = $isZeroDefect ? 0 : $validated['jumlah'];
+        $areaDitemukan = $isZeroDefect ? null : ($validated['area_ditemukan'] ?? null);
+
+        // Batch 4: end_number hanya untuk Final Assy non-Zero Defect; selain itu paksa null.
+        $endNumber = (!$isPreAssyRecord && !$isZeroDefect && filled($validated['end_number'] ?? null))
+            ? trim((string) $validated['end_number'])
+            : null;
+
+        // Batch 4: specification opsional Final Assy non-Zero Defect; actual dipaksa null jika specification kosong.
+        $specification = (!$isPreAssyRecord && !$isZeroDefect && filled($validated['specification'] ?? null))
+            ? trim((string) $validated['specification'])
+            : null;
+        $actual = ($specification !== null && filled($validated['actual'] ?? null))
+            ? trim((string) $validated['actual'])
+            : null;
 
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $recordType,
-            'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
-            'conveyor'                 => $isPreAssy ? (!empty($validated['carline_id']) ? null : $defect->conveyor) : ($validated['conveyor'] ?? null),
+            'jenis_mobil'              => $isPreAssyRecord ? null : ($validated['jenis_mobil'] ?? null),
+            'conveyor'                 => $isPreAssyRecord ? (!empty($validated['carline_id']) ? null : $defect->conveyor) : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
             'jenis_sub_defect'         => $subDefect,
             'quantity'                 => $quantity,
             'inspect_quantity'         => $validated['inspect_quantity'] ?? null,
-            'end_number'               => $validated['end_number'] ?? null,
-            'specification'            => $validated['specification'] ?? null,
-            'actual'                   => $validated['actual'] ?? null,
-            'area_ditemukan'           => $isPreAssy ? $defect->area_ditemukan : ($validated['area_ditemukan'] ?? null),
+            'end_number'               => $endNumber,
+            'specification'            => $specification,
+            'actual'                   => $actual,
+            'area_ditemukan'           => $areaDitemukan,
             'job_station'              => $validated['job_station'] ?? null,
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
@@ -980,7 +1168,7 @@ class ReportController extends Controller
             'final_inspect_type_id'    => filled($finalInspectTypeId) ? $finalInspectTypeId : null,
             'defect_type_id'           => filled($validated['defect_type_id'] ?? null) ? $validated['defect_type_id'] : null,
             'sub_defect_type_id'       => $isZeroDefect ? null : (filled($validated['sub_defect_type_id'] ?? null) ? $validated['sub_defect_type_id'] : null),
-            'ditemukan_oleh'           => $isPreAssy ? (filled($validated['ditemukan_oleh'] ?? null) ? $validated['ditemukan_oleh'] : null) : $defect->ditemukan_oleh,
+            'ditemukan_oleh'           => ($isPreAssyRecord && !$isZeroDefect) ? ($validated['ditemukan_oleh'] ?? null) : null,
             'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
@@ -1048,6 +1236,11 @@ class ReportController extends Controller
             return redirect()->route('rework.edit', $params);
         }
 
+        $allAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]);
+        $finalAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::finalAssy()->orderBy('name')->get() : collect([]);
+        $preAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::preAssy()->orderBy('name')->get() : collect([]);
+        $reworkAreas = $allAreas;
+
         return view('input_defect', [
             'type'                  => $defect->jenis_assy,
             'defect'                => $defect,
@@ -1058,7 +1251,10 @@ class ReportController extends Controller
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
             'finalAssyInspectTypes' => FinalAssyInspectType::orderBy('name')->get(),
-            'areaDitemukanList'     => Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]),
+            'areaDitemukanList'     => $allAreas,
+            'areaDitemukanFinal'    => $finalAreas->isNotEmpty() ? $finalAreas : $allAreas,
+            'areaDitemukanPre'      => $preAreas->isNotEmpty() ? $preAreas : $allAreas,
+            'areaDitemukanRework'   => $reworkAreas->isNotEmpty() ? $reworkAreas : $allAreas,
         ]);
     }
 
@@ -1074,7 +1270,8 @@ class ReportController extends Controller
         }
 
         $defectType = $defect->jenis_assy;
-        $isPreAssy = $defectType === 'Pre Assy';
+        $type = $request->input('type', $defectType);
+        $isPreAssy = $type === 'Pre Assy';
 
         if ($request->has('final_inspect_type_id') && ($request->input('final_inspect_type_id') === '' || $request->input('final_inspect_type_id') === null)) {
             $request->merge(['final_inspect_type_id' => null]);
@@ -1087,17 +1284,18 @@ class ReportController extends Controller
             $request->merge(['no_defective_tag' => filled($request->input('no_defective_tag')) ? trim((string) $request->input('no_defective_tag')) : null]);
         }
 
-        $type = $request->input('type', $defectType);
         $jenisMobil = $request->input('jenis_mobil', $defect->jenis_mobil);
         $conveyor = $request->input('conveyor', $defect->conveyor);
         $isApplicable = $this->isFinalInspectTypeApplicable($type, $jenisMobil, $conveyor);
 
         $allowedAreaDitemukan = Schema::hasTable('area_ditemukans')
             ? AreaDitemukan::pluck('name')->toArray()
-            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI'];
+            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI', 'Manual Crimping', 'Join Crimping', 'Wonder', 'Cutting', 'Raychem'];
         if (!empty($defect->area_ditemukan) && !in_array($defect->area_ditemukan, $allowedAreaDitemukan)) {
             $allowedAreaDitemukan[] = $defect->area_ditemukan;
         }
+
+        $isZeroDefect = ($request->input('jenis_defect') === 'Zero Defect');
 
         $validated = $request->validate([
             'type'                     => 'nullable|string|in:Final Assy,Pre Assy',
@@ -1109,10 +1307,10 @@ class ReportController extends Controller
             'sub_defect'               => 'nullable|string|max:255',
             'jumlah'                   => 'required|integer|min:0',
             'inspect_quantity'         => 'nullable|integer|min:0',
-            'end_number'               => 'nullable|string|max:255',
+            'end_number'               => ($isPreAssy || $isZeroDefect) ? 'nullable|string|max:255' : 'required|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => ['nullable', 'string', Rule::in($allowedAreaDitemukan)],
+            'area_ditemukan'           => $isZeroDefect ? ['nullable', 'string', Rule::in($allowedAreaDitemukan)] : ['required', 'string', Rule::in($allowedAreaDitemukan)],
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
@@ -1124,29 +1322,49 @@ class ReportController extends Controller
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
-            'ditemukan_oleh'           => 'nullable|in:Inspektor,Operator',
+            'ditemukan_oleh'           => ($isPreAssy && !$isZeroDefect) ? 'required|in:Inspektor,Operator' : 'nullable|in:Inspektor,Operator',
             'pattern'                  => 'nullable|string|max:255',
+        ], [
+            'end_number.required'     => 'Nomor End (#) wajib diisi.',
+            'area_ditemukan.required' => 'Area ditemukan wajib diisi.',
+            'area_ditemukan.in'       => 'Area ditemukan yang dipilih tidak valid.',
+            'ditemukan_oleh.required' => 'Ditemukan oleh wajib dipilih.',
+            'ditemukan_oleh.in'       => 'Ditemukan oleh yang dipilih tidak valid.',
         ]);
 
         $recordType = $validated['type'] ?? $defectType;
+        $isPreAssyRecord = $recordType === 'Pre Assy';
         $finalInspectTypeId = $this->resolveFinalInspectTypeIdForUpdate($defect, $validated, $isApplicable);
-        $isZeroDefect = ($validated['jenis_defect'] ?? '') === 'Zero Defect';
         $subDefect = $isZeroDefect ? '-' : ($validated['sub_defect'] ?? '-');
         $quantity = $isZeroDefect ? 0 : $validated['jumlah'];
+        $areaDitemukan = $isZeroDefect ? null : ($validated['area_ditemukan'] ?? null);
+
+        // Batch 4: end_number hanya untuk Final Assy non-Zero Defect; selain itu paksa null.
+        $endNumber = (!$isPreAssyRecord && !$isZeroDefect && filled($validated['end_number'] ?? null))
+            ? trim((string) $validated['end_number'])
+            : null;
+
+        // Batch 4: specification opsional Final Assy non-Zero Defect; actual dipaksa null jika specification kosong.
+        $specification = (!$isPreAssyRecord && !$isZeroDefect && filled($validated['specification'] ?? null))
+            ? trim((string) $validated['specification'])
+            : null;
+        $actual = ($specification !== null && filled($validated['actual'] ?? null))
+            ? trim((string) $validated['actual'])
+            : null;
 
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $recordType,
-            'jenis_mobil'              => $isPreAssy ? null : ($validated['jenis_mobil'] ?? null),
-            'conveyor'                 => $isPreAssy ? (!empty($validated['carline_id']) ? null : $defect->conveyor) : ($validated['conveyor'] ?? null),
+            'jenis_mobil'              => $isPreAssyRecord ? null : ($validated['jenis_mobil'] ?? null),
+            'conveyor'                 => $isPreAssyRecord ? (!empty($validated['carline_id']) ? null : $defect->conveyor) : ($validated['conveyor'] ?? null),
             'jenis_defect'             => $validated['jenis_defect'] ?? null,
             'jenis_sub_defect'         => $subDefect,
             'quantity'                 => $quantity,
             'inspect_quantity'         => $validated['inspect_quantity'] ?? null,
-            'end_number'               => $validated['end_number'] ?? null,
-            'specification'            => $validated['specification'] ?? null,
-            'actual'                   => $validated['actual'] ?? null,
-            'area_ditemukan'           => $isPreAssy ? $defect->area_ditemukan : ($validated['area_ditemukan'] ?? null),
+            'end_number'               => $endNumber,
+            'specification'            => $specification,
+            'actual'                   => $actual,
+            'area_ditemukan'           => $areaDitemukan,
             'job_station'              => $validated['job_station'] ?? null,
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
@@ -1158,7 +1376,7 @@ class ReportController extends Controller
             'final_inspect_type_id'    => filled($finalInspectTypeId) ? $finalInspectTypeId : null,
             'defect_type_id'           => filled($validated['defect_type_id'] ?? null) ? $validated['defect_type_id'] : null,
             'sub_defect_type_id'       => $isZeroDefect ? null : (filled($validated['sub_defect_type_id'] ?? null) ? $validated['sub_defect_type_id'] : null),
-            'ditemukan_oleh'           => $isPreAssy ? (filled($validated['ditemukan_oleh'] ?? null) ? $validated['ditemukan_oleh'] : null) : $defect->ditemukan_oleh,
+            'ditemukan_oleh'           => ($isPreAssyRecord && !$isZeroDefect) ? ($validated['ditemukan_oleh'] ?? null) : null,
             'pattern'                  => $validated['pattern'] ?? null,
         ]);
 
@@ -1221,11 +1439,11 @@ class ReportController extends Controller
         $query = Defect::with(['finalInspectType', 'areaDitemukanRef']);
 
         if ($selectedCategory === 'internal') {
-            $query->finalAssyInternal();
+            $query->finalAssyInternalDefect();
         } elseif ($selectedCategory === 'assembly') {
-            $query->finalAssyAssembly();
+            $query->finalAssyAssemblyDefect();
         } elseif ($selectedCategory === 'unclassified') {
-            $query->finalAssyUnclassified();
+            $query->whereRaw('1 = 0');
         } else {
             $query->finalAssyReport();
         }
@@ -1262,16 +1480,21 @@ class ReportController extends Controller
 
         $items = collect($records->items())->map(function ($item) {
             $array = $item->toArray();
-            $katReport = $item->areaDitemukanRef?->kategori_report ?: $item->areaDitemukanRef?->tipe;
-            if ($katReport === 'inspeksi') {
+            // BATCH 2: Evaluasi klasifikasi tipe baru
+            $tipeArea = $item->areaDitemukanRef?->tipe ?? AreaDitemukan::resolveTipeByName($item->area_ditemukan);
+            if ($item->jenis_defect === 'Zero Defect' || (int)$item->quantity === 0) {
+                $array['category_label'] = 'Zero Defect';
+                $array['category_badge_class'] = 'border-gray-200 bg-gray-50 text-gray-700';
+                $array['area_ditemukan'] = '-';
+            } elseif ($tipeArea === AreaDitemukan::TIPE_INTERNAL_DEFECT) {
                 $array['category_label'] = 'Internal Defect';
                 $array['category_badge_class'] = 'border-blue-200 bg-blue-50 text-blue-700';
-            } elseif ($katReport === 'assembly') {
+            } elseif ($tipeArea === AreaDitemukan::TIPE_ASSEMBLY_DEFECT) {
                 $array['category_label'] = 'Assembly Defect';
                 $array['category_badge_class'] = 'border-emerald-200 bg-emerald-50 text-emerald-700';
             } else {
-                $array['category_label'] = 'Belum Terklasifikasi';
-                $array['category_badge_class'] = 'border-amber-200 bg-amber-50 text-amber-700';
+                $array['category_label'] = '-';
+                $array['category_badge_class'] = 'border-gray-200 bg-gray-50 text-gray-600';
             }
             return $array;
         });
@@ -1289,12 +1512,12 @@ class ReportController extends Controller
     public function preAssyLive(Request $request)
     {
         $selectedCategory = $request->input('category', 'all');
-        $query = Defect::with(['carline', 'inspectProcessType'])->where('jenis_assy', 'Pre Assy');
+        $query = Defect::with(['carline', 'inspectProcessType'])->where('jenis_assy', 'Pre Assy')->operatorInput();
 
-        if ($selectedCategory === 'internal') {
-            $query->preAssyInternal();
-        } elseif ($selectedCategory === 'assembly' || $selectedCategory === 'process') {
-            $query->preAssyAssembly();
+        if ($selectedCategory === 'internal' || $selectedCategory === 'inspektor') {
+            $query->preAssyInspektor();
+        } elseif ($selectedCategory === 'assembly' || $selectedCategory === 'process' || $selectedCategory === 'operator') {
+            $query->preAssyOperator();
         } elseif ($selectedCategory === 'unknown') {
             $query->preAssyUnknown();
         }
@@ -1337,14 +1560,17 @@ class ReportController extends Controller
             $array = $item->toArray();
             $array['carline_name'] = $item->carline?->name ?? $item->conveyor ?? '-';
             $array['inspect_process_type_name'] = $item->inspectProcessType?->name ?? '-';
-            if ($item->ditemukan_oleh === 'Inspektor') {
-                $array['ditemukan_label'] = 'Internal Defect (Inspektor)';
+            if ($item->jenis_defect === 'Zero Defect' || (int)$item->quantity === 0) {
+                $array['ditemukan_label'] = 'Zero Defect';
+                $array['ditemukan_badge_class'] = 'border-gray-200 bg-gray-50 text-gray-700';
+            } elseif ($item->ditemukan_oleh === 'Inspektor') {
+                $array['ditemukan_label'] = 'Inspektor';
                 $array['ditemukan_badge_class'] = 'border-blue-200 bg-blue-50 text-blue-700';
             } elseif ($item->ditemukan_oleh === 'Operator') {
-                $array['ditemukan_label'] = 'Assembly Defect (Operator)';
+                $array['ditemukan_label'] = 'Operator';
                 $array['ditemukan_badge_class'] = 'border-amber-200 bg-amber-50 text-amber-700';
             } else {
-                $array['ditemukan_label'] = 'Tidak Diketahui';
+                $array['ditemukan_label'] = '-';
                 $array['ditemukan_badge_class'] = 'border-gray-200 bg-gray-50 text-gray-600';
             }
             return $array;

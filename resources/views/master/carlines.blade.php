@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Carline / Konveyor - IDRECT</title>
+    <title>Master Carline / Conveyor - IDRECT</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         [x-cloak] { display: none !important; }
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 h-screen overflow-hidden flex" x-data="{ editModal: false, editId: null, editCarTypeId: '', editName: '' }">
+<body class="bg-gray-50 text-gray-800 min-h-screen min-h-[100dvh] flex" x-data="{ editModal: false, editId: null, editCarTypeId: '', editName: '' }">
 
     @include('partials.sidebar')
 
     <!-- Main Content Area -->
-    <main class="flex-1 overflow-y-auto px-10 py-8 flex flex-col justify-start">
+    <main class="flex-1 min-w-0 px-4 sm:px-8 lg:px-10 py-6 sm:py-8 flex flex-col justify-start">
         
         <!-- Header -->
         <header class="flex justify-between items-center mb-8">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 leading-tight">Master Carline / Konveyor</h1>
+                <h1 class="text-2xl font-bold text-gray-900 leading-tight">Master Carline / Conveyor</h1>
                 <p class="text-sm text-gray-500 mt-1">Kelola data master line / conveyor berdasarkan jenis mobil.</p>
             </div>
             <div class="flex items-center space-x-3">
@@ -59,7 +59,7 @@
             <section class="bg-white border border-gray-100 rounded-lg p-6 shadow-sm h-fit">
                 <div class="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-100">
                     <svg class="w-5 h-5 text-[#8b0000]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    <h2 class="text-sm font-bold text-gray-900">Tambah Carline / Konveyor</h2>
+                    <h2 class="text-sm font-bold text-gray-900">Tambah Carline / Conveyor</h2>
                 </div>
 
                 <form action="{{ route('admin.master.carlines.store') }}" method="POST" class="space-y-4">
@@ -76,7 +76,7 @@
                     </div>
 
                     <div>
-                        <label for="name" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Nama Carline / Konveyor <span class="text-red-500">*</span></label>
+                        <label for="name" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Nama Carline / Conveyor <span class="text-red-500">*</span></label>
                         <input type="text" id="name" name="name" placeholder="Contoh: LINE 1, CONVEYOR A" value="{{ old('name') }}" required
                             class="w-full border border-gray-200 rounded-lg p-3 text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white uppercase">
                     </div>
@@ -92,7 +92,7 @@
             <section class="lg:col-span-2 bg-white border border-gray-100 rounded-lg p-6 shadow-sm flex flex-col justify-between">
                 <div>
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
-                        <h2 class="text-sm font-bold text-gray-900">Daftar Carline / Konveyor ({{ $carlines->total() }})</h2>
+                        <h2 class="text-sm font-bold text-gray-900">Daftar Carline / Conveyor ({{ $carlines->total() }})</h2>
                         
                         <!-- Filter Jenis Mobil -->
                         <form method="GET" action="{{ route('admin.master.carlines.index') }}" class="flex items-center space-x-2">
@@ -116,7 +116,7 @@
                                 <tr class="border-b border-gray-200">
                                     <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2 w-16">No</th>
                                     <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
-                                    <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Carline / Konveyor</th>
+                                    <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Carline / Conveyor</th>
                                     <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2 w-32">Aksi</th>
                                 </tr>
                             </thead>
@@ -179,7 +179,7 @@
     <div x-show="editModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100" @click.away="editModal = false">
             <div class="flex justify-between items-center pb-3 border-b border-gray-100 mb-4">
-                <h3 class="text-base font-bold text-gray-900">Edit Carline / Konveyor</h3>
+                <h3 class="text-base font-bold text-gray-900">Edit Carline / Conveyor</h3>
                 <button type="button" @click="editModal = false" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
@@ -200,7 +200,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Nama Carline / Konveyor <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Nama Carline / Conveyor <span class="text-red-500">*</span></label>
                     <input type="text" name="name" x-model="editName" required
                         class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] uppercase">
                 </div>

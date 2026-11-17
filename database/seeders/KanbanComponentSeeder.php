@@ -22,7 +22,7 @@ class KanbanComponentSeeder extends Seeder
             ],
             [
                 'component_key' => KanbanComponent::KEY_CONVEYOR,
-                'label'         => 'Konveyor',
+                'label'         => 'Conveyor',
                 'sequence'      => 2,
                 'delimiter'     => '.',
             ],

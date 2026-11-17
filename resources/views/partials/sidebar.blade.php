@@ -10,30 +10,70 @@
     x-data="{ 
         collapsed: (function() {
             try {
-                return localStorage.getItem('sidebar_collapsed') === 'true';
+                var stored = localStorage.getItem('sidebar_collapsed');
+                if (stored !== null) return stored === 'true';
+                return window.innerWidth < 1024;
             } catch (e) {
                 return false;
             }
         })(),
+        isMobile: window.innerWidth < 768,
         finalAssyOpen: {{ $isFinalAssyActive ? 'true' : 'false' }},
         preAssyOpen: {{ $isPreAssyActive ? 'true' : 'false' }},
         riwayatOpen: {{ $isRiwayatActive ? 'true' : 'false' }},
         masterOpen: {{ $isMasterActive ? 'true' : 'false' }},
         logoutModal: false,
+        updateBodyScroll() {
+            if (this.isMobile && !this.collapsed) {
+                document.body.classList.add('overflow-hidden');
+            } else {
+                document.body.classList.remove('overflow-hidden');
+            }
+        },
         toggleSidebar() {
             this.collapsed = !this.collapsed;
             try {
                 localStorage.setItem('sidebar_collapsed', this.collapsed ? 'true' : 'false');
             } catch (e) {}
+            this.updateBodyScroll();
             setTimeout(() => {
                 window.dispatchEvent(new Event('resize'));
             }, 320);
+        },
+        closeMobileSidebar() {
+            if (this.isMobile) {
+                this.collapsed = true;
+                this.updateBodyScroll();
+            }
         }
     }" 
+    x-init="
+        window.addEventListener('resize', () => {
+            isMobile = window.innerWidth < 768;
+            updateBodyScroll();
+        });
+        updateBodyScroll();
+    "
     @transitionend="if ($event.target === $el && $event.propertyName === 'width') { window.dispatchEvent(new Event('resize')); }"
-    class="transition-all duration-300 ease-in-out bg-white flex flex-col justify-between shrink-0 h-full select-none w-64 border-r border-gray-200"
+    class="transition-all duration-300 ease-in-out bg-white flex flex-col justify-between shrink-0 select-none w-64 border-r border-gray-200 z-50 md:z-30 h-screen h-[100dvh] max-h-[100dvh] min-h-0 sticky top-0"
+    :class="{ 'fixed inset-y-0 left-0 shadow-2xl': isMobile, 'sticky top-0': !isMobile }"
     :style="collapsed ? 'width:0;border-right-width:0;overflow:hidden' : ''"
 >
+    <!-- Mobile Backdrop Overlay (only on mobile when open) -->
+    <div 
+        x-show="!collapsed && isMobile"
+        x-cloak
+        x-transition:enter="transition-opacity ease-linear duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition-opacity ease-linear duration-300"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        @click="closeMobileSidebar()"
+        class="fixed inset-0 bg-black/40 z-40 md:hidden backdrop-blur-xs"
+        aria-hidden="true"
+    ></div>
+
     <!-- Floating Open Tab (Fixed) -->
     <button 
         id="sidebarOpenBtn"
@@ -51,10 +91,10 @@
     </button>
 
     <!-- Sidebar Inner Container -->
-    <div class="w-64 flex flex-col justify-between h-full shrink-0">
-        <div class="overflow-y-auto flex-1 py-1">
+    <div class="w-64 flex flex-col justify-between h-full min-h-0 shrink-0">
+        <div class="overflow-y-auto min-h-0 flex-1 py-1 overscroll-contain [-webkit-overflow-scrolling:touch]">
             <!-- Logo Section -->
-            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
                 <div class="flex items-center space-x-3 min-w-0">
                     <img class="w-14 h-14 -ml-2 -my-3 object-contain shrink-0 drop-shadow-sm" src="{{ asset('images/logo-yazaki.jpg') }}" alt="Yazaki Logo">
                     <div class="min-w-0">
@@ -173,12 +213,12 @@
                     <a href="{{ route('pre_assy.internal') }}"
                        class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isPreInternal ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
                         <span class="w-1.5 h-1.5 rounded-full {{ $isPreInternal ? 'bg-white' : 'bg-gray-300 group-hover:bg-gray-500' }}"></span>
-                        <span>Internal Defect</span>
+                        <span>Ditemukan oleh Inspektor</span>
                     </a>
                     <a href="{{ route('pre_assy.assembly') }}"
                        class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isPreAssembly ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
                         <span class="w-1.5 h-1.5 rounded-full {{ $isPreAssembly ? 'bg-white' : 'bg-gray-300 group-hover:bg-gray-500' }}"></span>
-                        <span>Assembly Defect</span>
+                        <span>Ditemukan oleh Operator</span>
                     </a>
                 </div>
             </div>
@@ -251,7 +291,7 @@
                             <a href="{{ route('admin.master.carlines.index') }}" 
                                class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.carlines.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
                                 <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.carlines.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1.5 3 3.5 3s3.5-1 3.5-3V7c0-2-1.5-3-3.5-3S4 5 4 7zm9 0v10c0 2 1.5 3 3.5 3s3.5-1 3.5-3V7c0-2-1.5-3-3.5-3s-3.5 1-3.5 3z"></path></svg>
-                                <span>Carline / Konveyor</span>
+                                <span>Carline / Conveyor</span>
                             </a>
                             <a href="{{ route('admin.master.assy_numbers.index') }}" 
                                class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.assy_numbers.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
@@ -312,7 +352,7 @@
     </div>
 
     <!-- Logout Trigger Button -->
-    <div class="p-3 border-t border-gray-100 bg-gray-50/40">
+    <div class="p-3 border-t border-gray-100 bg-gray-50/40 shrink-0">
         <button type="button" @click="logoutModal = true" 
                 class="group w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-gray-700 hover:text-brand hover:bg-red-50/80 border border-transparent hover:border-red-100 transition-all duration-200 text-left">
             <div class="flex items-center space-x-3">

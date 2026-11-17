@@ -36,12 +36,14 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
 
         $query = Defect::with(['carline', 'inspectProcessType'])->where('jenis_assy', 'Pre Assy');
 
-        if ($selectedCategory === 'internal') {
-            $query->preAssyInternal();
-        } elseif ($selectedCategory === 'assembly' || $selectedCategory === 'process') {
-            $query->preAssyAssembly();
+        if ($selectedCategory === 'internal' || $selectedCategory === 'inspektor') {
+            $query->preAssyInspektor();
+        } elseif ($selectedCategory === 'assembly' || $selectedCategory === 'process' || $selectedCategory === 'operator') {
+            $query->preAssyOperator();
         } elseif ($selectedCategory === 'unknown') {
             $query->preAssyUnknown();
+        } else {
+            $query->operatorInput();
         }
 
         $dateRange = $this->request->input('date_range');
@@ -109,11 +111,17 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
 
     public function map($row): array
     {
-        $kategoriSumber = match ($row->ditemukan_oleh) {
-            'Inspektor' => 'Internal Defect (Inspektor)',
-            'Operator'  => 'Assembly Defect (Operator)',
-            default     => 'Tidak Diketahui',
-        };
+        $isZeroDefect = ($row->jenis_defect === 'Zero Defect' || (int)$row->quantity === 0);
+
+        if ($isZeroDefect) {
+            $kategoriSumber = 'Zero Defect';
+        } else {
+            $kategoriSumber = match ($row->ditemukan_oleh) {
+                'Inspektor' => 'Inspektor',
+                'Operator'  => 'Operator',
+                default     => '-',
+            };
+        }
 
         return [
             $row->id,

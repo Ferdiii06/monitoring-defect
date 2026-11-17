@@ -39,12 +39,12 @@ class ReworkDpmCalculationTest extends TestCase
     }
 
     /**
-     * Skenario a: 10 group rework, total 14 quantity defect -> DPM 1.400.000.
+     * Skenario a: 10 group rework tersimpan sebagai record murni, tidak masuk DPM trends.
      */
     public function test_scenario_a_ten_groups_with_fourteen_qty_yields_dpm_one_million_four_hundred_thousand(): void
     {
         $today = Carbon::today()->format('Y-m-d');
-        AreaDitemukan::create(['name' => 'AREA-RWK', 'tipe' => AreaDitemukan::TIPE_REWORK]);
+        AreaDitemukan::create(['name' => 'AREA-RWK', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         // 8 groups dengan quantity 1 (total 8)
         for ($i = 1; $i <= 8; $i++) {
@@ -76,24 +76,29 @@ class ReworkDpmCalculationTest extends TestCase
             ]);
         }
 
+        // Di Batch 2: rework adalah record murni, tidak masuk DPM trends
         $res = $this->actingAsAdmin()->getJson("/dashboard/analytics?mode=rework&assy=final&start_date={$today}&end_date={$today}&group_by=day");
         $res->assertStatus(200);
 
         $points = $res->json('dpm_final');
         $this->assertCount(1, $points);
-        $this->assertEquals(14, $points[0]['total_defect']);
-        $this->assertEquals(10, $points[0]['total_harness_rework']);
-        $this->assertEquals(1400000.0, $points[0]['dpm']);
+        $this->assertEquals(0, $points[0]['total_defect']);
+        $this->assertNull($points[0]['dpm']);
         $this->assertNull($points[0]['target']);
+
+        // Data rework tersimpan sebagai record murni
+        $this->assertEquals(10, Defect::reworkRecord()->distinct('rework_group_id')->count('rework_group_id'));
+        $this->assertEquals(14, Defect::reworkRecord()->sum('quantity'));
+        $this->assertEquals(0, Defect::operatorInput()->count());
     }
 
     /**
-     * Skenario b: 1 group dengan 3 baris defect -> penyebut tetap 1.
+     * Skenario b: 1 group dengan 3 baris defect tersimpan sebagai rework record.
      */
     public function test_scenario_b_one_group_with_three_defects_has_denominator_one(): void
     {
         $today = Carbon::today()->format('Y-m-d');
-        AreaDitemukan::create(['name' => 'AREA-RWK', 'tipe' => AreaDitemukan::TIPE_REWORK]);
+        AreaDitemukan::create(['name' => 'AREA-RWK', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         $groupId = (string) Str::uuid();
 
@@ -138,21 +143,23 @@ class ReworkDpmCalculationTest extends TestCase
 
         $points = $res->json('dpm_final');
         $this->assertCount(1, $points);
-        $this->assertEquals(3, $points[0]['total_defect']);
-        $this->assertEquals(1, $points[0]['total_harness_rework']);
-        $this->assertEquals(3000000.0, $points[0]['dpm']);
+        $this->assertEquals(0, $points[0]['total_defect']);
+        $this->assertNull($points[0]['dpm']);
+
+        $this->assertEquals(3, Defect::reworkRecord()->count());
+        $this->assertEquals(1, Defect::reworkRecord()->distinct('rework_group_id')->count('rework_group_id'));
     }
 
     /**
-     * Skenario c: Baris rework dengan area internal (mismatch) tidak masuk pembilang maupun penyebut.
+     * Skenario c: Pembeda hanya rework_group_id, bukan tipe area. Seluruh rework tidak masuk DPM.
      */
     public function test_scenario_c_mismatch_rework_with_internal_area_excluded_from_numerator_and_denominator(): void
     {
         $today = Carbon::today()->format('Y-m-d');
-        AreaDitemukan::create(['name' => 'AREA-RWK', 'tipe' => AreaDitemukan::TIPE_REWORK]);
+        AreaDitemukan::create(['name' => 'AREA-RWK', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
         AreaDitemukan::create(['name' => 'AREA-INT', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
-        // Group 1: Valid rework
+        // Group 1: Rework dengan area 1
         Defect::create([
             'user_name'        => 'reworkA',
             'waktu'            => Carbon::now(),
@@ -165,7 +172,7 @@ class ReworkDpmCalculationTest extends TestCase
             'quantity'         => 2,
         ]);
 
-        // Group 2: Mismatch rework (area bertipe internal_defect)
+        // Group 2: Rework dengan area 2
         Defect::create([
             'user_name'        => 'reworkA',
             'waktu'            => Carbon::now(),
@@ -183,9 +190,10 @@ class ReworkDpmCalculationTest extends TestCase
 
         $points = $res->json('dpm_final');
         $this->assertCount(1, $points);
-        $this->assertEquals(2, $points[0]['total_defect']); // Group 2 (5 qty) diabaikan
-        $this->assertEquals(1, $points[0]['total_harness_rework']); // Group 2 diabaikan
-        $this->assertEquals(2000000.0, $points[0]['dpm']); // (2 / 1) * 1.000.000
+        $this->assertEquals(0, $points[0]['total_defect']);
+        $this->assertNull($points[0]['dpm']);
+
+        $this->assertEquals(2, Defect::reworkRecord()->count());
     }
 
     /**
@@ -194,7 +202,7 @@ class ReworkDpmCalculationTest extends TestCase
     public function test_scenario_d_empty_rework_returns_null_dpm_without_error(): void
     {
         $today = Carbon::today()->format('Y-m-d');
-        AreaDitemukan::create(['name' => 'AREA-RWK', 'tipe' => AreaDitemukan::TIPE_REWORK]);
+        AreaDitemukan::create(['name' => 'AREA-RWK', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         $res = $this->actingAsAdmin()->getJson("/dashboard/analytics?mode=rework&assy=final&start_date={$today}&end_date={$today}&group_by=day");
         $res->assertStatus(200);
@@ -202,22 +210,21 @@ class ReworkDpmCalculationTest extends TestCase
         $points = $res->json('dpm_final');
         $this->assertCount(1, $points);
         $this->assertEquals(0, $points[0]['total_defect']);
-        $this->assertEquals(0, $points[0]['total_harness_rework']);
         $this->assertNull($points[0]['dpm']);
         $this->assertNull($points[0]['target']);
     }
 
     /**
-     * Skenario e: Tren per bucket: dua hari berbeda dihitung terpisah.
+     * Skenario e: Tren per bucket: data rework tidak masuk ke tren bucket mana pun.
      */
     public function test_scenario_e_trend_buckets_calculate_dpm_independently_per_day(): void
     {
-        AreaDitemukan::create(['name' => 'AREA-RWK', 'tipe' => AreaDitemukan::TIPE_REWORK]);
+        AreaDitemukan::create(['name' => 'AREA-RWK', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         $yesterday = Carbon::yesterday()->startOfDay()->addHours(10);
         $today = Carbon::today()->startOfDay()->addHours(10);
 
-        // Hari 1 (Kemarin): 1 group, qty 2 -> DPM = (2 / 1) * 1.000.000 = 2.000.000
+        // Hari 1 (Kemarin): 1 group, qty 2
         Defect::create([
             'user_name'        => 'reworkA',
             'waktu'            => $yesterday,
@@ -230,7 +237,7 @@ class ReworkDpmCalculationTest extends TestCase
             'quantity'         => 2,
         ]);
 
-        // Hari 2 (Hari ini): 2 group, masing-masing qty 1 (total qty 2) -> DPM = (2 / 2) * 1.000.000 = 1.000.000
+        // Hari 2 (Hari ini): 2 group, masing-masing qty 1 (total qty 2)
         Defect::create([
             'user_name'        => 'reworkA',
             'waktu'            => $today,
@@ -264,15 +271,13 @@ class ReworkDpmCalculationTest extends TestCase
         $points = $res->json('dpm_final');
         $this->assertCount(2, $points);
 
-        // Bucket Kemarin
-        $this->assertEquals(2, $points[0]['total_defect']);
-        $this->assertEquals(1, $points[0]['total_harness_rework']);
-        $this->assertEquals(2000000.0, $points[0]['dpm']);
+        // Bucket Kemarin: rework dikecualikan dari metrik
+        $this->assertEquals(0, $points[0]['total_defect']);
+        $this->assertNull($points[0]['dpm']);
 
-        // Bucket Hari Ini
-        $this->assertEquals(2, $points[1]['total_defect']);
-        $this->assertEquals(2, $points[1]['total_harness_rework']);
-        $this->assertEquals(1000000.0, $points[1]['dpm']);
+        // Bucket Hari Ini: rework dikecualikan dari metrik
+        $this->assertEquals(0, $points[1]['total_defect']);
+        $this->assertNull($points[1]['dpm']);
     }
 
     /**

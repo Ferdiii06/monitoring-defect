@@ -10,7 +10,7 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 h-screen overflow-hidden flex" 
+<body class="bg-gray-50 text-gray-800 min-h-screen min-h-[100dvh] flex" 
       x-data="{ 
           createModal: false, 
           editModal: false, 
@@ -24,13 +24,13 @@
     @include('partials.sidebar')
 
     <!-- Main Content Area -->
-    <main class="flex-1 overflow-y-auto px-10 py-8 flex flex-col justify-start">
+    <main class="flex-1 min-w-0 px-4 sm:px-8 lg:px-10 py-6 sm:py-8 flex flex-col justify-start">
         
         <!-- Header -->
         <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 leading-tight">Master Kanban</h1>
-                <p class="text-sm text-gray-500 mt-1">Kelola data master kanban / nomor assy, pemetaan carline / konveyor, dan import Excel/CSV.</p>
+                <p class="text-sm text-gray-500 mt-1">Kelola data master kanban / nomor assy, pemetaan carline / conveyor, dan import Excel/CSV.</p>
             </div>
             <div class="flex items-center space-x-3">
                 <a href="{{ route('admin.master.kanban_format.index') }}"
@@ -141,7 +141,7 @@
                     <div class="w-full sm:w-64">
                         <select name="carline_id" 
                                 class="w-full border border-gray-200 rounded-lg py-2 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
-                            <option value="">Semua Carline / Konveyor</option>
+                            <option value="">Semua Carline / Conveyor</option>
                             @foreach ($carlines as $c)
                                 <option value="{{ $c->id }}" {{ (string)$selectedCarline === (string)$c->id ? 'selected' : '' }}>
                                     {{ $c->name }} {{ $c->carType ? '('.$c->carType->name.')' : '' }}
@@ -180,7 +180,7 @@
                             <tr class="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                                 <th class="py-3 px-4 w-12 text-center">No</th>
                                 <th class="py-3 px-4">Nomor Assy</th>
-                                <th class="py-3 px-4">Carline / Konveyor</th>
+                                <th class="py-3 px-4">Carline / Conveyor</th>
                                 <th class="py-3 px-4">Jenis Mobil</th>
                                 <th class="py-3 px-4">Keterangan</th>
                                 <th class="py-3 px-4 text-center w-28">Aksi</th>
@@ -280,10 +280,10 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Carline / Konveyor</label>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Carline / Conveyor</label>
                     <select name="carline_id"
                             class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
-                        <option value="">-- Pilih Carline / Konveyor (Opsional) --</option>
+                        <option value="">-- Pilih Carline / Conveyor (Opsional) --</option>
                         @foreach ($carlines as $c)
                             <option value="{{ $c->id }}">{{ $c->name }} {{ $c->carType ? '('.$c->carType->name.')' : '' }}</option>
                         @endforeach
@@ -324,10 +324,10 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Carline / Konveyor</label>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Carline / Conveyor</label>
                     <select name="carline_id" x-model="editCarlineId"
                             class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
-                        <option value="">-- Pilih Carline / Konveyor (Opsional) --</option>
+                        <option value="">-- Pilih Carline / Conveyor (Opsional) --</option>
                         @foreach ($carlines as $c)
                             <option value="{{ $c->id }}">{{ $c->name }} {{ $c->carType ? '('.$c->carType->name.')' : '' }}</option>
                         @endforeach

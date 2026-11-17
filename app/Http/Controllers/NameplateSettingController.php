@@ -180,6 +180,6 @@ class NameplateSettingController extends Controller
 
         $result = NameplateSetting::extractBarcode($barcode, $rules);
 
-        return response()->json($result);
+        return response()->json($result, $result['success'] ? 200 : 422);
     }
 }

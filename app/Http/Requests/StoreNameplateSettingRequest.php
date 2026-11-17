@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\NameplateSetting;
+use App\Rules\DigitRangeRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,6 +32,22 @@ class StoreNameplateSettingRequest extends FormRequest
             $merge['date_field'] = $this->input('date');
         }
 
+        foreach (['assy_no', 'suffix', 'level', 'date_field', 'sequence_label'] as $f) {
+            if ($this->has($f)) {
+                $raw = $this->input($f);
+                if (filled($raw)) {
+                    $val = trim((string) $raw);
+                    if (preg_match('/^([1-9]\d*)\s*-\s*([1-9]\d*)$/', $val, $m)) {
+                        $merge[$f] = "{$m[1]}-{$m[2]}";
+                    } else {
+                        $merge[$f] = $val;
+                    }
+                } else {
+                    $merge[$f] = null;
+                }
+            }
+        }
+
         $this->merge($merge);
     }
 
@@ -42,11 +59,11 @@ class StoreNameplateSettingRequest extends FormRequest
             'name'           => ['required', 'string', 'max:100'],
             'set'            => ['required', 'string', Rule::in(NameplateSetting::SET_OPTIONS)],
             'date_format'    => ['required', 'string', 'max:20', 'regex:/^[YMD]+$/i'],
-            'assy_no'        => ['nullable', 'string', 'max:100'],
-            'suffix'         => ['nullable', 'string', 'max:100'],
-            'level'          => ['nullable', 'string', 'max:100'],
-            'date_field'     => ['nullable', 'string', 'max:100'],
-            'sequence_label' => ['nullable', 'string', 'max:100'],
+            'assy_no'        => ['nullable', 'string', 'max:100', new DigitRangeRule()],
+            'suffix'         => ['nullable', 'string', 'max:100', new DigitRangeRule()],
+            'level'          => ['nullable', 'string', 'max:100', new DigitRangeRule()],
+            'date_field'     => ['nullable', 'string', 'max:100', new DigitRangeRule()],
+            'sequence_label' => ['nullable', 'string', 'max:100', new DigitRangeRule()],
         ];
     }
 

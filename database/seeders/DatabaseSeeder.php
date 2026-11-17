@@ -80,7 +80,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call(ReworkAccountSeeder::class);
-        $this->call(ReworkAreaSeeder::class);
+        $this->call(AreaDitemukanClassificationSeeder::class);
     }
 }
 

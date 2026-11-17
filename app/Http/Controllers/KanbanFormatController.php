@@ -48,7 +48,7 @@ class KanbanFormatController extends Controller
             count(array_diff(KanbanComponent::ALLOWED_KEYS, $keys)) !== 0) {
             return redirect()->back()
                 ->withInput()
-                ->withErrors(['components' => 'Setiap komponen (Nomor Assy, Konveyor, Serial Number) harus ada tepat satu kali.']);
+                ->withErrors(['components' => 'Setiap komponen (Nomor Assy, Conveyor, Serial Number) harus ada tepat satu kali.']);
         }
 
         // 2. Validasi Invarian: Sequence harus permutasi 1..n tanpa duplikat
@@ -103,7 +103,7 @@ class KanbanFormatController extends Controller
         if (KanbanComponent::count() < count(KanbanComponent::ALLOWED_KEYS)) {
             $defaults = [
                 ['component_key' => KanbanComponent::KEY_ASSY_NUMBER, 'label' => 'Nomor Assy', 'sequence' => 1, 'delimiter' => '.'],
-                ['component_key' => KanbanComponent::KEY_CONVEYOR,    'label' => 'Konveyor',   'sequence' => 2, 'delimiter' => '.'],
+                ['component_key' => KanbanComponent::KEY_CONVEYOR,    'label' => 'Conveyor',   'sequence' => 2, 'delimiter' => '.'],
                 ['component_key' => KanbanComponent::KEY_SERIAL,      'label' => 'Serial Number', 'sequence' => 3, 'delimiter' => '.'],
             ];
 
