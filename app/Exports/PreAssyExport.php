@@ -99,7 +99,7 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
             'Kategori Sumber',
             'Jenis Assy',
             'Carline',
-            'Inspect Process Type',
+            'Area Ditemukan Pre Assy',
             'Jenis Defect',
             'Jenis Sub Defect',
             'No Terminal',

@@ -18,6 +18,8 @@
           editId: null, 
           editAssyNumber: '', 
           editCarlineId: '', 
+          editFamily: '',
+          editConveyor: '',
           editKeterangan: '' 
       }">
 
@@ -180,6 +182,8 @@
                             <tr class="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                                 <th class="py-3 px-4 w-12 text-center">No</th>
                                 <th class="py-3 px-4">Nomor Assy</th>
+                                <th class="py-3 px-4">Family</th>
+                                <th class="py-3 px-4">Conveyor</th>
                                 <th class="py-3 px-4">Carline / Conveyor</th>
                                 <th class="py-3 px-4">Jenis Mobil</th>
                                 <th class="py-3 px-4">Keterangan</th>
@@ -194,6 +198,12 @@
                                     </td>
                                     <td class="py-3.5 px-4 font-mono font-bold text-gray-900 tracking-wide">
                                         {{ $item->assy_number }}
+                                    </td>
+                                    <td class="py-3.5 px-4 font-medium text-gray-700">
+                                        {{ $item->family ?? '—' }}
+                                    </td>
+                                    <td class="py-3.5 px-4 font-mono font-semibold text-gray-700">
+                                        {{ $item->conveyor ?? '—' }}
                                     </td>
                                     <td class="py-3.5 px-4">
                                         @if ($item->carline)
@@ -217,6 +227,8 @@
                                                         editId = {{ $item->id }}; 
                                                         editAssyNumber = '{{ addslashes($item->assy_number) }}'; 
                                                         editCarlineId = '{{ $item->carline_id ?? '' }}'; 
+                                                        editFamily = '{{ addslashes($item->family ?? '') }}';
+                                                        editConveyor = '{{ addslashes($item->conveyor ?? '') }}';
                                                         editKeterangan = '{{ addslashes($item->keterangan ?? '') }}'; 
                                                         editModal = true;
                                                     " 
@@ -236,7 +248,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="py-12 text-center text-xs text-gray-400 font-medium">
+                                    <td colspan="8" class="py-12 text-center text-xs text-gray-400 font-medium">
                                         @if ($search !== '' || filled($selectedCarline))
                                             Tidak ada data assy number yang cocok dengan filter pencarian.
                                         @else
@@ -290,6 +302,19 @@
                     </select>
                 </div>
 
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Family</label>
+                        <input type="text" name="family" placeholder="Contoh: D26D"
+                               class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Conveyor</label>
+                        <input type="text" name="conveyor" placeholder="Contoh: 1 / CV-01"
+                               class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Keterangan</label>
                     <input type="text" name="keterangan" placeholder="Contoh: Main Harness RHD"
@@ -334,6 +359,19 @@
                     </select>
                 </div>
 
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Family</label>
+                        <input type="text" name="family" x-model="editFamily" placeholder="Contoh: D26D"
+                               class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Conveyor</label>
+                        <input type="text" name="conveyor" x-model="editConveyor" placeholder="Contoh: 1 / CV-01"
+                               class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Keterangan</label>
                     <input type="text" name="keterangan" x-model="editKeterangan"
@@ -373,9 +411,9 @@
 
                 <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 text-[11px] text-gray-600 space-y-1.5">
                     <div class="font-bold text-gray-800">Petunjuk Format File:</div>
-                    <p>&bull; Format file didukung: <span class="font-semibold text-gray-700">.xlsx, .xls, .csv</span></p>
-                    <p>&bull; Header kolom yang dikenali: <span class="font-mono font-semibold text-gray-800">assy_number</span> (wajib), <span class="font-mono font-semibold text-gray-800">carline</span> (opsional, cocokkan nama carline), <span class="font-mono font-semibold text-gray-800">keterangan</span> (opsional).</p>
-                    <p>&bull; Import bersifat <span class="font-semibold text-gray-800">idempotent</span>: jika assy number sudah ada, datanya akan diperbarui.</p>
+                    <p>&bull; Format file didukung: <span class="font-semibold text-gray-700">.csv, .xlsx, .xls</span> (Disarankan menggunakan <span class="font-bold text-emerald-700">CSV UTF-8</span> untuk proses tercepat & hemat memori).</p>
+                    <p>&bull; Header kolom yang dikenali: <span class="font-mono font-semibold text-gray-800">assy_number</span> (wajib), <span class="font-mono font-semibold text-gray-800">family</span> (opsional), <span class="font-mono font-semibold text-gray-800">conveyor</span> (opsional), <span class="font-mono font-semibold text-gray-800">carline</span> (opsional), <span class="font-mono font-semibold text-gray-800">keterangan</span> (opsional).</p>
+                    <p>&bull; Import bersifat <span class="font-semibold text-gray-800">idempotent</span>: jika assy number sudah ada, datanya akan diperbarui tanpa menimpa family/conveyor lama jika kolom tersebut kosong di file.</p>
                 </div>
 
                 <div class="flex justify-end space-x-2 pt-2">

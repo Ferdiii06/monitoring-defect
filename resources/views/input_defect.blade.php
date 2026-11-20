@@ -115,7 +115,7 @@
                 <!-- CARLINE (Khusus Pre Assy) -->
                 <div x-show="form.type === 'Pre Assy'" class="space-y-1.5">
                     <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">CARLINE <span class="text-brand">*</span></label>
-                    <select x-model="form.carline_id" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer" :required="form.type === 'Pre Assy'">
+                    <select x-model="form.carline_id" @change="onCarlineChange()" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer" :required="form.type === 'Pre Assy'">
                         <option value="" disabled selected>Pilih Carline...</option>
                         <template x-for="cl in preAssyCarlines" :key="cl.id">
                             <option :value="cl.id" x-text="cl.name"></option>
@@ -123,11 +123,11 @@
                     </select>
                 </div>
 
-                <!-- QUANTITY INSPECT TYPE (Khusus Pre Assy) -->
-                <div x-show="form.type === 'Pre Assy'" class="space-y-1.5">
-                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">QUANTITY INSPECT TYPE</label>
-                    <select x-model="form.inspect_process_type_id" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer">
-                        <option value="">Pilih Quantity Inspect Type (Opsional)...</option>
+                <!-- AREA DITEMUKAN PRE ASSY (Khusus Pre Assy & Ada Defect) -->
+                <div x-show="form.type === 'Pre Assy' && form.jenis_defect !== 'Zero Defect'" class="space-y-1.5">
+                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA DITEMUKAN PRE ASSY <span class="text-brand">*</span></label>
+                    <select x-model="form.inspect_process_type_id" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer" :required="form.type === 'Pre Assy' && form.jenis_defect !== 'Zero Defect'">
+                        <option value="">Pilih Area Ditemukan Pre Assy...</option>
                         @foreach($inspectProcessTypes as $process)
                             <option value="{{ $process->id }}">{{ $process->name }}</option>
                         @endforeach
@@ -312,24 +312,39 @@
                 <template x-if="form.type === 'Pre Assy'">
                     <div class="space-y-3.5 pt-2 border-t border-gray-100">
                         <span class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Detail Pre Assy</span>
-                        <div class="space-y-1.5">
-                            <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA DITEMUKAN</label>
-                            <select name="area_ditemukan" x-model="form.area_ditemukan" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer">
-                                <option value="">Pilih Area Ditemukan...</option>
-                                @php
-                                    $preOptions = isset($areaDitemukanPre) ? $areaDitemukanPre : (isset($areaDitemukanList) ? $areaDitemukanList : collect([]));
-                                    $masterPreNames = $preOptions->pluck('name')->toArray();
-                                @endphp
-                                @foreach($preOptions as $areaItem)
-                                    <option value="{{ $areaItem->name }}">{{ $areaItem->name }}</option>
-                                @endforeach
-                                @if(isset($defect) && $defect->area_ditemukan && !in_array($defect->area_ditemukan, $masterPreNames))
-                                    <option value="{{ $defect->area_ditemukan }}">{{ $defect->area_ditemukan }}</option>
+                        
+                        <x-form-input label="NO TERMINAL" type="text" name="no_terminal" x-model="form.no_terminal" placeholder="Masukkan Nomor Terminal..." />
+                        
+                        <!-- NO MESIN (Dropdown Khusus Pre Assy & Ada Defect) -->
+                        <div x-show="form.jenis_defect !== 'Zero Defect'" class="space-y-1.5">
+                            <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">
+                                NO MESIN <span x-show="currentPreAssyMachines.length > 0 && !isOldNoMesinEmpty" class="text-brand">*</span>
+                            </label>
+                            <select name="no_mesin" 
+                                    x-model="form.no_mesin" 
+                                    :disabled="!form.carline_id || currentPreAssyMachines.length === 0"
+                                    class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                                    :required="form.type === 'Pre Assy' && form.jenis_defect !== 'Zero Defect' && currentPreAssyMachines.length > 0 && !isOldNoMesinEmpty">
+                                <template x-if="!form.carline_id">
+                                    <option value="" disabled selected>Pilih Carline terlebih dahulu...</option>
+                                </template>
+                                <template x-if="form.carline_id && currentPreAssyMachines.length === 0">
+                                    <option value="" disabled selected>Belum ada mesin untuk carline ini</option>
+                                </template>
+                                <template x-if="form.carline_id && currentPreAssyMachines.length > 0">
+                                    <option value="" :disabled="currentPreAssyMachines.length > 0 && !isOldNoMesinEmpty">Pilih Nomor Mesin...</option>
+                                </template>
+                                <template x-for="m in currentPreAssyMachines" :key="m.id">
+                                    <option :value="m.name" x-text="m.name"></option>
+                                </template>
+                                @if(isset($defect) && $defect->no_mesin)
+                                    <template x-if="!currentPreAssyMachines.some(m => m.name === '{{ addslashes($defect->no_mesin) }}')">
+                                        <option value="{{ $defect->no_mesin }}">{{ $defect->no_mesin }} (Lama)</option>
+                                    </template>
                                 @endif
                             </select>
                         </div>
-                        <x-form-input label="NO TERMINAL" type="text" name="no_terminal" x-model="form.no_terminal" placeholder="Masukkan Nomor Terminal..." />
-                        <x-form-input label="NO MESIN" type="text" name="no_mesin" x-model="form.no_mesin" placeholder="Masukkan Nomor Mesin..." />
+
                         <div class="space-y-1.5">
                             <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">KETERANGAN (OPSIONAL)</label>
                             <textarea name="keterangan" x-model="form.keterangan" rows="2" placeholder="Catatan tambahan..." class="w-full bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all"></textarea>
@@ -394,7 +409,7 @@
                             <span class="block font-extrabold text-gray-900 mt-0.5" x-text="selectedCarlineName"></span>
                         </div>
                         <div x-show="form.inspect_process_type_id">
-                            <span class="block text-gray-400 font-medium text-[10px] uppercase">Inspect Process</span>
+                            <span class="block text-gray-400 font-medium text-[10px] uppercase">Area Ditemukan Pre Assy</span>
                             <span class="block font-extrabold text-gray-900 mt-0.5" x-text="selectedInspectProcessName"></span>
                         </div>
                     </div>
@@ -455,7 +470,6 @@
 
                     <template x-if="form.type === 'Pre Assy'">
                         <div class="pt-2 border-t border-gray-200 space-y-1.5 text-[11px] break-words [overflow-wrap:anywhere]">
-                            <div x-show="form.area_ditemukan"><span class="text-gray-400">Area Ditemukan:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.area_ditemukan"></span></div>
                             <div x-show="form.no_terminal"><span class="text-gray-400">No Terminal:</span> <span class="font-bold text-gray-900 font-mono break-words [overflow-wrap:anywhere]" x-text="form.no_terminal"></span></div>
                             <div x-show="form.no_mesin"><span class="text-gray-400">No Mesin:</span> <span class="font-bold text-gray-900 font-mono break-words [overflow-wrap:anywhere]" x-text="form.no_mesin"></span></div>
                             <div x-show="form.keterangan"><span class="text-gray-400">Keterangan:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.keterangan"></span></div>
@@ -529,6 +543,7 @@
             errorMessage: '',
             isSubmitting: false,
             isEdit: {{ isset($defect) ? 'true' : 'false' }},
+            isOldNoMesinEmpty: {{ (isset($defect) && empty($defect->no_mesin)) ? 'true' : 'false' }},
             initialCarlineId: '{{ old("carline_id", $defect->carline_id ?? "") }}',
             conveyorMap: conveyorMap,
             preAssyCarlines: preAssyCarlines,
@@ -569,6 +584,16 @@
                 if (!this.form.carline_id) return '{{ isset($defect) && $defect->conveyor ? $defect->conveyor : "-" }}';
                 const c = this.preAssyCarlines.find(item => String(item.id) === String(this.form.carline_id));
                 return c ? c.name : '-';
+            },
+
+            get currentPreAssyMachines() {
+                if (!this.form.carline_id) return [];
+                const c = this.preAssyCarlines.find(item => String(item.id) === String(this.form.carline_id));
+                return (c && c.machines) ? c.machines : [];
+            },
+
+            onCarlineChange() {
+                this.form.no_mesin = '';
             },
 
             get selectedInspectProcessName() {
@@ -648,6 +673,12 @@
                     this.form.sub_defect = '-';
                     this.form.custom_sub_defect = '';
                     this.form.jumlah = 0;
+                    if (this.form.type === 'Pre Assy') {
+                        this.form.inspect_process_type_id = '';
+                        this.form.no_mesin = '';
+                        this.form.ditemukan_oleh = '';
+                        this.form.area_ditemukan = '';
+                    }
                 } else {
                     if (this.form.sub_defect === '-') {
                         this.form.sub_defect = '';
@@ -662,10 +693,6 @@
                     (isZeroDefect ? Number(this.form.jumlah) === 0 : Number(this.form.jumlah) >= 0);
 
                 if (!this.form.tanggal || !this.form.jam || !this.form.jenis_defect || !isJumlahValid) {
-                    return false;
-                }
-
-                if (this.form.type === 'Pre Assy' && !isZeroDefect && !this.form.ditemukan_oleh) {
                     return false;
                 }
 
@@ -687,6 +714,18 @@
                 } else if (this.form.type === 'Pre Assy') {
                     if (!this.form.carline_id && (!this.isEdit || this.initialCarlineId)) {
                         return false;
+                    }
+                    if (!isZeroDefect) {
+                        if (!this.form.ditemukan_oleh) {
+                            return false;
+                        }
+                        if (!this.form.inspect_process_type_id) {
+                            return false;
+                        }
+                        const hasMachines = this.currentPreAssyMachines && this.currentPreAssyMachines.length > 0;
+                        if (hasMachines && !this.isOldNoMesinEmpty && !this.form.no_mesin) {
+                            return false;
+                        }
                     }
                 } else {
                     return false;
@@ -789,6 +828,12 @@
                 if (this.form.jenis_defect === 'Zero Defect') {
                     this.form.sub_defect = '-';
                     this.form.jumlah = 0;
+                    if (this.form.type === 'Pre Assy') {
+                        this.form.inspect_process_type_id = '';
+                        this.form.no_mesin = '';
+                        this.form.ditemukan_oleh = '';
+                        this.form.area_ditemukan = '';
+                    }
                 }
 
                 if (this.form.type === 'Final Assy') {

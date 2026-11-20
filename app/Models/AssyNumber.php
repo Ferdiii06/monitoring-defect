@@ -14,6 +14,8 @@ class AssyNumber extends Model
     protected $fillable = [
         'assy_number',
         'carline_id',
+        'family',
+        'conveyor',
         'keterangan',
     ];
 

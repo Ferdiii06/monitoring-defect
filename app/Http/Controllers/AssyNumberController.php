@@ -7,6 +7,7 @@ use App\Models\AssyNumber;
 use App\Models\Carline;
 use App\Support\KanbanCodeParser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AssyNumberController extends Controller
@@ -26,6 +27,8 @@ class AssyNumberController extends Controller
             $query->where(function ($q) use ($search, $normalizedSearch) {
                 $term = '%' . strtolower($search) . '%';
                 $q->whereRaw('LOWER(assy_number) LIKE ?', [$term])
+                  ->orWhereRaw('LOWER(family) LIKE ?', [$term])
+                  ->orWhereRaw('LOWER(conveyor) LIKE ?', [$term])
                   ->orWhereRaw('LOWER(keterangan) LIKE ?', [$term])
                   ->orWhereHas('carline', function ($sub) use ($term) {
                       $sub->whereRaw('LOWER(name) LIKE ?', [$term]);
@@ -55,6 +58,8 @@ class AssyNumberController extends Controller
         $validated = $request->validate([
             'assy_number' => 'required|string|max:255',
             'carline_id'  => 'nullable|exists:carlines,id',
+            'family'      => 'nullable|string|max:255',
+            'conveyor'    => 'nullable|string|max:255',
             'keterangan'  => 'nullable|string|max:255',
         ]);
 
@@ -75,6 +80,8 @@ class AssyNumberController extends Controller
         AssyNumber::create([
             'assy_number' => $assy,
             'carline_id'  => $validated['carline_id'] ?? null,
+            'family'      => filled($validated['family'] ?? null) ? trim($validated['family']) : null,
+            'conveyor'    => filled($validated['conveyor'] ?? null) ? trim($validated['conveyor']) : null,
             'keterangan'  => filled($validated['keterangan'] ?? null) ? trim($validated['keterangan']) : null,
         ]);
 
@@ -91,6 +98,8 @@ class AssyNumberController extends Controller
         $validated = $request->validate([
             'assy_number' => 'required|string|max:255',
             'carline_id'  => 'nullable|exists:carlines,id',
+            'family'      => 'nullable|string|max:255',
+            'conveyor'    => 'nullable|string|max:255',
             'keterangan'  => 'nullable|string|max:255',
         ]);
 
@@ -114,6 +123,8 @@ class AssyNumberController extends Controller
         $assyNumber->update([
             'assy_number' => $assy,
             'carline_id'  => $validated['carline_id'] ?? null,
+            'family'      => filled($validated['family'] ?? null) ? trim($validated['family']) : null,
+            'conveyor'    => filled($validated['conveyor'] ?? null) ? trim($validated['conveyor']) : null,
             'keterangan'  => filled($validated['keterangan'] ?? null) ? trim($validated['keterangan']) : null,
         ]);
 
@@ -140,26 +151,41 @@ class AssyNumberController extends Controller
             'file' => 'required|file|max:10240',
         ]);
 
-        $import = new AssyNumberImport();
-        Excel::import($import, $request->file('file'));
+        try {
+            config(['excel.imports.ignore_empty' => true]);
 
-        $success = $import->getSuccessCount();
-        $skipped = $import->getSkippedCount();
-        $errors  = $import->getSkippedRows();
+            $import = new AssyNumberImport();
+            Excel::import($import, $request->file('file'));
 
-        session()->flash('import_summary', [
-            'success' => $success,
-            'skipped' => $skipped,
-            'errors'  => $errors,
-        ]);
+            $success = $import->getSuccessCount();
+            $skipped = $import->getSkippedCount();
+            $errors  = $import->getSkippedRows();
 
-        $message = "Import selesai: {$success} baris berhasil diproses";
-        if ($skipped > 0) {
-            $message .= ", {$skipped} baris dilewati.";
-        } else {
-            $message .= ".";
+            session()->flash('import_summary', [
+                'success' => $success,
+                'skipped' => $skipped,
+                'errors'  => $errors,
+            ]);
+
+            $message = "Import selesai: {$success} baris berhasil diproses";
+            if ($skipped > 0) {
+                $message .= ", {$skipped} baris dilewati.";
+            } else {
+                $message .= ".";
+            }
+
+            return redirect()->route('admin.master.assy_numbers.index')->with('success', $message);
+        } catch (\Throwable $e) {
+            Log::error('Import Master Assy gagal: ' . $e->getMessage(), [
+                'exception' => $e,
+                'file'      => $request->file('file')?->getClientOriginalName(),
+            ]);
+
+            return redirect()->route('admin.master.assy_numbers.index')
+                ->withInput()
+                ->withErrors([
+                    'file' => 'Gagal memproses file impor: ' . $e->getMessage(),
+                ]);
         }
-
-        return redirect()->route('admin.master.assy_numbers.index')->with('success', $message);
     }
 }

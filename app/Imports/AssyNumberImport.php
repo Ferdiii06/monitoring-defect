@@ -5,23 +5,63 @@ namespace App\Imports;
 use App\Models\AssyNumber;
 use App\Models\Carline;
 use App\Support\KanbanCodeParser;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\RemembersChunkOffset;
 use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
-class AssyNumberImport implements ToCollection, WithHeadingRow
+class AssyNumberImport implements ToCollection, WithHeadingRow, WithChunkReading, WithMultipleSheets
 {
+    use RemembersChunkOffset;
+
     protected int $successCount = 0;
     protected int $skippedCount = 0;
     protected array $skippedRows = [];
+    protected ?EloquentCollection $allCarlines = null;
+    protected bool $stopProcessing = false;
+
+    public function chunkSize(): int
+    {
+        return 500;
+    }
+
+    public function sheets(): array
+    {
+        return [
+            0 => $this,
+        ];
+    }
 
     public function collection(Collection $rows)
     {
+        if ($this->stopProcessing) {
+            return;
+        }
+
         // Cache all carlines for fast case-insensitive lookup
-        $allCarlines = Carline::all();
+        if ($this->allCarlines === null) {
+            $this->allCarlines = Carline::all();
+        }
+
+        $startOffset = $this->getChunkOffset() ?? 2;
+        $chunkHasData = false;
 
         foreach ($rows as $index => $row) {
-            $rowNum = $index + 2; // +1 for 0-index, +1 for heading row
+            $rowNum = $startOffset + $index;
+
+            // Skip completely empty row (used range kosong / trailing empty rows)
+            $nonEmptyValues = array_filter($row->toArray(), function ($val) {
+                return $val !== null && trim((string) $val) !== '';
+            });
+
+            if (empty($nonEmptyValues)) {
+                continue;
+            }
+
+            $chunkHasData = true;
 
             // Extract assy_number
             $rawAssy = $row['assy_number'] ?? $row['assy'] ?? $row['nomor_assy'] ?? null;
@@ -60,7 +100,7 @@ class AssyNumberImport implements ToCollection, WithHeadingRow
 
             $matchedCarline = null;
             if ($rawCarline !== null && $rawCarline !== '') {
-                $matchedCarline = $allCarlines->first(function ($c) use ($rawCarline) {
+                $matchedCarline = $this->allCarlines->first(function ($c) use ($rawCarline) {
                     return strcasecmp(trim($c->name), $rawCarline) === 0;
                 });
 
@@ -74,6 +114,14 @@ class AssyNumberImport implements ToCollection, WithHeadingRow
                     continue;
                 }
             }
+
+            // Extract family (only 'family')
+            $rawFamily = $row['family'] ?? null;
+            $family = filled($rawFamily) ? trim((string) $rawFamily) : null;
+
+            // Extract conveyor (only 'conveyor' or 'konveyor')
+            $rawConveyor = $row['conveyor'] ?? $row['konveyor'] ?? null;
+            $conveyor = filled($rawConveyor) ? trim((string) $rawConveyor) : null;
 
             // Optional keterangan
             $keterangan = $row['keterangan'] ?? $row['notes'] ?? $row['description'] ?? null;
@@ -89,20 +137,37 @@ class AssyNumberImport implements ToCollection, WithHeadingRow
                 ->first();
 
             if ($existing) {
-                $existing->update([
+                $updateData = [
                     'assy_number' => $rawAssy,
                     'carline_id'  => $matchedCarline ? $matchedCarline->id : $existing->carline_id,
                     'keterangan'  => $keterangan ?? $existing->keterangan,
-                ]);
+                ];
+
+                if ($family !== null) {
+                    $updateData['family'] = $family;
+                }
+
+                if ($conveyor !== null) {
+                    $updateData['conveyor'] = $conveyor;
+                }
+
+                $existing->update($updateData);
             } else {
                 AssyNumber::create([
                     'assy_number' => $rawAssy,
                     'carline_id'  => $matchedCarline?->id,
+                    'family'      => $family,
+                    'conveyor'    => $conveyor,
                     'keterangan'  => $keterangan,
                 ]);
             }
 
             $this->successCount++;
+        }
+
+        // If an entire chunk of 500 rows is empty after having processed real data, stop further chunks
+        if (!$chunkHasData && ($this->successCount > 0 || $this->skippedCount > 0)) {
+            $this->stopProcessing = true;
         }
     }
 

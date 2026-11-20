@@ -18,6 +18,7 @@ use App\Models\DefectType;
 use App\Models\InspectProcessType;
 use App\Models\FinalAssyInspectType;
 use App\Models\AreaDitemukan;
+use App\Models\PreAssyMachine;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Collection;
@@ -818,6 +819,52 @@ class ReportController extends Controller
     }
 
     /**
+     * Apakah carline Pre Assy memiliki nomor mesin aktif di master data.
+     */
+    private function isCarlineHasActiveMachines($carlineId): bool
+    {
+        if (empty($carlineId)) {
+            return false;
+        }
+        return PreAssyMachine::where('carline_id', (int) $carlineId)->where('is_active', true)->exists();
+    }
+
+    /**
+     * Resolve nilai area_ditemukan dan inspect_process_type_id untuk Pre Assy.
+     * Jika Zero Defect: null.
+     * Jika ada defect: menyalin nama proses dari InspectProcessType terpilih ke area_ditemukan.
+     */
+    private function resolvePreAssyAreaAndProcess(bool $isPreAssy, bool $isZeroDefect, $inspectProcessTypeId, ?string $finalAssyAreaInput = null): array
+    {
+        if (!$isPreAssy) {
+            return [
+                'area_ditemukan'          => $isZeroDefect ? null : $finalAssyAreaInput,
+                'inspect_process_type_id' => null,
+            ];
+        }
+
+        if ($isZeroDefect) {
+            return [
+                'area_ditemukan'          => null,
+                'inspect_process_type_id' => null,
+            ];
+        }
+
+        $processId = filled($inspectProcessTypeId) ? (int) $inspectProcessTypeId : null;
+        $areaName = null;
+
+        if ($processId) {
+            $process = InspectProcessType::find($processId);
+            $areaName = $process?->name;
+        }
+
+        return [
+            'area_ditemukan'          => $areaName,
+            'inspect_process_type_id' => $processId,
+        ];
+    }
+
+    /**
      * Show form to create a new defect report.
      */
     public function createInputDefect(Request $request)
@@ -836,7 +883,7 @@ class ReportController extends Controller
         return view('input_defect', [
             'type'                  => $type,
             'carTypes'              => CarType::with('carlines')->orderBy('name')->get(),
-            'preAssyCarlines'       => Carline::whereNull('car_type_id')->orderBy('name')->get(),
+            'preAssyCarlines'       => Carline::whereNull('car_type_id')->with(['machines' => fn($q) => $q->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
             'defectTypesFinal'      => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
@@ -879,6 +926,7 @@ class ReportController extends Controller
             : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI', 'Manual Crimping', 'Join Crimping', 'Wonder', 'Cutting', 'Raychem'];
 
         $isZeroDefect = ($request->input('jenis_defect') === 'Zero Defect');
+        $hasActiveMachines = $isPreAssy && $this->isCarlineHasActiveMachines($request->input('carline_id'));
 
         $validated = $request->validate([
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
@@ -893,26 +941,28 @@ class ReportController extends Controller
             'end_number'               => ($isPreAssy || $isZeroDefect) ? 'nullable|string|max:255' : 'required|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => $isZeroDefect ? ['nullable', 'string', Rule::in($allowedAreaDitemukan)] : ['required', 'string', Rule::in($allowedAreaDitemukan)],
+            'area_ditemukan'           => (!$isPreAssy && !$isZeroDefect) ? ['required', 'string', Rule::in($allowedAreaDitemukan)] : ['nullable', 'string'],
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
-            'no_mesin'                 => 'nullable|string|max:255',
+            'no_mesin'                 => ($isPreAssy && !$isZeroDefect && $hasActiveMachines) ? 'required|string|max:255' : 'nullable|string|max:255',
             'nameplate_lama'           => 'nullable|string|max:255',
             'no_defective_tag'         => 'nullable|string|max:255',
             // Kolom baru master data
             'carline_id'               => 'required_if:type,Pre Assy|nullable|exists:carlines,id',
-            'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
+            'inspect_process_type_id'  => ($isPreAssy && !$isZeroDefect) ? 'required|exists:inspect_process_types,id' : 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
             'ditemukan_oleh'           => ($isPreAssy && !$isZeroDefect) ? 'required|in:Inspektor,Operator' : 'nullable|in:Inspektor,Operator',
         ], [
-            'end_number.required'     => 'Nomor End (#) wajib diisi.',
-            'area_ditemukan.required' => 'Area ditemukan wajib diisi.',
-            'area_ditemukan.in'       => 'Area ditemukan yang dipilih tidak valid.',
-            'ditemukan_oleh.required' => 'Ditemukan oleh wajib dipilih.',
-            'ditemukan_oleh.in'       => 'Ditemukan oleh yang dipilih tidak valid.',
+            'end_number.required'              => 'Nomor End (#) wajib diisi.',
+            'area_ditemukan.required'          => 'Area ditemukan wajib diisi.',
+            'area_ditemukan.in'                => 'Area ditemukan yang dipilih tidak valid.',
+            'ditemukan_oleh.required'          => 'Ditemukan oleh wajib dipilih.',
+            'ditemukan_oleh.in'                => 'Ditemukan oleh yang dipilih tidak valid.',
+            'inspect_process_type_id.required' => 'Area ditemukan Pre Assy wajib dipilih.',
+            'no_mesin.required'                => 'Nomor mesin wajib dipilih.',
         ]);
 
         $userName = session('user_name', 'Operator');
@@ -922,7 +972,6 @@ class ReportController extends Controller
         $finalInspectTypeId = (!$isPreAssy && $isApplicable) ? ($validated['final_inspect_type_id'] ?? null) : null;
         $subDefect = $isZeroDefect ? '-' : ($validated['sub_defect'] ?? '-');
         $quantity = $isZeroDefect ? 0 : $validated['jumlah'];
-        $areaDitemukan = $isZeroDefect ? null : ($validated['area_ditemukan'] ?? null);
 
         // Batch 4: end_number hanya untuk Final Assy non-Zero Defect; selain itu paksa null.
         $endNumber = (!$isPreAssy && !$isZeroDefect && filled($validated['end_number'] ?? null))
@@ -935,6 +984,19 @@ class ReportController extends Controller
             : null;
         $actual = ($specification !== null && filled($validated['actual'] ?? null))
             ? trim((string) $validated['actual'])
+            : null;
+
+        $areaAndProcess = $this->resolvePreAssyAreaAndProcess(
+            $isPreAssy,
+            $isZeroDefect,
+            $validated['inspect_process_type_id'] ?? null,
+            $validated['area_ditemukan'] ?? null
+        );
+        $areaDitemukan = $areaAndProcess['area_ditemukan'];
+        $inspectProcessTypeId = $areaAndProcess['inspect_process_type_id'];
+
+        $noMesin = ($isPreAssy && !$isZeroDefect && filled($validated['no_mesin'] ?? null))
+            ? trim((string) $validated['no_mesin'])
             : null;
 
         $defect = Defect::create([
@@ -955,12 +1017,12 @@ class ReportController extends Controller
             'job_station'              => $validated['job_station'] ?? null,
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
-            'no_mesin'                 => $validated['no_mesin'] ?? null,
+            'no_mesin'                 => $noMesin,
             'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
             'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
             // Kolom baru master data
             'carline_id'               => filled($validated['carline_id'] ?? null) ? $validated['carline_id'] : null,
-            'inspect_process_type_id'  => filled($validated['inspect_process_type_id'] ?? null) ? $validated['inspect_process_type_id'] : null,
+            'inspect_process_type_id'  => $inspectProcessTypeId,
             'final_inspect_type_id'    => filled($finalInspectTypeId) ? $finalInspectTypeId : null,
             'defect_type_id'           => filled($validated['defect_type_id'] ?? null) ? $validated['defect_type_id'] : null,
             'sub_defect_type_id'       => $isZeroDefect ? null : (filled($validated['sub_defect_type_id'] ?? null) ? $validated['sub_defect_type_id'] : null),
@@ -1030,7 +1092,7 @@ class ReportController extends Controller
             'type'                  => $defect->jenis_assy,
             'defect'                => $defect,
             'carTypes'              => CarType::with('carlines')->orderBy('name')->get(),
-            'preAssyCarlines'       => Carline::whereNull('car_type_id')->orderBy('name')->get(),
+            'preAssyCarlines'       => Carline::whereNull('car_type_id')->with(['machines' => fn($q) => $q->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
             'defectTypesFinal'      => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
@@ -1088,6 +1150,13 @@ class ReportController extends Controller
         }
 
         $isZeroDefect = ($request->input('jenis_defect') === 'Zero Defect');
+        $targetCarlineId = $request->input('carline_id') ?: $defect->carline_id;
+        $hasActiveMachines = $isPreAssy && $this->isCarlineHasActiveMachines($targetCarlineId);
+        $isOldNoMesinEmpty = empty($defect->no_mesin);
+
+        $noMesinRule = ($isPreAssy && !$isZeroDefect && $hasActiveMachines && !$isOldNoMesinEmpty)
+            ? 'required|string|max:255'
+            : 'nullable|string|max:255';
 
         $validated = $request->validate([
             'type'                     => 'nullable|string|in:Final Assy,Pre Assy',
@@ -1102,26 +1171,28 @@ class ReportController extends Controller
             'end_number'               => ($isPreAssy || $isZeroDefect) ? 'nullable|string|max:255' : 'required|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => $isZeroDefect ? ['nullable', 'string', Rule::in($allowedAreaDitemukan)] : ['required', 'string', Rule::in($allowedAreaDitemukan)],
+            'area_ditemukan'           => (!$isPreAssy && !$isZeroDefect) ? ['required', 'string', Rule::in($allowedAreaDitemukan)] : ['nullable', 'string'],
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
-            'no_mesin'                 => 'nullable|string|max:255',
+            'no_mesin'                 => $noMesinRule,
             'nameplate_lama'           => 'nullable|string|max:255',
             'no_defective_tag'         => 'nullable|string|max:255',
             'carline_id'               => $isPreAssy ? ($defect->carline_id ? 'required|exists:carlines,id' : 'nullable|exists:carlines,id') : 'nullable|exists:carlines,id',
-            'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
+            'inspect_process_type_id'  => ($isPreAssy && !$isZeroDefect) ? 'required|exists:inspect_process_types,id' : 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
             'ditemukan_oleh'           => ($isPreAssy && !$isZeroDefect) ? 'required|in:Inspektor,Operator' : 'nullable|in:Inspektor,Operator',
             'pattern'                  => 'nullable|string|max:255',
         ], [
-            'end_number.required'     => 'Nomor End (#) wajib diisi.',
-            'area_ditemukan.required' => 'Area ditemukan wajib diisi.',
-            'area_ditemukan.in'       => 'Area ditemukan yang dipilih tidak valid.',
-            'ditemukan_oleh.required' => 'Ditemukan oleh wajib dipilih.',
-            'ditemukan_oleh.in'       => 'Ditemukan oleh yang dipilih tidak valid.',
+            'end_number.required'              => 'Nomor End (#) wajib diisi.',
+            'area_ditemukan.required'          => 'Area ditemukan wajib diisi.',
+            'area_ditemukan.in'                => 'Area ditemukan yang dipilih tidak valid.',
+            'ditemukan_oleh.required'          => 'Ditemukan oleh wajib dipilih.',
+            'ditemukan_oleh.in'                => 'Ditemukan oleh yang dipilih tidak valid.',
+            'inspect_process_type_id.required' => 'Area ditemukan Pre Assy wajib dipilih.',
+            'no_mesin.required'                => 'Nomor mesin wajib dipilih.',
         ]);
 
         $recordType = $validated['type'] ?? $defectType;
@@ -1129,7 +1200,6 @@ class ReportController extends Controller
         $finalInspectTypeId = $this->resolveFinalInspectTypeIdForUpdate($defect, $validated, $isApplicable);
         $subDefect = $isZeroDefect ? '-' : ($validated['sub_defect'] ?? '-');
         $quantity = $isZeroDefect ? 0 : $validated['jumlah'];
-        $areaDitemukan = $isZeroDefect ? null : ($validated['area_ditemukan'] ?? null);
 
         // Batch 4: end_number hanya untuk Final Assy non-Zero Defect; selain itu paksa null.
         $endNumber = (!$isPreAssyRecord && !$isZeroDefect && filled($validated['end_number'] ?? null))
@@ -1142,6 +1212,19 @@ class ReportController extends Controller
             : null;
         $actual = ($specification !== null && filled($validated['actual'] ?? null))
             ? trim((string) $validated['actual'])
+            : null;
+
+        $areaAndProcess = $this->resolvePreAssyAreaAndProcess(
+            $isPreAssyRecord,
+            $isZeroDefect,
+            $validated['inspect_process_type_id'] ?? null,
+            $validated['area_ditemukan'] ?? null
+        );
+        $areaDitemukan = $areaAndProcess['area_ditemukan'];
+        $inspectProcessTypeId = $areaAndProcess['inspect_process_type_id'];
+
+        $noMesin = ($isPreAssyRecord && !$isZeroDefect && filled($validated['no_mesin'] ?? null))
+            ? trim((string) $validated['no_mesin'])
             : null;
 
         $defect->update([
@@ -1160,11 +1243,11 @@ class ReportController extends Controller
             'job_station'              => $validated['job_station'] ?? null,
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
-            'no_mesin'                 => $validated['no_mesin'] ?? null,
+            'no_mesin'                 => $noMesin,
             'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
             'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
             'carline_id'               => filled($validated['carline_id'] ?? null) ? $validated['carline_id'] : null,
-            'inspect_process_type_id'  => filled($validated['inspect_process_type_id'] ?? null) ? $validated['inspect_process_type_id'] : null,
+            'inspect_process_type_id'  => $inspectProcessTypeId,
             'final_inspect_type_id'    => filled($finalInspectTypeId) ? $finalInspectTypeId : null,
             'defect_type_id'           => filled($validated['defect_type_id'] ?? null) ? $validated['defect_type_id'] : null,
             'sub_defect_type_id'       => $isZeroDefect ? null : (filled($validated['sub_defect_type_id'] ?? null) ? $validated['sub_defect_type_id'] : null),
@@ -1246,7 +1329,7 @@ class ReportController extends Controller
             'defect'                => $defect,
             'backRoute'             => route('recent_defects.index'),
             'carTypes'              => CarType::with('carlines')->orderBy('name')->get(),
-            'preAssyCarlines'       => Carline::whereNull('car_type_id')->orderBy('name')->get(),
+            'preAssyCarlines'       => Carline::whereNull('car_type_id')->with(['machines' => fn($q) => $q->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
             'defectTypesFinal'      => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
@@ -1296,6 +1379,13 @@ class ReportController extends Controller
         }
 
         $isZeroDefect = ($request->input('jenis_defect') === 'Zero Defect');
+        $targetCarlineId = $request->input('carline_id') ?: $defect->carline_id;
+        $hasActiveMachines = $isPreAssy && $this->isCarlineHasActiveMachines($targetCarlineId);
+        $isOldNoMesinEmpty = empty($defect->no_mesin);
+
+        $noMesinRule = ($isPreAssy && !$isZeroDefect && $hasActiveMachines && !$isOldNoMesinEmpty)
+            ? 'required|string|max:255'
+            : 'nullable|string|max:255';
 
         $validated = $request->validate([
             'type'                     => 'nullable|string|in:Final Assy,Pre Assy',
@@ -1310,26 +1400,28 @@ class ReportController extends Controller
             'end_number'               => ($isPreAssy || $isZeroDefect) ? 'nullable|string|max:255' : 'required|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => $isZeroDefect ? ['nullable', 'string', Rule::in($allowedAreaDitemukan)] : ['required', 'string', Rule::in($allowedAreaDitemukan)],
+            'area_ditemukan'           => (!$isPreAssy && !$isZeroDefect) ? ['required', 'string', Rule::in($allowedAreaDitemukan)] : ['nullable', 'string'],
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
-            'no_mesin'                 => 'nullable|string|max:255',
+            'no_mesin'                 => $noMesinRule,
             'nameplate_lama'           => 'nullable|string|max:255',
             'no_defective_tag'         => 'nullable|string|max:255',
             'carline_id'               => $isPreAssy ? ($defect->carline_id ? 'required|exists:carlines,id' : 'nullable|exists:carlines,id') : 'nullable|exists:carlines,id',
-            'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
+            'inspect_process_type_id'  => ($isPreAssy && !$isZeroDefect) ? 'required|exists:inspect_process_types,id' : 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
             'ditemukan_oleh'           => ($isPreAssy && !$isZeroDefect) ? 'required|in:Inspektor,Operator' : 'nullable|in:Inspektor,Operator',
             'pattern'                  => 'nullable|string|max:255',
         ], [
-            'end_number.required'     => 'Nomor End (#) wajib diisi.',
-            'area_ditemukan.required' => 'Area ditemukan wajib diisi.',
-            'area_ditemukan.in'       => 'Area ditemukan yang dipilih tidak valid.',
-            'ditemukan_oleh.required' => 'Ditemukan oleh wajib dipilih.',
-            'ditemukan_oleh.in'       => 'Ditemukan oleh yang dipilih tidak valid.',
+            'end_number.required'              => 'Nomor End (#) wajib diisi.',
+            'area_ditemukan.required'          => 'Area ditemukan wajib diisi.',
+            'area_ditemukan.in'                => 'Area ditemukan yang dipilih tidak valid.',
+            'ditemukan_oleh.required'          => 'Ditemukan oleh wajib dipilih.',
+            'ditemukan_oleh.in'                => 'Ditemukan oleh yang dipilih tidak valid.',
+            'inspect_process_type_id.required' => 'Area ditemukan Pre Assy wajib dipilih.',
+            'no_mesin.required'                => 'Nomor mesin wajib dipilih.',
         ]);
 
         $recordType = $validated['type'] ?? $defectType;
@@ -1337,7 +1429,6 @@ class ReportController extends Controller
         $finalInspectTypeId = $this->resolveFinalInspectTypeIdForUpdate($defect, $validated, $isApplicable);
         $subDefect = $isZeroDefect ? '-' : ($validated['sub_defect'] ?? '-');
         $quantity = $isZeroDefect ? 0 : $validated['jumlah'];
-        $areaDitemukan = $isZeroDefect ? null : ($validated['area_ditemukan'] ?? null);
 
         // Batch 4: end_number hanya untuk Final Assy non-Zero Defect; selain itu paksa null.
         $endNumber = (!$isPreAssyRecord && !$isZeroDefect && filled($validated['end_number'] ?? null))
@@ -1350,6 +1441,19 @@ class ReportController extends Controller
             : null;
         $actual = ($specification !== null && filled($validated['actual'] ?? null))
             ? trim((string) $validated['actual'])
+            : null;
+
+        $areaAndProcess = $this->resolvePreAssyAreaAndProcess(
+            $isPreAssyRecord,
+            $isZeroDefect,
+            $validated['inspect_process_type_id'] ?? null,
+            $validated['area_ditemukan'] ?? null
+        );
+        $areaDitemukan = $areaAndProcess['area_ditemukan'];
+        $inspectProcessTypeId = $areaAndProcess['inspect_process_type_id'];
+
+        $noMesin = ($isPreAssyRecord && !$isZeroDefect && filled($validated['no_mesin'] ?? null))
+            ? trim((string) $validated['no_mesin'])
             : null;
 
         $defect->update([
@@ -1368,11 +1472,11 @@ class ReportController extends Controller
             'job_station'              => $validated['job_station'] ?? null,
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
-            'no_mesin'                 => $validated['no_mesin'] ?? null,
+            'no_mesin'                 => $noMesin,
             'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
             'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
             'carline_id'               => filled($validated['carline_id'] ?? null) ? $validated['carline_id'] : null,
-            'inspect_process_type_id'  => filled($validated['inspect_process_type_id'] ?? null) ? $validated['inspect_process_type_id'] : null,
+            'inspect_process_type_id'  => $inspectProcessTypeId,
             'final_inspect_type_id'    => filled($finalInspectTypeId) ? $finalInspectTypeId : null,
             'defect_type_id'           => filled($validated['defect_type_id'] ?? null) ? $validated['defect_type_id'] : null,
             'sub_defect_type_id'       => $isZeroDefect ? null : (filled($validated['sub_defect_type_id'] ?? null) ? $validated['sub_defect_type_id'] : null),

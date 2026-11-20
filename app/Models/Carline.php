@@ -20,4 +20,9 @@ class Carline extends Model
     {
         return $this->hasMany(AssyNumber::class);
     }
+
+    public function machines()
+    {
+        return $this->hasMany(PreAssyMachine::class);
+    }
 }

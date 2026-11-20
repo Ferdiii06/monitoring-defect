@@ -462,18 +462,18 @@ class FinalAssyReportInvariantTest extends TestCase
         $resEdit->assertSee('Edit Report');
 
         // 6. Test Admin mencoba update defect non-zero tanpa ditemukan_oleh ditolak validasi
-        $areaPa = AreaDitemukan::firstOrCreate(['name' => 'Manual Crimping'], ['tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+        $inspectProcess = \App\Models\InspectProcessType::firstOrCreate(['name' => 'Cutting']);
         $invalidPayload = [
-            'tanggal'        => $baseTime->format('Y-m-d'),
-            'jam'            => $baseTime->format('H:i'),
-            'type'           => 'Pre Assy',
-            'jenis_defect'   => 'CRIMPING',
-            'sub_defect'     => 'LOOSE',
-            'jumlah'         => 10,
-            'area_ditemukan' => $areaPa->name,
-            'carline_id'     => '',
-            'ditemukan_oleh' => '',
-            'no_terminal'    => 'TERM-999',
+            'tanggal'                 => $baseTime->format('Y-m-d'),
+            'jam'                     => $baseTime->format('H:i'),
+            'type'                    => 'Pre Assy',
+            'jenis_defect'            => 'CRIMPING',
+            'sub_defect'              => 'LOOSE',
+            'jumlah'                  => 10,
+            'inspect_process_type_id' => $inspectProcess->id,
+            'carline_id'              => '',
+            'ditemukan_oleh'          => '',
+            'no_terminal'             => 'TERM-999',
         ];
 
         $resInvalid = $this->actingAsAdmin()->put(route('admin.report.update', $dUnknown->id), $invalidPayload);
@@ -509,15 +509,15 @@ class FinalAssyReportInvariantTest extends TestCase
 
         // 9. Test Admin mengupdate defect internal tetap berjalan normal
         $resUpdateInternal = $this->actingAsAdmin()->put(route('admin.report.update', $dInternal->id), [
-            'tanggal'        => $baseTime->format('Y-m-d'),
-            'jam'            => $baseTime->format('H:i'),
-            'type'           => 'Pre Assy',
-            'jenis_defect'   => 'CORE',
-            'sub_defect'     => 'CUT WIRE',
-            'jumlah'         => 7,
-            'area_ditemukan' => $areaPa->name,
-            'carline_id'     => $carline->id,
-            'ditemukan_oleh' => 'Inspektor',
+            'tanggal'                 => $baseTime->format('Y-m-d'),
+            'jam'                     => $baseTime->format('H:i'),
+            'type'                    => 'Pre Assy',
+            'jenis_defect'            => 'CORE',
+            'sub_defect'              => 'CUT WIRE',
+            'jumlah'                  => 7,
+            'inspect_process_type_id' => $inspectProcess->id,
+            'carline_id'              => $carline->id,
+            'ditemukan_oleh'          => 'Inspektor',
         ]);
         $resUpdateInternal->assertSessionHasNoErrors();
         $this->assertEquals(7, $dInternal->fresh()->quantity);

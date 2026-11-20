@@ -158,6 +158,13 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
             Route::put('/area-ditemukans/{id}', [\App\Http\Controllers\AreaDitemukanController::class, 'update'])->name('area_ditemukans.update');
             Route::delete('/area-ditemukans/{id}', [\App\Http\Controllers\AreaDitemukanController::class, 'destroy'])->name('area_ditemukans.destroy');
 
+            // Master No Mesin Pre Assy
+            Route::get('/pre-assy-machines', [\App\Http\Controllers\PreAssyMachineController::class, 'index'])->name('pre_assy_machines.index');
+            Route::post('/pre-assy-machines', [\App\Http\Controllers\PreAssyMachineController::class, 'store'])->name('pre_assy_machines.store');
+            Route::put('/pre-assy-machines/{id}', [\App\Http\Controllers\PreAssyMachineController::class, 'update'])->name('pre_assy_machines.update');
+            Route::patch('/pre-assy-machines/{id}/toggle', [\App\Http\Controllers\PreAssyMachineController::class, 'toggleStatus'])->name('pre_assy_machines.toggle');
+            Route::delete('/pre-assy-machines/{id}', [\App\Http\Controllers\PreAssyMachineController::class, 'destroy'])->name('pre_assy_machines.destroy');
+
             // Target DPM (DPM Targets)
             Route::get('/dpm-targets', [\App\Http\Controllers\DpmTargetController::class, 'index'])->name('dpm_targets.index');
             Route::post('/dpm-targets', [\App\Http\Controllers\DpmTargetController::class, 'store'])->name('dpm_targets.store');
