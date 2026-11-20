@@ -231,11 +231,11 @@ class AdminAreaDitemukanTest extends TestCase
         ]);
     }
 
-    public function test_nama_area_yang_dipakai_defects_tidak_bisa_diubah_namanya_tetapi_tipe_bisa_diubah(): void
+    public function test_nama_area_yang_dipakai_defects_bisa_diubah_dan_update_defects_kategori_sama(): void
     {
         $area = AreaDitemukan::where('name', 'CK')->firstOrFail();
 
-        Defect::create([
+        $defect = Defect::create([
             'waktu'            => Carbon::today(),
             'user_name'        => 'Operator QA',
             'jenis_assy'       => 'Final Assy',
@@ -246,36 +246,47 @@ class AdminAreaDitemukanTest extends TestCase
             'inspect_quantity' => 10,
         ]);
 
-        // 1. Coba ubah nama area yang sudah dipakai defect -> Harus DITOLAK di server
+        // 1. Ubah nama area yang sudah dipakai defect -> Harus BERHASIL dan mengupdate defect
         $response1 = $this->actingAsAdmin()->put("/master/area-ditemukans/{$area->id}", [
             'name'     => 'CK_RENAMED',
             'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
             'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
         ]);
 
-        $response1->assertSessionHasErrors(['name']);
-        $this->assertDatabaseMissing('area_ditemukans', [
+        $response1->assertRedirect(route('admin.master.area_ditemukans.index'));
+        $response1->assertSessionHas('success');
+
+        $this->assertDatabaseHas('area_ditemukans', [
             'id'   => $area->id,
             'name' => 'CK_RENAMED',
         ]);
-        $this->assertDatabaseHas('area_ditemukans', [
-            'id'   => $area->id,
-            'name' => 'CK',
+        $this->assertDatabaseHas('defects', [
+            'id'             => $defect->id,
+            'area_ditemukan' => 'CK_RENAMED',
         ]);
 
-        // 2. Ubah tipe area saja (nama tetap 'CK') -> Harus BERHASIL
+        // 2. Coba ubah nama ke nama yang sudah ada di kategori yang sama ('V1') -> Harus DITOLAK
         $response2 = $this->actingAsAdmin()->put("/master/area-ditemukans/{$area->id}", [
-            'name'     => 'CK',
+            'name'     => 'V1',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        $response2->assertSessionHasErrors(['name']);
+
+        // 3. Ubah tipe area (nama tetap 'CK_RENAMED') -> Harus BERHASIL
+        $response3 = $this->actingAsAdmin()->put("/master/area-ditemukans/{$area->id}", [
+            'name'     => 'CK_RENAMED',
             'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
             'tipe'     => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
         ]);
 
-        $response2->assertRedirect(route('admin.master.area_ditemukans.index'));
-        $response2->assertSessionHas('success');
+        $response3->assertRedirect(route('admin.master.area_ditemukans.index'));
+        $response3->assertSessionHas('success');
 
         $this->assertDatabaseHas('area_ditemukans', [
             'id'   => $area->id,
-            'name' => 'CK',
+            'name' => 'CK_RENAMED',
             'tipe' => AreaDitemukan::TIPE_ASSEMBLY_DEFECT,
         ]);
     }
@@ -321,7 +332,7 @@ class AdminAreaDitemukanTest extends TestCase
         ]);
     }
 
-    public function test_seeder_area_classification_menghasilkan_6_final_dan_5_pre_assy(): void
+    public function test_seeder_area_classification_menghasilkan_6_final_dan_16_pre_assy(): void
     {
         $seeder = new \Database\Seeders\AreaDitemukanClassificationSeeder();
         $seeder->run();
@@ -329,8 +340,8 @@ class AdminAreaDitemukanTest extends TestCase
         // 6 Final Assy (CK, V1, V2, FC, WP, RI) bertipe internal_defect
         $this->assertEquals(6, AreaDitemukan::where('kategori', AreaDitemukan::KATEGORI_FINAL_ASSY)->where('tipe', AreaDitemukan::TIPE_INTERNAL_DEFECT)->count());
 
-        // 5 Pre Assy (Manual Crimping, Join Crimping, Wonder, Cutting, Raychem) bertipe internal_defect
-        $this->assertEquals(5, AreaDitemukan::where('kategori', AreaDitemukan::KATEGORI_PRE_ASSY)->where('tipe', AreaDitemukan::TIPE_INTERNAL_DEFECT)->count());
+        // 16 Pre Assy (16 item dari inspect_process_types) bertipe internal_defect
+        $this->assertEquals(16, AreaDitemukan::where('kategori', AreaDitemukan::KATEGORI_PRE_ASSY)->where('tipe', AreaDitemukan::TIPE_INTERNAL_DEFECT)->count());
 
         // Area REWORK tidak boleh ada
         $this->assertDatabaseMissing('area_ditemukans', ['name' => 'REWORK']);

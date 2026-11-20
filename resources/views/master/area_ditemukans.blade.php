@@ -1,21 +1,22 @@
 @extends('layouts.app')
 
-@section('title', 'Master Area Ditemukan')
+@section('title', isset($kategori) ? 'Master Area Ditemukan ' . $kategori : 'Master Area Ditemukan')
 
 @section('content')
 <div x-data="{
-    selectedCategory: 'all',
+    selectedCategory: '{{ $kategori ?? 'all' }}',
     // Form Tambah
-    addKategori: '{{ !old('edit_id') ? old('kategori', \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY) : \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}',
+    addKategori: '{{ !old('edit_id') ? old('kategori', $kategori ?? \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY) : ($kategori ?? \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY) }}',
     addTipe: '{{ !old('edit_id') ? old('tipe', \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT) : \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}',
 
     // Modal Edit
     editModal: {{ ($errors->any() && old('edit_id')) ? 'true' : 'false' }},
     editId: {{ old('edit_id', 'null') }},
     editName: '{{ old('edit_id') ? addslashes(old('name', '')) : '' }}',
-    editKategori: '{{ old('edit_id') ? old('kategori', \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY) : \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}',
+    originalName: '{{ old('original_name', '') }}',
+    editKategori: '{{ old('edit_id') ? old('kategori', $kategori ?? \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY) : ($kategori ?? \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY) }}',
     editTipe: '{{ old('edit_id') ? old('tipe', \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT) : \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}',
-    originalKategori: '{{ old('original_kategori', \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY) }}',
+    originalKategori: '{{ old('original_kategori', $kategori ?? \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY) }}',
     originalTipe: '{{ old('original_tipe', \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT) }}',
     editDefectsCount: {{ old('edit_defects_count', 0) }},
 
@@ -23,6 +24,7 @@
         this.editModal = true;
         this.editId = area.id;
         this.editName = area.name;
+        this.originalName = area.name;
         this.editKategori = area.kategori;
         this.editTipe = area.tipe;
         this.originalKategori = area.kategori;
@@ -33,8 +35,18 @@
     <!-- Header -->
     <header class="flex justify-between items-center mb-8">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900 leading-tight">Master Area Ditemukan</h1>
-            <p class="text-sm text-gray-500 mt-1">Kelola data master area ditemukan untuk Final Assy dan Pre Assy.</p>
+            <h1 class="text-2xl font-bold text-gray-900 leading-tight">
+                {{ isset($kategori) ? 'Master Area Ditemukan ' . $kategori : 'Master Area Ditemukan' }}
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">
+                @if(($kategori ?? null) === \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY)
+                    Kelola data master area ditemukan khusus Pre Assy.
+                @elseif(($kategori ?? null) === \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY)
+                    Kelola data master area ditemukan khusus Final Assy.
+                @else
+                    Kelola data master area ditemukan untuk Final Assy dan Pre Assy.
+                @endif
+            </p>
         </div>
         <div class="flex items-center space-x-3">
             <div class="text-right">
@@ -55,6 +67,13 @@
         </div>
     @endif
 
+    @if (session('info'))
+        <div class="mb-6 bg-blue-50 text-blue-700 text-sm font-semibold p-4 rounded-lg border border-blue-200 flex items-center space-x-2 shadow-sm">
+            <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>{{ session('info') }}</span>
+        </div>
+    @endif
+
     @if ($errors->any())
         <div class="mb-6 bg-red-50 text-[#8b0000] text-xs font-semibold p-4 rounded-lg border border-red-200">
             <ul class="list-disc pl-5 space-y-1">
@@ -72,14 +91,16 @@
         <section class="bg-white border border-gray-100 rounded-lg p-6 shadow-sm h-fit">
             <div class="flex items-center space-x-2 mb-4 pb-3 border-b border-gray-100">
                 <svg class="w-5 h-5 text-[#8b0000]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                <h2 class="text-sm font-bold text-gray-900">Tambah Area Ditemukan</h2>
+                <h2 class="text-sm font-bold text-gray-900">
+                    {{ isset($kategori) ? 'Tambah Area Ditemukan ' . $kategori : 'Tambah Area Ditemukan' }}
+                </h2>
             </div>
 
-            <form action="{{ route('admin.master.area_ditemukans.store') }}" method="POST" class="space-y-4">
+            <form action="{{ route('admin.master.area_ditemukans.store', request()->only('kategori')) }}" method="POST" class="space-y-4">
                 @csrf
                 <div>
                     <label for="name" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Nama Area <span class="text-red-500">*</span></label>
-                    <input type="text" id="name" name="name" value="{{ !old('edit_id') ? old('name') : '' }}" placeholder="Contoh: CK / V1 / Cutting" required
+                    <input type="text" id="name" name="name" value="{{ !old('edit_id') ? old('name') : '' }}" placeholder="Contoh: {{ ($kategori ?? '') === \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY ? 'Cutting / Bonder' : 'CK / V1' }}" required
                         class="w-full border border-gray-200 rounded-lg p-3 text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white uppercase">
                     @if(!old('edit_id'))
                         @error('name')
@@ -88,31 +109,37 @@
                     @endif
                 </div>
 
-                <div>
-                    <label for="kategori" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Kategori Area <span class="text-red-500">*</span></label>
-                    <select id="kategori" name="kategori" x-model="addKategori" required
-                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
-                        <option value="{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}">Final Assy</option>
-                        <option value="{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}">Pre Assy</option>
-                    </select>
-                </div>
+                @if(isset($kategori))
+                    <input type="hidden" name="kategori" value="{{ $kategori }}">
+                @else
+                    <div>
+                        <label for="kategori" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Kategori Area <span class="text-red-500">*</span></label>
+                        <select id="kategori" name="kategori" x-model="addKategori" required
+                            class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
+                            <option value="{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}">Final Assy</option>
+                            <option value="{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}">Pre Assy</option>
+                        </select>
+                    </div>
+                @endif
 
-                <div x-show="addKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}'">
-                    <label for="tipe" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Tipe Defect <span class="text-red-500">*</span></label>
-                    <select id="tipe" name="tipe" x-model="addTipe"
-                        :disabled="addKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}'"
-                        :required="addKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}'"
-                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
-                        <option value="{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}">Internal Defect</option>
-                        <option value="{{ \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT }}">Assembly Defect</option>
-                    </select>
-                    <p class="text-[11px] text-gray-400 mt-1">Tipe area menentukan klasifikasi defect Final Assy.</p>
-                    @if(!old('edit_id'))
-                        @error('tipe')
-                            <p class="text-[11px] text-red-600 mt-1 font-semibold">{{ $message }}</p>
-                        @enderror
-                    @endif
-                </div>
+                @if(($kategori ?? null) !== \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY)
+                    <div x-show="addKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}'">
+                        <label for="tipe" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Tipe Defect <span class="text-red-500">*</span></label>
+                        <select id="tipe" name="tipe" x-model="addTipe"
+                            :disabled="addKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}'"
+                            :required="addKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}'"
+                            class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
+                            <option value="{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}">Internal Defect</option>
+                            <option value="{{ \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT }}">Assembly Defect</option>
+                        </select>
+                        <p class="text-[11px] text-gray-400 mt-1">Tipe area menentukan klasifikasi defect Final Assy.</p>
+                        @if(!old('edit_id'))
+                            @error('tipe')
+                                <p class="text-[11px] text-red-600 mt-1 font-semibold">{{ $message }}</p>
+                            @enderror
+                        @endif
+                    </div>
+                @endif
 
                 <button type="submit" class="w-full bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold py-3 rounded-lg transition duration-200 shadow-sm flex items-center justify-center space-x-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -125,18 +152,22 @@
         <section class="lg:col-span-2 bg-white border border-gray-100 rounded-lg p-6 shadow-sm flex flex-col justify-between">
             <div>
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
-                    <h2 class="text-sm font-bold text-gray-900">Daftar Area Ditemukan ({{ count($areas) }})</h2>
-                    <div class="flex items-center space-x-1.5 bg-gray-100 p-1 rounded-lg text-xs font-semibold">
-                        <button type="button" @click="selectedCategory = 'all'"
-                            :class="selectedCategory === 'all' ? 'bg-white text-[#8b0000] shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-                            class="px-3 py-1.5 rounded-md transition-all">Semua</button>
-                        <button type="button" @click="selectedCategory = '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}'"
-                            :class="selectedCategory === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}' ? 'bg-white text-[#8b0000] shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-                            class="px-3 py-1.5 rounded-md transition-all">Final Assy</button>
-                        <button type="button" @click="selectedCategory = '{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}'"
-                            :class="selectedCategory === '{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}' ? 'bg-white text-[#8b0000] shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-                            class="px-3 py-1.5 rounded-md transition-all">Pre Assy</button>
-                    </div>
+                    <h2 class="text-sm font-bold text-gray-900">
+                        {{ isset($kategori) ? 'Daftar Area Ditemukan ' . $kategori : 'Daftar Area Ditemukan' }} ({{ count($areas) }})
+                    </h2>
+                    @if(!isset($kategori))
+                        <div class="flex items-center space-x-1.5 bg-gray-100 p-1 rounded-lg text-xs font-semibold">
+                            <button type="button" @click="selectedCategory = 'all'"
+                                :class="selectedCategory === 'all' ? 'bg-white text-[#8b0000] shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                class="px-3 py-1.5 rounded-md transition-all">Semua</button>
+                            <button type="button" @click="selectedCategory = '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}'"
+                                :class="selectedCategory === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}' ? 'bg-white text-[#8b0000] shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                class="px-3 py-1.5 rounded-md transition-all">Final Assy</button>
+                            <button type="button" @click="selectedCategory = '{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}'"
+                                :class="selectedCategory === '{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}' ? 'bg-white text-[#8b0000] shadow-sm' : 'text-gray-600 hover:text-gray-900'"
+                                class="px-3 py-1.5 rounded-md transition-all">Pre Assy</button>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="overflow-x-auto min-h-[300px]">
@@ -145,10 +176,15 @@
                             <tr class="border-b border-gray-200">
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2 w-12">No</th>
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Nama Area</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Kategori Area</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Tipe Defect</th>
+                                @if(!isset($kategori))
+                                    <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Kategori Area</th>
+                                @endif
+                                @if(($kategori ?? null) !== \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY)
+                                    <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Tipe Defect</th>
+                                @endif
                                 <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Data Defect</th>
-                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2 w-32">Aksi</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Status</th>
+                                <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2 w-48">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -161,32 +197,36 @@
                                             {{ $area->name }}
                                         </span>
                                     </td>
-                                    <!-- Badge Kategori Area (Final Assy / Pre Assy) -->
-                                    <td class="py-3.5 px-4">
-                                        @if($area->kategori === \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY)
-                                            <span class="inline-block bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
-                                                Pre Assy
-                                            </span>
-                                        @else
-                                            <span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
-                                                Final Assy
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <!-- Badge Tipe Defect (Internal Defect / Assembly Defect) -->
-                                    <td class="py-3.5 px-4">
-                                        @if($area->kategori === \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY)
-                                            <span class="text-xs text-gray-400 font-semibold">-</span>
-                                        @elseif($area->tipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
-                                            <span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
-                                                Assembly Defect
-                                            </span>
-                                        @else
-                                            <span class="inline-block bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
-                                                Internal Defect
-                                            </span>
-                                        @endif
-                                    </td>
+                                    @if(!isset($kategori))
+                                        <!-- Badge Kategori Area (Final Assy / Pre Assy) -->
+                                        <td class="py-3.5 px-4">
+                                            @if($area->kategori === \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY)
+                                                <span class="inline-block bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                                                    Pre Assy
+                                                </span>
+                                            @else
+                                                <span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                                                    Final Assy
+                                                </span>
+                                            @endif
+                                        </td>
+                                    @endif
+                                    @if(($kategori ?? null) !== \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY)
+                                        <!-- Badge Tipe Defect (Internal Defect / Assembly Defect) -->
+                                        <td class="py-3.5 px-4">
+                                            @if($area->kategori === \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY)
+                                                <span class="text-xs text-gray-400 font-semibold">-</span>
+                                            @elseif($area->tipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
+                                                <span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                                                    Assembly Defect
+                                                </span>
+                                            @else
+                                                <span class="inline-block bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold px-2.5 py-0.5 rounded-full tracking-wide">
+                                                    Internal Defect
+                                                </span>
+                                            @endif
+                                        </td>
+                                    @endif
                                     <td class="py-3.5 px-4 text-xs">
                                         @if($area->defects_count > 0)
                                             <span class="inline-flex items-center text-xs font-semibold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded">
@@ -194,6 +234,18 @@
                                             </span>
                                         @else
                                             <span class="text-xs text-gray-400">0 defect</span>
+                                        @endif
+                                    </td>
+                                    <!-- Status (Aktif / Nonaktif) -->
+                                    <td class="py-3.5 px-4 text-center">
+                                        @if($area->is_active)
+                                            <span class="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                                                Aktif
+                                            </span>
+                                        @else
+                                            <span class="inline-block bg-gray-100 text-gray-600 border border-gray-300 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                                                Nonaktif
+                                            </span>
                                         @endif
                                     </td>
                                     <td class="py-3.5 text-center px-4 pr-2">
@@ -204,14 +256,24 @@
                                                 class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">
                                                 Edit
                                             </button>
-                                            <!-- Tombol Hapus -->
-                                            @if($area->defects_count > 0)
-                                                <button type="button" disabled title="Terkunci: area sudah digunakan pada {{ $area->defects_count }} data defect"
-                                                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-400 text-xs font-semibold cursor-not-allowed">
-                                                    Hapus
+                                            <!-- Tombol Toggle Aktif/Nonaktif -->
+                                            <form action="{{ route('admin.master.area_ditemukans.toggle', array_merge(['id' => $area->id], request()->only('kategori'))) }}" method="POST" class="inline-block">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit"
+                                                    onclick="return confirm('Apakah Anda yakin ingin {{ $area->is_active ? 'menonaktifkan' : 'mengaktifkan' }} area &quot;{{ addslashes($area->name) }}&quot;?');"
+                                                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg {{ $area->is_active ? 'bg-amber-100 hover:bg-amber-200 text-amber-800' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800' }} text-xs font-semibold transition-colors">
+                                                    {{ $area->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
                                                 </button>
+                                            </form>
+                                            <!-- Tombol Hapus / Keterangan Terpakai -->
+                                            @if($area->defects_count > 0)
+                                                <span title="Area sudah digunakan pada {{ $area->defects_count }} defect. Gunakan tombol Nonaktifkan jika tidak ingin digunakan lagi."
+                                                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-gray-100 text-gray-400 text-xs font-semibold cursor-not-allowed">
+                                                    Terpakai (Nonaktifkan)
+                                                </span>
                                             @else
-                                                <form action="{{ route('admin.master.area_ditemukans.destroy', $area->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus area ditemukan ini?');" class="inline-block">
+                                                <form action="{{ route('admin.master.area_ditemukans.destroy', array_merge(['id' => $area->id], request()->only('kategori'))) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus area ditemukan ini?');" class="inline-block">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-xs font-semibold transition-colors">
@@ -224,7 +286,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="py-10 text-center text-xs text-gray-400 font-medium">Belum ada data area ditemukan.</td>
+                                    <td colspan="{{ !isset($kategori) ? 7 : (($kategori === \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY) ? 5 : 6) }}" class="py-10 text-center text-xs text-gray-400 font-medium">Belum ada data area ditemukan.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -239,18 +301,34 @@
     <div x-show="editModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100" @click.away="editModal = false">
             <div class="flex justify-between items-center pb-3 border-b border-gray-100 mb-4">
-                <h3 class="text-base font-bold text-gray-900">Edit Area Ditemukan</h3>
+                <h3 class="text-base font-bold text-gray-900">
+                    {{ isset($kategori) ? 'Edit Area Ditemukan ' . $kategori : 'Edit Area Ditemukan' }}
+                </h3>
                 <button type="button" @click="editModal = false" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
 
-            <form :action="'{{ url('/master/area-ditemukans') }}/' + editId" method="POST"
-                @submit="if (editDefectsCount > 0 && (editKategori !== originalKategori || editTipe !== originalTipe)) { if (!confirm('Area ini memiliki ' + editDefectsCount + ' data defect terkait.\n\nPeringatan: Perubahan tipe atau kategori ini akan mempengaruhi klasifikasi data defect terkait di dashboard dan laporan.\n\nApakah Anda yakin ingin melanjutkan?')) { $event.preventDefault(); } }"
+            <form :action="'{{ url('/master/area-ditemukans') }}/' + editId + '{{ request()->filled('kategori') ? '?kategori=' . urlencode(request('kategori')) : '' }}'" method="POST"
+                @submit="
+                    if (editDefectsCount > 0 && editName.trim().toUpperCase() !== originalName.trim().toUpperCase()) {
+                        if (!confirm('Area ini sudah digunakan pada ' + editDefectsCount + ' data defect.\n\nMengubah nama area akan otomatis memperbarui seluruh ' + editDefectsCount + ' data defect terkait di kategori ini.\n\nApakah Anda yakin ingin melanjutkan?')) {
+                            $event.preventDefault();
+                            return;
+                        }
+                    }
+                    if (editDefectsCount > 0 && (editKategori !== originalKategori || editTipe !== originalTipe)) {
+                        if (!confirm('Area ini memiliki ' + editDefectsCount + ' data defect terkait.\n\nPeringatan: Perubahan tipe atau kategori ini akan mempengaruhi klasifikasi data defect terkait di dashboard dan laporan.\n\nApakah Anda yakin ingin melanjutkan?')) {
+                            $event.preventDefault();
+                            return;
+                        }
+                    }
+                "
                 class="space-y-4">
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="edit_id" :value="editId">
+                <input type="hidden" name="original_name" :value="originalName">
                 <input type="hidden" name="original_kategori" :value="originalKategori">
                 <input type="hidden" name="original_tipe" :value="originalTipe">
                 <input type="hidden" name="edit_defects_count" :value="editDefectsCount">
@@ -258,11 +336,9 @@
                 <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Nama Area <span class="text-red-500">*</span></label>
                     <input type="text" name="name" x-model="editName" required
-                        :readonly="editDefectsCount > 0"
-                        :class="editDefectsCount > 0 ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900'"
-                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] uppercase">
+                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] uppercase bg-white text-gray-900">
                     <p x-show="editDefectsCount > 0" class="text-[11px] text-amber-600 mt-1 font-medium">
-                        Terkunci: Nama area tidak dapat diubah karena sudah digunakan pada <span x-text="editDefectsCount"></span> data defect.
+                        Info: Area ini sudah digunakan pada <span x-text="editDefectsCount"></span> data defect. Mengubah nama area akan otomatis memperbarui seluruh data defect terkait di kategori ini.
                     </p>
                     @if(old('edit_id'))
                         @error('name')
@@ -271,33 +347,39 @@
                     @endif
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Kategori Area <span class="text-red-500">*</span></label>
-                    <select name="kategori" x-model="editKategori" required
-                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
-                        <option value="{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}">Final Assy</option>
-                        <option value="{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}">Pre Assy</option>
-                    </select>
-                </div>
+                @if(isset($kategori))
+                    <input type="hidden" name="kategori" :value="editKategori">
+                @else
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Kategori Area <span class="text-red-500">*</span></label>
+                        <select name="kategori" x-model="editKategori" required
+                            class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
+                            <option value="{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}">Final Assy</option>
+                            <option value="{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}">Pre Assy</option>
+                        </select>
+                    </div>
+                @endif
 
-                <div x-show="editKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}'">
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Tipe Defect <span class="text-red-500">*</span></label>
-                    <select name="tipe" x-model="editTipe"
-                        :disabled="editKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}'"
-                        :required="editKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}'"
-                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
-                        <option value="{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}">Internal Defect</option>
-                        <option value="{{ \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT }}">Assembly Defect</option>
-                    </select>
-                    @if(old('edit_id'))
-                        @error('tipe')
-                            <p class="text-[11px] text-red-600 mt-1 font-semibold">{{ $message }}</p>
-                        @enderror
-                    @endif
-                </div>
-                <div x-show="editDefectsCount > 0 && (editKategori !== originalKategori || (editKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}' && editTipe !== originalTipe))" class="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-                    <strong>Peringatan:</strong> Area ini memiliki <span x-text="editDefectsCount"></span> data defect. Mengubah tipe atau kategori akan mempengaruhi filter dan laporan.
-                </div>
+                @if(($kategori ?? null) !== \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY)
+                    <div x-show="editKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}'">
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Tipe Defect <span class="text-red-500">*</span></label>
+                        <select name="tipe" x-model="editTipe"
+                            :disabled="editKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY }}'"
+                            :required="editKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}'"
+                            class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white text-gray-700 cursor-pointer">
+                            <option value="{{ \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT }}">Internal Defect</option>
+                            <option value="{{ \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT }}">Assembly Defect</option>
+                        </select>
+                        @if(old('edit_id'))
+                            @error('tipe')
+                                <p class="text-[11px] text-red-600 mt-1 font-semibold">{{ $message }}</p>
+                            @enderror
+                        @endif
+                    </div>
+                    <div x-show="editDefectsCount > 0 && (editKategori !== originalKategori || (editKategori === '{{ \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY }}' && editTipe !== originalTipe))" class="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                        <strong>Peringatan:</strong> Area ini memiliki <span x-text="editDefectsCount"></span> data defect. Mengubah tipe atau kategori akan mempengaruhi filter dan laporan.
+                    </div>
+                @endif
 
                 <div class="flex justify-end space-x-2 pt-2">
                     <button type="button" @click="editModal = false" class="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Batal</button>

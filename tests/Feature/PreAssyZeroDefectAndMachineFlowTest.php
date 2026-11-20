@@ -54,7 +54,10 @@ class PreAssyZeroDefectAndMachineFlowTest extends TestCase
     {
         $carline = Carline::create(['name' => 'PA-LINE-01', 'car_type_id' => null]);
         PreAssyMachine::create(['carline_id' => $carline->id, 'name' => 'MSN-PA-101', 'is_active' => true]);
-        $process = InspectProcessType::firstOrCreate(['name' => 'Cutting Process']);
+        AreaDitemukan::firstOrCreate(
+            ['name' => 'Cutting Process', 'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY],
+            ['tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]
+        );
 
         $payload = [
             'type'                    => 'Pre Assy',
@@ -66,7 +69,7 @@ class PreAssyZeroDefectAndMachineFlowTest extends TestCase
             'jumlah'                  => 3,
             'inspect_quantity'        => 50,
             'ditemukan_oleh'          => 'Operator',
-            'inspect_process_type_id' => $process->id,
+            'area_ditemukan'          => 'Cutting Process',
             'no_mesin'                => 'MSN-PA-101',
             'no_terminal'             => 'TRM-01',
         ];
@@ -79,7 +82,7 @@ class PreAssyZeroDefectAndMachineFlowTest extends TestCase
         $this->assertNotNull($saved);
         $this->assertEquals('Pre Assy', $saved->jenis_assy);
         $this->assertEquals($carline->id, $saved->carline_id);
-        $this->assertEquals($process->id, $saved->inspect_process_type_id);
+        $this->assertNull($saved->inspect_process_type_id);
         $this->assertEquals('Cutting Process', $saved->area_ditemukan);
         $this->assertEquals('MSN-PA-101', $saved->no_mesin);
         $this->assertEquals('Operator', $saved->ditemukan_oleh);
@@ -179,9 +182,9 @@ class PreAssyZeroDefectAndMachineFlowTest extends TestCase
     {
         $carline = Carline::create(['name' => 'PA-SYNC-LINE', 'car_type_id' => null]);
         $m1 = PreAssyMachine::create(['carline_id' => $carline->id, 'name' => 'MSN-S1', 'is_active' => true]);
-        $p1 = InspectProcessType::firstOrCreate(['name' => 'Cutting Initial']);
-        $p2 = InspectProcessType::firstOrCreate(['name' => 'Bonder Update']);
-        $p3 = InspectProcessType::firstOrCreate(['name' => 'Crimping Admin']);
+        AreaDitemukan::firstOrCreate(['name' => 'Cutting Initial', 'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY], ['tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+        AreaDitemukan::firstOrCreate(['name' => 'Bonder Update', 'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY], ['tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
+        AreaDitemukan::firstOrCreate(['name' => 'Crimping Admin', 'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY], ['tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         // 1. Buat record awal
         $defect = Defect::create([
@@ -190,7 +193,7 @@ class PreAssyZeroDefectAndMachineFlowTest extends TestCase
             'shift'                   => '1A',
             'jenis_assy'              => 'Pre Assy',
             'carline_id'              => $carline->id,
-            'inspect_process_type_id' => $p1->id,
+            'inspect_process_type_id' => null,
             'area_ditemukan'          => 'Cutting Initial',
             'no_mesin'                => 'MSN-S1',
             'ditemukan_oleh'          => 'Operator',
@@ -199,7 +202,7 @@ class PreAssyZeroDefectAndMachineFlowTest extends TestCase
             'quantity'                => 1,
         ]);
 
-        // 2. Operator update proses ke Bonder Update
+        // 2. Operator update area ke Bonder Update
         $opUpdate = [
             'type'                    => 'Pre Assy',
             'carline_id'              => $carline->id,
@@ -209,7 +212,7 @@ class PreAssyZeroDefectAndMachineFlowTest extends TestCase
             'sub_defect'              => 'A.1 - FRAYING',
             'jumlah'                  => 2,
             'ditemukan_oleh'          => 'Operator',
-            'inspect_process_type_id' => $p2->id,
+            'area_ditemukan'          => 'Bonder Update',
             'no_mesin'                => 'MSN-S1',
         ];
 
@@ -217,13 +220,13 @@ class PreAssyZeroDefectAndMachineFlowTest extends TestCase
         $resOp->assertRedirect(route('operator.home'));
 
         $fresh = $defect->fresh();
-        $this->assertEquals($p2->id, $fresh->inspect_process_type_id);
+        $this->assertNull($fresh->inspect_process_type_id);
         $this->assertEquals('Bonder Update', $fresh->area_ditemukan);
         $this->assertEquals(2, $fresh->quantity);
 
-        // 3. Admin update proses ke Crimping Admin
+        // 3. Admin update area ke Crimping Admin
         $adminUpdate = array_merge($opUpdate, [
-            'inspect_process_type_id' => $p3->id,
+            'area_ditemukan'          => 'Crimping Admin',
             'jumlah'                  => 5,
         ]);
 
@@ -231,7 +234,7 @@ class PreAssyZeroDefectAndMachineFlowTest extends TestCase
         $resAdmin->assertRedirect(route('recent_defects.index'));
 
         $freshAdmin = $defect->fresh();
-        $this->assertEquals($p3->id, $freshAdmin->inspect_process_type_id);
+        $this->assertNull($freshAdmin->inspect_process_type_id);
         $this->assertEquals('Crimping Admin', $freshAdmin->area_ditemukan);
         $this->assertEquals(5, $freshAdmin->quantity);
     }

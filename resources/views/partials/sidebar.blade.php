@@ -320,11 +320,6 @@
                                 <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.defect_types.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                                 <span>Defect &amp; Sub-Defect</span>
                             </a>
-                            <a href="{{ route('admin.master.inspect_process_types.index') }}" 
-                               class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.inspect_process_types.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
-                                <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.inspect_process_types.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                                <span>Inspect Proses</span>
-                            </a>
                             @if(\Illuminate\Support\Facades\Route::has('admin.master.final_assy_inspect_types.index'))
                                 <a href="{{ route('admin.master.final_assy_inspect_types.index') }}" 
                                    class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.final_assy_inspect_types.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
@@ -333,10 +328,15 @@
                                 </a>
                             @endif
                             @if(\Illuminate\Support\Facades\Route::has('admin.master.area_ditemukans.index'))
-                                <a href="{{ route('admin.master.area_ditemukans.index') }}" 
-                                   class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ request()->routeIs('admin.master.area_ditemukans.*') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
-                                    <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('admin.master.area_ditemukans.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                    <span>Area Ditemukan</span>
+                                <a href="{{ route('admin.master.area_ditemukans.index', ['kategori' => 'Final Assy']) }}" 
+                                   class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ (request()->routeIs('admin.master.area_ditemukans.*') && request('kategori') !== 'Pre Assy') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                                    <svg class="w-4 h-4 shrink-0 {{ (request()->routeIs('admin.master.area_ditemukans.*') && request('kategori') !== 'Pre Assy') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    <span>Area Ditemukan Final Assy</span>
+                                </a>
+                                <a href="{{ route('admin.master.area_ditemukans.index', ['kategori' => 'Pre Assy']) }}" 
+                                   class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ (request()->routeIs('admin.master.area_ditemukans.*') && request('kategori') === 'Pre Assy') ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
+                                    <svg class="w-4 h-4 shrink-0 {{ (request()->routeIs('admin.master.area_ditemukans.*') && request('kategori') === 'Pre Assy') ? 'text-white' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                    <span>Area Ditemukan Pre Assy</span>
                                 </a>
                             @endif
                             @if(\Illuminate\Support\Facades\Route::has('admin.master.pre_assy_machines.index'))

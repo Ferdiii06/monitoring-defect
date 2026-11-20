@@ -832,13 +832,13 @@ class ReportController extends Controller
     /**
      * Resolve nilai area_ditemukan dan inspect_process_type_id untuk Pre Assy.
      * Jika Zero Defect: null.
-     * Jika ada defect: menyalin nama proses dari InspectProcessType terpilih ke area_ditemukan.
+     * Pre Assy baru menyimpan langsung ke area_ditemukan dan inspect_process_type_id diset null.
      */
-    private function resolvePreAssyAreaAndProcess(bool $isPreAssy, bool $isZeroDefect, $inspectProcessTypeId, ?string $finalAssyAreaInput = null): array
+    private function resolvePreAssyAreaAndProcess(bool $isPreAssy, bool $isZeroDefect, $inspectProcessTypeId, ?string $areaInput = null): array
     {
         if (!$isPreAssy) {
             return [
-                'area_ditemukan'          => $isZeroDefect ? null : $finalAssyAreaInput,
+                'area_ditemukan'          => $isZeroDefect ? null : $areaInput,
                 'inspect_process_type_id' => null,
             ];
         }
@@ -850,17 +850,17 @@ class ReportController extends Controller
             ];
         }
 
+        $areaName = filled($areaInput) ? trim((string) $areaInput) : null;
         $processId = filled($inspectProcessTypeId) ? (int) $inspectProcessTypeId : null;
-        $areaName = null;
 
-        if ($processId) {
+        if (!$areaName && $processId) {
             $process = InspectProcessType::find($processId);
             $areaName = $process?->name;
         }
 
         return [
             'area_ditemukan'          => $areaName,
-            'inspect_process_type_id' => $processId,
+            'inspect_process_type_id' => null,
         ];
     }
 
@@ -875,10 +875,10 @@ class ReportController extends Controller
 
         $type = $request->input('type', 'Final Assy');
 
-        $allAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]);
-        $finalAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::finalAssy()->orderBy('name')->get() : collect([]);
-        $preAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::preAssy()->orderBy('name')->get() : collect([]);
-        $reworkAreas = $allAreas;
+        $allAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::active()->orderBy('name')->get() : collect([]);
+        $finalAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::finalAssy()->active()->orderBy('name')->get() : collect([]);
+        $preAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::preAssy()->active()->orderBy('name')->get() : collect([]);
+        $reworkAreas = $finalAreas;
 
         return view('input_defect', [
             'type'                  => $type,
@@ -921,12 +921,33 @@ class ReportController extends Controller
         $conveyor = $request->input('conveyor');
         $isApplicable = $this->isFinalInspectTypeApplicable($type, $jenisMobil, $conveyor);
 
-        $allowedAreaDitemukan = Schema::hasTable('area_ditemukans')
-            ? AreaDitemukan::pluck('name')->toArray()
-            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI', 'Manual Crimping', 'Join Crimping', 'Wonder', 'Cutting', 'Raychem'];
+        $preAssyAreas = Schema::hasTable('area_ditemukans')
+            ? AreaDitemukan::preAssy()->active()->pluck('name')->toArray()
+            : ['Cutting', 'Manual Crimping', 'Joint Crimping', 'Bonder', 'Heatshrink', 'Reychern', 'Solder', 'La Term. WP', 'A/B', 'Jam Twist', 'WP', 'MN20', 'EJ30', 'MN10', 'TP25', 'EJ35'];
+
+        $finalAssyAreas = Schema::hasTable('area_ditemukans')
+            ? AreaDitemukan::finalAssy()->active()->pluck('name')->toArray()
+            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI'];
+
+        $allowedAreas = $isPreAssy ? $preAssyAreas : $finalAssyAreas;
+
+        // Backward compatibility: Jika request lama hanya mengirim inspect_process_type_id
+        if ($isPreAssy && empty($request->input('area_ditemukan')) && $request->filled('inspect_process_type_id')) {
+            $process = InspectProcessType::find($request->input('inspect_process_type_id'));
+            if ($process) {
+                $request->merge(['area_ditemukan' => $process->name]);
+                if (!in_array($process->name, $allowedAreas)) {
+                    $allowedAreas[] = $process->name;
+                }
+            }
+        }
 
         $isZeroDefect = ($request->input('jenis_defect') === 'Zero Defect');
         $hasActiveMachines = $isPreAssy && $this->isCarlineHasActiveMachines($request->input('carline_id'));
+
+        $areaDitemukanRules = $isZeroDefect
+            ? ['nullable', 'string']
+            : ['required', 'string', Rule::in($allowedAreas)];
 
         $validated = $request->validate([
             'type'                     => 'required|string|in:Final Assy,Pre Assy',
@@ -941,7 +962,7 @@ class ReportController extends Controller
             'end_number'               => ($isPreAssy || $isZeroDefect) ? 'nullable|string|max:255' : 'required|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => (!$isPreAssy && !$isZeroDefect) ? ['required', 'string', Rule::in($allowedAreaDitemukan)] : ['nullable', 'string'],
+            'area_ditemukan'           => $areaDitemukanRules,
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
@@ -950,14 +971,14 @@ class ReportController extends Controller
             'no_defective_tag'         => 'nullable|string|max:255',
             // Kolom baru master data
             'carline_id'               => 'required_if:type,Pre Assy|nullable|exists:carlines,id',
-            'inspect_process_type_id'  => ($isPreAssy && !$isZeroDefect) ? 'required|exists:inspect_process_types,id' : 'nullable|exists:inspect_process_types,id',
+            'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
             'ditemukan_oleh'           => ($isPreAssy && !$isZeroDefect) ? 'required|in:Inspektor,Operator' : 'nullable|in:Inspektor,Operator',
         ], [
             'end_number.required'              => 'Nomor End (#) wajib diisi.',
-            'area_ditemukan.required'          => 'Area ditemukan wajib diisi.',
+            'area_ditemukan.required'          => $isPreAssy ? 'Area ditemukan Pre Assy wajib dipilih.' : 'Area ditemukan wajib diisi.',
             'area_ditemukan.in'                => 'Area ditemukan yang dipilih tidak valid.',
             'ditemukan_oleh.required'          => 'Ditemukan oleh wajib dipilih.',
             'ditemukan_oleh.in'                => 'Ditemukan oleh yang dipilih tidak valid.',
@@ -1083,10 +1104,10 @@ class ReportController extends Controller
             abort(403, 'Anda tidak memiliki akses untuk mengedit laporan ini.');
         }
 
-        $allAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]);
-        $finalAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::finalAssy()->orderBy('name')->get() : collect([]);
-        $preAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::preAssy()->orderBy('name')->get() : collect([]);
-        $reworkAreas = $allAreas;
+        $allAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::active()->orderBy('name')->get() : collect([]);
+        $finalAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::finalAssy()->active()->orderBy('name')->get() : collect([]);
+        $preAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::preAssy()->active()->orderBy('name')->get() : collect([]);
+        $reworkAreas = $finalAreas;
 
         return view('input_defect', [
             'type'                  => $defect->jenis_assy,
@@ -1142,11 +1163,32 @@ class ReportController extends Controller
         $conveyor = $request->input('conveyor', $defect->conveyor);
         $isApplicable = $this->isFinalInspectTypeApplicable($type, $jenisMobil, $conveyor);
 
-        $allowedAreaDitemukan = Schema::hasTable('area_ditemukans')
-            ? AreaDitemukan::pluck('name')->toArray()
-            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI', 'Manual Crimping', 'Join Crimping', 'Wonder', 'Cutting', 'Raychem'];
-        if (!empty($defect->area_ditemukan) && !in_array($defect->area_ditemukan, $allowedAreaDitemukan)) {
-            $allowedAreaDitemukan[] = $defect->area_ditemukan;
+        $preAssyAreas = Schema::hasTable('area_ditemukans')
+            ? AreaDitemukan::preAssy()->active()->pluck('name')->toArray()
+            : ['Cutting', 'Manual Crimping', 'Joint Crimping', 'Bonder', 'Heatshrink', 'Reychern', 'Solder', 'La Term. WP', 'A/B', 'Jam Twist', 'WP', 'MN20', 'EJ30', 'MN10', 'TP25', 'EJ35'];
+
+        $finalAssyAreas = Schema::hasTable('area_ditemukans')
+            ? AreaDitemukan::finalAssy()->active()->pluck('name')->toArray()
+            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI'];
+
+        $allowedAreas = $isPreAssy ? $preAssyAreas : $finalAssyAreas;
+
+        if (!empty($defect->area_ditemukan) && !in_array($defect->area_ditemukan, $allowedAreas)) {
+            $allowedAreas[] = $defect->area_ditemukan;
+        }
+        if ($isPreAssy && !empty($defect->inspectProcessType?->name) && !in_array($defect->inspectProcessType->name, $allowedAreas)) {
+            $allowedAreas[] = $defect->inspectProcessType->name;
+        }
+
+        // Backward compatibility: Jika request lama hanya mengirim inspect_process_type_id
+        if ($isPreAssy && empty($request->input('area_ditemukan')) && $request->filled('inspect_process_type_id')) {
+            $process = InspectProcessType::find($request->input('inspect_process_type_id'));
+            if ($process) {
+                $request->merge(['area_ditemukan' => $process->name]);
+                if (!in_array($process->name, $allowedAreas)) {
+                    $allowedAreas[] = $process->name;
+                }
+            }
         }
 
         $isZeroDefect = ($request->input('jenis_defect') === 'Zero Defect');
@@ -1157,6 +1199,10 @@ class ReportController extends Controller
         $noMesinRule = ($isPreAssy && !$isZeroDefect && $hasActiveMachines && !$isOldNoMesinEmpty)
             ? 'required|string|max:255'
             : 'nullable|string|max:255';
+
+        $areaDitemukanRules = $isZeroDefect
+            ? ['nullable', 'string']
+            : ['required', 'string', Rule::in($allowedAreas)];
 
         $validated = $request->validate([
             'type'                     => 'nullable|string|in:Final Assy,Pre Assy',
@@ -1171,7 +1217,7 @@ class ReportController extends Controller
             'end_number'               => ($isPreAssy || $isZeroDefect) ? 'nullable|string|max:255' : 'required|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => (!$isPreAssy && !$isZeroDefect) ? ['required', 'string', Rule::in($allowedAreaDitemukan)] : ['nullable', 'string'],
+            'area_ditemukan'           => $areaDitemukanRules,
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
@@ -1179,7 +1225,7 @@ class ReportController extends Controller
             'nameplate_lama'           => 'nullable|string|max:255',
             'no_defective_tag'         => 'nullable|string|max:255',
             'carline_id'               => $isPreAssy ? ($defect->carline_id ? 'required|exists:carlines,id' : 'nullable|exists:carlines,id') : 'nullable|exists:carlines,id',
-            'inspect_process_type_id'  => ($isPreAssy && !$isZeroDefect) ? 'required|exists:inspect_process_types,id' : 'nullable|exists:inspect_process_types,id',
+            'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
@@ -1187,7 +1233,7 @@ class ReportController extends Controller
             'pattern'                  => 'nullable|string|max:255',
         ], [
             'end_number.required'              => 'Nomor End (#) wajib diisi.',
-            'area_ditemukan.required'          => 'Area ditemukan wajib diisi.',
+            'area_ditemukan.required'          => $isPreAssy ? 'Area ditemukan Pre Assy wajib dipilih.' : 'Area ditemukan wajib diisi.',
             'area_ditemukan.in'                => 'Area ditemukan yang dipilih tidak valid.',
             'ditemukan_oleh.required'          => 'Ditemukan oleh wajib dipilih.',
             'ditemukan_oleh.in'                => 'Ditemukan oleh yang dipilih tidak valid.',
@@ -1319,10 +1365,10 @@ class ReportController extends Controller
             return redirect()->route('rework.edit', $params);
         }
 
-        $allAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::orderBy('name')->get() : collect([]);
-        $finalAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::finalAssy()->orderBy('name')->get() : collect([]);
-        $preAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::preAssy()->orderBy('name')->get() : collect([]);
-        $reworkAreas = $allAreas;
+        $allAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::active()->orderBy('name')->get() : collect([]);
+        $finalAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::finalAssy()->active()->orderBy('name')->get() : collect([]);
+        $preAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::preAssy()->active()->orderBy('name')->get() : collect([]);
+        $reworkAreas = $finalAreas;
 
         return view('input_defect', [
             'type'                  => $defect->jenis_assy,
@@ -1371,11 +1417,32 @@ class ReportController extends Controller
         $conveyor = $request->input('conveyor', $defect->conveyor);
         $isApplicable = $this->isFinalInspectTypeApplicable($type, $jenisMobil, $conveyor);
 
-        $allowedAreaDitemukan = Schema::hasTable('area_ditemukans')
-            ? AreaDitemukan::pluck('name')->toArray()
-            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI', 'Manual Crimping', 'Join Crimping', 'Wonder', 'Cutting', 'Raychem'];
-        if (!empty($defect->area_ditemukan) && !in_array($defect->area_ditemukan, $allowedAreaDitemukan)) {
-            $allowedAreaDitemukan[] = $defect->area_ditemukan;
+        $preAssyAreas = Schema::hasTable('area_ditemukans')
+            ? AreaDitemukan::preAssy()->active()->pluck('name')->toArray()
+            : ['Cutting', 'Manual Crimping', 'Joint Crimping', 'Bonder', 'Heatshrink', 'Reychern', 'Solder', 'La Term. WP', 'A/B', 'Jam Twist', 'WP', 'MN20', 'EJ30', 'MN10', 'TP25', 'EJ35'];
+
+        $finalAssyAreas = Schema::hasTable('area_ditemukans')
+            ? AreaDitemukan::finalAssy()->active()->pluck('name')->toArray()
+            : ['CK', 'V1', 'V2', 'FC', 'WP', 'RI'];
+
+        $allowedAreas = $isPreAssy ? $preAssyAreas : $finalAssyAreas;
+
+        if (!empty($defect->area_ditemukan) && !in_array($defect->area_ditemukan, $allowedAreas)) {
+            $allowedAreas[] = $defect->area_ditemukan;
+        }
+        if ($isPreAssy && !empty($defect->inspectProcessType?->name) && !in_array($defect->inspectProcessType->name, $allowedAreas)) {
+            $allowedAreas[] = $defect->inspectProcessType->name;
+        }
+
+        // Backward compatibility: Jika request lama hanya mengirim inspect_process_type_id
+        if ($isPreAssy && empty($request->input('area_ditemukan')) && $request->filled('inspect_process_type_id')) {
+            $process = InspectProcessType::find($request->input('inspect_process_type_id'));
+            if ($process) {
+                $request->merge(['area_ditemukan' => $process->name]);
+                if (!in_array($process->name, $allowedAreas)) {
+                    $allowedAreas[] = $process->name;
+                }
+            }
         }
 
         $isZeroDefect = ($request->input('jenis_defect') === 'Zero Defect');
@@ -1386,6 +1453,10 @@ class ReportController extends Controller
         $noMesinRule = ($isPreAssy && !$isZeroDefect && $hasActiveMachines && !$isOldNoMesinEmpty)
             ? 'required|string|max:255'
             : 'nullable|string|max:255';
+
+        $areaDitemukanRules = $isZeroDefect
+            ? ['nullable', 'string']
+            : ['required', 'string', Rule::in($allowedAreas)];
 
         $validated = $request->validate([
             'type'                     => 'nullable|string|in:Final Assy,Pre Assy',
@@ -1400,7 +1471,7 @@ class ReportController extends Controller
             'end_number'               => ($isPreAssy || $isZeroDefect) ? 'nullable|string|max:255' : 'required|string|max:255',
             'specification'            => 'nullable|string|max:255',
             'actual'                   => 'nullable|string|max:255',
-            'area_ditemukan'           => (!$isPreAssy && !$isZeroDefect) ? ['required', 'string', Rule::in($allowedAreaDitemukan)] : ['nullable', 'string'],
+            'area_ditemukan'           => $areaDitemukanRules,
             'job_station'              => 'nullable|string|max:255',
             'keterangan'               => 'nullable|string',
             'no_terminal'              => 'nullable|string|max:255',
@@ -1408,7 +1479,7 @@ class ReportController extends Controller
             'nameplate_lama'           => 'nullable|string|max:255',
             'no_defective_tag'         => 'nullable|string|max:255',
             'carline_id'               => $isPreAssy ? ($defect->carline_id ? 'required|exists:carlines,id' : 'nullable|exists:carlines,id') : 'nullable|exists:carlines,id',
-            'inspect_process_type_id'  => ($isPreAssy && !$isZeroDefect) ? 'required|exists:inspect_process_types,id' : 'nullable|exists:inspect_process_types,id',
+            'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
             'defect_type_id'           => 'nullable|exists:defect_types,id',
             'sub_defect_type_id'       => 'nullable|exists:sub_defect_types,id',
@@ -1416,7 +1487,7 @@ class ReportController extends Controller
             'pattern'                  => 'nullable|string|max:255',
         ], [
             'end_number.required'              => 'Nomor End (#) wajib diisi.',
-            'area_ditemukan.required'          => 'Area ditemukan wajib diisi.',
+            'area_ditemukan.required'          => $isPreAssy ? 'Area ditemukan Pre Assy wajib dipilih.' : 'Area ditemukan wajib diisi.',
             'area_ditemukan.in'                => 'Area ditemukan yang dipilih tidak valid.',
             'ditemukan_oleh.required'          => 'Ditemukan oleh wajib dipilih.',
             'ditemukan_oleh.in'                => 'Ditemukan oleh yang dipilih tidak valid.',
@@ -1663,7 +1734,7 @@ class ReportController extends Controller
         $items = collect($records->items())->map(function ($item) {
             $array = $item->toArray();
             $array['carline_name'] = $item->carline?->name ?? $item->conveyor ?? '-';
-            $array['inspect_process_type_name'] = $item->inspectProcessType?->name ?? '-';
+            $array['inspect_process_type_name'] = $item->area_ditemukan ?: ($item->inspectProcessType?->name ?? '-');
             if ($item->jenis_defect === 'Zero Defect' || (int)$item->quantity === 0) {
                 $array['ditemukan_label'] = 'Zero Defect';
                 $array['ditemukan_badge_class'] = 'border-gray-200 bg-gray-50 text-gray-700';

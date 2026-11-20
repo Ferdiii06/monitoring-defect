@@ -554,7 +554,7 @@
                                         @endif
                                         @if(filled($first->area_ditemukan))
                                             @php
-                                                $areaModel = \App\Models\AreaDitemukan::where('name', $first->area_ditemukan)->first();
+                                                $areaModel = \App\Models\AreaDitemukan::where('name', $first->area_ditemukan)->where('kategori', \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY)->first();
                                                 $isFinalAssyArea = $areaModel && $areaModel->kategori === \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY;
                                                 $areaTipe = $isFinalAssyArea ? $areaModel->tipe : null;
                                                 $badgeTipeLabel = ($areaTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)

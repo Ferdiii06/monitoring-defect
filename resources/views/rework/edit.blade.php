@@ -291,8 +291,12 @@
                                     $hasFirstArea = $first->area_ditemukan && $areas->contains('name', $first->area_ditemukan);
                                 @endphp
                                 @if(!$hasFirstArea && filled($first->area_ditemukan))
+                                    @php
+                                        $isInactiveFinal = \App\Models\AreaDitemukan::where('name', $first->area_ditemukan)->where('kategori', \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY)->where('is_active', false)->exists();
+                                        $labelSuffix = $isInactiveFinal ? '(Nonaktif)' : '(Data Lama)';
+                                    @endphp
                                     <option value="{{ $first->area_ditemukan }}" selected>
-                                        {{ $first->area_ditemukan }} (Data Lama)
+                                        {{ $first->area_ditemukan }} {{ $labelSuffix }}
                                     </option>
                                 @endif
                                 @foreach($areas as $area)

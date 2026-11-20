@@ -18,25 +18,38 @@ class AreaDitemukanClassificationSeeder extends Seeder
         // 1. 6 Area Final Assy (internal_defect)
         $finalAssyAreas = ['CK', 'V1', 'V2', 'FC', 'WP', 'RI'];
         foreach ($finalAssyAreas as $areaName) {
-            AreaDitemukan::updateOrCreate(
-                ['name' => $areaName],
+            AreaDitemukan::firstOrCreate(
+                ['name' => $areaName, 'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY],
                 [
-                    'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
-                    'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+                    'tipe'      => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+                    'is_active' => true,
                 ]
             );
         }
 
-        // 2. 5 Area Pre Assy (internal_defect)
-        $preAssyAreas = ['Manual Crimping', 'Join Crimping', 'Wonder', 'Cutting', 'Raychem'];
+        // 2. 16 Area Pre Assy (internal_defect) dari inspect_process_types
+        $preAssyAreas = [
+            'Cutting', 'Manual Crimping', 'Joint Crimping', 'Bonder',
+            'Heatshrink', 'Reychern', 'Solder', 'La Term. WP', 'A/B',
+            'Jam Twist', 'WP', 'MN20', 'EJ30', 'MN10', 'TP25', 'EJ35'
+        ];
         foreach ($preAssyAreas as $areaName) {
-            AreaDitemukan::updateOrCreate(
-                ['name' => $areaName],
+            AreaDitemukan::firstOrCreate(
+                ['name' => $areaName, 'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY],
                 [
-                    'kategori' => AreaDitemukan::KATEGORI_PRE_ASSY,
-                    'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+                    'tipe'      => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+                    'is_active' => true,
                 ]
             );
+        }
+
+        // Hapus area legacy (Wonder, Join Crimping lama, Raychem lama) jika tidak dipakai defects
+        $legacyPreNames = ['Wonder', 'Join Crimping', 'Raychem'];
+        foreach ($legacyPreNames as $legacyName) {
+            $legacy = AreaDitemukan::where('name', $legacyName)->where('kategori', AreaDitemukan::KATEGORI_PRE_ASSY)->first();
+            if ($legacy && $legacy->defects()->where('jenis_assy', 'Pre Assy')->count() === 0) {
+                $legacy->delete();
+            }
         }
 
         // 3. Hapus area REWORK jika ada dan tidak dipakai defect

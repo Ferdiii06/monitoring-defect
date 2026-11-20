@@ -67,7 +67,7 @@ class ReworkController extends Controller
             ->orderBy('name')
             ->get();
 
-        $areas = AreaDitemukan::finalAssy()->orderBy('name')->get();
+        $areas = AreaDitemukan::finalAssy()->active()->orderBy('name')->get();
         $carTypes = CarType::with(['carlines' => fn($q) => $q->orderBy('name')])->orderBy('name')->get();
 
         return view('rework.index', compact('paginatedGroups', 'defectsByGroup', 'finalAssySubDefects', 'isAdmin', 'areas', 'carTypes'));
@@ -109,9 +109,13 @@ class ReworkController extends Controller
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) {
-                    $area = AreaDitemukan::where('name', trim((string) $value))->first();
-                    if (!$area || $area->kategori === AreaDitemukan::KATEGORI_PRE_ASSY) {
+                    $area = AreaDitemukan::where('name', trim((string) $value))
+                        ->where('kategori', AreaDitemukan::KATEGORI_FINAL_ASSY)
+                        ->first();
+                    if (!$area) {
                         $fail('Area ditemukan harus merupakan area kategori Final Assy.');
+                    } elseif (!$area->is_active) {
+                        $fail('Area ditemukan yang dipilih sedang nonaktif.');
                     }
                 },
             ],
@@ -391,7 +395,7 @@ class ReworkController extends Controller
         })->values();
 
         $returnUrl = $isAdmin ? $this->sanitizeAdminReturnUrl($request->input('return_url')) : null;
-        $areas = AreaDitemukan::finalAssy()->orderBy('name')->get();
+        $areas = AreaDitemukan::finalAssy()->active()->orderBy('name')->get();
         $carTypes = CarType::with(['carlines' => fn($q) => $q->orderBy('name')])->orderBy('name')->get();
 
         return view('rework.edit', compact('defects', 'first', 'groupId', 'finalAssySubDefects', 'currentDefects', 'isAdmin', 'returnUrl', 'areas', 'carTypes'));
@@ -441,9 +445,13 @@ class ReworkController extends Controller
                     if ($first && $first->area_ditemukan === $trimmed) {
                         return;
                     }
-                    $area = AreaDitemukan::where('name', $trimmed)->first();
-                    if (!$area || $area->kategori === AreaDitemukan::KATEGORI_PRE_ASSY) {
+                    $area = AreaDitemukan::where('name', $trimmed)
+                        ->where('kategori', AreaDitemukan::KATEGORI_FINAL_ASSY)
+                        ->first();
+                    if (!$area) {
                         $fail('Area ditemukan harus merupakan area kategori Final Assy.');
+                    } elseif (!$area->is_active) {
+                        $fail('Area ditemukan yang dipilih sedang nonaktif.');
                     }
                 },
             ],

@@ -35,7 +35,12 @@ class AreaDitemukan extends Model
     protected $fillable = [
         'name',
         'kategori',
+        'is_active',
         'tipe',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     protected static function booted()
@@ -110,12 +115,22 @@ class AreaDitemukan extends Model
             return self::TIPE_INTERNAL_DEFECT;
         }
 
-        $area = static::where('name', trim($name))->first();
+        $area = static::where('name', trim($name))
+            ->where('kategori', self::KATEGORI_FINAL_ASSY)
+            ->first();
         if ($area && $area->tipe === self::TIPE_ASSEMBLY_DEFECT) {
             return self::TIPE_ASSEMBLY_DEFECT;
         }
 
         return self::TIPE_INTERNAL_DEFECT;
+    }
+
+    /**
+     * Scope untuk Area yang aktif.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 
     /**

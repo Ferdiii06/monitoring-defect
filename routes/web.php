@@ -157,6 +157,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsLoggedIn::class])->group(fun
             Route::post('/area-ditemukans', [\App\Http\Controllers\AreaDitemukanController::class, 'store'])->name('area_ditemukans.store');
             Route::put('/area-ditemukans/{id}', [\App\Http\Controllers\AreaDitemukanController::class, 'update'])->name('area_ditemukans.update');
             Route::delete('/area-ditemukans/{id}', [\App\Http\Controllers\AreaDitemukanController::class, 'destroy'])->name('area_ditemukans.destroy');
+            Route::patch('/area-ditemukans/{id}/toggle', [\App\Http\Controllers\AreaDitemukanController::class, 'toggleStatus'])->name('area_ditemukans.toggle');
 
             // Master No Mesin Pre Assy
             Route::get('/pre-assy-machines', [\App\Http\Controllers\PreAssyMachineController::class, 'index'])->name('pre_assy_machines.index');

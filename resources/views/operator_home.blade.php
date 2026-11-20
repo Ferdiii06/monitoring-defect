@@ -147,10 +147,13 @@
                                             <span class="block text-xs font-bold text-final-assy mt-0.5">{{ $defect->finalInspectType->name }}</span>
                                         </div>
                                     @endif
-                                    @if($defect->jenis_assy === 'Pre Assy' && $defect->inspectProcessType?->name)
+                                    @php
+                                        $preAssyAreaDisplay = $defect->area_ditemukan ?: ($defect->inspectProcessType?->name ?? null);
+                                    @endphp
+                                    @if($defect->jenis_assy === 'Pre Assy' && $preAssyAreaDisplay)
                                         <div>
                                             <span class="block text-[10px] font-medium text-gray-400 uppercase">Area Pre Assy</span>
-                                            <span class="block text-xs font-bold text-teal-800 mt-0.5">{{ $defect->inspectProcessType->name }}</span>
+                                            <span class="block text-xs font-bold text-teal-800 mt-0.5">{{ $preAssyAreaDisplay }}</span>
                                         </div>
                                     @endif
                                 </div>

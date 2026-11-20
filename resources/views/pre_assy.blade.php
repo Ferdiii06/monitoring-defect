@@ -251,7 +251,7 @@
                                         </span>
                                     </td>
                                     <td class="py-4 text-sm text-gray-700 font-semibold px-4">
-                                        {{ $record->inspectProcessType?->name ?? '-' }}
+                                        {{ $record->area_ditemukan ?: ($record->inspectProcessType?->name ?? '-') }}
                                     </td>
                                     <td class="py-4 text-xs text-brand font-bold tracking-wider uppercase font-mono px-4">
                                         {{ $record->jenis_defect }}

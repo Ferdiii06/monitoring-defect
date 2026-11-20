@@ -5,25 +5,54 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\AreaDitemukan;
 use App\Models\Defect;
+use App\Models\InspectProcessType;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class AreaDitemukanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $areas = AreaDitemukan::orderBy('name')->get();
+        $kategori = $request->query('kategori');
+
+        $query = AreaDitemukan::orderBy('name');
+        if ($kategori && in_array($kategori, [AreaDitemukan::KATEGORI_FINAL_ASSY, AreaDitemukan::KATEGORI_PRE_ASSY], true)) {
+            $query->where('kategori', $kategori);
+        }
+
+        $areas = $query->get();
 
         $defectCounts = Defect::whereNotNull('area_ditemukan')
             ->where('area_ditemukan', '!=', '')
-            ->selectRaw('area_ditemukan, count(*) as total')
-            ->groupBy('area_ditemukan')
-            ->pluck('total', 'area_ditemukan');
+            ->selectRaw('area_ditemukan, jenis_assy, count(*) as total')
+            ->groupBy('area_ditemukan', 'jenis_assy')
+            ->get();
 
-        foreach ($areas as $area) {
-            $area->defects_count = (int) $defectCounts->get($area->name, 0);
+        $countsMap = [];
+        foreach ($defectCounts as $row) {
+            $countsMap[$row->area_ditemukan . '|' . $row->jenis_assy] = (int) $row->total;
         }
 
-        return view('master.area_ditemukans', compact('areas'));
+        // Hitung juga data lama Pre Assy yang hanya punya inspect_process_type_id
+        $legacyPreCounts = Defect::where('jenis_assy', AreaDitemukan::KATEGORI_PRE_ASSY)
+            ->where(function ($q) {
+                $q->whereNull('area_ditemukan')->orWhere('area_ditemukan', '');
+            })
+            ->whereNotNull('inspect_process_type_id')
+            ->with('inspectProcessType')
+            ->get()
+            ->groupBy(fn ($d) => $d->inspectProcessType?->name)
+            ->map->count();
+
+        foreach ($areas as $area) {
+            $count = $countsMap[$area->name . '|' . $area->kategori] ?? 0;
+            if ($area->kategori === AreaDitemukan::KATEGORI_PRE_ASSY) {
+                $count += (int) ($legacyPreCounts->get($area->name) ?? 0);
+            }
+            $area->defects_count = $count;
+        }
+
+        return view('master.area_ditemukans', compact('areas', 'kategori'));
     }
 
     public function store(Request $request)
@@ -32,29 +61,34 @@ class AreaDitemukanController extends Controller
 
         AreaDitemukan::create($data);
 
-        return redirect()->route('admin.master.area_ditemukans.index')->with('success', 'Area Ditemukan berhasil ditambahkan!');
+        $redirectParams = $request->query('kategori') ? ['kategori' => $request->query('kategori')] : [];
+        return redirect()->route('admin.master.area_ditemukans.index', $redirectParams)
+            ->with('success', 'Area Ditemukan berhasil ditambahkan!');
     }
 
     public function update(Request $request, $id)
     {
         $area = AreaDitemukan::findOrFail($id);
-        $defectsCount = Defect::where('area_ditemukan', $area->name)->count();
-
         $data = $this->validateAreaInput($request, (int) $id);
 
-        if ($defectsCount > 0 && trim($data['name']) !== $area->name) {
-            return redirect()->back()->withInput()->withErrors([
-                'name' => 'Nama area tidak dapat diubah karena sudah digunakan pada ' . $defectsCount . ' data defect.',
-            ]);
-        }
+        $oldName = $area->name;
+        $newName = trim($data['name']);
+        $isRenamed = ($newName !== $oldName);
 
-        if ($defectsCount > 0) {
-            $data['name'] = $area->name;
-        }
+        DB::transaction(function () use ($area, $data, $oldName, $newName, $isRenamed) {
+            if ($isRenamed) {
+                // Update defects di kategori yang sama
+                Defect::where('area_ditemukan', $oldName)
+                    ->where('jenis_assy', $area->kategori)
+                    ->update(['area_ditemukan' => $newName]);
+            }
 
-        $area->update($data);
+            $area->update($data);
+        });
 
-        return redirect()->route('admin.master.area_ditemukans.index')->with('success', 'Area Ditemukan berhasil diperbarui!');
+        $redirectParams = $request->query('kategori') ? ['kategori' => $request->query('kategori')] : [];
+        return redirect()->route('admin.master.area_ditemukans.index', $redirectParams)
+            ->with('success', 'Area Ditemukan berhasil diperbarui!');
     }
 
     /**
@@ -62,8 +96,6 @@ class AreaDitemukanController extends Controller
      */
     private function validateAreaInput(Request $request, ?int $id = null): array
     {
-        $uniqueRule = $id ? 'unique:area_ditemukans,name,' . $id : 'unique:area_ditemukans,name';
-
         $allowedKategori = [
             AreaDitemukan::KATEGORI_FINAL_ASSY,
             AreaDitemukan::KATEGORI_PRE_ASSY,
@@ -77,6 +109,12 @@ class AreaDitemukanController extends Controller
         $kategoriInput = $request->input('kategori', AreaDitemukan::KATEGORI_FINAL_ASSY);
         $isPreAssy = ($kategoriInput === AreaDitemukan::KATEGORI_PRE_ASSY);
 
+        $uniqueRule = Rule::unique('area_ditemukans', 'name')
+            ->where('kategori', $kategoriInput);
+        if ($id) {
+            $uniqueRule->ignore($id);
+        }
+
         $rules = [
             'name'     => ['required', 'string', 'max:255', $uniqueRule],
             'kategori' => ['nullable', 'string', Rule::in($allowedKategori)],
@@ -87,7 +125,7 @@ class AreaDitemukanController extends Controller
 
         $messages = [
             'name.required' => 'Nama area wajib diisi.',
-            'name.unique'   => 'Nama area sudah digunakan.',
+            'name.unique'   => 'Nama area sudah digunakan pada kategori ' . $kategoriInput . '.',
             'name.max'      => 'Nama area maksimal 255 karakter.',
             'kategori.in'   => 'Kategori area harus Final Assy atau Pre Assy.',
             'tipe.required' => 'Tipe area wajib dipilih untuk Final Assy.',
@@ -113,19 +151,49 @@ class AreaDitemukanController extends Controller
         ];
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $area = AreaDitemukan::findOrFail($id);
-        $defectsCount = Defect::where('area_ditemukan', $area->name)->count();
+        $defectsCount = Defect::where('area_ditemukan', $area->name)
+            ->where('jenis_assy', $area->kategori)
+            ->count();
+
+        if ($area->kategori === AreaDitemukan::KATEGORI_PRE_ASSY) {
+            $legacyProcessIds = InspectProcessType::where('name', $area->name)->pluck('id');
+            if ($legacyProcessIds->isNotEmpty()) {
+                $legacyCount = Defect::where('jenis_assy', AreaDitemukan::KATEGORI_PRE_ASSY)
+                    ->where(function ($q) {
+                        $q->whereNull('area_ditemukan')->orWhere('area_ditemukan', '');
+                    })
+                    ->whereIn('inspect_process_type_id', $legacyProcessIds)
+                    ->count();
+                $defectsCount += $legacyCount;
+            }
+        }
 
         if ($defectsCount > 0) {
             return redirect()->back()->withErrors([
-                'error' => 'Area ditemukan tidak dapat dihapus karena sudah digunakan pada ' . $defectsCount . ' data defect.',
+                'error' => 'Area ditemukan tidak dapat dihapus karena sudah digunakan pada ' . $defectsCount . ' data defect ' . $area->kategori . '. Silakan gunakan tombol Nonaktifkan.',
             ]);
         }
 
         $area->delete();
 
-        return redirect()->route('admin.master.area_ditemukans.index')->with('success', 'Area Ditemukan berhasil dihapus!');
+        $redirectParams = $request->query('kategori') ? ['kategori' => $request->query('kategori')] : [];
+        return redirect()->route('admin.master.area_ditemukans.index', $redirectParams)
+            ->with('success', 'Area Ditemukan berhasil dihapus!');
+    }
+
+    public function toggleStatus(Request $request, $id)
+    {
+        $area = AreaDitemukan::findOrFail($id);
+        $area->is_active = !$area->is_active;
+        $area->save();
+
+        $redirectParams = $request->query('kategori') ? ['kategori' => $request->query('kategori')] : [];
+        $statusText = $area->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+        return redirect()->route('admin.master.area_ditemukans.index', $redirectParams)
+            ->with('success', "Area Ditemukan \"{$area->name}\" berhasil {$statusText}!");
     }
 }

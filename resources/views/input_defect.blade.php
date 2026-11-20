@@ -58,7 +58,7 @@
 
             <input type="hidden" name="type" x-model="form.type">
             <input type="hidden" name="carline_id" :value="form.type === 'Pre Assy' ? form.carline_id : ''">
-            <input type="hidden" name="inspect_process_type_id" :value="form.type === 'Pre Assy' ? form.inspect_process_type_id : ''">
+            <input type="hidden" name="inspect_process_type_id" value="">
             <input type="hidden" name="final_inspect_type_id" :value="showFinalInspectType ? form.final_inspect_type_id : ''">
             <input type="hidden" name="pattern" :value="form.pattern">
             <input type="hidden" name="jenis_defect" :value="form.jenis_defect">
@@ -73,14 +73,14 @@
                         <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA <span class="text-brand">*</span></label>
                         <div class="grid grid-cols-2 gap-2">
                             <button type="button" 
-                                    @click="form.type = 'Final Assy'; form.carline_id = ''; form.ditemukan_oleh = '';"
+                                    @click="form.type = 'Final Assy'; form.carline_id = ''; form.ditemukan_oleh = ''; form.area_ditemukan = '';"
                                     class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-extrabold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
                                     :class="form.type === 'Final Assy' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
                                 <span class="w-2 h-2 rounded-full" :class="form.type === 'Final Assy' ? 'bg-brand' : 'bg-gray-300'"></span>
                                 <span>Final Assy</span>
                             </button>
                             <button type="button" 
-                                    @click="form.type = 'Pre Assy'; form.jenis_mobil = ''; form.conveyor = ''; form.final_inspect_type_id = '';"
+                                    @click="form.type = 'Pre Assy'; form.jenis_mobil = ''; form.conveyor = ''; form.final_inspect_type_id = ''; form.area_ditemukan = '';"
                                     class="min-h-[48px] px-3 py-2.5 rounded-xl text-xs font-extrabold border transition-all text-center flex items-center justify-center space-x-1.5 active:scale-95 touch-manipulation"
                                     :class="form.type === 'Pre Assy' ? 'bg-red-50 border-brand text-brand shadow-xs' : 'bg-white border-border text-gray-600 hover:bg-gray-50'">
                                 <span class="w-2 h-2 rounded-full" :class="form.type === 'Pre Assy' ? 'bg-brand' : 'bg-gray-300'"></span>
@@ -126,11 +126,19 @@
                 <!-- AREA DITEMUKAN PRE ASSY (Khusus Pre Assy & Ada Defect) -->
                 <div x-show="form.type === 'Pre Assy' && form.jenis_defect !== 'Zero Defect'" class="space-y-1.5">
                     <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA DITEMUKAN PRE ASSY <span class="text-brand">*</span></label>
-                    <select x-model="form.inspect_process_type_id" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer" :required="form.type === 'Pre Assy' && form.jenis_defect !== 'Zero Defect'">
+                    <select :name="form.type === 'Pre Assy' ? 'area_ditemukan' : ''" x-model="form.area_ditemukan" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer" :required="form.type === 'Pre Assy' && form.jenis_defect !== 'Zero Defect'">
                         <option value="">Pilih Area Ditemukan Pre Assy...</option>
-                        @foreach($inspectProcessTypes as $process)
-                            <option value="{{ $process->id }}">{{ $process->name }}</option>
+                        @php
+                            $preOptions = isset($areaDitemukanPre) && $areaDitemukanPre->isNotEmpty() ? $areaDitemukanPre : (isset($areaDitemukanList) ? $areaDitemukanList : collect([]));
+                            $masterPreNames = $preOptions->pluck('name')->toArray();
+                            $existingPreArea = isset($defect) ? ($defect->area_ditemukan ?: ($defect->inspectProcessType?->name ?? null)) : null;
+                        @endphp
+                        @foreach($preOptions as $areaItem)
+                            <option value="{{ $areaItem->name }}">{{ $areaItem->name }}</option>
                         @endforeach
+                        @if($existingPreArea && !in_array($existingPreArea, $masterPreNames))
+                            <option value="{{ $existingPreArea }}">{{ $existingPreArea }} (Nonaktif)</option>
+                        @endif
                     </select>
                 </div>
 
@@ -284,7 +292,7 @@
                         <x-form-input label="ACTUAL" type="text" name="actual" x-model="form.actual" placeholder="Masukkan Aktual..." />
                         <div class="space-y-1.5">
                             <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA DITEMUKAN</label>
-                            <select name="area_ditemukan" x-model="form.area_ditemukan" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer">
+                            <select :name="form.type === 'Final Assy' ? 'area_ditemukan' : ''" x-model="form.area_ditemukan" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer">
                                 <option value="">Pilih Area Ditemukan...</option>
                                 @php
                                     $finalOptions = isset($areaDitemukanFinal) ? $areaDitemukanFinal : (isset($areaDitemukanList) ? $areaDitemukanList : collect([]));
@@ -297,7 +305,7 @@
                                     <option value="{{ $areaItem->name }}">{{ $areaItem->name }} ({{ $labelTipe }})</option>
                                 @endforeach
                                 @if(isset($defect) && $defect->area_ditemukan && !in_array($defect->area_ditemukan, $masterAreaNames))
-                                    <option value="{{ $defect->area_ditemukan }}">{{ $defect->area_ditemukan }}</option>
+                                    <option value="{{ $defect->area_ditemukan }}">{{ $defect->area_ditemukan }} (Nonaktif)</option>
                                 @endif
                             </select>
                         </div>
@@ -408,9 +416,9 @@
                             <span class="block text-gray-400 font-medium text-[10px] uppercase">Carline</span>
                             <span class="block font-extrabold text-gray-900 mt-0.5" x-text="selectedCarlineName"></span>
                         </div>
-                        <div x-show="form.inspect_process_type_id">
+                        <div x-show="form.area_ditemukan">
                             <span class="block text-gray-400 font-medium text-[10px] uppercase">Area Ditemukan Pre Assy</span>
-                            <span class="block font-extrabold text-gray-900 mt-0.5" x-text="selectedInspectProcessName"></span>
+                            <span class="block font-extrabold text-gray-900 mt-0.5" x-text="form.area_ditemukan"></span>
                         </div>
                     </div>
 
@@ -572,7 +580,7 @@
                 end_number: '{{ old("end_number", $defect->end_number ?? "") }}',
                 specification: '{{ old("specification", $defect->specification ?? "") }}',
                 actual: '{{ old("actual", $defect->actual ?? "") }}',
-                area_ditemukan: '{{ addslashes(old("area_ditemukan", $defect->area_ditemukan ?? "")) }}',
+                area_ditemukan: '{{ addslashes(old("area_ditemukan", isset($defect) ? ($defect->area_ditemukan ?: ($defect->inspectProcessType?->name ?? "")) : "")) }}',
                 job_station: '{{ old("job_station", $defect->job_station ?? "") }}',
                 keterangan: '{{ old("keterangan", $defect->keterangan ?? "") }}',
                 
@@ -719,7 +727,7 @@
                         if (!this.form.ditemukan_oleh) {
                             return false;
                         }
-                        if (!this.form.inspect_process_type_id) {
+                        if (!this.form.area_ditemukan) {
                             return false;
                         }
                         const hasMachines = this.currentPreAssyMachines && this.currentPreAssyMachines.length > 0;

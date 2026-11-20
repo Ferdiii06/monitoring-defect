@@ -131,7 +131,8 @@ class Defect extends Model
      */
     public function areaDitemukanRef()
     {
-        return $this->belongsTo(AreaDitemukan::class, 'area_ditemukan', 'name');
+        return $this->belongsTo(AreaDitemukan::class, 'area_ditemukan', 'name')
+            ->where('kategori', AreaDitemukan::KATEGORI_FINAL_ASSY);
     }
 
     /**

@@ -131,7 +131,7 @@ class PreAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoS
             $kategoriSumber,
             $row->jenis_assy,
             $row->carline?->name ?? $row->conveyor ?? '-',
-            $row->inspectProcessType?->name ?? '-',
+            $row->area_ditemukan ?: ($row->inspectProcessType?->name ?? '-'),
             $row->jenis_defect,
             $row->jenis_sub_defect,
             $row->no_terminal,

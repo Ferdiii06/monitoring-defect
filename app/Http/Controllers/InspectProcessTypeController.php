@@ -3,45 +3,36 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\InspectProcessType;
 
 class InspectProcessTypeController extends Controller
 {
+    private const REDIRECT_MESSAGE = 'Master ini sudah dipindahkan ke Area Ditemukan Pre Assy';
+
     public function index()
     {
-        $processes = InspectProcessType::orderBy('name')->get();
-        return view('master.inspect_process_types', compact('processes'));
+        return redirect()->route('admin.master.area_ditemukans.index', ['kategori' => 'Pre Assy'])
+            ->with('info', self::REDIRECT_MESSAGE)
+            ->with('success', self::REDIRECT_MESSAGE);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:inspect_process_types,name',
-        ]);
-
-        InspectProcessType::create($validated);
-
-        return redirect()->route('admin.master.inspect_process_types.index')->with('success', 'Jenis Inspect Proses berhasil ditambahkan!');
+        return redirect()->route('admin.master.area_ditemukans.index', ['kategori' => 'Pre Assy'])
+            ->with('info', self::REDIRECT_MESSAGE)
+            ->with('success', self::REDIRECT_MESSAGE);
     }
 
     public function update(Request $request, $id)
     {
-        $process = InspectProcessType::findOrFail($id);
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:inspect_process_types,name,' . $id,
-        ]);
-
-        $process->update($validated);
-
-        return redirect()->route('admin.master.inspect_process_types.index')->with('success', 'Jenis Inspect Proses berhasil diperbarui!');
+        return redirect()->route('admin.master.area_ditemukans.index', ['kategori' => 'Pre Assy'])
+            ->with('info', self::REDIRECT_MESSAGE)
+            ->with('success', self::REDIRECT_MESSAGE);
     }
 
     public function destroy($id)
     {
-        $process = InspectProcessType::findOrFail($id);
-        $process->delete();
-
-        return redirect()->route('admin.master.inspect_process_types.index')->with('success', 'Jenis Inspect Proses berhasil dihapus!');
+        return redirect()->route('admin.master.area_ditemukans.index', ['kategori' => 'Pre Assy'])
+            ->with('info', self::REDIRECT_MESSAGE)
+            ->with('success', self::REDIRECT_MESSAGE);
     }
 }

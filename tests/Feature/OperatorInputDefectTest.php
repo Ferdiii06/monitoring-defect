@@ -270,7 +270,10 @@ class OperatorInputDefectTest extends TestCase
     public function test_pre_assy_non_zero_defect_requires_area_ditemukan(): void
     {
         $carline = Carline::create(['name' => 'LINE-PRE-1']);
-        $inspectProcess = \App\Models\InspectProcessType::firstOrCreate(['name' => 'Cutting']);
+        \App\Models\AreaDitemukan::firstOrCreate(
+            ['name' => 'Cutting', 'kategori' => \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY],
+            ['tipe' => \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT]
+        );
 
         $payloadWithoutArea = [
             'type'           => 'Pre Assy',
@@ -285,16 +288,16 @@ class OperatorInputDefectTest extends TestCase
 
         $res1 = $this->actingAsOperator()->post(route('input_defect.store'), $payloadWithoutArea);
         $res1->assertSessionHasErrors([
-            'inspect_process_type_id' => 'Area ditemukan Pre Assy wajib dipilih.',
+            'area_ditemukan' => 'Area ditemukan Pre Assy wajib dipilih.',
         ]);
 
-        $payloadWithArea = array_merge($payloadWithoutArea, ['inspect_process_type_id' => $inspectProcess->id]);
+        $payloadWithArea = array_merge($payloadWithoutArea, ['area_ditemukan' => 'Cutting']);
         $res2 = $this->actingAsOperator()->post(route('input_defect.store'), $payloadWithArea);
         $res2->assertRedirect(route('operator.home'));
 
         $this->assertDatabaseHas('defects', [
             'jenis_assy'              => 'Pre Assy',
-            'inspect_process_type_id' => $inspectProcess->id,
+            'inspect_process_type_id' => null,
             'area_ditemukan'          => 'Cutting',
             'quantity'                => 1,
         ]);
@@ -629,7 +632,10 @@ class OperatorInputDefectTest extends TestCase
             ['name' => 'FC'],
             ['kategori' => \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY, 'tipe' => \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT]
         );
-        \App\Models\InspectProcessType::firstOrCreate(['name' => 'Cutting']);
+        \App\Models\AreaDitemukan::firstOrCreate(
+            ['name' => 'Cutting', 'kategori' => \App\Models\AreaDitemukan::KATEGORI_PRE_ASSY],
+            ['tipe' => \App\Models\AreaDitemukan::TIPE_INTERNAL_DEFECT]
+        );
 
         // Final Assy page menampilkan tipe label
         $resFinal = $this->actingAsOperator()->get(route('input_defect.create', ['type' => 'Final Assy']));
