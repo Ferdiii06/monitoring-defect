@@ -10,7 +10,7 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen min-h-[100dvh] flex" x-data="{ editModal: false, editId: null, editName: '' }">
+<body class="bg-gray-50 text-gray-800 min-h-screen min-h-[100dvh] flex" x-data="{ editModal: false, editId: null, editName: '', editScanFormat: '' }">
 
     @include('partials.sidebar')
 
@@ -70,6 +70,16 @@
                             class="w-full border border-gray-200 rounded-lg p-3 text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white uppercase">
                     </div>
 
+                    <div>
+                        <label for="scan_format" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Format Nomor Assy</label>
+                        <select id="scan_format" name="scan_format"
+                            class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
+                            <option value="">Otomatis (coba kedua urutan)</option>
+                            <option value="assy_family" {{ old('scan_format') === 'assy_family' ? 'selected' : '' }}>Assy-Family (contoh: KCLL-8211)</option>
+                            <option value="family_assy" {{ old('scan_format') === 'family_assy' ? 'selected' : '' }}>Family-Assy (contoh: 82111-1LB01)</option>
+                        </select>
+                    </div>
+
                     <button type="submit" class="w-full bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold py-3 rounded-lg transition duration-200 shadow-sm flex items-center justify-center space-x-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         <span>Simpan Data</span>
@@ -90,6 +100,7 @@
                                 <tr class="border-b border-gray-200">
                                     <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 pl-2 w-16">No</th>
                                     <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Jenis Mobil</th>
+                                    <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4">Format Nomor Assy</th>
                                     <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center">Jumlah Carline</th>
                                     <th class="text-xs font-semibold text-gray-400 uppercase tracking-wider pb-3 px-4 text-center pr-2 w-32">Aksi</th>
                                 </tr>
@@ -103,6 +114,19 @@
                                                 {{ $carType->name }}
                                             </span>
                                         </td>
+                                        <td class="py-3.5 text-xs text-gray-600 px-4">
+                                            @if ($carType->scan_format === 'assy_family')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-100">
+                                                    Assy-Family
+                                                </span>
+                                            @elseif ($carType->scan_format === 'family_assy')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-800 border border-indigo-100">
+                                                    Family-Assy
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400 italic">Otomatis</span>
+                                            @endif
+                                        </td>
                                         <td class="py-3.5 text-xs text-gray-700 px-4 text-center font-semibold">
                                             <span class="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full font-bold">
                                                 {{ $carType->carlines_count }} Carline
@@ -112,7 +136,7 @@
                                             <div class="inline-flex items-center space-x-1.5">
                                                 <!-- Tombol Edit -->
                                                 <button type="button" 
-                                                    @click="editModal = true; editId = {{ $carType->id }}; editName = '{{ addslashes($carType->name) }}'"
+                                                    @click="editModal = true; editId = {{ $carType->id }}; editName = '{{ addslashes($carType->name) }}'; editScanFormat = '{{ $carType->scan_format ?? '' }}'"
                                                     class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">
                                                     Edit
                                                 </button>
@@ -129,7 +153,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="py-10 text-center text-xs text-gray-400 font-medium">Belum ada data jenis mobil.</td>
+                                        <td colspan="5" class="py-10 text-center text-xs text-gray-400 font-medium">Belum ada data jenis mobil.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -159,6 +183,16 @@
                     <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Nama Jenis Mobil <span class="text-red-500">*</span></label>
                     <input type="text" name="name" x-model="editName" required
                         class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] uppercase">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Format Nomor Assy</label>
+                    <select name="scan_format" x-model="editScanFormat"
+                        class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
+                        <option value="">Otomatis (coba kedua urutan)</option>
+                        <option value="assy_family">Assy-Family (contoh: KCLL-8211)</option>
+                        <option value="family_assy">Family-Assy (contoh: 82111-1LB01)</option>
+                    </select>
                 </div>
 
                 <div class="flex justify-end space-x-2 pt-2">

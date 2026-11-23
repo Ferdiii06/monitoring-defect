@@ -133,6 +133,7 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             match ($row->kanban_status) {
                 'terdaftar'            => 'Terdaftar',
                 'tidak_terdaftar'      => 'Tidak Terdaftar',
+                'family_beda'          => 'Family Beda',
                 'conveyor_beda'        => 'Conveyor Beda',
                 'format_tidak_dikenal' => 'Format Tidak Dikenal',
                 default                => '-',

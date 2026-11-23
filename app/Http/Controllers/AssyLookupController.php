@@ -34,10 +34,13 @@ class AssyLookupController extends Controller
         }
 
         $assyNumber = $parsed['assy_number'];
-        $master = AssyNumber::findByAssyNumber($assyNumber);
+        $master = $parsed['_master'] ?? AssyNumber::findByAssyNumber($parsed['assy'] ?? $assyNumber);
+        unset($parsed['_master']);
 
         return response()->json([
             'assy_number'         => $assyNumber,
+            'assy'                => $parsed['assy'] ?? $assyNumber,
+            'family'              => $parsed['family'] ?? null,
             'conveyor'            => $parsed['conveyor'] ?? null,
             'serial'              => $parsed['serial'] ?? null,
             'carline_id'          => $master?->carline_id ?? null,

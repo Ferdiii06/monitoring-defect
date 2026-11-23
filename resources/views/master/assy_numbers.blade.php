@@ -106,7 +106,7 @@
                                 <thead class="bg-amber-100/60 text-amber-900 font-bold sticky top-0">
                                     <tr>
                                         <th class="py-2 px-3 w-16">Baris</th>
-                                        <th class="py-2 px-3 w-40">Nomor Assy</th>
+                                        <th class="py-2 px-3 w-40">Assy</th>
                                         <th class="py-2 px-3">Alasan Dilewati</th>
                                     </tr>
                                 </thead>
@@ -146,7 +146,7 @@
                             <option value="">Semua Carline / Conveyor</option>
                             @foreach ($carlines as $c)
                                 <option value="{{ $c->id }}" {{ (string)$selectedCarline === (string)$c->id ? 'selected' : '' }}>
-                                    {{ $c->name }} {{ $c->carType ? '('.$c->carType->name.')' : '' }}
+                                    {{ $c->name }}{{ $c->carType?->name ? ' (' . $c->carType->name . ')' : '' }}
                                 </option>
                             @endforeach
                         </select>
@@ -181,9 +181,9 @@
                         <thead>
                             <tr class="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                                 <th class="py-3 px-4 w-12 text-center">No</th>
-                                <th class="py-3 px-4">Nomor Assy</th>
+                                <th class="py-3 px-4">Assy</th>
                                 <th class="py-3 px-4">Family</th>
-                                <th class="py-3 px-4">Conveyor</th>
+                                <th class="py-3 px-4">Kode Conveyor</th>
                                 <th class="py-3 px-4">Carline / Conveyor</th>
                                 <th class="py-3 px-4">Jenis Mobil</th>
                                 <th class="py-3 px-4">Keterangan</th>
@@ -215,7 +215,21 @@
                                         @endif
                                     </td>
                                     <td class="py-3.5 px-4 font-medium text-gray-600">
-                                        {{ $item->carline?->carType?->name ?? '—' }}
+                                        @php
+                                            $jm = $item->resolveJenisMobil($carlines);
+                                        @endphp
+                                        @if ($jm)
+                                            @if ($jm['from_conveyor'])
+                                                <span class="inline-flex items-center space-x-1" title="Terdeteksi otomatis dari kode conveyor">
+                                                    <span>{{ $jm['name'] }}</span>
+                                                    <span class="text-[10px] text-gray-400 font-normal italic">(conveyor)</span>
+                                                </span>
+                                            @else
+                                                <span>{{ $jm['name'] }}</span>
+                                            @endif
+                                        @else
+                                            <span class="text-gray-400 italic">—</span>
+                                        @endif
                                     </td>
                                     <td class="py-3.5 px-4 text-gray-500">
                                         {{ $item->keterangan ?? '—' }}
@@ -285,10 +299,10 @@
             <form action="{{ route('admin.master.assy_numbers.store') }}" method="POST" class="space-y-4">
                 @csrf
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Nomor Assy <span class="text-red-500">*</span></label>
-                    <input type="text" name="assy_number" placeholder="Contoh: 82111-VU020" required
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Assy <span class="text-red-500">*</span></label>
+                    <input type="text" name="assy_number" placeholder="Contoh: KCLL" required
                            class="w-full border border-gray-200 rounded-lg p-3 text-sm font-mono uppercase focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
-                    <span class="block text-[11px] text-gray-400 mt-1">Bisa format kanban (ada tanda '-') atau QR nameplate (tanpa strip).</span>
+                    <span class="block text-[11px] text-gray-400 mt-1">Isi kode assy saja (contoh: KCLL). Family diisi di kolom Family.</span>
                 </div>
 
                 <div>
@@ -297,7 +311,7 @@
                             class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
                         <option value="">-- Pilih Carline / Conveyor (Opsional) --</option>
                         @foreach ($carlines as $c)
-                            <option value="{{ $c->id }}">{{ $c->name }} {{ $c->carType ? '('.$c->carType->name.')' : '' }}</option>
+                            <option value="{{ $c->id }}">{{ $c->name }}{{ $c->carType?->name ? ' (' . $c->carType->name . ')' : '' }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -309,7 +323,7 @@
                                class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Conveyor</label>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Kode Conveyor</label>
                         <input type="text" name="conveyor" placeholder="Contoh: 1 / CV-01"
                                class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
                     </div>
@@ -343,7 +357,7 @@
                 @csrf
                 @method('PUT')
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Nomor Assy <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Assy <span class="text-red-500">*</span></label>
                     <input type="text" name="assy_number" x-model="editAssyNumber" required
                            class="w-full border border-gray-200 rounded-lg p-3 text-sm font-mono uppercase focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
                 </div>
@@ -354,7 +368,7 @@
                             class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
                         <option value="">-- Pilih Carline / Conveyor (Opsional) --</option>
                         @foreach ($carlines as $c)
-                            <option value="{{ $c->id }}">{{ $c->name }} {{ $c->carType ? '('.$c->carType->name.')' : '' }}</option>
+                            <option value="{{ $c->id }}">{{ $c->name }}{{ $c->carType?->name ? ' (' . $c->carType->name . ')' : '' }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -366,7 +380,7 @@
                                class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Conveyor</label>
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Kode Conveyor</label>
                         <input type="text" name="conveyor" x-model="editConveyor" placeholder="Contoh: 1 / CV-01"
                                class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000]">
                     </div>
@@ -412,7 +426,7 @@
                 <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 text-[11px] text-gray-600 space-y-1.5">
                     <div class="font-bold text-gray-800">Petunjuk Format File:</div>
                     <p>&bull; Format file didukung: <span class="font-semibold text-gray-700">.csv, .xlsx, .xls</span> (Disarankan menggunakan <span class="font-bold text-emerald-700">CSV UTF-8</span> untuk proses tercepat & hemat memori).</p>
-                    <p>&bull; Header kolom yang dikenali: <span class="font-mono font-semibold text-gray-800">assy_number</span> (wajib), <span class="font-mono font-semibold text-gray-800">family</span> (opsional), <span class="font-mono font-semibold text-gray-800">conveyor</span> (opsional), <span class="font-mono font-semibold text-gray-800">carline</span> (opsional), <span class="font-mono font-semibold text-gray-800">keterangan</span> (opsional).</p>
+                    <p>&bull; Header kolom yang dikenali: <span class="font-mono font-semibold text-gray-800">assy</span> (atau assy_number) (wajib), <span class="font-mono font-semibold text-gray-800">family</span> (opsional), <span class="font-mono font-semibold text-gray-800">conveyor</span> (opsional), <span class="font-mono font-semibold text-gray-800">carline</span> (opsional), <span class="font-mono font-semibold text-gray-800">keterangan</span> (opsional).</p>
                     <p>&bull; Import bersifat <span class="font-semibold text-gray-800">idempotent</span>: jika assy number sudah ada, datanya akan diperbarui tanpa menimpa family/conveyor lama jika kolom tersebut kosong di file.</p>
                 </div>
 

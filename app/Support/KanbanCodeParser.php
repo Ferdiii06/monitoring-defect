@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\AssyNumber;
+use App\Models\CarType;
 use App\Models\KanbanComponent;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -48,6 +49,10 @@ class KanbanCodeParser
     {
         self::$cachedDynamicPattern = null;
         self::$cacheInitialized = false;
+
+        if (class_exists(CarType::class)) {
+            CarType::clearConveyorCache();
+        }
 
         try {
             Cache::forget(self::CACHE_KEY);
@@ -271,9 +276,9 @@ class KanbanCodeParser
 
     /**
      * Parse kode kanban (e-kanban baru / kanban lama).
-     * Format acuan: ASSY.CONVEYOR.SERIAL atau sesuai urutan dinamis di master.
+     * Format acuan: ASSY-FAMILY.CONVEYOR.SERIAL atau sesuai urutan dinamis di master.
      *
-     * @return array{assy_number: string, conveyor: string, serial: string}|null
+     * @return array{assy_number: string, assy: string, family: ?string, conveyor: string, serial: string}|null
      */
     public static function parseKanban(?string $raw): ?array
     {
@@ -282,27 +287,147 @@ class KanbanCodeParser
             return null;
         }
 
+        $assyNumber = null;
+        $conveyor = null;
+        $serial = null;
+
         // 1. Coba regex dinamis dari master database (jika ada dan valid)
         $dynamicPattern = self::getDynamicPattern();
         if ($dynamicPattern !== null) {
             if (preg_match($dynamicPattern, $normalized, $matches)) {
-                return [
-                    'assy_number' => $matches['assy_number'] ?? null,
-                    'conveyor'    => $matches['conveyor'] ?? null,
-                    'serial'      => $matches['serial'] ?? null,
-                ];
+                $assyNumber = $matches['assy_number'] ?? null;
+                $conveyor = $matches['conveyor'] ?? null;
+                $serial = $matches['serial'] ?? null;
             }
         }
 
         // 2. Fallback ke KANBAN_PATTERN lama jika pola dinamis gagal atau master kosong
-        if (!preg_match(self::KANBAN_PATTERN, $normalized, $matches)) {
-            return null;
+        if ($assyNumber === null || $conveyor === null || $serial === null) {
+            if (!preg_match(self::KANBAN_PATTERN, $normalized, $matches)) {
+                return null;
+            }
+            $assyNumber = $matches[1];
+            $conveyor = $matches[2];
+            $serial = $matches[3];
         }
 
+        // Ekstrak token A dan token B dari bagian nomor assy
+        $tokenA = $assyNumber;
+        $tokenB = null;
+        if ($assyNumber !== null && strpos($assyNumber, '-') !== false) {
+            $parts = explode('-', $assyNumber, 2);
+            $tokenA = trim($parts[0]);
+            $tokenB = isset($parts[1]) && trim($parts[1]) !== '' ? trim($parts[1]) : null;
+        }
+
+        // Resolusi jenis mobil dari conveyor
+        $carType = class_exists(CarType::class) ? CarType::resolveFromConveyor($conveyor) : null;
+        $resolved = self::resolveAssyTokens($tokenA, $tokenB, $carType, $assyNumber);
+
         return [
-            'assy_number' => $matches[1],
-            'conveyor'    => $matches[2],
-            'serial'      => $matches[3],
+            'assy_number' => $assyNumber,
+            'assy'        => $resolved['assy'],
+            'family'      => $resolved['family'],
+            'conveyor'    => $conveyor,
+            'serial'      => $serial,
+            '_master'     => $resolved['master'],
+        ];
+    }
+
+    /**
+     * Resolusi assy, family, dan record master assy berdasarkan jenis mobil dan token.
+     *
+     * @return array{assy: string, family: ?string, master: ?\App\Models\AssyNumber}
+     */
+    public static function resolveAssyTokens(string $tokenA, ?string $tokenB, ?CarType $carType, string $fullAssyPart): array
+    {
+        if (!function_exists('app') || !app()->bound('db')) {
+            return [
+                'assy'   => $tokenA,
+                'family' => $tokenB,
+                'master' => null,
+            ];
+        }
+
+        if ($tokenB === null) {
+            $master = AssyNumber::findByAssyOnly($tokenA) ?? AssyNumber::findByFullString($fullAssyPart);
+            return [
+                'assy'   => $tokenA,
+                'family' => null,
+                'master' => $master,
+            ];
+        }
+
+        $scanFormat = $carType?->scan_format;
+
+        // 3c. Kalau jenis mobil ketemu dan scan_format terisi:
+        // Ambil assy dan family sesuai urutan itu secara ketat, cari master dengan assy itu. Tidak mencoba urutan lain.
+        if (filled($scanFormat)) {
+            if ($scanFormat === CarType::SCAN_FORMAT_FAMILY_ASSY) {
+                $candidateAssy = $tokenB;
+                $candidateFamily = $tokenA;
+            } else {
+                $candidateAssy = $tokenA;
+                $candidateFamily = $tokenB;
+            }
+
+            $master = AssyNumber::findByAssyOnly($candidateAssy);
+
+            return [
+                'assy'   => $candidateAssy,
+                'family' => $candidateFamily,
+                'master' => $master,
+            ];
+        }
+
+        // 3d. Kalau jenis mobil tidak ketemu atau scan_format NULL: coba kedua urutan.
+        // Kandidat assy = token A atau B; bila ada lebih dari satu kandidat,
+        // pilih yang family-nya cocok dengan token pasangannya.
+        $masterA = AssyNumber::findByAssyOnly($tokenA);
+        $masterB = AssyNumber::findByAssyOnly($tokenB);
+
+        if ($masterA !== null && $masterB === null) {
+            return [
+                'assy'   => $tokenA,
+                'family' => $tokenB,
+                'master' => $masterA,
+            ];
+        }
+
+        if ($masterB !== null && $masterA === null) {
+            return [
+                'assy'   => $tokenB,
+                'family' => $tokenA,
+                'master' => $masterB,
+            ];
+        }
+
+        if ($masterA !== null && $masterB !== null) {
+            $aMatches = filled($masterA->family) && strcasecmp(trim($masterA->family), $tokenB) === 0;
+            $bMatches = filled($masterB->family) && strcasecmp(trim($masterB->family), $tokenA) === 0;
+
+            if ($bMatches && !$aMatches) {
+                return [
+                    'assy'   => $tokenB,
+                    'family' => $tokenA,
+                    'master' => $masterB,
+                ];
+            }
+
+            return [
+                'assy'   => $tokenA,
+                'family' => $tokenB,
+                'master' => $masterA,
+            ];
+        }
+
+        // 3e. Bila tidak ada kandidat, fallback ke pencarian string penuh seperti sekarang.
+        $masterFull = AssyNumber::findByFullString($fullAssyPart);
+
+        return [
+            'assy'   => $tokenA,
+            'family' => $tokenB,
+            'master' => $masterFull,
         ];
     }
 
@@ -367,7 +492,7 @@ class KanbanCodeParser
     /**
      * Evaluasi kode kanban untuk alur rework:
      * - Parse nomor urut kanban (contoh '010' menjadi integer 10).
-     * - Tentukan status: 'terdaftar', 'tidak_terdaftar', 'conveyor_beda', 'format_tidak_dikenal'.
+     * - Tentukan status: 'terdaftar', 'tidak_terdaftar', 'family_beda', 'conveyor_beda', 'format_tidak_dikenal'.
      *
      * @return array{kanban_serial: ?int, kanban_status: string, parsed: ?array, master: ?\App\Models\AssyNumber}
      */
@@ -389,8 +514,8 @@ class KanbanCodeParser
             $serial = (int) $parsed['serial'];
         }
 
-        $assyNumber = $parsed['assy_number'] ?? null;
-        $master = AssyNumber::findByAssyNumber($assyNumber);
+        $master = $parsed['_master'] ?? AssyNumber::findByAssyNumber($parsed['assy'] ?? ($parsed['assy_number'] ?? null));
+        unset($parsed['_master']);
 
         if ($master === null) {
             return [
@@ -401,11 +526,25 @@ class KanbanCodeParser
             ];
         }
 
+        // 1. Cek Family: jika master family terisi dan berbeda dari family scan -> 'family_beda'
+        // Family master NULL jangan dianggap beda.
+        $masterFamily = trim((string) ($master->family ?? ''));
+        $scannedFamily = trim((string) ($parsed['family'] ?? ''));
+
+        if ($masterFamily !== '' && strcasecmp($masterFamily, $scannedFamily) !== 0) {
+            return [
+                'kanban_serial' => $serial,
+                'kanban_status' => 'family_beda',
+                'parsed'        => $parsed,
+                'master'        => $master,
+            ];
+        }
+
+        // 2. Cek Conveyor: jika master conveyor terisi dan berbeda dari conveyor scan -> 'conveyor_beda'
+        // Conveyor master NULL jangan dianggap beda.
         $masterConveyor = trim((string) ($master->conveyor ?? ''));
         $scannedConveyor = trim((string) ($parsed['conveyor'] ?? ''));
 
-        // Jika kolom conveyor master terisi dan berbeda dari conveyor hasil scan -> 'conveyor_beda'
-        // Kalau kolom conveyor master masih NULL (atau kosong), jangan anggap beda.
         if ($masterConveyor !== '' && strcasecmp($masterConveyor, $scannedConveyor) !== 0) {
             return [
                 'kanban_serial' => $serial,

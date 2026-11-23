@@ -11,6 +11,17 @@ class Carline extends Model
 
     protected $fillable = ['car_type_id', 'name'];
 
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            CarType::clearConveyorCache();
+        });
+
+        static::deleted(function () {
+            CarType::clearConveyorCache();
+        });
+    }
+
     public function carType()
     {
         return $this->belongsTo(CarType::class);

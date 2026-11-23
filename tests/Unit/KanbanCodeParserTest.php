@@ -245,6 +245,28 @@ class KanbanCodeParserTest extends TestCase
     }
 
     /**
+     * Test validasi kanban format ASSY-FAMILY.CONVEYOR.SERIAL dengan dan tanpa bintang.
+     */
+    public function test_parse_kanban_extracts_assy_and_family_keys(): void
+    {
+        $r1 = KanbanCodeParser::parseKanban('KCLL-8211.AB1.020');
+        $this->assertNotNull($r1);
+        $this->assertSame('KCLL-8211', $r1['assy_number']);
+        $this->assertSame('KCLL', $r1['assy']);
+        $this->assertSame('8211', $r1['family']);
+        $this->assertSame('AB1', $r1['conveyor']);
+        $this->assertSame('020', $r1['serial']);
+
+        $r2 = KanbanCodeParser::parseKanban('*KCLL-8211.AB1.020*');
+        $this->assertNotNull($r2);
+        $this->assertSame('KCLL-8211', $r2['assy_number']);
+        $this->assertSame('KCLL', $r2['assy']);
+        $this->assertSame('8211', $r2['family']);
+        $this->assertSame('AB1', $r2['conveyor']);
+        $this->assertSame('020', $r2['serial']);
+    }
+
+    /**
      * Test helper normalisasi assy number: hapus "-" dan spasi, uppercase.
      */
     public function test_normalize_assy_number(): void

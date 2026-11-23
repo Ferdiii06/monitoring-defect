@@ -200,6 +200,10 @@
                                                 <span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
                                                     Belum terdaftar
                                                 </span>
+                                            @elseif($first->kanban_status === 'family_beda')
+                                                <span class="inline-block bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                                    Family beda
+                                                </span>
                                             @elseif($first->kanban_status === 'conveyor_beda')
                                                 <span class="inline-block bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
                                                     Conveyor beda

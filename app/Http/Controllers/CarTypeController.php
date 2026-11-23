@@ -16,8 +16,11 @@ class CarTypeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:car_types,name',
+            'name'        => 'required|string|max:255|unique:car_types,name',
+            'scan_format' => 'nullable|string|in:assy_family,family_assy',
         ]);
+
+        $validated['scan_format'] = filled($validated['scan_format'] ?? null) ? $validated['scan_format'] : null;
 
         CarType::create($validated);
 
@@ -29,8 +32,11 @@ class CarTypeController extends Controller
         $carType = CarType::findOrFail($id);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:car_types,name,' . $id,
+            'name'        => 'required|string|max:255|unique:car_types,name,' . $id,
+            'scan_format' => 'nullable|string|in:assy_family,family_assy',
         ]);
+
+        $validated['scan_format'] = filled($validated['scan_format'] ?? null) ? $validated['scan_format'] : null;
 
         $carType->update($validated);
 

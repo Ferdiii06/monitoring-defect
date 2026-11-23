@@ -471,4 +471,128 @@ class AdminAssyNumberMasterTest extends TestCase
         // Dash indicates null family/conveyor rendered gracefully
         $response->assertSee('—');
     }
+
+    public function test_master_page_displays_updated_column_labels(): void
+    {
+        $carType = CarType::create(['name' => 'D26D']);
+        $carlineWithCarType = Carline::create(['name' => 'CARLINE-A', 'car_type_id' => $carType->id]);
+        $carlineWithoutCarType = Carline::create(['name' => 'CARLINE-B', 'car_type_id' => null]);
+
+        $response = $this->actingAsAdmin()->get(route('admin.master.assy_numbers.index'));
+        $response->assertStatus(200);
+
+        // Header tabel memuat "Assy", "Kode Conveyor", dan "Carline / Conveyor"
+        $response->assertSee('<th class="py-3 px-4">Assy</th>', false);
+        $response->assertSee('<th class="py-3 px-4">Kode Conveyor</th>', false);
+        $response->assertSee('<th class="py-3 px-4">Carline / Conveyor</th>', false);
+        $response->assertDontSee('<th class="py-3 px-4">Nomor Assy</th>', false);
+
+        // Filter dropdown opsi memuat "Semua Carline / Conveyor"
+        $response->assertSee('<option value="">Semua Carline / Conveyor</option>', false);
+
+        // Form modal tambah & edit memuat label "Carline / Conveyor" dan "Kode Conveyor"
+        $response->assertSee('Carline / Conveyor');
+        $response->assertSee('Kode Conveyor');
+        $response->assertSee('-- Pilih Carline / Conveyor (Opsional) --');
+
+        // Modal tambah assy placeholder dan hint
+        $response->assertSee('placeholder="Contoh: KCLL"', false);
+        $response->assertSee('Isi kode assy saja (contoh: KCLL). Family diisi di kolom Family.');
+
+        // Format dropdown options: CARLINE-A (D26D) dan CARLINE-B tanpa tanda kurung
+        $response->assertSee('CARLINE-A (D26D)');
+        $response->assertSee('CARLINE-B');
+        $response->assertDontSee('CARLINE-B ()');
+    }
+
+    public function test_jenis_mobil_display_resolved_from_conveyor_token_only(): void
+    {
+        $carTypeMazda = CarType::create(['name' => 'MAZDA']);
+        $carTypeToyota = CarType::create(['name' => 'TOYOTA']);
+
+        // Carlines dengan token AB1 (keduanya MAZDA)
+        Carline::create(['name' => 'J30A-AB1.INPANEL LHD', 'car_type_id' => $carTypeMazda->id]);
+        Carline::create(['name' => 'J30A-AB1.INPANEL RHD', 'car_type_id' => $carTypeMazda->id]);
+
+        // Carlines dengan token MIX1 (campuran TOYOTA dan MAZDA)
+        Carline::create(['name' => 'LINE-MIX1', 'car_type_id' => $carTypeToyota->id]);
+        Carline::create(['name' => 'LINE-MIX1.RHD', 'car_type_id' => $carTypeMazda->id]);
+
+        // 1. Satu car_type: conveyor AB1 -> Jenis Mobil MAZDA (conveyor)
+        $assySingle = AssyNumber::create([
+            'assy_number' => 'KCLL-SINGLE',
+            'family'      => '67030',
+            'conveyor'    => 'AB1',
+            'carline_id'  => null,
+        ]);
+
+        $resSingle = $this->actingAsAdmin()->get(route('admin.master.assy_numbers.index'));
+        $resSingle->assertOk();
+        $resSingle->assertSee('MAZDA');
+        $resSingle->assertSee('(conveyor)');
+        // carline_id tetap null di DB
+        $this->assertNull($assySingle->fresh()->carline_id);
+
+        // 2. Token AB10 tidak boleh cocok dengan AB1
+        $assyTokenMismatch = AssyNumber::create([
+            'assy_number' => 'KCLN-AB10',
+            'conveyor'    => 'AB10',
+            'carline_id'  => null,
+        ]);
+        $infoTokenMismatch = $assyTokenMismatch->resolveJenisMobil();
+        $this->assertNull($infoTokenMismatch);
+
+        // 3. Campuran car_type: conveyor MIX1 -> null
+        $assyMixed = AssyNumber::create([
+            'assy_number' => 'KMIX-MULTI',
+            'conveyor'    => 'MIX1',
+            'carline_id'  => null,
+        ]);
+        $infoMixed = $assyMixed->resolveJenisMobil();
+        $this->assertNull($infoMixed);
+
+        // 4. Tanpa kecocokan: conveyor NONE99 -> null
+        $assyNoMatch = AssyNumber::create([
+            'assy_number' => 'KNONE-001',
+            'conveyor'    => 'NONE99',
+            'carline_id'  => null,
+        ]);
+        $infoNoMatch = $assyNoMatch->resolveJenisMobil();
+        $this->assertNull($infoNoMatch);
+    }
+
+    public function test_importer_with_capitalized_headers_does_not_misread_family_as_carline(): void
+    {
+        // CSV dengan header kapital: Assy, Family, Conveyor
+        $csvContent = "Assy,Family,Conveyor\n"
+            . "KCLL,67030,AB1\n"
+            . "KCLT,8211,C7\n";
+
+        $file = UploadedFile::fake()->createWithContent('assy_capital_headers.csv', $csvContent);
+
+        $response = $this->actingAsAdmin()->post(route('admin.master.assy_numbers.import'), [
+            'file' => $file,
+        ]);
+
+        $response->assertRedirect(route('admin.master.assy_numbers.index'));
+        $response->assertSessionHas('import_summary');
+
+        $summary = session('import_summary');
+        $this->assertSame(2, $summary['success']);
+        $this->assertSame(0, $summary['skipped']);
+
+        // Pastikan KCLL tersimpan dengan family 67030 dan conveyor AB1
+        $kcll = AssyNumber::where('assy_number', 'KCLL')->first();
+        $this->assertNotNull($kcll);
+        $this->assertSame('67030', $kcll->family);
+        $this->assertSame('AB1', $kcll->conveyor);
+        $this->assertNull($kcll->carline_id); // Family TIDAK dijadikan carline
+
+        // Pastikan KCLT tersimpan dengan family 8211 dan conveyor C7
+        $kclt = AssyNumber::where('assy_number', 'KCLT')->first();
+        $this->assertNotNull($kclt);
+        $this->assertSame('8211', $kclt->family);
+        $this->assertSame('C7', $kclt->conveyor);
+        $this->assertNull($kclt->carline_id);
+    }
 }

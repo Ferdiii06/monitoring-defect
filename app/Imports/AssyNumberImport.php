@@ -91,9 +91,17 @@ class AssyNumberImport implements ToCollection, WithHeadingRow, WithChunkReading
                 continue;
             }
 
-            // Extract carline
+            // Extract family
+            $rawFamily = $row['family'] ?? null;
+            $family = filled($rawFamily) ? trim((string) $rawFamily) : null;
+
+            // Extract conveyor
+            $rawConveyor = $row['conveyor'] ?? $row['konveyor'] ?? null;
+            $conveyor = filled($rawConveyor) ? trim((string) $rawConveyor) : null;
+
+            // Extract carline (hanya fallback ke index [1] jika tidak ada kolom family atau conveyor)
             $rawCarline = $row['carline'] ?? $row['nama_carline'] ?? $row['carline_name'] ?? null;
-            if ($rawCarline === null && isset($row[1])) {
+            if ($rawCarline === null && isset($row[1]) && !isset($row['family']) && !isset($row['conveyor'])) {
                 $rawCarline = $row[1];
             }
             $rawCarline = filled($rawCarline) ? trim((string) $rawCarline) : null;
@@ -115,17 +123,9 @@ class AssyNumberImport implements ToCollection, WithHeadingRow, WithChunkReading
                 }
             }
 
-            // Extract family (only 'family')
-            $rawFamily = $row['family'] ?? null;
-            $family = filled($rawFamily) ? trim((string) $rawFamily) : null;
-
-            // Extract conveyor (only 'conveyor' or 'konveyor')
-            $rawConveyor = $row['conveyor'] ?? $row['konveyor'] ?? null;
-            $conveyor = filled($rawConveyor) ? trim((string) $rawConveyor) : null;
-
-            // Optional keterangan
+            // Optional keterangan (hanya fallback ke index [2] jika tidak ada kolom conveyor)
             $keterangan = $row['keterangan'] ?? $row['notes'] ?? $row['description'] ?? null;
-            if ($keterangan === null && isset($row[2])) {
+            if ($keterangan === null && isset($row[2]) && !isset($row['conveyor'])) {
                 $keterangan = $row[2];
             }
             $keterangan = filled($keterangan) ? trim((string) $keterangan) : null;
