@@ -34,15 +34,7 @@ class AssyLookupController extends Controller
         }
 
         $assyNumber = $parsed['assy_number'];
-        $normalizedAssy = KanbanCodeParser::normalizeAssyNumber($assyNumber);
-
-        $master = AssyNumber::with(['carline.carType'])
-            ->where(function ($q) use ($assyNumber, $normalizedAssy) {
-                $q->where('assy_number', $assyNumber)
-                  ->orWhere('assy_number', $normalizedAssy)
-                  ->orWhereRaw("REPLACE(REPLACE(UPPER(assy_number), '-', ''), ' ', '') = ?", [$normalizedAssy]);
-            })
-            ->first();
+        $master = AssyNumber::findByAssyNumber($assyNumber);
 
         return response()->json([
             'assy_number'         => $assyNumber,

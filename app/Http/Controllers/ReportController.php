@@ -914,6 +914,9 @@ class ReportController extends Controller
         if ($request->has('no_defective_tag')) {
             $request->merge(['no_defective_tag' => filled($request->input('no_defective_tag')) ? trim((string) $request->input('no_defective_tag')) : null]);
         }
+        if ($request->has('no_sequence')) {
+            $request->merge(['no_sequence' => filled($request->input('no_sequence')) ? trim((string) $request->input('no_sequence')) : null]);
+        }
 
         $type = $request->input('type');
         $isPreAssy = $type === 'Pre Assy';
@@ -969,6 +972,7 @@ class ReportController extends Controller
             'no_mesin'                 => ($isPreAssy && !$isZeroDefect && $hasActiveMachines) ? 'required|string|max:255' : 'nullable|string|max:255',
             'nameplate_lama'           => 'nullable|string|max:255',
             'no_defective_tag'         => 'nullable|string|max:255',
+            'no_sequence'              => 'nullable|string|max:255',
             // Kolom baru master data
             'carline_id'               => 'required_if:type,Pre Assy|nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
@@ -1020,6 +1024,18 @@ class ReportController extends Controller
             ? trim((string) $validated['no_mesin'])
             : null;
 
+        $noSequence = ($isPreAssy && $isZeroDefect)
+            ? null
+            : (filled($validated['no_sequence'] ?? null) ? trim((string) $validated['no_sequence']) : null);
+
+        $noDefectiveTag = ($isPreAssy && $isZeroDefect)
+            ? null
+            : (filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null);
+
+        $nameplateLama = $isPreAssy
+            ? null
+            : (filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null);
+
         $defect = Defect::create([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'user_name'                => $userName,
@@ -1039,8 +1055,9 @@ class ReportController extends Controller
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
             'no_mesin'                 => $noMesin,
-            'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
-            'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
+            'nameplate_lama'           => $nameplateLama,
+            'no_defective_tag'         => $noDefectiveTag,
+            'no_sequence'              => $noSequence,
             // Kolom baru master data
             'carline_id'               => filled($validated['carline_id'] ?? null) ? $validated['carline_id'] : null,
             'inspect_process_type_id'  => $inspectProcessTypeId,
@@ -1158,6 +1175,9 @@ class ReportController extends Controller
         if ($request->has('no_defective_tag')) {
             $request->merge(['no_defective_tag' => filled($request->input('no_defective_tag')) ? trim((string) $request->input('no_defective_tag')) : null]);
         }
+        if ($request->has('no_sequence')) {
+            $request->merge(['no_sequence' => filled($request->input('no_sequence')) ? trim((string) $request->input('no_sequence')) : null]);
+        }
 
         $jenisMobil = $request->input('jenis_mobil', $defect->jenis_mobil);
         $conveyor = $request->input('conveyor', $defect->conveyor);
@@ -1224,6 +1244,7 @@ class ReportController extends Controller
             'no_mesin'                 => $noMesinRule,
             'nameplate_lama'           => 'nullable|string|max:255',
             'no_defective_tag'         => 'nullable|string|max:255',
+            'no_sequence'              => 'nullable|string|max:255',
             'carline_id'               => $isPreAssy ? ($defect->carline_id ? 'required|exists:carlines,id' : 'nullable|exists:carlines,id') : 'nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
@@ -1273,6 +1294,18 @@ class ReportController extends Controller
             ? trim((string) $validated['no_mesin'])
             : null;
 
+        $noSequence = ($isPreAssyRecord && $isZeroDefect)
+            ? null
+            : (filled($validated['no_sequence'] ?? null) ? trim((string) $validated['no_sequence']) : null);
+
+        $noDefectiveTag = ($isPreAssyRecord && $isZeroDefect)
+            ? null
+            : (filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null);
+
+        $nameplateLama = $isPreAssyRecord
+            ? null
+            : (filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null);
+
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $recordType,
@@ -1290,8 +1323,9 @@ class ReportController extends Controller
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
             'no_mesin'                 => $noMesin,
-            'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
-            'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
+            'nameplate_lama'           => $nameplateLama,
+            'no_defective_tag'         => $noDefectiveTag,
+            'no_sequence'              => $noSequence,
             'carline_id'               => filled($validated['carline_id'] ?? null) ? $validated['carline_id'] : null,
             'inspect_process_type_id'  => $inspectProcessTypeId,
             'final_inspect_type_id'    => filled($finalInspectTypeId) ? $finalInspectTypeId : null,
@@ -1412,6 +1446,9 @@ class ReportController extends Controller
         if ($request->has('no_defective_tag')) {
             $request->merge(['no_defective_tag' => filled($request->input('no_defective_tag')) ? trim((string) $request->input('no_defective_tag')) : null]);
         }
+        if ($request->has('no_sequence')) {
+            $request->merge(['no_sequence' => filled($request->input('no_sequence')) ? trim((string) $request->input('no_sequence')) : null]);
+        }
 
         $jenisMobil = $request->input('jenis_mobil', $defect->jenis_mobil);
         $conveyor = $request->input('conveyor', $defect->conveyor);
@@ -1478,6 +1515,7 @@ class ReportController extends Controller
             'no_mesin'                 => $noMesinRule,
             'nameplate_lama'           => 'nullable|string|max:255',
             'no_defective_tag'         => 'nullable|string|max:255',
+            'no_sequence'              => 'nullable|string|max:255',
             'carline_id'               => $isPreAssy ? ($defect->carline_id ? 'required|exists:carlines,id' : 'nullable|exists:carlines,id') : 'nullable|exists:carlines,id',
             'inspect_process_type_id'  => 'nullable|exists:inspect_process_types,id',
             'final_inspect_type_id'    => $this->getFinalInspectTypeValidationRules($isApplicable, $jenisMobil, $conveyor),
@@ -1527,6 +1565,18 @@ class ReportController extends Controller
             ? trim((string) $validated['no_mesin'])
             : null;
 
+        $noSequence = ($isPreAssyRecord && $isZeroDefect)
+            ? null
+            : (filled($validated['no_sequence'] ?? null) ? trim((string) $validated['no_sequence']) : null);
+
+        $noDefectiveTag = ($isPreAssyRecord && $isZeroDefect)
+            ? null
+            : (filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null);
+
+        $nameplateLama = $isPreAssyRecord
+            ? null
+            : (filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null);
+
         $defect->update([
             'waktu'                    => Carbon::parse($validated['tanggal'] . ' ' . $validated['jam']),
             'jenis_assy'               => $recordType,
@@ -1544,8 +1594,9 @@ class ReportController extends Controller
             'keterangan'               => $validated['keterangan'] ?? null,
             'no_terminal'              => $validated['no_terminal'] ?? null,
             'no_mesin'                 => $noMesin,
-            'nameplate_lama'           => filled($validated['nameplate_lama'] ?? null) ? trim((string) $validated['nameplate_lama']) : null,
-            'no_defective_tag'         => filled($validated['no_defective_tag'] ?? null) ? trim((string) $validated['no_defective_tag']) : null,
+            'nameplate_lama'           => $nameplateLama,
+            'no_defective_tag'         => $noDefectiveTag,
+            'no_sequence'              => $noSequence,
             'carline_id'               => filled($validated['carline_id'] ?? null) ? $validated['carline_id'] : null,
             'inspect_process_type_id'  => $inspectProcessTypeId,
             'final_inspect_type_id'    => filled($finalInspectTypeId) ? $finalInspectTypeId : null,

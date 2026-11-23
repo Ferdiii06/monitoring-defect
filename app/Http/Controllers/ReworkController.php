@@ -7,6 +7,7 @@ use App\Models\CarType;
 use App\Models\Carline;
 use App\Models\Defect;
 use App\Models\SubDefectType;
+use App\Support\KanbanCodeParser;
 use App\Support\RoleRouteHelper;
 use App\Support\SubDefectHelper;
 use Carbon\Carbon;
@@ -250,6 +251,8 @@ class ReworkController extends Controller
             ? strtoupper(trim((string) $request->input('nameplate_baru')))
             : null;
 
+        $kanbanEval = KanbanCodeParser::evaluateKanban($validated['kanban_assy']);
+
         foreach ($validated['sub_defect_ids'] as $subDefectId) {
             $sub = $subDefects->get($subDefectId);
             if (!$sub) {
@@ -265,6 +268,8 @@ class ReworkController extends Controller
                 'status_rework'        => $isSusulan ? 'CLOSE' : 'OPEN',
                 'is_susulan'           => $isSusulan,
                 'kanban_assy'          => $validated['kanban_assy'],
+                'kanban_serial'        => $kanbanEval['kanban_serial'],
+                'kanban_status'        => $kanbanEval['kanban_status'],
                 'nameplate_lama'       => $validated['nameplate'],
                 'nameplate_baru'       => $nameplateBaru,
                 'no_defective_tag'     => $request->input('no_defective_tag') ?: null,
@@ -513,6 +518,7 @@ class ReworkController extends Controller
 
         DB::transaction(function () use ($existingDefects, $groupId, $validated, $subDefects, $first, $reworkArea, $request, $resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil) {
             $kanban = $validated['kanban_assy'];
+            $kanbanEval = KanbanCodeParser::evaluateKanban($kanban);
             $nameplate = $validated['nameplate'];
             $newSubIds = array_map('intval', $validated['sub_defect_ids']);
 
@@ -522,6 +528,8 @@ class ReworkController extends Controller
 
             $sharedUpdates = [
                 'kanban_assy'          => $kanban,
+                'kanban_serial'        => $kanbanEval['kanban_serial'],
+                'kanban_status'        => $kanbanEval['kanban_status'],
                 'nameplate_lama'       => $nameplate,
                 'area_ditemukan'       => $reworkArea,
                 'nameplate_baru'       => $request->has('nameplate_baru') ? ($request->input('nameplate_baru') ?: null) : $template->nameplate_baru,

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\AssyNumber;
 use App\Models\KanbanComponent;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -361,6 +362,65 @@ class KanbanCodeParser
         }
 
         return null;
+    }
+
+    /**
+     * Evaluasi kode kanban untuk alur rework:
+     * - Parse nomor urut kanban (contoh '010' menjadi integer 10).
+     * - Tentukan status: 'terdaftar', 'tidak_terdaftar', 'conveyor_beda', 'format_tidak_dikenal'.
+     *
+     * @return array{kanban_serial: ?int, kanban_status: string, parsed: ?array, master: ?\App\Models\AssyNumber}
+     */
+    public static function evaluateKanban(?string $raw): array
+    {
+        $parsed = self::parseKanban($raw);
+
+        if ($parsed === null) {
+            return [
+                'kanban_serial' => null,
+                'kanban_status' => 'format_tidak_dikenal',
+                'parsed'        => null,
+                'master'        => null,
+            ];
+        }
+
+        $serial = null;
+        if (isset($parsed['serial']) && $parsed['serial'] !== '') {
+            $serial = (int) $parsed['serial'];
+        }
+
+        $assyNumber = $parsed['assy_number'] ?? null;
+        $master = AssyNumber::findByAssyNumber($assyNumber);
+
+        if ($master === null) {
+            return [
+                'kanban_serial' => $serial,
+                'kanban_status' => 'tidak_terdaftar',
+                'parsed'        => $parsed,
+                'master'        => null,
+            ];
+        }
+
+        $masterConveyor = trim((string) ($master->conveyor ?? ''));
+        $scannedConveyor = trim((string) ($parsed['conveyor'] ?? ''));
+
+        // Jika kolom conveyor master terisi dan berbeda dari conveyor hasil scan -> 'conveyor_beda'
+        // Kalau kolom conveyor master masih NULL (atau kosong), jangan anggap beda.
+        if ($masterConveyor !== '' && strcasecmp($masterConveyor, $scannedConveyor) !== 0) {
+            return [
+                'kanban_serial' => $serial,
+                'kanban_status' => 'conveyor_beda',
+                'parsed'        => $parsed,
+                'master'        => $master,
+            ];
+        }
+
+        return [
+            'kanban_serial' => $serial,
+            'kanban_status' => 'terdaftar',
+            'parsed'        => $parsed,
+            'master'        => $master,
+        ];
     }
 
     /**

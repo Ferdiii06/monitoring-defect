@@ -80,6 +80,8 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             'Sub Defect',
             'Quantity',
             'Input Susulan',
+            'No Urut Kanban',
+            'Status Kanban',
         ];
     }
 
@@ -127,6 +129,14 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             $row->jenis_sub_defect ?? '-',
             $row->quantity ?? 1,
             $row->is_susulan ? 'Ya' : 'Tidak',
+            $row->kanban_serial !== null ? $row->kanban_serial : '-',
+            match ($row->kanban_status) {
+                'terdaftar'            => 'Terdaftar',
+                'tidak_terdaftar'      => 'Tidak Terdaftar',
+                'conveyor_beda'        => 'Conveyor Beda',
+                'format_tidak_dikenal' => 'Format Tidak Dikenal',
+                default                => '-',
+            },
         ];
     }
 }

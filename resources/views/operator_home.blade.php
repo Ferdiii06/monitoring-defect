@@ -159,10 +159,13 @@
                                 </div>
 
                                 <!-- Additional info tags if exists -->
-                                @if($defect->end_number || $defect->no_terminal || $defect->no_mesin || $defect->nameplate_lama || $defect->no_defective_tag)
+                                @if($defect->end_number || $defect->no_terminal || $defect->no_mesin || $defect->nameplate_lama || $defect->no_sequence || $defect->no_defective_tag)
                                     <div class="flex flex-wrap gap-2 pt-1 text-[11px]">
                                         @if($defect->nameplate_lama)
                                             <span class="bg-red-50 text-[#8b0000] border border-red-200 px-2 py-0.5 rounded font-mono font-bold">NP: {{ $defect->nameplate_lama }}</span>
+                                        @endif
+                                        @if($defect->jenis_assy === 'Pre Assy' && $defect->no_sequence)
+                                            <span class="bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded font-mono font-bold">SEQ: {{ $defect->no_sequence }}</span>
                                         @endif
                                         @if($defect->no_defective_tag)
                                             <span class="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-mono font-bold">Tag: {{ $defect->no_defective_tag }}</span>

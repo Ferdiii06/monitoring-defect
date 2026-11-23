@@ -30,6 +30,7 @@ class Defect extends Model
         'keterangan',
         'no_terminal',
         'no_mesin',
+        'no_sequence',
         // Kolom baru (Tahap C)
         'inspect_quantity',
         'ditemukan_oleh',
@@ -45,6 +46,8 @@ class Defect extends Model
         'durasi_rework_menit',
         'status_rework',
         'kanban_assy',
+        'kanban_serial',
+        'kanban_status',
         'nameplate_lama',
         'nameplate_baru',
         'no_defective_tag',
@@ -72,6 +75,7 @@ class Defect extends Model
         'waktu_in'                 => 'datetime',
         'waktu_out'                => 'datetime',
         'durasi_rework_menit'      => 'integer',
+        'kanban_serial'            => 'integer',
         'is_susulan'               => 'boolean',
     ];
 

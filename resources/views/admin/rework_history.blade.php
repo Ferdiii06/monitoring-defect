@@ -186,9 +186,31 @@
                             <!-- Kanban & Nameplate -->
                             <td class="py-4 text-xs px-4 align-top">
                                 <div class="space-y-0.5">
-                                    <span class="block text-sm font-black text-gray-900 tracking-tight">
-                                        {{ $first?->kanban_assy ?? '-' }}
-                                    </span>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-sm font-black text-gray-900 tracking-tight">
+                                            {{ $first?->kanban_assy ?? '-' }}
+                                        </span>
+                                        @if($first?->kanban_serial !== null)
+                                            <span class="inline-block bg-gray-100 text-gray-700 text-[10px] font-bold px-1.5 py-0.5 rounded font-mono">
+                                                #{{ $first->kanban_serial }}
+                                            </span>
+                                        @endif
+                                        @if($first?->kanban_status && $first->kanban_status !== 'terdaftar')
+                                            @if($first->kanban_status === 'tidak_terdaftar')
+                                                <span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                                    Belum terdaftar
+                                                </span>
+                                            @elseif($first->kanban_status === 'conveyor_beda')
+                                                <span class="inline-block bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                                    Conveyor beda
+                                                </span>
+                                            @elseif($first->kanban_status === 'format_tidak_dikenal')
+                                                <span class="inline-block bg-rose-50 text-rose-800 border border-rose-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                                    Format tidak dikenal
+                                                </span>
+                                            @endif
+                                        @endif
+                                    </div>
                                     <span class="block text-xs font-bold font-mono text-gray-500">
                                         NP: {{ $first?->nameplate_lama ?? '-' }}
                                     </span>
