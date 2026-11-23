@@ -110,8 +110,60 @@ class PreAssySequenceTest extends TestCase
         $response = $this->actingAsOperator()->get(route('input_defect.create', ['type' => 'Pre Assy']));
         $response->assertStatus(200);
 
+        // Template No Sequence ada di form Pre Assy, Nameplate tidak ada
         $response->assertSee('NO SEQUENCE');
         $response->assertDontSee('NAMEPLATE (NP)');
+
+        // Kondisi Alpine: No Sequence hanya aktif jika ada defect dan bukan Zero Defect
+        $response->assertSee("form.type === 'Pre Assy' && form.jenis_defect && form.jenis_defect !== 'Zero Defect'", false);
+
+        // State awal saat baru buka: jenis_defect kosong sehingga field tersembunyi
+        $response->assertSee("jenis_defect: ''", false);
+    }
+
+    public function test_form_pre_assy_edit_displays_saved_sequence_when_defect_exists(): void
+    {
+        $defect = Defect::create([
+            'waktu'            => now(),
+            'user_name'        => 'Operator Pre',
+            'shift'            => '1A',
+            'jenis_assy'       => 'Pre Assy',
+            'jenis_defect'     => 'CORE',
+            'jenis_sub_defect' => 'A.1',
+            'quantity'         => 1,
+            'no_sequence'      => 'SEQ-EXISTING-123',
+            'no_defective_tag' => 'TAG-EXISTING-456',
+        ]);
+
+        $response = $this->actingAsOperator()->get(route('input_defect.edit', $defect->id));
+        $response->assertStatus(200);
+
+        // State terisi dengan defect dan sequence tersimpan
+        $response->assertSee("jenis_defect: 'CORE'", false);
+        $response->assertSee("no_sequence: 'SEQ-EXISTING-123'", false);
+        $response->assertSee("no_defective_tag: 'TAG-EXISTING-456'", false);
+    }
+
+    public function test_form_pre_assy_edit_zero_defect_keeps_sequence_empty(): void
+    {
+        $zeroDefect = Defect::create([
+            'waktu'            => now(),
+            'user_name'        => 'Operator Pre',
+            'shift'            => '1A',
+            'jenis_assy'       => 'Pre Assy',
+            'jenis_defect'     => 'Zero Defect',
+            'jenis_sub_defect' => '-',
+            'quantity'         => 0,
+            'no_sequence'      => null,
+            'no_defective_tag' => null,
+        ]);
+
+        $response = $this->actingAsOperator()->get(route('input_defect.edit', $zeroDefect->id));
+        $response->assertStatus(200);
+
+        // State jenis_defect bernilai 'Zero Defect' (sehingga kondisi x-if Alpine false)
+        $response->assertSee("jenis_defect: 'Zero Defect'", false);
+        $response->assertSee("no_sequence: ''", false);
     }
 
     public function test_form_final_assy_contains_nameplate_and_does_not_contain_no_sequence(): void

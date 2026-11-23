@@ -258,7 +258,7 @@
 
                 <!-- PRE ASSY: Identitas Harness & Tag (Hanya saat ada defect) -->
                 @if(($type ?? '') !== 'Final Assy' || !request()->filled('type'))
-                    <template x-if="form.type === 'Pre Assy' && form.jenis_defect !== 'Zero Defect'">
+                    <template x-if="form.type === 'Pre Assy' && form.jenis_defect && form.jenis_defect !== 'Zero Defect'">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                             <x-form-input 
                                 label="NO SEQUENCE (OPSIONAL)" 
