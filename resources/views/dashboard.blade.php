@@ -74,11 +74,11 @@
 
     <!-- KPI Cards Grid (Using Reusable metric-card) -->
     <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        <!-- Card 1: Total Defect -->
+        <!-- Card 1: Defect Bulan Ini -->
         <x-metric-card
-            label="Total Defect"
-            :value="number_format($totalDefect, 0, ',', '.')"
-            valueId="stat-total-defect"
+            label="Defect Bulan Ini"
+            :value="number_format($defectBulanIni, 0, ',', '.')"
+            valueId="stat-defect-bulan-ini"
             iconBg="bg-red-50"
             iconBorder="border-red-100"
             iconColor="text-brand"
@@ -90,7 +90,7 @@
             </x-slot:icon>
             <x-slot:trend>
                 <x-status-badge type="defect">Defect QA</x-status-badge>
-                <span class="text-[10px] text-gray-400 font-medium">Akumulatif</span>
+                <span class="text-[10px] text-gray-400 font-medium">{{ \Carbon\Carbon::now()->locale('id')->isoFormat('MMMM Y') }}</span>
             </x-slot:trend>
         </x-metric-card>
 
@@ -4233,13 +4233,13 @@
                 .then(r => r.json())
                 .then(stats => {
                     if (reqMode !== currentMode) return;
-                    const totalEl = document.getElementById('stat-total-defect');
-                    if (totalEl && stats.totalDefect !== undefined && stats.totalDefect !== null) {
-                        const num = Number(stats.totalDefect);
+                    const monthEl = document.getElementById('stat-defect-bulan-ini');
+                    if (monthEl && stats.defectBulanIni !== undefined && stats.defectBulanIni !== null) {
+                        const num = Number(stats.defectBulanIni);
                         const newTxt = isNaN(num) ? '0' : num.toLocaleString('id-ID');
-                        if (totalEl.innerText !== newTxt) {
-                            totalEl.innerText = newTxt;
-                            flashElement(totalEl);
+                        if (monthEl.innerText !== newTxt) {
+                            monthEl.innerText = newTxt;
+                            flashElement(monthEl);
                         }
                     }
 

@@ -112,7 +112,7 @@ class CombinedModeBackendTest extends TestCase
         $res = $this->actingAsAdmin()->getJson('/api/dashboard/stats?mode=all');
         $res->assertStatus(200);
         $res->assertJson([
-            'totalDefect'     => 14,
+            'defectBulanIni'  => 14,
             'internal_defect' => 14,
             'rework_defect'   => 0,
             'internal_percent'=> 100.0,

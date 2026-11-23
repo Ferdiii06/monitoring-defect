@@ -48,7 +48,7 @@ class DashboardController extends Controller
         }
 
         // Hitung statistik dari database
-        $totalDefect = (clone $baseDefectQuery)->sum('quantity');
+        $defectBulanIni = (int) Defect::defectBulanIni($mappedMode)->sum('quantity');
         $defectToday = (clone $baseDefectQuery)->whereDate('waktu', Carbon::today())->sum('quantity');
 
         // 🆕 Active Users & Total Users - diambil dari endpoint qa-backend
@@ -110,7 +110,7 @@ class DashboardController extends Controller
             ->get(['id', 'name']);
 
         return view('dashboard', compact(
-            'totalDefect',
+            'defectBulanIni',
             'defectToday',
             'activeUsers',
             'totalUsers',

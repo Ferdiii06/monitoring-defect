@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
 
 class Defect extends Model
 {
@@ -116,6 +117,29 @@ class Defect extends Model
     public function scopeOperatorInput($query)
     {
         return $query->whereNull('rework_group_id');
+    }
+
+    /**
+     * Scope data defect operator bulan kalender berjalan (Asia/Jakarta).
+     * Menerapkan rentang waktu whereBetween (00:00:00 s.d. 23:59:59),
+     * hanya operator (rework_group_id IS NULL), dan filter mode assy ('final'/'pre'/'total').
+     */
+    public function scopeDefectBulanIni($query, ?string $mode = 'total')
+    {
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth()->startOfDay();
+        $endOfMonth = $now->copy()->endOfMonth()->endOfDay();
+
+        $query->operatorInput()
+            ->whereBetween('waktu', [$startOfMonth, $endOfMonth]);
+
+        if ($mode === 'final') {
+            $query->where('jenis_assy', 'Final Assy');
+        } elseif ($mode === 'pre') {
+            $query->where('jenis_assy', 'Pre Assy');
+        }
+
+        return $query;
     }
 
     /**

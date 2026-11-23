@@ -167,26 +167,26 @@ class DefectApiController extends Controller
                 $baseQuery->where('jenis_assy', 'Pre Assy');
             }
 
-            $totalDefect = (int) (clone $baseQuery)->sum('quantity');
+            $defectBulanIni = (int) \App\Models\Defect::defectBulanIni($currentMode)->sum('quantity');
             $defectToday = (int) (clone $baseQuery)->whereDate('waktu', Carbon::today())->sum('quantity');
 
             return response()->json([
                 'mode'             => $currentMode,
-                'totalDefect'      => $totalDefect,
+                'defectBulanIni'   => $defectBulanIni,
                 'defectToday'      => $defectToday,
                 'activeUsers'      => (int) $activeUsers,
                 'totalUsers'       => (int) $totalUsers,
                 'reworkHarness'    => null,
                 'reworkDpm'        => null,
-                'internal_defect'  => $totalDefect,
+                'internal_defect'  => $defectBulanIni,
                 'rework_defect'    => 0,
                 'rework_harness'   => 0,
-                'internal_percent' => $totalDefect > 0 ? 100.0 : 0.0,
+                'internal_percent' => $defectBulanIni > 0 ? 100.0 : 0.0,
                 'rework_percent'   => 0.0,
                 // CamelCase aliases
-                'internalDefect'   => $totalDefect,
+                'internalDefect'   => $defectBulanIni,
                 'reworkDefect'     => 0,
-                'internalPercent'  => $totalDefect > 0 ? 100.0 : 0.0,
+                'internalPercent'  => $defectBulanIni > 0 ? 100.0 : 0.0,
                 'reworkPercent'    => 0.0,
             ]);
 

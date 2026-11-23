@@ -1413,7 +1413,7 @@ class AdminDashboardAnalyticsTest extends TestCase
         // 1. Mode Internal (Final Assy Operator Only di Batch 2)
         $resInternal = $this->actingAsAdmin()->get('/dashboard?mode=internal');
         $resInternal->assertStatus(200);
-        $resInternal->assertViewHas('totalDefect', 13); // 10 + 3 (Final Assy operator only, tanpa rework)
+        $resInternal->assertViewHas('defectBulanIni', 13); // 10 + 3 (Final Assy operator only, tanpa rework)
         $resInternal->assertViewHas('defectToday', 10); // 10 (Final Assy operator today)
 
         $recentInternal = $resInternal->viewData('recentDefects');
@@ -1425,7 +1425,7 @@ class AdminDashboardAnalyticsTest extends TestCase
         // 2. Mode All (Total Operator di Batch 2)
         $resAll = $this->actingAsAdmin()->get('/dashboard?mode=all');
         $resAll->assertStatus(200);
-        $resAll->assertViewHas('totalDefect', 20); // 10 + 7 + 3 (Pre + Final operator, tanpa 5 rework)
+        $resAll->assertViewHas('defectBulanIni', 20); // 10 + 7 + 3 (Pre + Final operator, tanpa 5 rework)
         $resAll->assertViewHas('defectToday', 17); // 10 + 7
 
         $recentAll = $resAll->viewData('recentDefects');
@@ -1488,25 +1488,25 @@ class AdminDashboardAnalyticsTest extends TestCase
         // Default mode -> total operator (20 total, 17 today)
         $resDef = $this->getJson('/api/dashboard/stats');
         $resDef->assertStatus(200);
-        $this->assertEquals(20, $resDef->json('totalDefect'));
+        $this->assertEquals(20, $resDef->json('defectBulanIni'));
         $this->assertEquals(17, $resDef->json('defectToday'));
 
         // Mode total -> total operator (20 total, 17 today)
         $resTotal = $this->getJson('/api/dashboard/stats?mode=total');
         $resTotal->assertStatus(200);
-        $this->assertEquals(20, $resTotal->json('totalDefect'));
+        $this->assertEquals(20, $resTotal->json('defectBulanIni'));
         $this->assertEquals(17, $resTotal->json('defectToday'));
 
         // Mode final -> Final Assy operator (13 total, 10 today)
         $resFinal = $this->getJson('/api/dashboard/stats?mode=final');
         $resFinal->assertStatus(200);
-        $this->assertEquals(13, $resFinal->json('totalDefect'));
+        $this->assertEquals(13, $resFinal->json('defectBulanIni'));
         $this->assertEquals(10, $resFinal->json('defectToday'));
 
         // Mode pre -> Pre Assy operator (7 total, 7 today)
         $resPre = $this->getJson('/api/dashboard/stats?mode=pre');
         $resPre->assertStatus(200);
-        $this->assertEquals(7, $resPre->json('totalDefect'));
+        $this->assertEquals(7, $resPre->json('defectBulanIni'));
         $this->assertEquals(7, $resPre->json('defectToday'));
     }
 
@@ -1537,7 +1537,7 @@ class AdminDashboardAnalyticsTest extends TestCase
         $resIndexNoMode = $this->actingAsAdmin()->get('/dashboard');
         $resIndexTotal = $this->actingAsAdmin()->get('/dashboard?mode=total');
 
-        $this->assertEquals($resIndexNoMode->viewData('totalDefect'), $resIndexTotal->viewData('totalDefect'));
+        $this->assertEquals($resIndexNoMode->viewData('defectBulanIni'), $resIndexTotal->viewData('defectBulanIni'));
         $this->assertEquals($resIndexNoMode->viewData('defectToday'), $resIndexTotal->viewData('defectToday'));
         $this->assertEquals(
             $resIndexNoMode->viewData('recentDefects')->pluck('id')->all(),
@@ -1549,7 +1549,7 @@ class AdminDashboardAnalyticsTest extends TestCase
         $resStatsNoMode = $this->getJson('/api/dashboard/stats');
         $resStatsTotal = $this->getJson('/api/dashboard/stats?mode=total');
 
-        $this->assertEquals($resStatsNoMode->json('totalDefect'), $resStatsTotal->json('totalDefect'));
+        $this->assertEquals($resStatsNoMode->json('defectBulanIni'), $resStatsTotal->json('defectBulanIni'));
         $this->assertEquals($resStatsNoMode->json('defectToday'), $resStatsTotal->json('defectToday'));
     }
 
@@ -1970,7 +1970,7 @@ class AdminDashboardAnalyticsTest extends TestCase
         // Cek total pareto sama dengan KPI stats mode all
         $resStats = $this->actingAsAdmin()->getJson('/api/dashboard/stats?mode=all');
         $resStats->assertStatus(200);
-        $kpiTotalDefect = $resStats->json('totalDefect');
+        $kpiTotalDefect = $resStats->json('defectBulanIni');
 
         $this->assertEquals(22, $sumParetoTotal);
         $this->assertEquals(22, $kpiTotalDefect);
@@ -2923,5 +2923,152 @@ class AdminDashboardAnalyticsTest extends TestCase
         $resPre->assertDontSee('Internal Defect Inspektor');
         $resPre->assertDontSee('Pareto Defect Operator');
         $resPre->assertDontSee('Pareto Defect Inspektor');
+    }
+
+    /**
+     * Test verifikasi lengkap kartu "Defect Bulan Ini":
+     * (1) Boundary tanggal:
+     *     - Tanggal terakhir bulan lalu (23:59:59) TIDAK dihitung.
+     *     - Tanggal 1 bulan ini (00:00:00) DIHITUNG.
+     *     - Tanggal terakhir bulan ini (23:59:59) DIHITUNG.
+     *     - Tanggal 1 bulan depan (00:00:00) TIDAK dihitung.
+     * (2) Rework TIDAK dihitung (rework_group_id != null diabaikan).
+     * (3) Zero Defect TIDAK mengubah angka (quantity 0).
+     * (4) Mode final/pre/all menyaring benar.
+     * (5) index dan getStats menghasilkan angka identik di seluruh mode.
+     * (6) Defect Hari Ini tidak berubah perilakunya dan selalu <= Defect Bulan Ini.
+     */
+    public function test_kpi_defect_bulan_ini_boundary_rework_zero_defect_mode_dan_konsistensi(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 11, 15, 14, 30, 0, 'Asia/Jakarta'));
+
+        try {
+            // (1) Boundary Data:
+            // a. Tanggal terakhir bulan lalu: 2026-10-31 23:59:59 (TIDAK dihitung)
+            Defect::create([
+                'waktu'            => '2026-10-31 23:59:59',
+                'user_name'        => 'Operator QA',
+                'jenis_assy'       => 'Final Assy',
+                'conveyor'         => 'CONV-1',
+                'jenis_defect'     => 'WIRE',
+                'jenis_sub_defect' => 'CUT',
+                'quantity'         => 100,
+            ]);
+
+            // b. Tanggal 1 bulan ini tepat 00:00:00 (DIHITUNG, Final Assy: 10 pcs)
+            Defect::create([
+                'waktu'            => '2026-11-01 00:00:00',
+                'user_name'        => 'Operator QA',
+                'jenis_assy'       => 'Final Assy',
+                'conveyor'         => 'CONV-1',
+                'jenis_defect'     => 'TERMINAL',
+                'jenis_sub_defect' => 'BENT',
+                'quantity'         => 10,
+            ]);
+
+            // c. Hari ini: 2026-11-15 10:00:00 (DIHITUNG, Final Assy: 5 pcs)
+            Defect::create([
+                'waktu'            => '2026-11-15 10:00:00',
+                'user_name'        => 'Operator QA',
+                'jenis_assy'       => 'Final Assy',
+                'conveyor'         => 'CONV-2',
+                'jenis_defect'     => 'CONNECTOR',
+                'jenis_sub_defect' => 'BROKEN',
+                'quantity'         => 5,
+            ]);
+
+            // d. Tanggal terakhir bulan ini tepat 23:59:59 (DIHITUNG, Pre Assy: 20 pcs)
+            Defect::create([
+                'waktu'            => '2026-11-30 23:59:59',
+                'user_name'        => 'Operator Pre',
+                'jenis_assy'       => 'Pre Assy',
+                'carline_id'       => null,
+                'jenis_defect'     => 'CRIMP',
+                'jenis_sub_defect' => 'BAD',
+                'quantity'         => 20,
+            ]);
+
+            // e. Tanggal 1 bulan depan tepat 00:00:00 (TIDAK dihitung)
+            Defect::create([
+                'waktu'            => '2026-12-01 00:00:00',
+                'user_name'        => 'Operator Pre',
+                'jenis_assy'       => 'Pre Assy',
+                'carline_id'       => null,
+                'jenis_defect'     => 'CRIMP',
+                'jenis_sub_defect' => 'BAD',
+                'quantity'         => 200,
+            ]);
+
+            // (2) Rework di bulan ini (TIDAK dihitung karena rework_group_id terisi)
+            Defect::create([
+                'waktu'            => '2026-11-15 11:00:00',
+                'user_name'        => 'Reworker A',
+                'jenis_assy'       => 'Final Assy',
+                'conveyor'         => 'CONV-1',
+                'jenis_defect'     => 'HOUSING',
+                'jenis_sub_defect' => 'CRACK',
+                'rework_group_id'  => (string) Str::uuid(),
+                'quantity'         => 50,
+            ]);
+
+            // (3) Zero Defect di bulan ini (TIDAK mengubah angka karena quantity = 0)
+            Defect::create([
+                'waktu'            => '2026-11-15 12:00:00',
+                'user_name'        => 'Operator QA',
+                'jenis_assy'       => 'Final Assy',
+                'conveyor'         => 'CONV-1',
+                'jenis_defect'     => 'Zero Defect',
+                'jenis_sub_defect' => '-',
+                'quantity'         => 0,
+            ]);
+
+            // (4) & (5) Mode check dan verifikasi index vs getStats identik:
+            $modes = [
+                'total' => ['expectedBulanIni' => 35, 'expectedToday' => 5],
+                'final' => ['expectedBulanIni' => 15, 'expectedToday' => 5],
+                'pre'   => ['expectedBulanIni' => 20, 'expectedToday' => 0],
+            ];
+
+            foreach ($modes as $mode => $exp) {
+                // Initial SSR via DashboardController::index
+                $resIndex = $this->actingAsAdmin()->get("/dashboard?mode={$mode}");
+                $resIndex->assertStatus(200);
+                $indexBulanIni = $resIndex->viewData('defectBulanIni');
+                $indexToday = $resIndex->viewData('defectToday');
+
+                // Polling API via DefectApiController::getStats
+                $resApi = $this->actingAsAdmin()->getJson("/api/dashboard/stats?mode={$mode}");
+                $resApi->assertStatus(200);
+                $apiBulanIni = $resApi->json('defectBulanIni');
+                $apiToday = $resApi->json('defectToday');
+
+                // Pastikan nilai index dan getStats IDENTIK
+                $this->assertSame($indexBulanIni, $apiBulanIni, "Mode {$mode}: defectBulanIni pada index dan getStats harus identik.");
+                $this->assertSame($indexToday, $apiToday, "Mode {$mode}: defectToday pada index dan getStats harus identik.");
+
+                // Pastikan angka tepat sesuai ekspektasi filter mode
+                $this->assertEquals($exp['expectedBulanIni'], $apiBulanIni, "Mode {$mode}: ekspektasi defectBulanIni salah.");
+                $this->assertEquals($exp['expectedToday'], $apiToday, "Mode {$mode}: ekspektasi defectToday salah.");
+
+                // (6) Defect Hari Ini selalu <= Defect Bulan Ini
+                $this->assertLessThanOrEqual($apiBulanIni, $apiToday, "Mode {$mode}: defectToday ({$apiToday}) harus <= defectBulanIni ({$apiBulanIni}).");
+            }
+
+            // Mode 'all' (alias total)
+            $resAllApi = $this->actingAsAdmin()->getJson('/api/dashboard/stats?mode=all');
+            $resAllApi->assertStatus(200);
+            $this->assertEquals(35, $resAllApi->json('defectBulanIni'));
+            $this->assertEquals(5, $resAllApi->json('defectToday'));
+
+            // View check: kartu menampilkan teks label "Defect Bulan Ini" dan "November 2026"
+            $resDashboardView = $this->actingAsAdmin()->get('/dashboard');
+            $resDashboardView->assertSee('Defect Bulan Ini');
+            $resDashboardView->assertSee('November 2026');
+            $resDashboardView->assertSee('stat-defect-bulan-ini');
+            $resDashboardView->assertDontSee('stat-total-defect');
+
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 }

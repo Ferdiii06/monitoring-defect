@@ -79,7 +79,7 @@ class ExampleTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
-            'totalDefect',
+            'defectBulanIni',
             'defectToday',
             'activeUsers',
             'totalUsers'
