@@ -384,4 +384,104 @@ class Batch3ReworkExportAndFilterTest extends TestCase
         $resAreaBeta->assertDontSee('KB-ALPHA-99');
         $resAreaBeta->assertSee('KB-BETA-88');
     }
+
+    /**
+     * 6. Fallback kanban_status di ReworkHistoryExport:
+     *    - Jika kanban_status NULL tetapi kanban_assy terisi, hitung via evaluateKanban.
+     *    - Tidak menulis ke database.
+     *    - Jika kanban_assy juga kosong/NULL, tampil "-".
+     *    - Jika kanban_status sudah terisi, pakai status yang ada.
+     */
+    public function test_kanban_status_fallback_when_null_in_export(): void
+    {
+        $group = (string) Str::uuid();
+
+        // Case A: kanban_status NULL, kanban_assy input asal-asalan -> "Format Tidak Dikenal"
+        $defectA = Defect::create([
+            'rework_group_id'  => $group,
+            'user_name'        => 'Operator QA',
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'status_rework'    => 'OPEN',
+            'kanban_assy'      => 'MANUAL-ASAL-ASALAN',
+            'kanban_status'    => null,
+            'nameplate_lama'   => 'NP-01',
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'DEFECT A',
+            'jenis_sub_defect' => 'SUB A',
+            'quantity'         => 1,
+        ]);
+
+        // Case B: kanban_status NULL, kanban_assy format valid tetapi tidak di master -> "Tidak Terdaftar"
+        $defectB = Defect::create([
+            'rework_group_id'  => $group,
+            'user_name'        => 'Operator QA',
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'status_rework'    => 'OPEN',
+            'kanban_assy'      => '82111-VU020.CA1.010',
+            'kanban_status'    => null,
+            'nameplate_lama'   => 'NP-02',
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'DEFECT B',
+            'jenis_sub_defect' => 'SUB B',
+            'quantity'         => 1,
+        ]);
+
+        // Case C: kanban_status NULL, kanban_assy NULL/kosong -> "-"
+        $defectC = Defect::create([
+            'rework_group_id'  => $group,
+            'user_name'        => 'Operator QA',
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'status_rework'    => 'OPEN',
+            'kanban_assy'      => null,
+            'kanban_status'    => null,
+            'nameplate_lama'   => 'NP-03',
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'DEFECT C',
+            'jenis_sub_defect' => 'SUB C',
+            'quantity'         => 1,
+        ]);
+
+        // Case D: kanban_status sudah terisi "family_beda" -> "Family Beda"
+        $defectD = Defect::create([
+            'rework_group_id'  => $group,
+            'user_name'        => 'Operator QA',
+            'waktu'            => now(),
+            'waktu_in'         => now(),
+            'status_rework'    => 'OPEN',
+            'kanban_assy'      => 'MANUAL-INPUT',
+            'kanban_status'    => 'family_beda',
+            'nameplate_lama'   => 'NP-04',
+            'jenis_assy'       => 'Final Assy',
+            'jenis_defect'     => 'DEFECT D',
+            'jenis_sub_defect' => 'SUB D',
+            'quantity'         => 1,
+        ]);
+
+        $export = new ReworkHistoryExport(new Request());
+
+        $mappedA = $export->map($defectA);
+        $mappedB = $export->map($defectB);
+        $mappedC = $export->map($defectC);
+        $mappedD = $export->map($defectD);
+
+        // Heading index 11 adalah "Status Kanban" (kolom ke-12)
+        $headings = $export->headings();
+        $statusColIdx = array_search('Status Kanban', $headings, true);
+        $this->assertSame(11, $statusColIdx);
+
+        $this->assertSame('Format Tidak Dikenal', $mappedA[$statusColIdx]);
+        $this->assertSame('Tidak Terdaftar', $mappedB[$statusColIdx]);
+        $this->assertSame('-', $mappedC[$statusColIdx]);
+        $this->assertSame('Family Beda', $mappedD[$statusColIdx]);
+
+        // Pastikan tidak menulis perubahan ke database
+        $defectA->refresh();
+        $this->assertNull($defectA->kanban_status);
+
+        $defectB->refresh();
+        $this->assertNull($defectB->kanban_status);
+    }
 }

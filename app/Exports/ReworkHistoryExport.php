@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Http\Controllers\Admin\ReworkHistoryController;
 use App\Models\AreaDitemukan;
 use App\Models\Defect;
+use App\Support\KanbanCodeParser;
 use App\Support\SubDefectHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -123,7 +124,12 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             $tipeAreaLabel = '-';
         }
 
-        $statusKanbanLabel = match ($row->kanban_status) {
+        $effectiveKanbanStatus = $row->kanban_status;
+        if ($effectiveKanbanStatus === null && filled($row->kanban_assy)) {
+            $effectiveKanbanStatus = KanbanCodeParser::evaluateKanban($row->kanban_assy)['kanban_status'] ?? null;
+        }
+
+        $statusKanbanLabel = match ($effectiveKanbanStatus) {
             'terdaftar'            => 'Terdaftar',
             'tidak_terdaftar'      => 'Tidak Terdaftar',
             'family_beda'          => 'Family Beda',
