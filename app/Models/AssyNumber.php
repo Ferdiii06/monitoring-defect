@@ -14,6 +14,7 @@ class AssyNumber extends Model
     protected $fillable = [
         'assy_number',
         'carline_id',
+        'car_type_id',
         'family',
         'conveyor',
         'keterangan',
@@ -22,6 +23,11 @@ class AssyNumber extends Model
     public function carline()
     {
         return $this->belongsTo(Carline::class);
+    }
+
+    public function carType()
+    {
+        return $this->belongsTo(CarType::class);
     }
 
     /**
@@ -38,7 +44,7 @@ class AssyNumber extends Model
             ? \App\Support\KanbanCodeParser::normalizeAssyNumber($trimmed)
             : strtoupper(str_replace(['-', ' '], '', $trimmed));
 
-        return static::with(['carline.carType'])
+        return static::with(['carType', 'carline.carType'])
             ->where(function ($q) use ($trimmed, $normalized) {
                 $q->where('assy_number', $trimmed)
                   ->orWhere('assy_number', $normalized)
@@ -61,7 +67,7 @@ class AssyNumber extends Model
             ? \App\Support\KanbanCodeParser::normalizeAssyNumber($trimmed)
             : strtoupper(str_replace(['-', ' '], '', $trimmed));
 
-        return static::with(['carline.carType'])
+        return static::with(['carType', 'carline.carType'])
             ->where(function ($q) use ($trimmed, $normalized) {
                 $q->where('assy_number', $trimmed)
                   ->orWhere('assy_number', $normalized)
@@ -98,16 +104,24 @@ class AssyNumber extends Model
 
     /**
      * Resolusi nama jenis mobil untuk tampilan (hanya tampilan, tidak mengubah DB):
-     * - Jika carline_id terisi, ambil dari relasi carline->carType->name.
-     * - Jika carline_id NULL dan conveyor terisi: cari carline yang memuat conveyor sebagai token penuh (\b).
-     *   Jika semua carline yang cocok memiliki carType yang sama, kembalikan nama tersebut dengan tanda from_conveyor.
-     *   Jika campuran atau tidak ada yang cocok, kembalikan null.
+     * - Urutan prioritas:
+     *   1. car_type_id langsung (carType->name) tanpa tanda "(conveyor)".
+     *   2. carline->carType->name tanpa tanda "(conveyor)".
+     *   3. tebakan otomatis dari kode conveyor dengan tanda "(conveyor)".
+     * - Jika tidak ada yang cocok, kembalikan null.
      *
      * @param iterable|null $carlines Koleksi carline (opsional, untuk mencegah N+1)
      * @return array{name: string, from_conveyor: bool}|null
      */
     public function resolveJenisMobil(?iterable $carlines = null): ?array
     {
+        if ($this->carType?->name) {
+            return [
+                'name'          => $this->carType->name,
+                'from_conveyor' => false,
+            ];
+        }
+
         if ($this->carline?->carType?->name) {
             return [
                 'name'          => $this->carline->carType->name,
@@ -115,7 +129,7 @@ class AssyNumber extends Model
             ];
         }
 
-        if ($this->carline_id === null && filled($this->conveyor)) {
+        if (filled($this->conveyor)) {
             $carType = class_exists(CarType::class) ? CarType::resolveFromConveyor($this->conveyor, $carlines) : null;
             if ($carType !== null && filled($carType->name)) {
                 return [

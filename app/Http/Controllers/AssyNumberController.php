@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Imports\AssyNumberImport;
 use App\Models\AssyNumber;
 use App\Models\Carline;
+use App\Models\CarType;
 use App\Support\KanbanCodeParser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -20,7 +21,7 @@ class AssyNumberController extends Controller
         $search = trim((string) $request->input('search', ''));
         $selectedCarline = $request->input('carline_id');
 
-        $query = AssyNumber::with(['carline.carType']);
+        $query = AssyNumber::with(['carType', 'carline.carType']);
 
         if ($search !== '') {
             $normalizedSearch = KanbanCodeParser::normalizeAssyNumber($search);
@@ -31,6 +32,9 @@ class AssyNumberController extends Controller
                   ->orWhereRaw('LOWER(conveyor) LIKE ?', [$term])
                   ->orWhereRaw('LOWER(keterangan) LIKE ?', [$term])
                   ->orWhereHas('carline', function ($sub) use ($term) {
+                      $sub->whereRaw('LOWER(name) LIKE ?', [$term]);
+                  })
+                  ->orWhereHas('carType', function ($sub) use ($term) {
                       $sub->whereRaw('LOWER(name) LIKE ?', [$term]);
                   });
 
@@ -46,8 +50,9 @@ class AssyNumberController extends Controller
 
         $assyNumbers = $query->orderBy('assy_number')->paginate(20)->withQueryString();
         $carlines = Carline::with('carType')->orderBy('name')->get();
+        $carTypes = CarType::orderBy('name')->get();
 
-        return view('master.assy_numbers', compact('assyNumbers', 'carlines', 'search', 'selectedCarline'));
+        return view('master.assy_numbers', compact('assyNumbers', 'carlines', 'carTypes', 'search', 'selectedCarline'));
     }
 
     /**
@@ -58,6 +63,7 @@ class AssyNumberController extends Controller
         $validated = $request->validate([
             'assy_number' => 'required|string|max:255',
             'carline_id'  => 'nullable|exists:carlines,id',
+            'car_type_id' => 'nullable|exists:car_types,id',
             'family'      => 'nullable|string|max:255',
             'conveyor'    => 'nullable|string|max:255',
             'keterangan'  => 'nullable|string|max:255',
@@ -79,7 +85,8 @@ class AssyNumberController extends Controller
 
         AssyNumber::create([
             'assy_number' => $assy,
-            'carline_id'  => $validated['carline_id'] ?? null,
+            'carline_id'  => filled($validated['carline_id'] ?? null) ? $validated['carline_id'] : null,
+            'car_type_id' => filled($validated['car_type_id'] ?? null) ? $validated['car_type_id'] : null,
             'family'      => filled($validated['family'] ?? null) ? trim($validated['family']) : null,
             'conveyor'    => filled($validated['conveyor'] ?? null) ? trim($validated['conveyor']) : null,
             'keterangan'  => filled($validated['keterangan'] ?? null) ? trim($validated['keterangan']) : null,
@@ -98,6 +105,7 @@ class AssyNumberController extends Controller
         $validated = $request->validate([
             'assy_number' => 'required|string|max:255',
             'carline_id'  => 'nullable|exists:carlines,id',
+            'car_type_id' => 'nullable|exists:car_types,id',
             'family'      => 'nullable|string|max:255',
             'conveyor'    => 'nullable|string|max:255',
             'keterangan'  => 'nullable|string|max:255',
@@ -122,7 +130,8 @@ class AssyNumberController extends Controller
 
         $assyNumber->update([
             'assy_number' => $assy,
-            'carline_id'  => $validated['carline_id'] ?? null,
+            'carline_id'  => filled($validated['carline_id'] ?? null) ? $validated['carline_id'] : null,
+            'car_type_id' => filled($validated['car_type_id'] ?? null) ? $validated['car_type_id'] : null,
             'family'      => filled($validated['family'] ?? null) ? trim($validated['family']) : null,
             'conveyor'    => filled($validated['conveyor'] ?? null) ? trim($validated['conveyor']) : null,
             'keterangan'  => filled($validated['keterangan'] ?? null) ? trim($validated['keterangan']) : null,
@@ -157,22 +166,27 @@ class AssyNumberController extends Controller
             $import = new AssyNumberImport();
             Excel::import($import, $request->file('file'));
 
-            $success = $import->getSuccessCount();
-            $skipped = $import->getSkippedCount();
-            $errors  = $import->getSkippedRows();
+            $success  = $import->getSuccessCount();
+            $skipped  = $import->getSkippedCount();
+            $errors   = $import->getSkippedRows();
+            $warnings = $import->getWarnings();
 
             session()->flash('import_summary', [
-                'success' => $success,
-                'skipped' => $skipped,
-                'errors'  => $errors,
+                'success'  => $success,
+                'skipped'  => $skipped,
+                'errors'   => $errors,
+                'warnings' => $warnings,
             ]);
 
             $message = "Import selesai: {$success} baris berhasil diproses";
             if ($skipped > 0) {
-                $message .= ", {$skipped} baris dilewati.";
-            } else {
-                $message .= ".";
+                $message .= ", {$skipped} baris dilewati";
             }
+            if (!empty($warnings)) {
+                $warnCount = count($warnings);
+                $message .= " ({$warnCount} peringatan jenis mobil)";
+            }
+            $message .= ".";
 
             return redirect()->route('admin.master.assy_numbers.index')->with('success', $message);
         } catch (\Throwable $e) {

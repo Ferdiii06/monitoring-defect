@@ -595,4 +595,337 @@ class AdminAssyNumberMasterTest extends TestCase
         $this->assertSame('C7', $kclt->conveyor);
         $this->assertNull($kclt->carline_id);
     }
+
+    public function test_import_four_columns_stores_car_type_id(): void
+    {
+        $toyota = CarType::create(['name' => 'TOYOTA']);
+        $mazda  = CarType::create(['name' => 'MAZDA']);
+        $honda  = CarType::create(['name' => 'HONDA']);
+
+        $fixturePath = base_path('tests/Fixtures/assy_numbers_4_columns_test.csv');
+        $this->assertFileExists($fixturePath);
+
+        $uploadedFile = new UploadedFile(
+            $fixturePath,
+            'assy_numbers_4_columns_test.csv',
+            'text/csv',
+            null,
+            true
+        );
+
+        $response = $this->actingAsAdmin()->post(route('admin.master.assy_numbers.import'), [
+            'file' => $uploadedFile,
+        ]);
+
+        $response->assertRedirect(route('admin.master.assy_numbers.index'));
+        $response->assertSessionHas('import_summary');
+
+        $summary = session('import_summary');
+        $this->assertSame(3, $summary['success']);
+        $this->assertSame(0, $summary['skipped']);
+
+        $assy1 = AssyNumber::where('assy_number', '82111-4COL1')->first();
+        $this->assertNotNull($assy1);
+        $this->assertSame('FAM-A', $assy1->family);
+        $this->assertSame('CV-A', $assy1->conveyor);
+        $this->assertSame($toyota->id, $assy1->car_type_id);
+
+        $assy2 = AssyNumber::where('assy_number', '82111-4COL2')->first();
+        $this->assertNotNull($assy2);
+        $this->assertSame('FAM-B', $assy2->family);
+        $this->assertSame('CV-B', $assy2->conveyor);
+        $this->assertSame($mazda->id, $assy2->car_type_id);
+
+        $assy3 = AssyNumber::where('assy_number', '82111-4COL3')->first();
+        $this->assertNotNull($assy3);
+        $this->assertSame('FAM-C', $assy3->family);
+        $this->assertSame('CV-C', $assy3->conveyor);
+        $this->assertSame($honda->id, $assy3->car_type_id);
+    }
+
+    public function test_import_unknown_car_type_is_reported_and_does_not_create_new_record(): void
+    {
+        CarType::create(['name' => 'TOYOTA']);
+
+        $csvContent = "assy,family,conveyor,jenis_mobil\n"
+            . "82111-UNKNOWN-CT,FAM-X,CV-X,FERRARI_F40\n";
+
+        $file = UploadedFile::fake()->createWithContent('unknown_car_type.csv', $csvContent);
+
+        $response = $this->actingAsAdmin()->post(route('admin.master.assy_numbers.import'), [
+            'file' => $file,
+        ]);
+
+        $response->assertRedirect(route('admin.master.assy_numbers.index'));
+        $response->assertSessionHas('import_summary');
+
+        $summary = session('import_summary');
+        $this->assertSame(0, $summary['success']);
+        $this->assertSame(1, $summary['skipped']);
+        $this->assertCount(1, $summary['errors']);
+        $this->assertSame(2, $summary['errors'][0]['row']);
+        $this->assertSame('82111-UNKNOWN-CT', $summary['errors'][0]['assy_number']);
+        $this->assertStringContainsString('FERRARI_F40', $summary['errors'][0]['reason']);
+        $this->assertStringContainsString('tidak ditemukan', $summary['errors'][0]['reason']);
+
+        // Pastikan TIDAK membuat jenis mobil baru
+        $this->assertFalse(CarType::where('name', 'FERRARI_F40')->exists());
+
+        // Pastikan nomor assy TIDAK disimpan di database
+        $this->assertDatabaseMissing('assy_numbers', [
+            'assy_number' => '82111-UNKNOWN-CT',
+        ]);
+    }
+
+    public function test_import_empty_car_type_cell_does_not_overwrite_existing_car_type_id(): void
+    {
+        $toyota = CarType::create(['name' => 'TOYOTA']);
+
+        $existing = AssyNumber::create([
+            'assy_number' => '82111-PRESERVE-CT',
+            'family'      => 'ORIG-FAM',
+            'conveyor'    => 'ORIG-CV',
+            'car_type_id' => $toyota->id,
+            'keterangan'  => 'Old note',
+        ]);
+
+        $csvContent = "assy,family,conveyor,jenis_mobil\n"
+            . "82111-PRESERVE-CT,NEW-FAM,NEW-CV,\n";
+
+        $file = UploadedFile::fake()->createWithContent('preserve_car_type.csv', $csvContent);
+
+        $response = $this->actingAsAdmin()->post(route('admin.master.assy_numbers.import'), [
+            'file' => $file,
+        ]);
+
+        $response->assertRedirect(route('admin.master.assy_numbers.index'));
+
+        $fresh = $existing->fresh();
+        $this->assertSame($toyota->id, $fresh->car_type_id, 'car_type_id tidak boleh ditimpa menjadi null jika sel kosong');
+        $this->assertSame('NEW-FAM', $fresh->family);
+        $this->assertSame('NEW-CV', $fresh->conveyor);
+    }
+
+    public function test_import_warning_when_excel_differs_from_conveyor_guess_but_keeps_excel_value(): void
+    {
+        $mazda  = CarType::create(['name' => 'MAZDA']);
+        $toyota = CarType::create(['name' => 'TOYOTA']);
+
+        // Carline dengan token CVCONV menghasilkan tebakan MAZDA
+        Carline::create(['name' => 'LINE-CVCONV', 'car_type_id' => $mazda->id]);
+
+        $csvContent = "assy,family,conveyor,jenis_mobil\n"
+            . "82111-DIFF-GUESS,FAM1,CVCONV,TOYOTA\n";
+
+        $file = UploadedFile::fake()->createWithContent('diff_guess.csv', $csvContent);
+
+        $response = $this->actingAsAdmin()->post(route('admin.master.assy_numbers.import'), [
+            'file' => $file,
+        ]);
+
+        $response->assertRedirect(route('admin.master.assy_numbers.index'));
+
+        $summary = session('import_summary');
+        $this->assertSame(1, $summary['success']);
+        $this->assertSame(0, $summary['skipped']);
+        $this->assertNotEmpty($summary['warnings']);
+        $this->assertStringContainsString('TOYOTA', $summary['warnings'][0]['message']);
+        $this->assertStringContainsString('MAZDA', $summary['warnings'][0]['message']);
+
+        // Nilai Excel (TOYOTA) tetap disimpan
+        $saved = AssyNumber::where('assy_number', '82111-DIFF-GUESS')->first();
+        $this->assertNotNull($saved);
+        $this->assertSame($toyota->id, $saved->car_type_id);
+    }
+
+    public function test_jenis_mobil_display_priority_order(): void
+    {
+        $typeDirect   = CarType::create(['name' => 'PRIO-DIRECT']);
+        $typeCarline  = CarType::create(['name' => 'PRIO-CARLINE']);
+        $typeConveyor = CarType::create(['name' => 'PRIO-CONVEYOR']);
+
+        $carlineWithCarType = Carline::create([
+            'name'        => 'LINE-PRIO',
+            'car_type_id' => $typeCarline->id,
+        ]);
+
+        // Carline dengan token CONVTOKEN menuju typeConveyor
+        Carline::create([
+            'name'        => 'LINE-CONVTOKEN',
+            'car_type_id' => $typeConveyor->id,
+        ]);
+
+        // 1. Prioritas 1: car_type_id langsung > carline.carType > conveyor
+        $assyLevel1 = AssyNumber::create([
+            'assy_number' => 'PRIO-LVL1',
+            'car_type_id' => $typeDirect->id,
+            'carline_id'  => $carlineWithCarType->id,
+            'conveyor'    => 'CONVTOKEN',
+        ]);
+        $resolved1 = $assyLevel1->resolveJenisMobil();
+        $this->assertSame('PRIO-DIRECT', $resolved1['name']);
+        $this->assertFalse($resolved1['from_conveyor']);
+
+        // 2. Prioritas 2: car_type_id null, carline.carType > conveyor
+        $assyLevel2 = AssyNumber::create([
+            'assy_number' => 'PRIO-LVL2',
+            'car_type_id' => null,
+            'carline_id'  => $carlineWithCarType->id,
+            'conveyor'    => 'CONVTOKEN',
+        ]);
+        $resolved2 = $assyLevel2->resolveJenisMobil();
+        $this->assertSame('PRIO-CARLINE', $resolved2['name']);
+        $this->assertFalse($resolved2['from_conveyor']);
+
+        // 3. Prioritas 3: car_type_id null, carline_id null, conveyor guess
+        $assyLevel3 = AssyNumber::create([
+            'assy_number' => 'PRIO-LVL3',
+            'car_type_id' => null,
+            'carline_id'  => null,
+            'conveyor'    => 'CONVTOKEN',
+        ]);
+        $resolved3 = $assyLevel3->resolveJenisMobil();
+        $this->assertSame('PRIO-CONVEYOR', $resolved3['name']);
+        $this->assertTrue($resolved3['from_conveyor']);
+
+        // 4. Fallback: semua null -> null
+        $assyLevel4 = AssyNumber::create([
+            'assy_number' => 'PRIO-LVL4',
+            'car_type_id' => null,
+            'carline_id'  => null,
+            'conveyor'    => null,
+        ]);
+        $this->assertNull($assyLevel4->resolveJenisMobil());
+
+        // Verifikasi tampilan tabel di web
+        $res = $this->actingAsAdmin()->get(route('admin.master.assy_numbers.index'));
+        $res->assertOk();
+        $res->assertSee('PRIO-DIRECT');
+        $res->assertSee('PRIO-CARLINE');
+        $res->assertSee('PRIO-CONVEYOR');
+        // Pastikan hanya conveyor yang memakai tanda (conveyor)
+        $res->assertSee('(conveyor)');
+    }
+
+    public function test_importer_recognizes_capitalized_and_header_variants_for_car_type(): void
+    {
+        $honda = CarType::create(['name' => 'HONDA']);
+
+        $headerVariants = [
+            'JENIS MOBIL',
+            'Jenis Mobil',
+            'jenis_mobil',
+            'CAR TYPE',
+            'car type',
+            'car_type',
+        ];
+
+        foreach ($headerVariants as $idx => $header) {
+            $assyNum = "ASSY-HDR-VAR-{$idx}";
+            $csv = "assy,family,conveyor,{$header}\n"
+                . "{$assyNum},FAM,CV,HONDA\n";
+
+            $file = UploadedFile::fake()->createWithContent("header_var_{$idx}.csv", $csv);
+
+            $res = $this->actingAsAdmin()->post(route('admin.master.assy_numbers.import'), [
+                'file' => $file,
+            ]);
+            $res->assertRedirect(route('admin.master.assy_numbers.index'));
+
+            $assy = AssyNumber::where('assy_number', $assyNum)->first();
+            $this->assertNotNull($assy, "Assy {$assyNum} harus tersimpan dengan header variant '{$header}'");
+            $this->assertSame($honda->id, $assy->car_type_id, "car_type_id harus cocok untuk header '{$header}'");
+        }
+    }
+
+    public function test_manual_crud_for_car_type_in_assy_numbers(): void
+    {
+        $suzuki   = CarType::create(['name' => 'SUZUKI']);
+        $daihatsu = CarType::create(['name' => 'DAIHATSU']);
+
+        // 1. Tampilan view memuat dropdown Jenis Mobil berurutan berdasarkan nama
+        $resView = $this->actingAsAdmin()->get(route('admin.master.assy_numbers.index'));
+        $resView->assertOk();
+        $resView->assertSee('Jenis Mobil');
+        $resView->assertSee('DAIHATSU');
+        $resView->assertSee('SUZUKI');
+
+        // 2. Tambah assy number dengan car_type_id
+        $storeRes = $this->actingAsAdmin()->post(route('admin.master.assy_numbers.store'), [
+            'assy_number' => '82111-MANUAL-01',
+            'car_type_id' => $suzuki->id,
+            'family'      => 'FAM-SZ',
+            'conveyor'    => 'CV-SZ',
+            'keterangan'  => 'Created via manual form',
+        ]);
+        $storeRes->assertRedirect(route('admin.master.assy_numbers.index'));
+        $storeRes->assertSessionHas('success');
+
+        $assy = AssyNumber::where('assy_number', '82111-MANUAL-01')->first();
+        $this->assertNotNull($assy);
+        $this->assertSame($suzuki->id, $assy->car_type_id);
+
+        // 3. Validasi gagal jika car_type_id tidak valid
+        $invalidRes = $this->actingAsAdmin()->post(route('admin.master.assy_numbers.store'), [
+            'assy_number' => '82111-INVALID-01',
+            'car_type_id' => 999999,
+        ]);
+        $invalidRes->assertSessionHasErrors('car_type_id');
+
+        // 4. Update assy number mengganti car_type_id ke DAIHATSU
+        $updateRes = $this->actingAsAdmin()->put(route('admin.master.assy_numbers.update', $assy->id), [
+            'assy_number' => '82111-MANUAL-01',
+            'car_type_id' => $daihatsu->id,
+            'family'      => 'FAM-DH',
+            'conveyor'    => 'CV-DH',
+            'keterangan'  => 'Updated to Daihatsu',
+        ]);
+        $updateRes->assertRedirect(route('admin.master.assy_numbers.index'));
+        $updateRes->assertSessionHas('success');
+
+        $assy->refresh();
+        $this->assertSame($daihatsu->id, $assy->car_type_id);
+        $this->assertSame('Updated to Daihatsu', $assy->keterangan);
+
+        // 5. Update assy number menghapus car_type_id (menjadi null)
+        $clearRes = $this->actingAsAdmin()->put(route('admin.master.assy_numbers.update', $assy->id), [
+            'assy_number' => '82111-MANUAL-01',
+            'car_type_id' => '',
+        ]);
+        $clearRes->assertRedirect(route('admin.master.assy_numbers.index'));
+        $this->assertNull($assy->fresh()->car_type_id);
+
+        // 6. Delete assy number
+        $delRes = $this->actingAsAdmin()->delete(route('admin.master.assy_numbers.destroy', $assy->id));
+        $delRes->assertRedirect(route('admin.master.assy_numbers.index'));
+        $this->assertDatabaseMissing('assy_numbers', ['id' => $assy->id]);
+    }
+
+    public function test_master_assy_index_eager_loads_car_type_without_n_plus_one(): void
+    {
+        $types = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $types[] = CarType::create(['name' => "CAR-TYPE-{$i}"]);
+        }
+
+        for ($i = 1; $i <= 10; $i++) {
+            AssyNumber::create([
+                'assy_number' => "NPLUS-{$i}",
+                'car_type_id' => $types[$i % 5]->id,
+            ]);
+        }
+
+        \Illuminate\Support\Facades\DB::enableQueryLog();
+        \Illuminate\Support\Facades\DB::flushQueryLog();
+
+        $res = $this->actingAsAdmin()->get(route('admin.master.assy_numbers.index'));
+        $res->assertOk();
+
+        $queries = collect(\Illuminate\Support\Facades\DB::getQueryLog());
+        // Verify car_types query is not called once per assy row (N+1)
+        $carTypesPerRecordQueries = $queries->filter(function ($q) {
+            return str_contains($q['query'], 'car_types') && (str_contains($q['query'], '`id` = ?') || str_contains($q['query'], '"id" = ?'));
+        });
+        $this->assertCount(0, $carTypesPerRecordQueries, 'carType must be eager loaded without N+1 single-id queries');
+    }
 }

@@ -18,6 +18,7 @@
           editId: null, 
           editAssyNumber: '', 
           editCarlineId: '', 
+          editCarTypeId: '',
           editFamily: '',
           editConveyor: '',
           editKeterangan: '' 
@@ -74,11 +75,11 @@
         <!-- Ringkasan Import (jika baru selesai import) -->
         @if (session('import_summary'))
             @php $summary = session('import_summary'); @endphp
-            <div class="mb-6 p-4 rounded-xl border {{ $summary['skipped'] > 0 ? 'bg-amber-50/70 border-amber-200 text-amber-900' : 'bg-emerald-50/70 border-emerald-200 text-emerald-900' }} shadow-sm">
+            <div class="mb-6 p-4 rounded-xl border {{ ($summary['skipped'] > 0 || !empty($summary['warnings'])) ? 'bg-amber-50/70 border-amber-200 text-amber-900' : 'bg-emerald-50/70 border-emerald-200 text-emerald-900' }} shadow-sm">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
-                        <div class="w-9 h-9 rounded-lg {{ $summary['skipped'] > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }} flex items-center justify-center font-bold">
-                            @if ($summary['skipped'] > 0)
+                        <div class="w-9 h-9 rounded-lg {{ ($summary['skipped'] > 0 || !empty($summary['warnings'])) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }} flex items-center justify-center font-bold">
+                            @if ($summary['skipped'] > 0 || !empty($summary['warnings']))
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                             @else
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -90,6 +91,9 @@
                                 <span class="font-semibold text-emerald-700">{{ $summary['success'] }} baris berhasil diproses</span>
                                 @if ($summary['skipped'] > 0)
                                     &bull; <span class="font-semibold text-amber-700">{{ $summary['skipped'] }} baris dilewati</span>
+                                @endif
+                                @if (!empty($summary['warnings']))
+                                    &bull; <span class="font-semibold text-amber-700">{{ count($summary['warnings']) }} peringatan jenis mobil</span>
                                 @endif
                             </p>
                         </div>
@@ -116,6 +120,34 @@
                                             <td class="py-2 px-3 text-center text-gray-500 font-mono">{{ $err['row'] ?? '-' }}</td>
                                             <td class="py-2 px-3 font-mono font-bold">{{ $err['assy_number'] ?? '-' }}</td>
                                             <td class="py-2 px-3 text-red-600">{{ $err['reason'] ?? '-' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                @endif
+
+                @if (!empty($summary['warnings']))
+                    <details class="mt-4 pt-3 border-t border-amber-200/70 text-xs" open>
+                        <summary class="cursor-pointer font-bold text-amber-900 hover:text-amber-950 select-none flex items-center space-x-1">
+                            <span>Lihat rincian {{ count($summary['warnings']) }} peringatan</span>
+                        </summary>
+                        <div class="mt-2 max-h-60 overflow-y-auto rounded-lg border border-amber-200 bg-white shadow-inner">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-amber-100/60 text-amber-900 font-bold sticky top-0">
+                                    <tr>
+                                        <th class="py-2 px-3 w-16">Baris</th>
+                                        <th class="py-2 px-3 w-40">Assy</th>
+                                        <th class="py-2 px-3">Peringatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 font-medium text-gray-700">
+                                    @foreach ($summary['warnings'] as $warn)
+                                        <tr class="hover:bg-amber-50/50">
+                                            <td class="py-2 px-3 text-center text-gray-500 font-mono">{{ $warn['row'] ?? '-' }}</td>
+                                            <td class="py-2 px-3 font-mono font-bold">{{ $warn['assy_number'] ?? '-' }}</td>
+                                            <td class="py-2 px-3 text-amber-800">{{ $warn['message'] ?? $warn['reason'] ?? '-' }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -241,6 +273,7 @@
                                                         editId = {{ $item->id }}; 
                                                         editAssyNumber = '{{ addslashes($item->assy_number) }}'; 
                                                         editCarlineId = '{{ $item->carline_id ?? '' }}'; 
+                                                        editCarTypeId = '{{ $item->car_type_id ?? '' }}';
                                                         editFamily = '{{ addslashes($item->family ?? '') }}';
                                                         editConveyor = '{{ addslashes($item->conveyor ?? '') }}';
                                                         editKeterangan = '{{ addslashes($item->keterangan ?? '') }}'; 
@@ -316,6 +349,17 @@
                     </select>
                 </div>
 
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Jenis Mobil</label>
+                    <select name="car_type_id"
+                            class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
+                        <option value="">-- Pilih Jenis Mobil (Opsional) --</option>
+                        @foreach ($carTypes as $ct)
+                            <option value="{{ $ct->id }}">{{ $ct->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Family</label>
@@ -373,6 +417,17 @@
                     </select>
                 </div>
 
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Jenis Mobil</label>
+                    <select name="car_type_id" x-model="editCarTypeId"
+                            class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
+                        <option value="">-- Pilih Jenis Mobil (Opsional) --</option>
+                        @foreach ($carTypes as $ct)
+                            <option value="{{ $ct->id }}">{{ $ct->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Family</label>
@@ -426,8 +481,8 @@
                 <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 text-[11px] text-gray-600 space-y-1.5">
                     <div class="font-bold text-gray-800">Petunjuk Format File:</div>
                     <p>&bull; Format file didukung: <span class="font-semibold text-gray-700">.csv, .xlsx, .xls</span> (Disarankan menggunakan <span class="font-bold text-emerald-700">CSV UTF-8</span> untuk proses tercepat & hemat memori).</p>
-                    <p>&bull; Header kolom yang dikenali: <span class="font-mono font-semibold text-gray-800">assy</span> (atau assy_number) (wajib), <span class="font-mono font-semibold text-gray-800">family</span> (opsional), <span class="font-mono font-semibold text-gray-800">conveyor</span> (opsional), <span class="font-mono font-semibold text-gray-800">carline</span> (opsional), <span class="font-mono font-semibold text-gray-800">keterangan</span> (opsional).</p>
-                    <p>&bull; Import bersifat <span class="font-semibold text-gray-800">idempotent</span>: jika assy number sudah ada, datanya akan diperbarui tanpa menimpa family/conveyor lama jika kolom tersebut kosong di file.</p>
+                    <p>&bull; Header kolom yang dikenali: <span class="font-mono font-semibold text-gray-800">assy</span> (atau assy_number) (wajib), <span class="font-mono font-semibold text-gray-800">jenis mobil</span> (atau car type) (opsional), <span class="font-mono font-semibold text-gray-800">family</span> (opsional), <span class="font-mono font-semibold text-gray-800">conveyor</span> (opsional), <span class="font-mono font-semibold text-gray-800">carline</span> (opsional), <span class="font-mono font-semibold text-gray-800">keterangan</span> (opsional).</p>
+                    <p>&bull; Import bersifat <span class="font-semibold text-gray-800">idempotent</span>: jika assy number sudah ada, datanya akan diperbarui tanpa menimpa jenis mobil, family, atau conveyor lama jika kolom tersebut kosong di file.</p>
                 </div>
 
                 <div class="flex justify-end space-x-2 pt-2">

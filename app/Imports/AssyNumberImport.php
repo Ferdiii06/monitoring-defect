@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\AssyNumber;
 use App\Models\Carline;
+use App\Models\CarType;
 use App\Support\KanbanCodeParser;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
@@ -20,7 +21,9 @@ class AssyNumberImport implements ToCollection, WithHeadingRow, WithChunkReading
     protected int $successCount = 0;
     protected int $skippedCount = 0;
     protected array $skippedRows = [];
+    protected array $warnings = [];
     protected ?EloquentCollection $allCarlines = null;
+    protected ?EloquentCollection $allCarTypes = null;
     protected bool $stopProcessing = false;
 
     public function chunkSize(): int
@@ -41,9 +44,12 @@ class AssyNumberImport implements ToCollection, WithHeadingRow, WithChunkReading
             return;
         }
 
-        // Cache all carlines for fast case-insensitive lookup
+        // Cache all carlines and carTypes for fast case-insensitive lookup
         if ($this->allCarlines === null) {
-            $this->allCarlines = Carline::all();
+            $this->allCarlines = Carline::with('carType')->get();
+        }
+        if ($this->allCarTypes === null) {
+            $this->allCarTypes = CarType::all();
         }
 
         $startOffset = $this->getChunkOffset() ?? 2;
@@ -123,6 +129,38 @@ class AssyNumberImport implements ToCollection, WithHeadingRow, WithChunkReading
                 }
             }
 
+            // Extract jenis_mobil
+            $rawCarType = $row['jenis_mobil'] ?? $row['jenis mobil'] ?? $row['car_type'] ?? $row['car type'] ?? null;
+            if ($rawCarType === null) {
+                foreach ($row as $k => $v) {
+                    if (is_string($k)) {
+                        $normalizedKey = strtolower(trim(preg_replace('/[\s_-]+/', ' ', $k)));
+                        if (in_array($normalizedKey, ['jenis mobil', 'car type', 'car types', 'cartype', 'jenismobil', 'tipe mobil', 'type mobil'], true)) {
+                            $rawCarType = $v;
+                            break;
+                        }
+                    }
+                }
+            }
+            $rawCarType = filled($rawCarType) ? trim((string) $rawCarType) : null;
+
+            $matchedCarType = null;
+            if ($rawCarType !== null && $rawCarType !== '') {
+                $matchedCarType = $this->allCarTypes->first(function ($ct) use ($rawCarType) {
+                    return strcasecmp(trim($ct->name), $rawCarType) === 0;
+                });
+
+                if (!$matchedCarType) {
+                    $this->skippedCount++;
+                    $this->skippedRows[] = [
+                        'row'         => $rowNum,
+                        'assy_number' => $rawAssy,
+                        'reason'      => "Jenis Mobil '{$rawCarType}' tidak ditemukan di master jenis mobil",
+                    ];
+                    continue;
+                }
+            }
+
             // Optional keterangan (hanya fallback ke index [2] jika tidak ada kolom conveyor)
             $keterangan = $row['keterangan'] ?? $row['notes'] ?? $row['description'] ?? null;
             if ($keterangan === null && isset($row[2]) && !isset($row['conveyor'])) {
@@ -135,6 +173,20 @@ class AssyNumberImport implements ToCollection, WithHeadingRow, WithChunkReading
                 ->orWhere('assy_number', $normalizedAssy)
                 ->orWhereRaw("REPLACE(REPLACE(UPPER(assy_number), '-', ''), ' ', '') = ?", [$normalizedAssy])
                 ->first();
+
+            // Peringatan jika jenis mobil dari Excel berbeda dari hasil tebakan kode conveyor
+            $conveyorToCheck = $conveyor ?? $existing?->conveyor;
+            if ($matchedCarType !== null && filled($conveyorToCheck)) {
+                $guessedCarType = CarType::resolveFromConveyor($conveyorToCheck, $this->allCarlines);
+                if ($guessedCarType !== null && $guessedCarType->id !== $matchedCarType->id) {
+                    $this->warnings[] = [
+                        'row'         => $rowNum,
+                        'assy_number' => $rawAssy,
+                        'reason'      => "Jenis Mobil '{$matchedCarType->name}' berbeda dari hasil tebakan conveyor '{$conveyorToCheck}' ('{$guessedCarType->name}')",
+                        'message'     => "Jenis Mobil '{$matchedCarType->name}' pada baris {$rowNum} (Assy {$rawAssy}) berbeda dari hasil tebakan conveyor '{$conveyorToCheck}' ('{$guessedCarType->name}'). Nilai Excel tetap disimpan.",
+                    ];
+                }
+            }
 
             if ($existing) {
                 $updateData = [
@@ -151,11 +203,16 @@ class AssyNumberImport implements ToCollection, WithHeadingRow, WithChunkReading
                     $updateData['conveyor'] = $conveyor;
                 }
 
+                if ($matchedCarType !== null) {
+                    $updateData['car_type_id'] = $matchedCarType->id;
+                }
+
                 $existing->update($updateData);
             } else {
                 AssyNumber::create([
                     'assy_number' => $rawAssy,
                     'carline_id'  => $matchedCarline?->id,
+                    'car_type_id' => $matchedCarType?->id,
                     'family'      => $family,
                     'conveyor'    => $conveyor,
                     'keterangan'  => $keterangan,
@@ -184,5 +241,10 @@ class AssyNumberImport implements ToCollection, WithHeadingRow, WithChunkReading
     public function getSkippedRows(): array
     {
         return $this->skippedRows;
+    }
+
+    public function getWarnings(): array
+    {
+        return $this->warnings;
     }
 }

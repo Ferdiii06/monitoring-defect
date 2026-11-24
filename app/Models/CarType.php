@@ -58,6 +58,11 @@ class CarType extends Model
         return $this->hasMany(Carline::class);
     }
 
+    public function assyNumbers()
+    {
+        return $this->hasMany(AssyNumber::class);
+    }
+
     public function getScanFormatLabelAttribute(): string
     {
         return self::SCAN_FORMAT_LABELS[$this->scan_format] ?? 'Otomatis (coba kedua urutan)';
