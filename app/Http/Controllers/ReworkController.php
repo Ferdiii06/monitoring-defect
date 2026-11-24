@@ -699,7 +699,7 @@ class ReworkController extends Controller
 
         // Jika conveyor diisi
         if ($conveyor !== null) {
-            $carlineQuery = Carline::whereNotNull('car_type_id')->where('name', $conveyor)->with('carType');
+            $carlineQuery = Carline::finalAssy()->where('name', $conveyor)->with('carType');
             if ($carline !== null) {
                 $carlineQuery->whereHas('carType', function ($q) use ($carline) {
                     $q->where('name', $carline);

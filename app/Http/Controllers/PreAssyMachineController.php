@@ -14,7 +14,7 @@ class PreAssyMachineController extends Controller
      */
     public function index(Request $request)
     {
-        $carlines = Carline::whereNull('car_type_id')->orderBy('name')->get();
+        $carlines = Carline::preAssy()->orderBy('name')->get();
 
         $selectedCarlineId = $request->input('carline_id');
         if (!$selectedCarlineId && $carlines->isNotEmpty()) {

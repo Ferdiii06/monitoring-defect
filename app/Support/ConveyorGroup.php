@@ -44,7 +44,7 @@ class ConveyorGroup
      */
     public static function availableGroups(): array
     {
-        $masterFinalConveyors = Carline::whereNotNull('car_type_id')->pluck('name');
+        $masterFinalConveyors = Carline::finalAssy()->pluck('name');
         $defectFinalConveyors = Defect::where('jenis_assy', 'Final Assy')
             ->whereNotNull('conveyor')
             ->where('conveyor', '!=', '')
@@ -70,7 +70,7 @@ class ConveyorGroup
      */
     public static function resolveNamesForGroup(string $groupKey): array
     {
-        $masterFinalConveyors = Carline::whereNotNull('car_type_id')->pluck('name');
+        $masterFinalConveyors = Carline::finalAssy()->pluck('name');
         $defectFinalConveyors = Defect::where('jenis_assy', 'Final Assy')
             ->whereNotNull('conveyor')
             ->where('conveyor', '!=', '')

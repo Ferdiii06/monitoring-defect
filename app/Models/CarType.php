@@ -113,7 +113,7 @@ class CarType extends Model
                 // Saring di query dengan LIKE agar tidak memuat seluruh data carline dari database (case-insensitive & escape %, _, \)
                 $escapedCode = addcslashes(strtolower($conveyorCode), '%_\\');
                 $candidates = Carline::with('carType')
-                    ->whereNotNull('car_type_id')
+                    ->finalAssy()
                     ->whereRaw('LOWER(name) LIKE ?', ['%' . $escapedCode . '%'])
                     ->get();
             }

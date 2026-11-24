@@ -105,7 +105,7 @@ class DashboardController extends Controller
         // Opsi dropdown filter untuk Dashboard Analytics: grup unik dari gabungan master dan defects Final Assy
         $finalAssyConveyors = ConveyorGroup::availableGroups();
 
-        $preAssyCarlines = \App\Models\Carline::whereNull('car_type_id')
+        $preAssyCarlines = \App\Models\Carline::preAssy()
             ->orderBy('name')
             ->get(['id', 'name']);
 

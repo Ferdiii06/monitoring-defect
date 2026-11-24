@@ -270,7 +270,7 @@ class ReportController extends Controller
         ];
 
         $lineOptions = ['TOYOTA', 'NISSAN', 'MAZDA'];
-        $carlineOptions = Carline::whereNull('car_type_id')->orderBy('name')->get();
+        $carlineOptions = Carline::preAssy()->orderBy('name')->get();
 
         // 6. Paginate Data (10 baris per halaman)
         $records = $query->orderBy('waktu', 'desc')->paginate(10)->withQueryString();
@@ -870,7 +870,7 @@ class ReportController extends Controller
         return view('input_defect', [
             'type'                  => $type,
             'carTypes'              => CarType::with('carlines')->orderBy('name')->get(),
-            'preAssyCarlines'       => Carline::whereNull('car_type_id')->with(['machines' => fn($q) => $q->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
+            'preAssyCarlines'       => Carline::preAssy()->with(['machines' => fn($q) => $q->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
             'defectTypesFinal'      => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
@@ -1117,7 +1117,7 @@ class ReportController extends Controller
             'type'                  => $defect->jenis_assy,
             'defect'                => $defect,
             'carTypes'              => CarType::with('carlines')->orderBy('name')->get(),
-            'preAssyCarlines'       => Carline::whereNull('car_type_id')->with(['machines' => fn($q) => $q->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
+            'preAssyCarlines'       => Carline::preAssy()->with(['machines' => fn($q) => $q->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
             'defectTypesFinal'      => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),
@@ -1396,7 +1396,7 @@ class ReportController extends Controller
             'defect'                => $defect,
             'backRoute'             => route('recent_defects.index'),
             'carTypes'              => CarType::with('carlines')->orderBy('name')->get(),
-            'preAssyCarlines'       => Carline::whereNull('car_type_id')->with(['machines' => fn($q) => $q->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
+            'preAssyCarlines'       => Carline::preAssy()->with(['machines' => fn($q) => $q->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
             'defectTypesFinal'      => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
             'defectTypesPre'        => DefectType::with('subDefectTypes')->where('type', 'Pre Assy')->orderBy('name')->get(),
             'inspectProcessTypes'   => InspectProcessType::orderBy('name')->get(),

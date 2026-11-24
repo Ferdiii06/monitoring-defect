@@ -23,7 +23,7 @@ class DpmTargetController extends Controller
             ->get();
 
         $finalAssyConveyors = ConveyorGroup::availableGroups();
-        $preAssyCarlines = Carline::whereNull('car_type_id')
+        $preAssyCarlines = Carline::preAssy()
             ->orderBy('name')
             ->get(['id', 'name']);
 
@@ -121,7 +121,7 @@ class DpmTargetController extends Controller
                     return;
                 }
                 if ($carlineId !== null) {
-                    $isValidCarline = Carline::whereNull('car_type_id')->where('id', $carlineId)->exists();
+                    $isValidCarline = Carline::preAssy()->where('id', $carlineId)->exists();
                     if (!$isValidCarline) {
                         $validator->errors()->add('carline_id', 'Carline tidak valid untuk Pre Assy.');
                         return;

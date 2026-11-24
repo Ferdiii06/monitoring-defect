@@ -59,7 +59,8 @@ class AssyNumberImport implements ToCollection, WithHeadingRow, WithChunkReading
             $rowNum = $startOffset + $index;
 
             // Skip completely empty row (used range kosong / trailing empty rows)
-            $nonEmptyValues = array_filter($row->toArray(), function ($val) {
+            $rowArray = is_array($row) ? $row : (method_exists($row, 'toArray') ? $row->toArray() : (array) $row);
+            $nonEmptyValues = array_filter($rowArray, function ($val) {
                 return $val !== null && trim((string) $val) !== '';
             });
 
@@ -114,9 +115,21 @@ class AssyNumberImport implements ToCollection, WithHeadingRow, WithChunkReading
 
             $matchedCarline = null;
             if ($rawCarline !== null && $rawCarline !== '') {
-                $matchedCarline = $this->allCarlines->first(function ($c) use ($rawCarline) {
+                $matchingCarlines = $this->allCarlines->filter(function ($c) use ($rawCarline) {
                     return strcasecmp(trim($c->name), $rawCarline) === 0;
                 });
+
+                if ($matchingCarlines->count() > 1) {
+                    $this->skippedCount++;
+                    $this->skippedRows[] = [
+                        'row'         => $rowNum,
+                        'assy_number' => $rawAssy,
+                        'reason'      => "Nama carline '{$rawCarline}' ambigu karena cocok dengan {$matchingCarlines->count()} carline berbeda di master",
+                    ];
+                    continue;
+                }
+
+                $matchedCarline = $matchingCarlines->first();
 
                 if (!$matchedCarline) {
                     $this->skippedCount++;
