@@ -295,7 +295,7 @@ class ReworkKanbanScanTest extends TestCase
 
         $response->assertSee('#10');
         $response->assertSee('#20');
-        $response->assertSee('Belum terdaftar');
+        $response->assertSee('Tidak terdaftar');
     }
 
     public function test_rework_history_export_contains_new_headings_and_values(): void

@@ -161,7 +161,7 @@ class AdminReworkHistoryTest extends TestCase
         $response->assertSee('KB-TEST-999');
         $response->assertSee('NP-TEST-888');
         $response->assertSee('rework_operator_1');
-        $response->assertSee('30 menit');
+        $response->assertSee('30 mnt 0 dtk');
         $response->assertSee('CLOSE');
 
         // Both defects rendered under the same row with code and name
@@ -1248,5 +1248,224 @@ class AdminReworkHistoryTest extends TestCase
         $resRework->assertStatus(200);
         $resRework->assertDontSee('id="adminSidebar"', false);
         $resRework->assertSee('Rework QA • Edit');
+    }
+
+    public function test_rework_history_table_has_14_columns_in_order_and_overflow_container(): void
+    {
+        $response = $this->actingAsAdmin()->get(route('admin.rework_history.index'));
+        $response->assertStatus(200);
+        $response->assertSee('overflow-x-auto', false);
+
+        $html = $response->getContent();
+        preg_match('/<thead>(.*?)<\/thead>/s', $html, $theadMatch);
+        $this->assertNotEmpty($theadMatch, 'Thead not found in rework history table.');
+
+        preg_match_all('/<th[^>]*>(.*?)<\/th>/s', $theadMatch[1], $thMatches);
+        $actualHeaders = array_map(fn($h) => trim(strip_tags($h)), $thMatches[1]);
+
+        $expectedHeaders = [
+            'No',
+            'Waktu In',
+            'Waktu Out',
+            'Status',
+            'Durasi',
+            'Kanban Assy',
+            'NP Lama',
+            'NP Baru',
+            'Jenis Mobil',
+            'Conveyor',
+            'Operator',
+            'Shift',
+            'Daftar Defect',
+            'Aksi',
+        ];
+
+        $this->assertCount(14, $actualHeaders);
+        $this->assertSame($expectedHeaders, $actualHeaders);
+    }
+
+    public function test_rework_history_duration_formatting_and_not_registered_badge_and_detail_modal(): void
+    {
+        $area = AreaDitemukan::create([
+            'name'     => 'RWK_VIEW_AREA',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+
+        $defectType = DefectType::create(['name' => 'VIEW DEFECT', 'type' => 'Final Assy']);
+        $subDefect = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '3.A - VIEW SUB',
+            'code'           => '3A',
+        ]);
+
+        // 1. Terdaftar, durasi 45 detik -> "45 dtk", TIDAK ada badge "Tidak terdaftar"
+        $groupRegistered = (string) Str::uuid();
+        Defect::create([
+            'rework_group_id'    => $groupRegistered,
+            'waktu'              => Carbon::parse('2026-11-24 08:00:00'),
+            'waktu_in'           => Carbon::parse('2026-11-24 08:00:00'),
+            'waktu_out'          => Carbon::parse('2026-11-24 08:00:45'),
+            'status_rework'      => 'CLOSE',
+            'durasi_rework_menit'=> 1,
+            'kanban_assy'        => 'KB-TERDAFTAR-001',
+            'kanban_serial'      => 1,
+            'kanban_status'      => 'terdaftar',
+            'nameplate_lama'     => 'NP-TERDAFTAR',
+            'user_name'          => 'rework_view_1',
+            'shift'              => '1A',
+            'jenis_assy'         => 'Final Assy',
+            'defect_type_id'     => $defectType->id,
+            'sub_defect_type_id' => $subDefect->id,
+            'jenis_defect'       => $defectType->name,
+            'jenis_sub_defect'   => $subDefect->name,
+            'area_ditemukan'     => $area->name,
+            'quantity'           => 1,
+        ]);
+
+        $resRegistered = $this->actingAsAdmin()->get(route('admin.rework_history.index', ['search' => 'KB-TERDAFTAR-001']));
+        $resRegistered->assertOk();
+        $resRegistered->assertSee('45 dtk');
+        $resRegistered->assertDontSee('Tidak terdaftar');
+        $resRegistered->assertSee('Detail');
+        $resRegistered->assertSee('Edit');
+        $resRegistered->assertSee('Hapus');
+        $resRegistered->assertSee('detail-modal-1', false);
+
+        // 2. Fallback kanban_status NULL dengan kanban_assy asal-asalan, durasi 75 detik -> "1 mnt 15 dtk", badge "Tidak terdaftar", DB tetap NULL
+        $groupFallback = (string) Str::uuid();
+        $fallbackDefect = Defect::create([
+            'rework_group_id'    => $groupFallback,
+            'waktu'              => Carbon::parse('2026-11-24 09:00:00'),
+            'waktu_in'           => Carbon::parse('2026-11-24 09:00:00'),
+            'waktu_out'          => Carbon::parse('2026-11-24 09:01:15'),
+            'status_rework'      => 'CLOSE',
+            'kanban_assy'        => 'ASAL-INPUT-MANUAL',
+            'kanban_status'      => null,
+            'nameplate_lama'     => 'NP-FALLBACK',
+            'user_name'          => 'rework_view_2',
+            'shift'              => '1B',
+            'jenis_assy'         => 'Final Assy',
+            'defect_type_id'     => $defectType->id,
+            'sub_defect_type_id' => $subDefect->id,
+            'jenis_defect'       => $defectType->name,
+            'jenis_sub_defect'   => $subDefect->name,
+            'area_ditemukan'     => $area->name,
+            'quantity'           => 1,
+        ]);
+
+        $resFallback = $this->actingAsAdmin()->get(route('admin.rework_history.index', ['search' => 'ASAL-INPUT-MANUAL']));
+        $resFallback->assertOk();
+        $resFallback->assertSee('1 mnt 15 dtk');
+        $resFallback->assertSee('Format tidak dikenal');
+        $this->assertGreaterThanOrEqual(2, substr_count($resFallback->getContent(), 'Format tidak dikenal')); // Muncul di tabel & modal Detail
+
+        $fallbackDefect->refresh();
+        $this->assertNull($fallbackDefect->kanban_status);
+
+        // 3. OPEN dengan kanban_assy NULL dan kanban_status NULL -> durasi "-", tidak ada badge status kanban
+        $groupOpen = (string) Str::uuid();
+        Defect::create([
+            'rework_group_id'    => $groupOpen,
+            'waktu'              => Carbon::parse('2026-11-24 10:00:00'),
+            'waktu_in'           => Carbon::parse('2026-11-24 10:00:00'),
+            'waktu_out'          => null,
+            'status_rework'      => 'OPEN',
+            'kanban_assy'        => null,
+            'kanban_status'      => null,
+            'nameplate_lama'     => 'NP-OPEN-KOSONG',
+            'user_name'          => 'rework_view_3',
+            'shift'              => '2A',
+            'jenis_assy'         => 'Final Assy',
+            'defect_type_id'     => $defectType->id,
+            'sub_defect_type_id' => $subDefect->id,
+            'jenis_defect'       => $defectType->name,
+            'jenis_sub_defect'   => $subDefect->name,
+            'area_ditemukan'     => $area->name,
+            'quantity'           => 1,
+        ]);
+
+        $resOpen = $this->actingAsAdmin()->get(route('admin.rework_history.index', ['search' => 'NP-OPEN-KOSONG']));
+        $resOpen->assertOk();
+        $resOpen->assertDontSee('Tidak terdaftar');
+        $resOpen->assertDontSee('Family beda');
+        $resOpen->assertDontSee('Conveyor beda');
+        $resOpen->assertDontSee('Format tidak dikenal');
+    }
+
+    public function test_rework_history_displays_exact_badge_label_per_kanban_status(): void
+    {
+        $area = AreaDitemukan::create([
+            'name'     => 'RWK_BADGE_AREA',
+            'kategori' => AreaDitemukan::KATEGORI_FINAL_ASSY,
+            'tipe'     => AreaDitemukan::TIPE_INTERNAL_DEFECT,
+        ]);
+        $defectType = DefectType::create(['name' => 'BADGE DEFECT', 'type' => 'Final Assy']);
+        $subDefect = SubDefectType::create([
+            'defect_type_id' => $defectType->id,
+            'name'           => '4.A - BADGE SUB',
+            'code'           => '4A',
+        ]);
+
+        $cases = [
+            'tidak_terdaftar'      => 'Tidak terdaftar',
+            'family_beda'          => 'Family beda',
+            'conveyor_beda'        => 'Conveyor beda',
+            'format_tidak_dikenal' => 'Format tidak dikenal',
+        ];
+
+        foreach ($cases as $status => $expectedLabel) {
+            $np = 'NP-STATUS-' . strtoupper($status);
+            Defect::create([
+                'rework_group_id'    => (string) Str::uuid(),
+                'waktu'              => now(),
+                'waktu_in'           => now(),
+                'status_rework'      => 'OPEN',
+                'kanban_assy'        => 'KB-' . strtoupper($status),
+                'kanban_status'      => $status,
+                'nameplate_lama'     => $np,
+                'user_name'          => 'rework_badge_user',
+                'shift'              => '1A',
+                'jenis_assy'         => 'Final Assy',
+                'defect_type_id'     => $defectType->id,
+                'sub_defect_type_id' => $subDefect->id,
+                'jenis_defect'       => $defectType->name,
+                'jenis_sub_defect'   => $subDefect->name,
+                'area_ditemukan'     => $area->name,
+                'quantity'           => 1,
+            ]);
+
+            $res = $this->actingAsAdmin()->get(route('admin.rework_history.index', ['search' => $np]));
+            $res->assertOk();
+            $res->assertSee($expectedLabel);
+            // Muncul di tabel dan di modal Detail
+            $this->assertGreaterThanOrEqual(2, substr_count($res->getContent(), $expectedLabel));
+        }
+
+        // Status terdaftar -> tidak diberi badge apapun
+        Defect::create([
+            'rework_group_id'    => (string) Str::uuid(),
+            'waktu'              => now(),
+            'waktu_in'           => now(),
+            'status_rework'      => 'OPEN',
+            'kanban_assy'        => 'KB-OK-TERDAFTAR',
+            'kanban_status'      => 'terdaftar',
+            'nameplate_lama'     => 'NP-STATUS-TERDAFTAR',
+            'user_name'          => 'rework_badge_user',
+            'shift'              => '1A',
+            'jenis_assy'         => 'Final Assy',
+            'defect_type_id'     => $defectType->id,
+            'sub_defect_type_id' => $subDefect->id,
+            'jenis_defect'       => $defectType->name,
+            'jenis_sub_defect'   => $subDefect->name,
+            'area_ditemukan'     => $area->name,
+            'quantity'           => 1,
+        ]);
+
+        $resOk = $this->actingAsAdmin()->get(route('admin.rework_history.index', ['search' => 'NP-STATUS-TERDAFTAR']));
+        $resOk->assertOk();
+        foreach ($cases as $expectedLabel) {
+            $resOk->assertDontSee($expectedLabel);
+        }
     }
 }

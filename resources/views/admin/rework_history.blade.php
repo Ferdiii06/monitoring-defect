@@ -134,17 +134,23 @@
 
         <!-- Responsive Table Container -->
         <div class="overflow-x-auto min-h-[380px] pb-4">
-            <table class="w-full min-w-[950px] text-left border-collapse">
+            <table class="w-full min-w-[1250px] text-left border-collapse">
                 <thead>
                     <tr class="border-b border-gray-200 bg-gray-50/70 sticky top-0 z-10">
-                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 pl-3 text-center w-12">No.</th>
-                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Waktu In / Out</th>
-                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Status</th>
-                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Durasi</th>
-                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Kanban &amp; NP</th>
-                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Operator Input</th>
-                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Daftar Defect</th>
-                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center pr-3 w-24">Aksi</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 text-center w-12">No</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 whitespace-nowrap">Waktu In</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 whitespace-nowrap">Waktu Out</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 text-center whitespace-nowrap">Status</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 whitespace-nowrap">Durasi</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 whitespace-nowrap">Kanban Assy</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 whitespace-nowrap">NP Lama</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 whitespace-nowrap">NP Baru</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 whitespace-nowrap">Jenis Mobil</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 whitespace-nowrap">Conveyor</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 whitespace-nowrap">Operator</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 text-center whitespace-nowrap">Shift</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 min-w-[220px]">Daftar Defect</th>
+                        <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-3 text-center whitespace-nowrap">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="reworkTableBody">
@@ -154,43 +160,84 @@
                             $items = $defectsByGroup->get($groupId, collect());
                             $first = $items->first();
                             $rowNum = ($paginatedGroups->currentPage() - 1) * $paginatedGroups->perPage() + $loop->iteration;
+
+                            $isClose = in_array($first?->status_rework, ['Selesai', 'CLOSE'], true);
+                            $waktuInObj = $first?->waktu_in
+                                ? \Carbon\Carbon::parse($first->waktu_in)
+                                : ($first?->waktu ? \Carbon\Carbon::parse($first->waktu) : null);
+                            $waktuOutObj = ($isClose && $first?->waktu_out)
+                                ? \Carbon\Carbon::parse($first->waktu_out)
+                                : null;
+
+                            $durasiDisplay = '-';
+                            if ($isClose && $waktuInObj && $waktuOutObj) {
+                                $totalSeconds = max(0, (int) $waktuInObj->diffInSeconds($waktuOutObj));
+                                if ($totalSeconds < 60) {
+                                    $durasiDisplay = $totalSeconds . ' dtk';
+                                } else {
+                                    $minutes = intdiv($totalSeconds, 60);
+                                    $seconds = $totalSeconds % 60;
+                                    $durasiDisplay = $minutes . ' mnt ' . $seconds . ' dtk';
+                                }
+                            }
+
+                            $effectiveKanbanStatus = $first?->kanban_status;
+                            if ($effectiveKanbanStatus === null && filled($first?->kanban_assy)) {
+                                $effectiveKanbanStatus = \App\Support\KanbanCodeParser::evaluateKanban($first->kanban_assy)['kanban_status'] ?? null;
+                            }
+                            $kanbanBadgeMeta = match ($effectiveKanbanStatus) {
+                                'tidak_terdaftar'      => ['label' => 'Tidak terdaftar', 'class' => 'bg-amber-50 text-amber-800 border-amber-200'],
+                                'family_beda'          => ['label' => 'Family beda', 'class' => 'bg-indigo-50 text-indigo-800 border-indigo-200'],
+                                'conveyor_beda'        => ['label' => 'Conveyor beda', 'class' => 'bg-purple-50 text-purple-800 border-purple-200'],
+                                'format_tidak_dikenal' => ['label' => 'Format tidak dikenal', 'class' => 'bg-rose-50 text-rose-800 border-rose-200'],
+                                default                => null,
+                            };
+
+                            $carlineDisplay = $first?->jenis_mobil ?: ($first?->carline?->carType?->name ?: $first?->carline?->name);
+                            $conveyorDisplay = $first?->conveyor ?: ($first?->carline?->name);
+
+                            $areaModel = filled($first?->area_ditemukan)
+                                ? \App\Models\AreaDitemukan::where('name', $first->area_ditemukan)->first()
+                                : null;
+                            $isFinalAssyArea = $areaModel && $areaModel->kategori === \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY;
+                            $areaTipe = $isFinalAssyArea ? $areaModel->tipe : null;
+                            $badgeTipeLabel = ($areaTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
+                                ? 'Assembly Defect'
+                                : ($isFinalAssyArea ? 'Internal Defect' : '-');
+                            $badgeTipeClass = ($areaTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : ($isFinalAssyArea ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-gray-100 text-gray-500 border-gray-200');
                         @endphp
 
                         <tr class="border-b border-gray-100 last:border-b-0 hover:bg-red-50/20 transition-colors odd:bg-white even:bg-gray-50/40">
-                            <!-- No -->
-                            <td class="py-4 text-xs font-mono text-gray-400 font-bold text-center px-3 pl-3 align-top">
+                            <!-- 1. No -->
+                            <td class="py-4 text-xs font-mono text-gray-400 font-bold text-center px-3 align-top">
                                 {{ $rowNum }}
                             </td>
 
-                            <!-- Waktu In / Out -->
-                            <td class="py-4 text-sm text-gray-500 px-4 align-top">
-                                <div class="text-xs leading-relaxed space-y-1">
-                                    <div>
-                                        <span class="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">In:</span>
-                                        <span class="font-extrabold text-gray-900 font-mono text-[11px]">
-                                            {{ $first?->waktu_in ? \Carbon\Carbon::parse($first->waktu_in)->format('d/m/Y H:i') : ($first?->waktu ? \Carbon\Carbon::parse($first->waktu)->format('d/m/Y H:i') : '-') }}
-                                        </span>
-                                    </div>
-                                    @if(in_array($first?->status_rework, ['Selesai', 'CLOSE'], true) && $first?->waktu_out)
-                                        <div class="pt-0.5 border-t border-gray-100">
-                                            <span class="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Out:</span>
-                                            <span class="font-extrabold text-gray-900 font-mono text-[11px]">
-                                                {{ \Carbon\Carbon::parse($first->waktu_out)->format('d/m/Y H:i') }}
-                                            </span>
-                                        </div>
-                                    @endif
-                                </div>
+                            <!-- 2. Waktu In -->
+                            <td class="py-4 text-xs px-3 align-top whitespace-nowrap">
+                                <span class="font-extrabold text-gray-900 font-mono text-[11px]">
+                                    {{ $waktuInObj ? $waktuInObj->format('d/m/Y H:i') : '-' }}
+                                </span>
                             </td>
 
-                            <!-- Status Badge -->
-                            <td class="py-4 text-xs font-bold px-4 text-center align-top">
+                            <!-- 3. Waktu Out -->
+                            <td class="py-4 text-xs px-3 align-top whitespace-nowrap">
+                                <span class="font-extrabold text-gray-900 font-mono text-[11px]">
+                                    {{ $waktuOutObj ? $waktuOutObj->format('d/m/Y H:i') : '-' }}
+                                </span>
+                            </td>
+
+                            <!-- 4. Status -->
+                            <td class="py-4 text-xs font-bold px-3 text-center align-top whitespace-nowrap">
                                 <div class="inline-flex flex-col items-center gap-1">
                                     @if($first?->is_susulan)
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
                                             Susulan
                                         </span>
                                     @endif
-                                    @if(in_array($first?->status_rework, ['Selesai', 'CLOSE'], true))
+                                    @if($isClose)
                                         <span class="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                             <span>CLOSE</span>
@@ -204,115 +251,74 @@
                                 </div>
                             </td>
 
-                            <!-- Durasi -->
-                            <td class="py-4 text-xs font-bold px-4 align-top">
-                                @if(in_array($first?->status_rework, ['Selesai', 'CLOSE'], true))
+                            <!-- 5. Durasi -->
+                            <td class="py-4 text-xs font-bold px-3 align-top whitespace-nowrap">
+                                @if($isClose && $durasiDisplay !== '-')
                                     <span class="text-emerald-700 font-mono">
-                                        {{ $first?->durasi_rework_menit ?? 0 }} menit
+                                        {{ $durasiDisplay }}
                                     </span>
                                 @else
-                                    <span class="text-amber-600 font-semibold italic">
-                                        Sedang berjalan
-                                    </span>
+                                    <span class="text-gray-400 font-mono">-</span>
                                 @endif
                             </td>
 
-                            <!-- Kanban & Nameplate -->
-                            <td class="py-4 text-xs px-4 align-top">
+                            <!-- 6. Kanban Assy -->
+                            <td class="py-4 text-xs px-3 align-top">
                                 <div class="space-y-0.5">
-                                    <div class="flex items-center gap-1.5 flex-wrap">
-                                        <span class="text-sm font-black text-gray-900 tracking-tight">
-                                            {{ $first?->kanban_assy ?? '-' }}
-                                        </span>
-                                        @if($first?->kanban_serial !== null)
-                                            <span class="inline-block bg-gray-100 text-gray-700 text-[10px] font-bold px-1.5 py-0.5 rounded font-mono">
-                                                #{{ $first->kanban_serial }}
-                                            </span>
-                                        @endif
-                                        @if($first?->kanban_status && $first->kanban_status !== 'terdaftar')
-                                            @if($first->kanban_status === 'tidak_terdaftar')
-                                                <span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                                    Belum terdaftar
-                                                </span>
-                                            @elseif($first->kanban_status === 'family_beda')
-                                                <span class="inline-block bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                                    Family beda
-                                                </span>
-                                            @elseif($first->kanban_status === 'conveyor_beda')
-                                                <span class="inline-block bg-purple-50 text-purple-800 border border-purple-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                                    Conveyor beda
-                                                </span>
-                                            @elseif($first->kanban_status === 'format_tidak_dikenal')
-                                                <span class="inline-block bg-rose-50 text-rose-800 border border-rose-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                                    Format tidak dikenal
-                                                </span>
-                                            @endif
-                                        @endif
-                                    </div>
-                                    <span class="block text-xs font-bold font-mono text-gray-500">
-                                        NP: {{ $first?->nameplate_lama ?? '-' }}
+                                    <span class="block text-sm font-black text-gray-900 tracking-tight whitespace-nowrap">
+                                        {{ $first?->kanban_assy ?? '-' }}
                                     </span>
-                                    @if(filled($first?->nameplate_baru))
-                                        <span class="block text-xs font-bold font-mono text-emerald-700">
-                                            NP Baru: {{ $first?->nameplate_baru }}
+                                    @if($first?->kanban_serial !== null)
+                                        <span class="block text-[10px] font-bold font-mono text-gray-500">
+                                            #{{ $first->kanban_serial }}
                                         </span>
                                     @endif
-                                    @php
-                                        $carlineDisplay = $first?->jenis_mobil ?: ($first?->carline?->carType?->name ?: $first?->carline?->name);
-                                        $conveyorDisplay = $first?->conveyor ?: ($first?->carline?->name);
-                                    @endphp
-                                    @if(filled($carlineDisplay) || filled($conveyorDisplay))
-                                        <div class="pt-1 flex flex-wrap gap-1">
-                                            @if(filled($carlineDisplay))
-                                                <span class="inline-block bg-gray-100 text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                                    Jenis Mobil: {{ $carlineDisplay }}
-                                                </span>
-                                            @endif
-                                            @if(filled($conveyorDisplay))
-                                                <span class="inline-block bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                                    Conv: {{ $conveyorDisplay }}
-                                                </span>
-                                            @endif
-                                        </div>
-                                    @endif
-                                    @if(filled($first?->area_ditemukan))
-                                        @php
-                                            $areaModel = \App\Models\AreaDitemukan::where('name', $first?->area_ditemukan)->first();
-                                            $isFinalAssyArea = $areaModel && $areaModel->kategori === \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY;
-                                            $areaTipe = $isFinalAssyArea ? $areaModel->tipe : null;
-                                            $badgeTipeLabel = ($areaTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
-                                                ? 'Assembly Defect'
-                                                : ($isFinalAssyArea ? 'Internal Defect' : '-');
-                                            $badgeTipeClass = ($areaTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
-                                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                                : ($isFinalAssyArea ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-gray-100 text-gray-500 border-gray-200');
-                                        @endphp
-                                        <div class="pt-1 flex items-center gap-1 flex-wrap">
-                                            <span class="inline-block bg-gray-100 text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                                Area: {{ $first?->area_ditemukan }}
-                                            </span>
-                                            <span class="inline-block border text-[10px] font-bold px-1.5 py-0.5 rounded {{ $badgeTipeClass }}">
-                                                {{ $badgeTipeLabel }}
-                                            </span>
-                                        </div>
+                                    @if($kanbanBadgeMeta)
+                                        <span class="inline-block border text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap {{ $kanbanBadgeMeta['class'] }}">
+                                            {{ $kanbanBadgeMeta['label'] }}
+                                        </span>
                                     @endif
                                 </div>
                             </td>
 
-                            <!-- Operator Input -->
-                            <td class="py-4 text-xs px-4 align-top">
-                                <div class="space-y-0.5">
-                                    <span class="block font-bold text-gray-900">
-                                        {{ $first?->user_name ?? '-' }}
-                                    </span>
-                                    <span class="inline-block text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
-                                        Shift {{ $first?->shift ?? '-' }}
-                                    </span>
-                                </div>
+                            <!-- 7. NP Lama -->
+                            <td class="py-4 text-xs font-bold font-mono text-gray-700 px-3 align-top whitespace-nowrap">
+                                {{ $first?->nameplate_lama ?? '-' }}
                             </td>
 
-                            <!-- Daftar Defect -->
-                            <td class="py-4 text-xs px-4 align-top">
+                            <!-- 8. NP Baru -->
+                            <td class="py-4 text-xs font-bold font-mono px-3 align-top whitespace-nowrap">
+                                @if(filled($first?->nameplate_baru))
+                                    <span class="text-emerald-700">{{ $first->nameplate_baru }}</span>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </td>
+
+                            <!-- 9. Jenis Mobil -->
+                            <td class="py-4 text-xs font-bold text-gray-800 px-3 align-top whitespace-nowrap">
+                                {{ filled($carlineDisplay) ? $carlineDisplay : '-' }}
+                            </td>
+
+                            <!-- 10. Conveyor -->
+                            <td class="py-4 text-xs font-bold text-blue-800 px-3 align-top whitespace-nowrap">
+                                {{ filled($conveyorDisplay) ? $conveyorDisplay : '-' }}
+                            </td>
+
+                            <!-- 11. Operator -->
+                            <td class="py-4 text-xs font-bold text-gray-900 px-3 align-top whitespace-nowrap">
+                                {{ $first?->user_name ?? '-' }}
+                            </td>
+
+                            <!-- 12. Shift -->
+                            <td class="py-4 text-xs font-bold text-center px-3 align-top whitespace-nowrap">
+                                <span class="inline-block text-[11px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-md">
+                                    {{ $first?->shift ?? '-' }}
+                                </span>
+                            </td>
+
+                            <!-- 13. Daftar Defect -->
+                            <td class="py-4 text-xs px-3 align-top">
                                 <div class="space-y-1.5 max-w-md">
                                     @forelse($items as $item)
                                         @php
@@ -331,9 +337,19 @@
                                 </div>
                             </td>
 
-                            <!-- Aksi (Edit & Hapus) -->
-                            <td class="py-4 text-center px-4 pr-3 align-top">
+                            <!-- 14. Aksi (Detail, Edit, Hapus) -->
+                            <td class="py-4 text-center px-3 align-top whitespace-nowrap">
                                 <div class="inline-flex items-center space-x-1.5">
+                                    <button type="button"
+                                            onclick="openDetailModal('detail-modal-{{ $rowNum }}')"
+                                            title="Detail Riwayat Harness"
+                                            class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer">
+                                        <svg class="w-3.5 h-3.5 text-gray-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        <span>Detail</span>
+                                    </button>
                                     <a href="{{ route('rework.edit', array_merge(['groupId' => $groupId], request()->query() ? ['return_url' => request()->getRequestUri()] : [])) }}"
                                        title="Edit Riwayat Harness"
                                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-[#8b0000] hover:bg-[#600000] text-white text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer">
@@ -358,11 +374,151 @@
                                         </button>
                                     </form>
                                 </div>
+
+                                <!-- Modal Detail Harness -->
+                                <div id="detail-modal-{{ $rowNum }}"
+                                     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 text-left"
+                                     onclick="if (event.target === this) closeDetailModal('detail-modal-{{ $rowNum }}')">
+                                    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200">
+                                        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+                                            <div>
+                                                <h3 class="text-base font-black text-gray-900">Detail Riwayat Rework #{{ $rowNum }}</h3>
+                                                <p class="text-[11px] font-mono text-gray-400">Group ID: {{ $groupId }}</p>
+                                            </div>
+                                            <button type="button"
+                                                    onclick="closeDetailModal('detail-modal-{{ $rowNum }}')"
+                                                    class="text-gray-400 hover:text-gray-700 p-1 rounded-lg cursor-pointer">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                        <div class="p-6 space-y-5 text-xs">
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <span class="block text-[10px] font-bold uppercase text-gray-400">Kanban Assy</span>
+                                                    <div class="mt-1 flex items-center gap-2 flex-wrap">
+                                                        <span class="font-black text-sm text-gray-900">{{ $first?->kanban_assy ?? '-' }}</span>
+                                                        @if($first?->kanban_serial !== null)
+                                                            <span class="bg-gray-100 text-gray-700 text-[10px] font-bold px-1.5 py-0.5 rounded font-mono">#{{ $first->kanban_serial }}</span>
+                                                        @endif
+                                                        @if($kanbanBadgeMeta)
+                                                            <span class="border text-[10px] font-bold px-1.5 py-0.5 rounded {{ $kanbanBadgeMeta['class'] }}">
+                                                                {{ $kanbanBadgeMeta['label'] }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <span class="block text-[10px] font-bold uppercase text-gray-400">Status &amp; Durasi</span>
+                                                    <div class="mt-1 flex items-center gap-2 flex-wrap">
+                                                        <span class="font-extrabold {{ $isClose ? 'text-emerald-700' : 'text-amber-700' }}">
+                                                            {{ $isClose ? 'CLOSE' : 'OPEN' }}
+                                                        </span>
+                                                        @if($first?->is_susulan)
+                                                            <span class="bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Susulan</span>
+                                                        @endif
+                                                        <span class="font-mono text-gray-700">({{ $durasiDisplay }})</span>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <span class="block text-[10px] font-bold uppercase text-gray-400">Waktu In / Out</span>
+                                                    <div class="mt-1 font-mono text-gray-800">
+                                                        In: {{ $waktuInObj ? $waktuInObj->format('d/m/Y H:i') : '-' }}<br>
+                                                        Out: {{ $waktuOutObj ? $waktuOutObj->format('d/m/Y H:i') : '-' }}
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <span class="block text-[10px] font-bold uppercase text-gray-400">Operator &amp; Shift</span>
+                                                    <div class="mt-1 font-bold text-gray-800">
+                                                        {{ $first?->user_name ?? '-' }} (Shift {{ $first?->shift ?? '-' }})
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <span class="block text-[10px] font-bold uppercase text-gray-400">NP Lama / NP Baru</span>
+                                                    <div class="mt-1 font-mono font-bold text-gray-800">
+                                                        {{ $first?->nameplate_lama ?? '-' }} / {{ filled($first?->nameplate_baru) ? $first->nameplate_baru : '-' }}
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <span class="block text-[10px] font-bold uppercase text-gray-400">Jenis Mobil &amp; Conveyor</span>
+                                                    <div class="mt-1 font-bold text-gray-800">
+                                                        {{ filled($carlineDisplay) ? $carlineDisplay : '-' }} / {{ filled($conveyorDisplay) ? $conveyorDisplay : '-' }}
+                                                    </div>
+                                                </div>
+
+                                                <div class="sm:col-span-2">
+                                                    <span class="block text-[10px] font-bold uppercase text-gray-400">Area Ditemukan</span>
+                                                    <div class="mt-1 flex items-center gap-2 flex-wrap">
+                                                        <span class="font-bold text-gray-800">{{ $first?->area_ditemukan ?? '-' }}</span>
+                                                        @if(filled($first?->area_ditemukan))
+                                                            <span class="inline-block border text-[10px] font-bold px-1.5 py-0.5 rounded {{ $badgeTipeClass }}">
+                                                                {{ $badgeTipeLabel }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <span class="block text-[10px] font-bold uppercase text-gray-400">No Defective Tag / 4M Status</span>
+                                                    <div class="mt-1 font-bold text-gray-800">
+                                                        {{ $first?->no_defective_tag ?? '-' }} / {{ $first?->status_4m ?? 'NO' }}
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <span class="block text-[10px] font-bold uppercase text-gray-400">Ujung (#End) / No Box</span>
+                                                    <div class="mt-1 font-bold text-gray-800">
+                                                        {{ $first?->ujung ?? '-' }} / {{ $first?->no_box ?? '-' }}
+                                                    </div>
+                                                </div>
+
+                                                <div class="sm:col-span-2">
+                                                    <span class="block text-[10px] font-bold uppercase text-gray-400">Posisi &amp; Detail Rework</span>
+                                                    <div class="mt-1 text-gray-800">{{ $first?->posisi_detail_rework ?? '-' }}</div>
+                                                </div>
+
+                                                <div class="sm:col-span-2">
+                                                    <span class="block text-[10px] font-bold uppercase text-gray-400">F C/H, F C/W, R C/H, R C/W</span>
+                                                    <div class="mt-1 font-mono text-gray-800">
+                                                        {{ $first?->fc_h ?? '-' }} / {{ $first?->fc_w ?? '-' }} / {{ $first?->rc_h ?? '-' }} / {{ $first?->rc_w ?? '-' }}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="border-t border-gray-100 pt-4">
+                                                <span class="block text-[10px] font-bold uppercase text-gray-400 mb-2">Daftar Defect ({{ $items->count() }})</span>
+                                                <div class="space-y-1.5">
+                                                    @forelse($items as $item)
+                                                        @php
+                                                            $code = $item->subDefectType?->code ?? \App\Support\SubDefectHelper::deriveCode($item->jenis_sub_defect) ?? '-';
+                                                            $name = $item->jenis_sub_defect ?? $item->subDefectType?->name ?? '-';
+                                                        @endphp
+                                                        <div class="flex items-start text-xs font-bold text-gray-800">
+                                                            <span class="bg-[#8b0000]/10 text-[#8b0000] border border-[#8b0000]/20 font-black px-1.5 py-0.5 rounded text-[10px] mr-2 shrink-0 font-mono">
+                                                                [{{ $code }}]
+                                                            </span>
+                                                            <span class="leading-tight text-gray-800">{{ $name }}</span>
+                                                        </div>
+                                                    @empty
+                                                        <span class="text-gray-400 italic">-</span>
+                                                    @endforelse
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-12 text-center text-sm text-gray-400 font-medium">
+                            <td colspan="14" class="py-12 text-center text-sm text-gray-400 font-medium">
                                 <div class="max-w-xs mx-auto space-y-2">
                                     <svg class="w-10 h-10 text-gray-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
@@ -393,6 +549,22 @@
 
 @push('scripts')
 <script>
+function openDetailModal(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
+}
+
+function closeDetailModal(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+}
+
 function exportExcel() {
     const form = document.getElementById("filterForm");
     const formData = new FormData(form);
