@@ -819,9 +819,9 @@ class AdminReworkHistoryTest extends TestCase
         $resRecent = $this->actingAsAdmin()->get(route('recent_defects.index'));
         $resRecent->assertStatus(200);
 
-        // Baris rework: link edit ke rework.edit, tombol hapus form aktif
-        $resRecent->assertSee(route('rework.edit', ['groupId' => $reworkGroupId]));
-        $resRecent->assertSee(route('admin.report.destroy', $reworkDefect->id));
+        // Baris rework: terisolasi dan TIDAK tampil di Recent Defects
+        $resRecent->assertDontSee(route('rework.edit', ['groupId' => $reworkGroupId]));
+        $resRecent->assertDontSee(route('admin.report.destroy', $reworkDefect->id));
 
         // Baris non-rework: link edit ke admin.report.edit, tombol hapus form aktif
         $resRecent->assertSee(route('admin.report.edit', $normalDefect->id));
@@ -1085,11 +1085,11 @@ class AdminReworkHistoryTest extends TestCase
         $resRw->assertStatus(403);
         $this->assertDatabaseHas('defects', ['id' => $reworkDefect->id]);
 
-        // 3. Admin berhasil hapus baris rework
+        // 3. Admin mencoba hapus baris rework -> DITOLAK dan record tidak terhapus
         $resRework = $this->actingAsAdmin()->from('/recent-defects')->delete(route('admin.report.destroy', $reworkDefect->id));
         $resRework->assertRedirect('/recent-defects');
-        $resRework->assertSessionHas('success');
-        $this->assertDatabaseMissing('defects', ['id' => $reworkDefect->id]);
+        $resRework->assertSessionHas('error');
+        $this->assertDatabaseHas('defects', ['id' => $reworkDefect->id]);
 
         // 4. Admin berhasil hapus baris normal
         $resNormal = $this->actingAsAdmin()->from('/recent-defects')->delete(route('admin.report.destroy', $normalDefect->id));

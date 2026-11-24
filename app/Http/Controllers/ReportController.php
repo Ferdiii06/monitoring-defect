@@ -48,7 +48,7 @@ class ReportController extends Controller
         $selectedConveyor = $request->input('conveyor');
         $selectedPattern = $request->input('pattern');
         $selectedCategory = strtolower((string) $request->input('category', 'all'));
-        if (!in_array($selectedCategory, ['all', 'internal', 'assembly', 'unclassified', 'rework'], true)) {
+        if (!in_array($selectedCategory, ['all', 'internal', 'assembly', 'unclassified'], true)) {
             $selectedCategory = 'all';
         }
 
@@ -67,38 +67,26 @@ class ReportController extends Controller
         $totalAssembly = (clone $baseFinalQuery)->finalAssyAssemblyDefect()->count();
         $totalUnclassified = 0;
 
-        // Riwayat Rework (sebagai record riwayat, tidak di-double count ke total defect utama)
-        $reworkBaseQuery = (clone $baseFinalQuery)
-            ->whereNotNull('rework_group_id')
-            ->with(['finalInspectType', 'areaDitemukanRef']);
-        $totalRework = (clone $reworkBaseQuery)->count();
-        $reworkRecords = (clone $reworkBaseQuery)
-            ->orderBy('waktu', 'desc')
-            ->paginate(10, ['*'], 'rework_page')
-            ->withQueryString();
-
         // Total PCS (sum quantity) untuk Kartu KPI (Opsi A)
         $pcsFinalAssyNonRework = (int) (clone $baseFinalQuery)->finalAssyReport()->sum('quantity');
         $pcsInternal = (int) (clone $baseFinalQuery)->finalAssyInternalDefect()->sum('quantity');
         $pcsAssembly = (int) (clone $baseFinalQuery)->finalAssyAssemblyDefect()->sum('quantity');
         $pcsUnclassified = 0;
-        $pcsRework = (int) (clone $reworkBaseQuery)->sum('quantity');
+        $totalRework = 0;
+        $pcsRework = 0;
+        $reworkRecords = collect([]);
 
         // 4. Query data defect utama sesuai category yang dipilih
-        if ($selectedCategory === 'rework') {
-            $query = (clone $reworkBaseQuery);
-        } else {
-            $query = (clone $baseFinalQuery)->with(['finalInspectType', 'areaDitemukanRef']);
+        $query = (clone $baseFinalQuery)->with(['finalInspectType', 'areaDitemukanRef']);
 
-            if ($selectedCategory === 'internal') {
-                $query->finalAssyInternalDefect();
-            } elseif ($selectedCategory === 'assembly') {
-                $query->finalAssyAssemblyDefect();
-            } elseif ($selectedCategory === 'unclassified') {
-                $query->whereRaw('1 = 0');
-            } else {
-                $query->finalAssyReport();
-            }
+        if ($selectedCategory === 'internal') {
+            $query->finalAssyInternalDefect();
+        } elseif ($selectedCategory === 'assembly') {
+            $query->finalAssyAssemblyDefect();
+        } elseif ($selectedCategory === 'unclassified') {
+            $query->whereRaw('1 = 0');
+        } else {
+            $query->finalAssyReport();
         }
 
         // 5. Opsi filter unik
@@ -171,12 +159,11 @@ class ReportController extends Controller
     }
 
     /**
-     * Submenu Final Assy: Rework (Record-only)
+     * Submenu Final Assy: Rework (dialihkan ke menu resmi Riwayat Rework)
      */
     public function finalAssyRework(Request $request)
     {
-        $request->merge(['category' => 'rework']);
-        return $this->index($request);
+        return redirect()->route('admin.rework_history.index');
     }
 
     /**
@@ -709,8 +696,8 @@ class ReportController extends Controller
             \Log::warning('RecentDefects: External API sync skipped - ' . $e->getMessage());
         }
 
-        // 1. Buat Query awal
-        $query = Defect::query();
+        // 1. Buat Query awal (hanya data defect operator, mengecualikan rework)
+        $query = Defect::operatorInput();
 
         // 2. Ambil parameter filter
         $dateRange = $request->input('date_range');
@@ -1626,6 +1613,16 @@ class ReportController extends Controller
     {
         $defect = Defect::findOrFail($id);
 
+        if ($defect->rework_group_id) {
+            $msg = 'Data defect rework tidak dapat dihapus dari menu ini. Silakan gunakan menu Riwayat Rework.';
+            if ($request->expectsJson() || $request->isJson() || $request->wantsJson()) {
+                return response()->json([
+                    'message' => $msg,
+                ], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
         $type = $defect->jenis_assy;
         $carlineOrLine = $defect->jenis_assy === 'Pre Assy' ? ($defect->carline?->name ?? '-') : ($defect->jenis_mobil . ' (' . ($defect->conveyor ?? '-') . ')');
         $defectType = $defect->jenis_defect;
@@ -1649,7 +1646,7 @@ class ReportController extends Controller
      */
     public function dashboardRecentDefects(Request $request)
     {
-        $defects = Defect::orderBy('waktu', 'desc')->take(4)->get();
+        $defects = Defect::operatorInput()->orderBy('waktu', 'desc')->take(4)->get();
         return response()->json([
             'success' => true,
             'data'    => $defects
@@ -1814,7 +1811,7 @@ class ReportController extends Controller
      */
     public function recentDefectsLive(Request $request)
     {
-        $query = Defect::query();
+        $query = Defect::operatorInput();
 
         $dateRange        = $request->input('date_range');
         $selectedDefect   = $request->input('defect');

@@ -32,7 +32,7 @@ class RecentDefectsExport implements FromQuery, WithHeadings, WithMapping, Shoul
 
     public function query()
     {
-        $query = Defect::query();
+        $query = Defect::operatorInput();
 
         $dateRange = $this->request->input('date_range');
         $selectedDefect = $this->request->input('defect');

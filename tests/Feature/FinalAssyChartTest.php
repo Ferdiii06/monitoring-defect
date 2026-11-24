@@ -427,10 +427,9 @@ class FinalAssyChartTest extends TestCase
         $resAssembly->assertOk();
         $resAssembly->assertDontSee('id="finalAssyBarChart"', false);
 
-        // GET /final-assy/rework -> Chart TIDAK BOLEH tampil
+        // GET /final-assy/rework -> dialihkan ke Riwayat Rework
         $resRework = $this->actingAsAdmin()->get(route('final_assy.rework'));
-        $resRework->assertOk();
-        $resRework->assertDontSee('id="finalAssyBarChart"', false);
+        $resRework->assertRedirect(route('admin.rework_history.index'));
     }
 
     /**
@@ -442,7 +441,7 @@ class FinalAssyChartTest extends TestCase
         $this->actingAsAdmin()->get(route('final_assy.index'))->assertOk();
         $this->actingAsAdmin()->get(route('final_assy.internal'))->assertOk();
         $this->actingAsAdmin()->get(route('final_assy.assembly'))->assertOk();
-        $this->actingAsAdmin()->get(route('final_assy.rework'))->assertOk();
+        $this->actingAsAdmin()->get(route('final_assy.rework'))->assertRedirect(route('admin.rework_history.index'));
 
         // Pre Assy submenus
         $this->actingAsAdmin()->get(route('pre_assy.index'))->assertOk();
@@ -499,7 +498,8 @@ class FinalAssyChartTest extends TestCase
         // Submenu Final Assy
         $res->assertSee(route('final_assy.internal'));
         $res->assertSee(route('final_assy.assembly'));
-        $res->assertSee(route('final_assy.rework'));
+        $res->assertDontSee(route('final_assy.rework'));
+        $res->assertSee(route('admin.rework_history.index'));
 
         // Submenu Pre Assy
         $res->assertSee(route('pre_assy.internal'));

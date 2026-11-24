@@ -5,13 +5,11 @@
     $headerTitle = match($selectedCategory) {
         'internal' => 'Report Final Assy - Internal Defect',
         'assembly' => 'Report Final Assy - Assembly Defect',
-        'rework'   => 'Report Final Assy - Riwayat Rework',
         default    => 'Report Final Assy',
     };
     $headerDesc = match($selectedCategory) {
         'internal' => 'Laporan defect Final Assy di Area Inspeksi (Internal Defect).',
         'assembly' => 'Laporan defect Final Assy di Area Produksi (Assembly Defect).',
-        'rework'   => 'Laporan riwayat defect rework (record perbaikan terpisah).',
         default    => 'Riwayat aktivitas defect final assy secara real-time.',
     };
 @endphp
@@ -42,10 +40,10 @@
 
         <!-- KPI Summary Cards (Invarian Final Assy) -->
         @if($isSubmenuAll)
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col justify-between h-full">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total Non-Rework</span>
+                    <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total Defect</span>
                     <span class="w-2 h-2 rounded-full bg-gray-400"></span>
                 </div>
                 <div class="text-2xl font-black text-gray-900 mt-2 font-mono tabular-nums">{{ $pcsFinalAssyNonRework ?? $totalFinalAssyNonRework }} <span class="text-xs font-bold text-gray-400 font-sans">PCS</span></div>
@@ -68,15 +66,6 @@
                 </div>
                 <div class="text-2xl font-black text-emerald-900 mt-2 font-mono tabular-nums">{{ $pcsAssembly ?? $totalAssembly }} <span class="text-xs font-bold text-emerald-500 font-sans">PCS</span></div>
                 <p class="text-[11px] text-emerald-600/80 mt-1">{{ $totalAssembly }} temuan di Area Produksi</p>
-            </div>
-
-            <div class="bg-white border border-purple-200 bg-purple-50/20 rounded-lg p-4 shadow-sm flex flex-col justify-between h-full">
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Riwayat Rework</span>
-                    <span class="w-2 h-2 rounded-full bg-purple-600"></span>
-                </div>
-                <div class="text-2xl font-black text-purple-900 mt-2 font-mono tabular-nums">{{ $pcsRework ?? $totalRework }} <span class="text-xs font-bold text-purple-500 font-sans">PCS</span></div>
-                <p class="text-[11px] text-purple-600/80 mt-1">{{ $totalRework }} record perbaikan terpisah</p>
             </div>
         </div>
         @elseif($selectedCategory === 'internal')
@@ -101,17 +90,6 @@
                 <p class="text-[11px] text-emerald-600/80 mt-1">{{ $totalAssembly }} temuan di Area Produksi</p>
             </div>
         </div>
-        @elseif($selectedCategory === 'rework')
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white border border-purple-200 bg-purple-50/20 rounded-lg p-4 shadow-sm flex flex-col justify-between h-full">
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Riwayat Rework</span>
-                    <span class="w-2 h-2 rounded-full bg-purple-600"></span>
-                </div>
-                <div class="text-2xl font-black text-purple-900 mt-2 font-mono tabular-nums">{{ $pcsRework ?? $totalRework }} <span class="text-xs font-bold text-purple-500 font-sans">PCS</span></div>
-                <p class="text-[11px] text-purple-600/80 mt-1">{{ $totalRework }} record perbaikan terpisah</p>
-            </div>
-        </div>
         @endif
 
         <!-- Grafik Final Assy Bar Chart (Stacked PCS per Jenis Defect) -->
@@ -129,7 +107,7 @@
                     <span class="text-xs font-bold text-gray-500 mr-1">Kategori Defect:</span>
                     <a href="{{ request()->fullUrlWithQuery(['category' => 'all', 'page' => 1]) }}"
                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ in_array($selectedCategory, ['all', ''], true) ? 'bg-[#8b0000] text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
-                        Semua Non-Rework ({{ $totalFinalAssyNonRework }})
+                        Semua Defect ({{ $totalFinalAssyNonRework }})
                     </a>
                     <a href="{{ request()->fullUrlWithQuery(['category' => 'internal', 'page' => 1]) }}"
                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ $selectedCategory === 'internal' ? 'bg-blue-600 text-white shadow-xs' : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200' }}">
@@ -138,10 +116,6 @@
                     <a href="{{ request()->fullUrlWithQuery(['category' => 'assembly', 'page' => 1]) }}"
                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ $selectedCategory === 'assembly' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' }}">
                         Assembly Defect ({{ $totalAssembly }})
-                    </a>
-                    <a href="{{ request()->fullUrlWithQuery(['category' => 'rework', 'page' => 1]) }}"
-                       class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all {{ $selectedCategory === 'rework' ? 'bg-purple-600 text-white shadow-xs' : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200' }}">
-                        Rework ({{ $totalRework }})
                     </a>
                 </div>
                 @endif
@@ -379,83 +353,6 @@
             </div>
 
         </section>
-
-        <!-- Section Riwayat Rework (Record Terpisah) -->
-        @if($selectedCategory === 'all')
-        <section class="mt-8 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-2 mb-4">
-                <div>
-                    <div class="flex items-center space-x-2">
-                        <h2 class="text-base font-bold text-gray-900">Riwayat Defect Rework</h2>
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase tracking-wider">Record Terpisah</span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">
-                        <span class="font-semibold text-gray-700">Catatan:</span> Rework dicatat sebagai record baru saat proses perbaikan harness. Kategori asal (Internal/Assembly) merupakan estimasi/asumsi berdasarkan stasiun yang dicatat.
-                    </p>
-                </div>
-                <div class="text-right">
-                    <span class="text-xs font-semibold text-gray-400">Total Record Rework: <span class="font-bold text-gray-800 font-mono">{{ $totalRework }}</span></span>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto min-h-[140px] pb-4">
-                <table class="w-full min-w-[850px] text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-border bg-gray-50/70">
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 pl-3">Waktu</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">User</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Shift</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Mobil</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Conveyor</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Defect</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Sub Defect</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Area / Stasiun</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Asal Rework (Asumsi)</th>
-                            <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Defect Qty</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($reworkRecords as $rework)
-                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-purple-50/20 transition-colors odd:bg-white even:bg-gray-50/30">
-                                <td class="py-3 text-xs text-gray-500 px-4 pl-3">
-                                    {{ \Carbon\Carbon::parse($rework->waktu)->translatedFormat('d M Y H:i') }}
-                                </td>
-                                <td class="py-3 text-xs text-gray-900 font-bold px-4">{{ $rework->user_name }}</td>
-                                <td class="py-3 text-xs text-gray-900 font-bold px-4 text-center">{{ $rework->shift ?? '-' }}</td>
-                                <td class="py-3 text-xs text-gray-950 font-bold px-4">{{ $rework->jenis_mobil ?? '-' }}</td>
-                                <td class="py-3 text-xs font-mono font-semibold text-gray-700 px-4">{{ $rework->conveyor ?? '-' }}</td>
-                                <td class="py-3 text-xs text-brand font-bold uppercase font-mono px-4">{{ $rework->jenis_defect }}</td>
-                                <td class="py-3 text-xs text-brand font-bold uppercase font-mono px-4">{{ $rework->jenis_sub_defect }}</td>
-                                <td class="py-3 text-xs text-gray-900 px-4 font-medium">{{ $rework->area_ditemukan ?? '-' }}</td>
-                                <td class="py-3 text-xs font-bold px-4">
-                                    @php
-                                        // BATCH 2
-                                        $rTipe = $rework->areaDitemukanRef?->tipe ?? \App\Models\AreaDitemukan::resolveTipeByName($rework->area_ditemukan);
-                                    @endphp
-                                    @if($rTipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT)
-                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] border border-emerald-200 bg-emerald-50 text-emerald-700">Assembly Defect (Asumsi)</span>
-                                    @else
-                                        <span class="inline-block px-2 py-0.5 rounded text-[10px] border border-blue-200 bg-blue-50 text-blue-700">Internal Defect (Asumsi)</span>
-                                    @endif
-                                </td>
-                                <td class="py-3 text-xs text-brand font-black font-mono text-center px-4">{{ $rework->quantity }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="10" class="py-8 text-center text-xs text-gray-400">Tidak ada riwayat rework untuk filter terpilih.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            @if($reworkRecords->hasPages())
-                <div class="mt-4 pt-3 border-t border-gray-100">
-                    {{ $reworkRecords->links() }}
-                </div>
-            @endif
-        </section>
-        @endif
     </main>
 
     <!-- Script Initializations -->

@@ -42,8 +42,6 @@ class FinalAssyExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
             $query->finalAssyAssemblyDefect();
         } elseif ($selectedCategory === 'unclassified') {
             $query->whereRaw('1 = 0');
-        } elseif ($selectedCategory === 'rework') {
-            $query->where('jenis_assy', 'Final Assy')->reworkRecord();
         } else {
             $query->finalAssyReport();
         }

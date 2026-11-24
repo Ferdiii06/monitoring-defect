@@ -16,7 +16,7 @@ class PreAssyCarlineSeeder extends Seeder
             '852W/853W',
             '909W/910W',
             'Battery Cable',
-            'DFM',
+            'NSN',
             'J72A',
             'GT43',
             '664W',

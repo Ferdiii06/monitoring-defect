@@ -262,9 +262,8 @@ class FinalAssyReportInvariantTest extends TestCase
         $response->assertViewHas('totalInternal', 1);
         $response->assertViewHas('totalAssembly', 1);
         $response->assertViewHas('totalUnclassified', 0);
-        $response->assertViewHas('totalRework', 1);
-        $response->assertSee('Riwayat Defect Rework');
-        $response->assertSee('Record Terpisah');
+        $response->assertDontSee('Riwayat Defect Rework');
+        $response->assertDontSee('Record Terpisah');
 
         // 2. Filter category=internal
         $respInternal = $this->actingAsAdmin()->get(route('final_assy.index', ['category' => 'internal']));
@@ -787,11 +786,9 @@ class FinalAssyReportInvariantTest extends TestCase
         $resFaAsm->assertDontSee('Kategori Defect:');
         $resFaAsm->assertSee('Report Final Assy - Assembly Defect');
 
-        // Final Assy Submenu Rework: Sembunyikan baris tab
+        // Final Assy Submenu Rework: dialihkan ke Riwayat Rework
         $resFaRew = $this->actingAsAdmin()->get(route('final_assy.rework'));
-        $resFaRew->assertOk();
-        $resFaRew->assertDontSee('Kategori Defect:');
-        $resFaRew->assertSee('Report Final Assy - Riwayat Rework');
+        $resFaRew->assertRedirect(route('admin.rework_history.index'));
 
         // Pre Assy All: Tampil baris tab
         $resPaAll = $this->actingAsAdmin()->get(route('pre_assy.index'));

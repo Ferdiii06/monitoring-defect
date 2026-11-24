@@ -159,7 +159,6 @@
                         $isFinalAll = (request()->routeIs('final_assy.index') && in_array(request('category', 'all'), ['all', ''], true));
                         $isFinalInternal = (request()->routeIs('final_assy.internal') || (request()->routeIs('final_assy.index') && request('category') === 'internal'));
                         $isFinalAssembly = (request()->routeIs('final_assy.assembly') || (request()->routeIs('final_assy.index') && request('category') === 'assembly'));
-                        $isFinalRework = (request()->routeIs('final_assy.rework') || (request()->routeIs('final_assy.index') && request('category') === 'rework'));
                     @endphp
                     <a href="{{ route('final_assy.index') }}"
                        class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isFinalAll ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
@@ -175,11 +174,6 @@
                        class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isFinalAssembly ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
                         <span class="w-1.5 h-1.5 rounded-full {{ $isFinalAssembly ? 'bg-white' : 'bg-gray-300 group-hover:bg-gray-500' }}"></span>
                         <span>Assembly Defect</span>
-                    </a>
-                    <a href="{{ route('final_assy.rework') }}"
-                       class="group flex items-center space-x-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 {{ $isFinalRework ? 'bg-[#8b0000] text-white shadow-sm shadow-red-950/20 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70' }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $isFinalRework ? 'bg-white' : 'bg-gray-300 group-hover:bg-gray-500' }}"></span>
-                        <span>Rework</span>
                     </a>
                 </div>
             </div>
