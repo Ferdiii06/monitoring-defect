@@ -698,8 +698,9 @@ class AdminReworkHistoryTest extends TestCase
         $export = new \App\Exports\ReworkHistoryExport($request);
 
         $headings = $export->headings();
+        $this->assertCount(32, $headings);
         $this->assertContains('Group ID', $headings);
-        $this->assertContains('Kanban Assy', $headings);
+        $this->assertContains('Scan Kanban Assy', $headings);
         $this->assertContains('Status Rework', $headings);
         $this->assertContains('Tipe Area', $headings);
 
@@ -707,18 +708,20 @@ class AdminReworkHistoryTest extends TestCase
         $this->assertCount(1, $rows);
 
         $mapped = $export->map($rows->first());
-        $this->assertEquals($groupId, $mapped[1]);
-        $this->assertEquals('OPEN', $mapped[4]);
-        $this->assertEquals('KB-EXPORT-TEST', $mapped[6]);
-        $this->assertEquals('NP-EXPORT-TEST', $mapped[7]);
-        $this->assertEquals($reworkArea->name, $mapped[14]);
-        $this->assertEquals('Internal Defect', $mapped[15]);
-        $this->assertEquals('rework_exp_user', $mapped[22]);
-        $this->assertEquals('1A', $mapped[23]);
-        $this->assertEquals('1A', $mapped[24]); // code derived
-        $this->assertEquals('TERMINAL DEFECT', $mapped[25]);
-        $this->assertEquals('1.A - TERMINAL BENGKOK', $mapped[26]);
-        $this->assertEquals(1, $mapped[27]);
+        $this->assertEquals(1, $mapped[0]); // No (urutan baris)
+        $this->assertEquals(1, $mapped[1]); // No Rework (urutan harness)
+        $this->assertEquals('OPEN', $mapped[2]); // Status Rework
+        $this->assertEquals('1A', $mapped[7]); // Shift
+        $this->assertEquals('rework_exp_user', $mapped[8]); // Operator Rework
+        $this->assertEquals('KB-EXPORT-TEST', $mapped[9]); // Scan Kanban Assy
+        $this->assertEquals('NP-EXPORT-TEST', $mapped[12]); // No Nameplate Lama
+        $this->assertEquals('1A', $mapped[16]); // Kode Defect
+        $this->assertEquals('TERMINAL DEFECT', $mapped[17]); // Jenis Defect
+        $this->assertEquals('1.A - TERMINAL BENGKOK', $mapped[18]); // Nama Sub Defect
+        $this->assertEquals(1, $mapped[19]); // Quantity
+        $this->assertEquals($reworkArea->name, $mapped[20]); // Area Ditemukan
+        $this->assertEquals('Internal Defect', $mapped[21]); // Tipe Area
+        $this->assertEquals($groupId, $mapped[31]); // Group ID (kolom ke-32)
     }
 
     public function test_rework_history_export_dan_view_menampilkan_strip_untuk_tipe_area_pre_assy(): void
@@ -765,7 +768,7 @@ class AdminReworkHistoryTest extends TestCase
         $rows = $export->query()->get();
         $this->assertCount(1, $rows);
         $mapped = $export->map($rows->first());
-        $this->assertEquals('-', $mapped[15]);
+        $this->assertEquals('-', $mapped[21]); // Tipe Area (kolom ke-22, index 21)
 
         // 2. View Admin Rework History: Tipe Area harus '-'
         $resView = $this->actingAsAdmin()->get('/admin/rework-history?search=KB-PRE-EXP-TEST');

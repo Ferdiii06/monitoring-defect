@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Exports\ReworkHistoryExport;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\AreaDitemukan;
 use App\Models\Defect;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -73,6 +74,18 @@ class ReworkHistoryController extends Controller
             $query->whereIn('status_rework', ['CLOSE', 'Selesai']);
         }
 
+        // 4. Shift Filter (1A, 1B, 2A, 2B, all)
+        $selectedShift = trim((string) $request->input('shift', 'all'));
+        if ($selectedShift !== '' && $selectedShift !== 'all') {
+            $query->where('shift', $selectedShift);
+        }
+
+        // 5. Area Ditemukan Filter
+        $selectedArea = trim((string) $request->input('area', 'all'));
+        if ($selectedArea !== '' && $selectedArea !== 'all') {
+            $query->where('area_ditemukan', $selectedArea);
+        }
+
         return $query;
     }
 
@@ -84,6 +97,11 @@ class ReworkHistoryController extends Controller
         $dateRange = (string) $request->input('date_range', '');
         $search = trim((string) $request->input('search', ''));
         $selectedStatus = (string) $request->input('status', 'all');
+        $selectedShift = (string) $request->input('shift', 'all');
+        $selectedArea = (string) $request->input('area', 'all');
+
+        $shiftOptions = ['1A', '1B', '2A', '2B'];
+        $areaOptions = AreaDitemukan::orderBy('name')->get();
 
         $query = static::baseQuery($request);
 
@@ -121,6 +139,10 @@ class ReworkHistoryController extends Controller
             'dateRange',
             'search',
             'selectedStatus',
+            'selectedShift',
+            'selectedArea',
+            'shiftOptions',
+            'areaOptions',
             'totalHarnesses'
         ));
     }

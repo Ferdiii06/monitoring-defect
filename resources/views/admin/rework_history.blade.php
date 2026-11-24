@@ -64,8 +64,42 @@
                     </div>
                 </div>
 
+                <!-- Shift Filter -->
+                <div class="relative min-w-[130px]">
+                    <select name="shift"
+                            onchange="this.form.submit()"
+                            class="w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
+                        <option value="all" {{ $selectedShift === 'all' || !$selectedShift ? 'selected' : '' }}>Semua Shift</option>
+                        @foreach($shiftOptions as $shift)
+                            <option value="{{ $shift }}" {{ $selectedShift === $shift ? 'selected' : '' }}>Shift {{ $shift }}</option>
+                        @endforeach
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Area Ditemukan Filter -->
+                <div class="relative min-w-[160px]">
+                    <select name="area"
+                            onchange="this.form.submit()"
+                            class="w-full appearance-none pl-4 pr-10 py-2 border border-[#8b0000] rounded-lg text-xs font-semibold text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#8b0000]/20 focus:border-[#8b0000] cursor-pointer">
+                        <option value="all" {{ $selectedArea === 'all' || !$selectedArea ? 'selected' : '' }}>Semua Area</option>
+                        @foreach($areaOptions as $areaItem)
+                            <option value="{{ $areaItem->name }}" {{ $selectedArea === $areaItem->name ? 'selected' : '' }}>{{ $areaItem->name }}</option>
+                        @endforeach
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-[#8b0000]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </div>
+
                 <!-- Reset Filter Button if any filter active -->
-                @if($dateRange !== '' || ($selectedStatus !== 'all' && $selectedStatus !== ''))
+                @if($dateRange !== '' || ($selectedStatus !== 'all' && $selectedStatus !== '') || ($selectedShift !== 'all' && $selectedShift !== '') || ($selectedArea !== 'all' && $selectedArea !== '') || $search !== '')
                     <a href="{{ route('admin.rework_history.index') }}"
                        class="text-xs text-gray-400 hover:text-[#8b0000] font-semibold transition-colors flex items-center space-x-1 pl-1">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -360,14 +394,12 @@
 @push('scripts')
 <script>
 function exportExcel() {
-    const dateRange = document.getElementById("date_range") ? document.getElementById("date_range").value : '';
-    const status = document.querySelector('select[name="status"]') ? document.querySelector('select[name="status"]').value : 'all';
+    const form = document.getElementById("filterForm");
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    params.delete('page');
 
-    let url = "{{ route('admin.rework_history.export') }}?";
-    url += "date_range=" + encodeURIComponent(dateRange);
-    url += "&status=" + encodeURIComponent(status);
-
-    window.location.href = url;
+    window.location.href = "{{ route('admin.rework_history.export') }}?" + params.toString();
 }
 
 document.addEventListener("DOMContentLoaded", function () {

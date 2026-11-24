@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Http\Controllers\Admin\ReworkHistoryController;
+use App\Models\AreaDitemukan;
 use App\Models\Defect;
 use App\Support\SubDefectHelper;
 use Carbon\Carbon;
@@ -21,6 +22,10 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
     use Exportable;
 
     protected $request;
+
+    protected int $rowNumber = 0;
+    protected int $reworkNumber = 0;
+    protected ?string $lastGroupId = null;
 
     public function __construct($request)
     {
@@ -43,101 +48,123 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
     {
         return ReworkHistoryController::baseQuery($this->request)
             ->with(['defectType', 'subDefectType', 'carline.carType'])
-            ->orderByDesc(DB::raw('COALESCE(waktu_in, waktu)'))
-            ->orderBy('rework_group_id')
-            ->orderBy('id');
+            ->orderBy(DB::raw('COALESCE(waktu_in, waktu)'), 'asc')
+            ->orderBy('rework_group_id', 'asc')
+            ->orderBy('id', 'asc');
     }
 
     public function headings(): array
     {
         return [
-            'ID',
-            'Group ID',
+            'No',
+            'No Rework',
+            'Status Rework',
+            'Input Susulan',
             'Waktu In',
             'Waktu Out',
-            'Status Rework',
-            'Durasi (Menit)',
-            'Kanban Assy',
+            'Waktu Rework (Menit)',
+            'Shift',
+            'Operator Rework',
+            'Scan Kanban Assy',
+            'No Urut Kanban',
+            'Status Kanban',
             'No Nameplate Lama',
             'No Nameplate Baru',
-            'Carline',
-            'Conveyor',
-            'No Defective Tag',
-            '#End',
-            '4M Status',
+            'Jenis Mobil',
+            'Konveyor',
+            'Kode Defect',
+            'Jenis Defect',
+            'Nama Sub Defect',
+            'Quantity',
             'Area Ditemukan',
             'Tipe Area',
+            'No Defective Tag',
+            '4M Change Status',
+            'Ujung (#End)',
+            'Carton Box / No Box',
             'Posisi & Detail Rework',
             'F C/H',
             'F C/W',
             'R C/H',
             'R C/W',
-            'No Box',
-            'Operator',
-            'Shift',
-            'Kode Defect',
-            'Jenis Defect',
-            'Sub Defect',
-            'Quantity',
-            'Input Susulan',
-            'No Urut Kanban',
-            'Status Kanban',
+            'Group ID',
         ];
     }
 
     public function map($row): array
     {
+        $this->rowNumber++;
+        if ($this->lastGroupId === null || $row->rework_group_id !== $this->lastGroupId) {
+            $this->lastGroupId = $row->rework_group_id;
+            $this->reworkNumber++;
+        }
+
+        $no = $this->rowNumber;
+        $noRework = $this->reworkNumber;
+
         $code = $row->subDefectType?->code ?? SubDefectHelper::deriveCode($row->jenis_sub_defect) ?? '-';
         $waktuIn = $row->waktu_in ?? $row->waktu;
         $status = in_array($row->status_rework, ['Selesai', 'CLOSE'], true) ? 'CLOSE' : 'OPEN';
+
+        $waktuInFormatted = $waktuIn ? Carbon::parse($waktuIn)->format('d/m/Y H:i') : '-';
+        if ($status === 'OPEN') {
+            $waktuOutFormatted = '-';
+        } else {
+            $waktuOutFormatted = $row->waktu_out ? Carbon::parse($row->waktu_out)->format('d/m/Y H:i') : '-';
+        }
+
         $carline = $row->jenis_mobil ?: ($row->carline?->carType?->name ?: $row->carline?->name) ?: '-';
         $conveyor = $row->conveyor ?: ($row->carline?->name) ?: '-';
-        $areaModel = $row->area_ditemukan ? \App\Models\AreaDitemukan::where('name', $row->area_ditemukan)->first() : null;
-        if ($areaModel && $areaModel->kategori === \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY) {
-            $tipeAreaLabel = ($areaModel->tipe === \App\Models\AreaDitemukan::TIPE_ASSEMBLY_DEFECT) ? 'Assembly Defect' : 'Internal Defect';
+
+        $areaModel = $row->area_ditemukan ? AreaDitemukan::where('name', $row->area_ditemukan)->first() : null;
+        if ($areaModel && $areaModel->kategori === AreaDitemukan::KATEGORI_FINAL_ASSY) {
+            $tipeAreaLabel = ($areaModel->tipe === AreaDitemukan::TIPE_ASSEMBLY_DEFECT) ? 'Assembly Defect' : 'Internal Defect';
         } else {
             $tipeAreaLabel = '-';
         }
 
+        $statusKanbanLabel = match ($row->kanban_status) {
+            'terdaftar'            => 'Terdaftar',
+            'tidak_terdaftar'      => 'Tidak Terdaftar',
+            'family_beda'          => 'Family Beda',
+            'conveyor_beda'        => 'Conveyor Beda',
+            'format_tidak_dikenal' => 'Format Tidak Dikenal',
+            default                => '-',
+        };
+
         return [
-            $row->id,
-            $row->rework_group_id ?? '-',
-            $waktuIn ? Carbon::parse($waktuIn)->format('Y-m-d H:i:s') : '-',
-            $row->waktu_out ? Carbon::parse($row->waktu_out)->format('Y-m-d H:i:s') : '-',
+            $no,
+            $noRework,
             $status,
+            $row->is_susulan ? 'Ya' : 'Tidak',
+            $waktuInFormatted,
+            $waktuOutFormatted,
             $row->durasi_rework_menit !== null ? $row->durasi_rework_menit : '-',
+            $row->shift ?? '-',
+            $row->user_name ?? '-',
             $row->kanban_assy ?? '-',
+            $row->kanban_serial !== null ? $row->kanban_serial : '-',
+            $statusKanbanLabel,
             $row->nameplate_lama ?? '-',
             $row->nameplate_baru ?? '-',
             $carline,
             $conveyor,
-            $row->no_defective_tag ?? '-',
-            $row->ujung ?? '-',
-            $row->status_4m ?? 'NO',
+            $code,
+            $row->jenis_defect ?? '-',
+            $row->jenis_sub_defect ?? '-',
+            $row->quantity ?? 1,
             $row->area_ditemukan ?? '-',
             $tipeAreaLabel,
+            $row->no_defective_tag ?? '-',
+            $row->status_4m ?? 'NO',
+            $row->ujung ?? '-',
+            $row->no_box ?? '-',
             $row->posisi_detail_rework ?? '-',
             $row->fc_h ?? '-',
             $row->fc_w ?? '-',
             $row->rc_h ?? '-',
             $row->rc_w ?? '-',
-            $row->no_box ?? '-',
-            $row->user_name ?? '-',
-            $row->shift ?? '-',
-            $code,
-            $row->jenis_defect ?? '-',
-            $row->jenis_sub_defect ?? '-',
-            $row->quantity ?? 1,
-            $row->is_susulan ? 'Ya' : 'Tidak',
-            $row->kanban_serial !== null ? $row->kanban_serial : '-',
-            match ($row->kanban_status) {
-                'terdaftar'            => 'Terdaftar',
-                'tidak_terdaftar'      => 'Tidak Terdaftar',
-                'family_beda'          => 'Family Beda',
-                'conveyor_beda'        => 'Conveyor Beda',
-                'format_tidak_dikenal' => 'Format Tidak Dikenal',
-                default                => '-',
-            },
+            $row->rework_group_id ?? '-',
         ];
     }
 }
