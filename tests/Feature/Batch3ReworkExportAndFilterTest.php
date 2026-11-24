@@ -12,8 +12,12 @@ use App\Models\SubDefectType;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Once;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Tests\TestCase;
 
 class Batch3ReworkExportAndFilterTest extends TestCase
@@ -166,12 +170,13 @@ class Batch3ReworkExportAndFilterTest extends TestCase
     }
 
     /**
-     * 3. Waktu Out "-" saat OPEN, format d/m/Y H:i saat CLOSE.
+     * 3. Waktu In dan Out tanggal Excel, Waktu Out "-" saat OPEN, Waktu Rework desimal 2 digit (45s -> 0.75, OPEN -> "-").
      */
     public function test_waktu_out_is_dash_when_status_is_open_and_formatted_when_close(): void
     {
         $groupOpen = (string) Str::uuid();
         $groupClose = (string) Str::uuid();
+        $group45s = (string) Str::uuid();
 
         // Status OPEN dengan waktu_in
         $openDefect = Defect::create([
@@ -187,7 +192,7 @@ class Batch3ReworkExportAndFilterTest extends TestCase
             'quantity'         => 1,
         ]);
 
-        // Status CLOSE dengan waktu_in dan waktu_out
+        // Status CLOSE dengan durasi 35 menit
         $closeDefect = Defect::create([
             'rework_group_id'      => $groupClose,
             'user_name'            => 'Operator QA',
@@ -202,16 +207,110 @@ class Batch3ReworkExportAndFilterTest extends TestCase
             'quantity'             => 1,
         ]);
 
+        // Status CLOSE dengan durasi 45 detik (rework < 1 menit)
+        $defect45s = Defect::create([
+            'rework_group_id'      => $group45s,
+            'user_name'            => 'Operator QA',
+            'waktu'                => Carbon::parse('2026-11-24 10:00:00'),
+            'waktu_in'             => Carbon::parse('2026-11-24 10:00:00'),
+            'waktu_out'            => Carbon::parse('2026-11-24 10:00:45'),
+            'status_rework'        => 'CLOSE',
+            'durasi_rework_menit'  => 0,
+            'jenis_assy'           => 'Final Assy',
+            'jenis_defect'         => 'DEFECT 45S',
+            'jenis_sub_defect'     => 'SUB 45S',
+            'quantity'             => 1,
+        ]);
+
         $export = new ReworkHistoryExport(new Request());
 
+        // Open: Waktu In tanggal Excel, Waktu Out "-", Durasi "-"
         $mappedOpen = $export->map($openDefect);
-        $this->assertEquals('24/11/2026 08:15', $mappedOpen[4]); // Waktu In
-        $this->assertEquals('-', $mappedOpen[5]); // Waktu Out "-" saat OPEN
+        $this->assertEquals(Date::dateTimeToExcel(Carbon::parse('2026-11-24 08:15:00')), $mappedOpen[4]);
+        $this->assertSame('-', $mappedOpen[5]); // Waktu Out "-" saat OPEN
+        $this->assertSame('-', $mappedOpen[6]); // Waktu Rework "-" saat OPEN
 
+        // Close 35 menit: Waktu In & Out tanggal Excel, Durasi 35.00
         $mappedClose = $export->map($closeDefect);
-        $this->assertEquals('24/11/2026 09:10', $mappedClose[4]); // Waktu In
-        $this->assertEquals('24/11/2026 09:45', $mappedClose[5]); // Waktu Out terformat d/m/Y H:i
-        $this->assertEquals(35, $mappedClose[6]); // Waktu Rework (Menit)
+        $this->assertEquals(Date::dateTimeToExcel(Carbon::parse('2026-11-24 09:10:00')), $mappedClose[4]);
+        $this->assertEquals(Date::dateTimeToExcel(Carbon::parse('2026-11-24 09:45:00')), $mappedClose[5]);
+        $this->assertEquals(35.0, $mappedClose[6]);
+
+        // Close 45 detik: rework 45 detik menghasilkan 0.75
+        $mapped45s = $export->map($defect45s);
+        $this->assertEquals(Date::dateTimeToExcel(Carbon::parse('2026-11-24 10:00:00')), $mapped45s[4]);
+        $this->assertEquals(Date::dateTimeToExcel(Carbon::parse('2026-11-24 10:00:45')), $mapped45s[5]);
+        $this->assertSame(0.75, $mapped45s[6]);
+    }
+
+    /**
+     * 3b. Autofilter, freeze pane, border tipis, header styling, dan number formats terpasang pada rentang yang benar.
+     */
+    public function test_autofilter_freeze_pane_border_and_styles_installed_on_correct_range(): void
+    {
+        $group = (string) Str::uuid();
+
+        Defect::create([
+            'rework_group_id'      => $group,
+            'user_name'            => 'Operator QA',
+            'waktu'                => Carbon::parse('2026-11-24 08:00:00'),
+            'waktu_in'             => Carbon::parse('2026-11-24 08:00:00'),
+            'waktu_out'            => Carbon::parse('2026-11-24 08:00:45'),
+            'status_rework'        => 'CLOSE',
+            'durasi_rework_menit'  => 0,
+            'kanban_assy'          => 'KB-TEST-STYLE',
+            'nameplate_lama'       => 'NP-TEST-STYLE',
+            'jenis_assy'           => 'Final Assy',
+            'jenis_defect'         => 'DEFECT STYLE',
+            'jenis_sub_defect'     => 'SUB STYLE',
+            'quantity'             => 1,
+        ]);
+
+        $export = new ReworkHistoryExport(new Request());
+        $tempFile = 'test_rework_export_' . Str::random(8) . '.xlsx';
+
+        Storage::delete($tempFile);
+        Excel::store($export, $tempFile);
+
+        $path = Storage::path($tempFile);
+        $spreadsheet = IOFactory::load($path);
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headings = $export->headings();
+        $this->assertCount(32, $headings);
+        $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headings));
+        $this->assertSame('AF', $lastCol);
+
+        $highestRow = $sheet->getHighestRow();
+        $this->assertGreaterThanOrEqual(2, $highestRow);
+
+        // 1. Autofilter di baris header untuk seluruh kolom (rentang dihitung dari jumlah header)
+        $this->assertSame("A1:{$lastCol}1", $sheet->getAutoFilter()->getRange());
+
+        // 2. Freeze pane di bawah header
+        $this->assertSame('A2', $sheet->getFreezePane());
+
+        // 3. Border tipis di semua sel dari header sampai baris data terakhir
+        $this->assertSame('thin', $sheet->getStyle('A1')->getBorders()->getTop()->getBorderStyle());
+        $this->assertSame('thin', $sheet->getStyle("{$lastCol}{$highestRow}")->getBorders()->getBottom()->getBorderStyle());
+
+        // 4. Header: bold, latar abu-abu muda, rata tengah, wrap text
+        $this->assertTrue($sheet->getStyle('A1')->getFont()->getBold());
+        $this->assertSame('E0E0E0', $sheet->getStyle('A1')->getFill()->getStartColor()->getRGB());
+        $this->assertSame('center', $sheet->getStyle('A1')->getAlignment()->getHorizontal());
+        $this->assertTrue($sheet->getStyle('A1')->getAlignment()->getWrapText());
+
+        // 5. Number format Waktu In (E), Waktu Out (F), dan Waktu Rework Menit (G)
+        $this->assertSame('dd/mm/yyyy hh:mm:ss', $sheet->getStyle('E2')->getNumberFormat()->getFormatCode());
+        $this->assertSame('dd/mm/yyyy hh:mm:ss', $sheet->getStyle('F2')->getNumberFormat()->getFormatCode());
+        $this->assertSame('0.00', $sheet->getStyle('G2')->getNumberFormat()->getFormatCode());
+
+        // Nilai terformat di Excel
+        $this->assertSame('24/11/2026 08:00:00', $sheet->getCell('E2')->getFormattedValue());
+        $this->assertSame('24/11/2026 08:00:45', $sheet->getCell('F2')->getFormattedValue());
+        $this->assertSame('0.75', $sheet->getCell('G2')->getFormattedValue());
+
+        Storage::delete($tempFile);
     }
 
     /**

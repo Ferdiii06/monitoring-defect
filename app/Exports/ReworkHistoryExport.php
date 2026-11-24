@@ -12,13 +12,18 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
+class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithColumnFormatting
 {
     use Exportable;
 
@@ -33,14 +38,42 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
         $this->request = $request;
     }
 
+    public function columnFormats(): array
+    {
+        return [
+            'E' => 'dd/mm/yyyy hh:mm:ss',
+            'F' => 'dd/mm/yyyy hh:mm:ss',
+            'G' => '0.00',
+        ];
+    }
+
     public function styles(Worksheet $sheet)
     {
         $lastColumn = Coordinate::stringFromColumnIndex(count($this->headings()));
+        $highestRow = max(1, $sheet->getHighestRow());
+
+        $sheet->setAutoFilter("A1:{$lastColumn}1");
+        $sheet->freezePane('A2');
 
         return [
-            1 => ['font' => ['bold' => true]],
             "A1:{$lastColumn}1" => [
                 'font' => ['bold' => true],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                    'wrapText' => true,
+                ],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'E0E0E0'],
+                ],
+            ],
+            "A1:{$lastColumn}{$highestRow}" => [
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                    ],
+                ],
             ],
         ];
     }
@@ -107,11 +140,21 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
         $waktuIn = $row->waktu_in ?? $row->waktu;
         $status = in_array($row->status_rework, ['Selesai', 'CLOSE'], true) ? 'CLOSE' : 'OPEN';
 
-        $waktuInFormatted = $waktuIn ? Carbon::parse($waktuIn)->format('d/m/Y H:i') : '-';
-        if ($status === 'OPEN') {
-            $waktuOutFormatted = '-';
+        $waktuInVal = $waktuIn ? Date::dateTimeToExcel(Carbon::parse($waktuIn)) : '-';
+
+        if ($status === 'OPEN' || !$row->waktu_out) {
+            $waktuOutVal = '-';
+            $durasiReworkMenit = '-';
         } else {
-            $waktuOutFormatted = $row->waktu_out ? Carbon::parse($row->waktu_out)->format('d/m/Y H:i') : '-';
+            $waktuOutVal = Date::dateTimeToExcel(Carbon::parse($row->waktu_out));
+            if ($waktuIn) {
+                $cIn = Carbon::parse($waktuIn);
+                $cOut = Carbon::parse($row->waktu_out);
+                $diffSeconds = max(0, $cIn->diffInSeconds($cOut));
+                $durasiReworkMenit = round($diffSeconds / 60, 2);
+            } else {
+                $durasiReworkMenit = '-';
+            }
         }
 
         $carline = $row->jenis_mobil ?: ($row->carline?->carType?->name ?: $row->carline?->name) ?: '-';
@@ -143,9 +186,9 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             $noRework,
             $status,
             $row->is_susulan ? 'Ya' : 'Tidak',
-            $waktuInFormatted,
-            $waktuOutFormatted,
-            $row->durasi_rework_menit !== null ? $row->durasi_rework_menit : '-',
+            $waktuInVal,
+            $waktuOutVal,
+            $durasiReworkMenit,
             $row->shift ?? '-',
             $row->user_name ?? '-',
             $row->kanban_assy ?? '-',
