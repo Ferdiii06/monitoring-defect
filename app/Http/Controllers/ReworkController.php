@@ -595,7 +595,12 @@ class ReworkController extends Controller
             }
         });
 
-        $returnUrl = $isAdmin ? $this->sanitizeAdminReturnUrl($request->input('return_url')) : null;
+        $returnUrl = $isAdmin
+            ? AdminReturnUrl::toRedirectTarget(
+                $this->sanitizeAdminReturnUrl($request->input('return_url'), $request->getBasePath()),
+                $request->getBasePath()
+            )
+            : null;
 
         if ($isAdmin) {
             if ($returnUrl) {

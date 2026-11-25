@@ -1607,7 +1607,10 @@ class ReportController extends Controller
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
 
-        $returnUrl = AdminReturnUrl::sanitize($request->input('return_url'), $request->getBasePath());
+        $returnUrl = AdminReturnUrl::toRedirectTarget(
+            AdminReturnUrl::sanitize($request->input('return_url'), $request->getBasePath()),
+            $request->getBasePath()
+        );
 
         return redirect()->to($returnUrl ?? route('recent_defects.index'))->with('success', 'Laporan defect berhasil diperbarui oleh Admin!');
     }

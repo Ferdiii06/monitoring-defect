@@ -96,4 +96,36 @@ class AdminReturnUrl
 
         return $trimmed;
     }
+
+    /**
+     * Ubah hasil sanitize() menjadi target relatif aplikasi untuk redirect()->to().
+     * Membuang basePath di awal tepat satu kali jika diikuti '/' atau akhir string
+     * (atau '?' / '#'), sambil mempertahankan query string dan fragment.
+     */
+    public static function toRedirectTarget(?string $sanitized, string $basePath): ?string
+    {
+        if ($sanitized === null) {
+            return null;
+        }
+
+        $normalizedBasePath = rtrim(trim($basePath), '/');
+        if ($normalizedBasePath !== '' && !str_starts_with($normalizedBasePath, '/')) {
+            $normalizedBasePath = '/' . $normalizedBasePath;
+        }
+        if ($normalizedBasePath === '' || $normalizedBasePath === '/') {
+            return $sanitized;
+        }
+
+        if (str_starts_with($sanitized, $normalizedBasePath)) {
+            $rest = substr($sanitized, strlen($normalizedBasePath));
+            if ($rest === '') {
+                return '/';
+            }
+            if (str_starts_with($rest, '/') || str_starts_with($rest, '?') || str_starts_with($rest, '#')) {
+                return $rest;
+            }
+        }
+
+        return $sanitized;
+    }
 }
