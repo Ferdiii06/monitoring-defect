@@ -1664,7 +1664,10 @@ class ReportController extends Controller
      */
     public function finalAssyLive(Request $request)
     {
-        $selectedCategory = $request->input('category', 'all');
+        $selectedCategory = strtolower((string) $request->input('category', 'all'));
+        if (!in_array($selectedCategory, ['all', 'internal', 'assembly'], true)) {
+            $selectedCategory = 'all';
+        }
         $query = Defect::with(['finalInspectType', 'areaDitemukanRef']);
 
         if ($selectedCategory === 'internal') {
@@ -1740,7 +1743,10 @@ class ReportController extends Controller
      */
     public function preAssyLive(Request $request)
     {
-        $selectedCategory = $request->input('category', 'all');
+        $selectedCategory = strtolower((string) $request->input('category', 'all'));
+        if (!in_array($selectedCategory, ['all', 'internal', 'assembly'], true)) {
+            $selectedCategory = 'all';
+        }
         $query = Defect::with(['carline', 'inspectProcessType'])->where('jenis_assy', 'Pre Assy')->operatorInput();
 
         if ($selectedCategory === 'internal' || $selectedCategory === 'inspektor') {

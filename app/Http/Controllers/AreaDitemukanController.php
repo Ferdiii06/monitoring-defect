@@ -109,14 +109,8 @@ class AreaDitemukanController extends Controller
         $kategoriInput = $request->input('kategori', AreaDitemukan::KATEGORI_FINAL_ASSY);
         $isPreAssy = ($kategoriInput === AreaDitemukan::KATEGORI_PRE_ASSY);
 
-        $uniqueRule = Rule::unique('area_ditemukans', 'name')
-            ->where('kategori', $kategoriInput);
-        if ($id) {
-            $uniqueRule->ignore($id);
-        }
-
         $rules = [
-            'name'     => ['required', 'string', 'max:255', $uniqueRule],
+            'name'     => ['required', 'string', 'max:255'],
             'kategori' => ['nullable', 'string', Rule::in($allowedKategori)],
             'tipe'     => $isPreAssy
                 ? ['nullable', 'string', Rule::in($allowedTipe)]
@@ -125,7 +119,6 @@ class AreaDitemukanController extends Controller
 
         $messages = [
             'name.required' => 'Nama area wajib diisi.',
-            'name.unique'   => 'Nama area sudah digunakan pada kategori ' . $kategoriInput . '.',
             'name.max'      => 'Nama area maksimal 255 karakter.',
             'kategori.in'   => 'Kategori area harus Final Assy atau Pre Assy.',
             'tipe.required' => 'Tipe area wajib dipilih untuk Final Assy.',
@@ -134,7 +127,19 @@ class AreaDitemukanController extends Controller
 
         $validated = $request->validate($rules, $messages);
 
+        $name = trim($validated['name']);
         $kategori = $validated['kategori'] ?? AreaDitemukan::KATEGORI_FINAL_ASSY;
+
+        $duplicateQuery = AreaDitemukan::where('kategori', $kategori)
+            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name, 'UTF-8')]);
+        if ($id) {
+            $duplicateQuery->where('id', '!=', $id);
+        }
+        if ($duplicateQuery->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'name' => 'Nama area sudah digunakan pada kategori ' . $kategori . '.',
+            ]);
+        }
 
         // Pre Assy: tipe tidak dipakai dan selalu diset internal_defect agar konsisten di DB
         if ($kategori === AreaDitemukan::KATEGORI_PRE_ASSY) {

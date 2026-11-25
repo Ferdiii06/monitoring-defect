@@ -584,11 +584,24 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         let pollingTimer = null;
+        const editUrlTemplate = @json(route('admin.report.edit', ['id' => '__ID__']));
+        const destroyUrlTemplate = @json(route('admin.report.destroy', ['id' => '__ID__']));
+        const csrfToken = @json(csrf_token());
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
         function formatDate(dateStr) {
             if (!dateStr) return '-';
             const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr;
+            if (isNaN(d.getTime())) return escapeHtml(dateStr);
             const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
             return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
         }
@@ -600,12 +613,32 @@
             return d.toTimeString().substring(0, 8);
         }
 
+        function stopPolling() {
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+            }
+        }
+
         function fetchLiveFinalAssy() {
-            const currentQuery = window.location.search;
-            fetch('{{ url("/api/final-assy/live") }}' + currentQuery)
-                .then(r => r.json())
+            if (document.hidden) return;
+            const params = new URLSearchParams(window.location.search);
+            if (!params.has('category')) {
+                params.set('category', @json($selectedCategory));
+            }
+            fetch('{{ url("/api/final-assy/live") }}?' + params.toString(), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(r => {
+                    const contentType = r.headers.get('content-type') || '';
+                    if (!r.ok || r.redirected || !contentType.includes('application/json')) {
+                        stopPolling();
+                        return null;
+                    }
+                    return r.json();
+                })
                 .then(res => {
-                    if (!res.success || !Array.isArray(res.data)) return;
+                    if (!res || !res.success || !Array.isArray(res.data)) return;
                     const tbody = document.getElementById('reportTableBody');
                     if (!tbody) return;
 
@@ -614,31 +647,49 @@
                         return;
                     }
 
+                    const returnUrlParam = encodeURIComponent(window.location.pathname + window.location.search);
                     let html = '';
                     res.data.forEach(item => {
                         const finalInspectTypeName = (item.final_inspect_type && item.final_inspect_type.name)
-                            ? item.final_inspect_type.name
+                            ? escapeHtml(item.final_inspect_type.name)
                             : '-';
+                        const areaText = (item.jenis_defect === 'Zero Defect' || item.quantity == 0)
+                            ? '-'
+                            : escapeHtml(item.area_ditemukan || '-');
+                        const catBadgeClass = escapeHtml(item.category_badge_class || 'border-gray-200 bg-gray-50 text-gray-600');
+                        const catLabel = escapeHtml(item.category_label || ((item.jenis_defect === 'Zero Defect' || item.quantity == 0) ? 'Zero Defect' : '-'));
+                        const safeId = encodeURIComponent(item.id);
+                        const editHref = escapeHtml(editUrlTemplate.replace('__ID__', safeId) + '?return_url=' + returnUrlParam);
+                        const destroyAction = escapeHtml(destroyUrlTemplate.replace('__ID__', safeId));
 
                         html += `
-                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${item.id}">
+                            <tr class="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors" data-id="${escapeHtml(item.id)}">
                                 <td class="py-4 text-sm text-gray-500 px-4 pl-2 font-medium"><div class="text-xs leading-normal"><span class="block text-gray-900">${formatDate(item.waktu)}</span><span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(item.waktu)}</span></div></td>
-                                <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.user_name || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${item.shift || '-'}</td>
-                                <td class="py-4 text-sm text-gray-950 font-bold px-4">${item.jenis_mobil || '-'}</td>
-                                <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${item.conveyor || '-'}</span></td>
+                                <td class="py-4 text-sm text-gray-900 font-bold px-4">${escapeHtml(item.user_name || '-')}</td>
+                                <td class="py-4 text-sm text-gray-900 font-bold px-4 text-center">${escapeHtml(item.shift || '-')}</td>
+                                <td class="py-4 text-sm text-gray-950 font-bold px-4">${escapeHtml(item.jenis_mobil || '-')}</td>
+                                <td class="py-4 text-sm font-bold px-4"><span class="inline-block bg-gray-100 text-gray-700 text-xs font-bold px-2 py-0.5 rounded-lg tracking-wider">${escapeHtml(item.conveyor || '-')}</span></td>
                                 <td class="py-4 text-sm text-gray-700 font-semibold px-4">${finalInspectTypeName}</td>
-                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_defect || '-'}</td>
-                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${item.jenis_sub_defect || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.end_number || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.specification || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.actual || '-'}</td>
-                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${(item.jenis_defect === 'Zero Defect' || item.quantity == 0) ? '-' : (item.area_ditemukan || '-')}</td>
-                                <td class="py-4 text-xs font-bold px-4"><span class="inline-block px-2 py-0.5 rounded border ${item.category_badge_class || 'border-gray-200 bg-gray-50 text-gray-600'} tracking-wider">${item.category_label || ((item.jenis_defect === 'Zero Defect' || item.quantity == 0) ? 'Zero Defect' : '-')}</span></td>
-                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${item.job_station || '-'}</td>
-                                <td class="py-4 text-sm text-teal-700 font-bold text-center px-4">${item.inspect_quantity ?? 0}</td>
-                                <td class="py-4 text-sm text-gray-900 font-bold text-center px-4">${item.quantity || 0}</td>
-                                <td class="py-4 text-center px-4 pr-2"><a href="/report/${item.id}/edit" class="inline-flex items-center px-3 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">Edit</a></td>
+                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${escapeHtml(item.jenis_defect || '-')}</td>
+                                <td class="py-4 text-xs text-[#8b0000] font-bold tracking-wider uppercase font-mono px-4">${escapeHtml(item.jenis_sub_defect || '-')}</td>
+                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${escapeHtml(item.end_number || '-')}</td>
+                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${escapeHtml(item.specification || '-')}</td>
+                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${escapeHtml(item.actual || '-')}</td>
+                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${areaText}</td>
+                                <td class="py-4 text-xs font-bold px-4"><span class="inline-block px-2 py-0.5 rounded border ${catBadgeClass} tracking-wider">${catLabel}</span></td>
+                                <td class="py-4 text-sm text-gray-900 px-4 font-medium">${escapeHtml(item.job_station || '-')}</td>
+                                <td class="py-4 text-sm text-teal-700 font-bold text-center px-4">${escapeHtml(item.inspect_quantity ?? 0)}</td>
+                                <td class="py-4 text-sm text-gray-900 font-bold text-center px-4">${escapeHtml(item.quantity || 0)}</td>
+                                <td class="py-4 text-center px-4 pr-2">
+                                    <div class="inline-flex items-center space-x-1.5">
+                                        <a href="${editHref}" class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-brand hover:bg-brand-active text-white text-xs font-bold transition-all shadow-xs active:scale-95">Edit</a>
+                                        <form action="${destroyAction}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data defect ini?');" class="inline-block">
+                                            <input type="hidden" name="_token" value="${escapeHtml(csrfToken)}">
+                                            <input type="hidden" name="_method" value="DELETE">
+                                            <button type="submit" class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-brand text-xs font-bold transition-colors">Hapus</button>
+                                        </form>
+                                    </div>
+                                </td>
                             </tr>
                         `;
                     });
@@ -651,15 +702,30 @@
                     const totalEl = document.getElementById('total-count');
                     if (totalEl && res.total !== undefined) totalEl.innerText = res.total;
                 })
-                .catch(err => console.error('[Polling] Gagal fetch final assy live:', err));
+                .catch(() => {
+                    stopPolling();
+                });
+        }
+
+        function startPolling() {
+            if (!pollingTimer && !document.hidden) {
+                pollingTimer = setInterval(fetchLiveFinalAssy, 8000);
+            }
         }
 
         // Init polling timer
-        pollingTimer = setInterval(fetchLiveFinalAssy, 8000);
+        startPolling();
 
-        window.addEventListener('beforeunload', function() {
-            if (pollingTimer) clearInterval(pollingTimer);
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopPolling();
+            } else {
+                fetchLiveFinalAssy();
+                startPolling();
+            }
         });
+
+        window.addEventListener('beforeunload', stopPolling);
     });
     </script>
 @endsection

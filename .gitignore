@@ -16,6 +16,7 @@
 /public/build
 /public/hot
 /public/storage
+/public/error_debug.txt
 /storage/*.key
 /storage/pail
 /storage/framework/*.php

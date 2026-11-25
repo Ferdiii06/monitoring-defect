@@ -348,10 +348,20 @@
     document.addEventListener('DOMContentLoaded', function() {
         let pollingTimer = null;
 
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function formatDate(dateStr) {
             if (!dateStr) return '-';
             const d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr;
+            if (isNaN(d.getTime())) return escapeHtml(dateStr);
             const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
             return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
         }
@@ -361,6 +371,13 @@
             const d = new Date(dateStr);
             if (isNaN(d.getTime())) return '';
             return d.toTimeString().substring(0, 8);
+        }
+
+        function stopPolling() {
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+            }
         }
 
         function getActionBadge(jenisAksi) {
@@ -381,15 +398,25 @@
                 style = 'border-rose-200 bg-rose-50 text-rose-700';
             }
 
-            return `<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border ${style} tracking-wider">${action || '-'}</span>`;
+            return `<span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-lg border ${style} tracking-wider">${escapeHtml(action) || '-'}</span>`;
         }
 
         function fetchLiveLogs() {
+            if (document.hidden) return;
             const currentQuery = window.location.search;
-            fetch('{{ url("/api/log-system/live") }}' + currentQuery)
-                .then(r => r.json())
+            fetch('{{ url("/api/log-system/live") }}' + currentQuery, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(r => {
+                    const contentType = r.headers.get('content-type') || '';
+                    if (!r.ok || r.redirected || !contentType.includes('application/json')) {
+                        stopPolling();
+                        return null;
+                    }
+                    return r.json();
+                })
                 .then(res => {
-                    if (!res.success || !Array.isArray(res.data)) return;
+                    if (!res || !res.success || !Array.isArray(res.data)) return;
                     const tbody = document.getElementById('logTableBody');
                     if (!tbody) return;
 
@@ -408,25 +435,40 @@
                                         <span class="block text-gray-400 mt-0.5 text-[11px]">${formatTime(item.waktu)}</span>
                                     </div>
                                 </td>
-                                <td class="py-4 text-sm text-gray-900 font-bold px-4">${item.user_name || '-'}</td>
+                                <td class="py-4 text-sm text-gray-900 font-bold px-4">${escapeHtml(item.user_name || '-')}</td>
                                 <td class="py-4 text-xs font-bold text-center px-4">${getActionBadge(item.jenis_aksi)}</td>
-                                <td class="py-4 text-sm text-gray-600 font-medium px-4">${item.aktivitas || '-'}</td>
-                                <td class="py-4 text-sm text-gray-500 font-medium px-4 font-mono">${item.ip_address || '-'}</td>
+                                <td class="py-4 text-sm text-gray-600 font-medium px-4">${escapeHtml(item.aktivitas || '-')}</td>
+                                <td class="py-4 text-sm text-gray-500 font-medium px-4 font-mono">${escapeHtml(item.ip_address || '-')}</td>
                             </tr>
                         `;
                     });
 
                     tbody.innerHTML = html;
                 })
-                .catch(err => console.error('[Polling] Gagal fetch log system live:', err));
+                .catch(() => {
+                    stopPolling();
+                });
+        }
+
+        function startPolling() {
+            if (!pollingTimer && !document.hidden) {
+                pollingTimer = setInterval(fetchLiveLogs, 8000);
+            }
         }
 
         // Init polling timer
-        pollingTimer = setInterval(fetchLiveLogs, 8000);
+        startPolling();
 
-        window.addEventListener('beforeunload', function() {
-            if (pollingTimer) clearInterval(pollingTimer);
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopPolling();
+            } else {
+                fetchLiveLogs();
+                startPolling();
+            }
         });
+
+        window.addEventListener('beforeunload', stopPolling);
     });
     </script>
 

@@ -153,7 +153,8 @@ class DefectApiController extends Controller
 
             // Fallback activeUsers to recent active users in defects/logs if API activeUsers is 0
             if ($activeUsers === 0) {
-                $recentOperators = \App\Models\Defect::where('waktu', '>=', Carbon::now()->subMinutes(15))
+                $recentOperators = \App\Models\Defect::operatorInput()
+                    ->where('waktu', '>=', Carbon::now()->subMinutes(15))
                     ->distinct('user_name')
                     ->count('user_name');
                 $activeUsers = max(1, $recentOperators);
@@ -192,10 +193,8 @@ class DefectApiController extends Controller
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('getStats Fatal Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-            @file_put_contents(public_path('error_debug.txt'), $e->getMessage() . "\n" . $e->getTraceAsString());
             return response()->json([
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
             ], 500);
         }
     }
