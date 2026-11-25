@@ -595,14 +595,18 @@ class ReworkEditTest extends TestCase
         $this->assertEquals($conveyorMazda->id, $updated->carline_id);
         $this->assertEquals('MAZDA', $updated->jenis_mobil);
 
-        // 2. Update dengan kombinasi tidak valid (carline TOYOTA tapi konveyor MAZDA)
-        $resInvalid = $this->withSession($session)->put(route('rework.update', $groupId), [
+        // 2. Batch 5a: Update dengan kombinasi bebas (carline TOYOTA tapi konveyor J72A-12B.LHD) tetap lolos di rework
+        $resFlexible = $this->withSession($session)->put(route('rework.update', $groupId), [
             'kanban_assy'    => 'KB-ORIGINAL-EDITED',
             'nameplate'      => 'NP-ORIGINAL',
             'sub_defect_ids' => [$sub1->id],
             'carline'        => 'TOYOTA',
             'conveyor'       => 'J72A-12B.LHD',
         ]);
-        $resInvalid->assertSessionHasErrors(['conveyor']);
+        $resFlexible->assertRedirect(route('rework.index'));
+        $resFlexible->assertSessionHasNoErrors();
+        $updated2 = Defect::where('rework_group_id', $groupId)->first();
+        $this->assertEquals('J72A-12B.LHD', $updated2->conveyor);
+        $this->assertEquals('TOYOTA', $updated2->jenis_mobil);
     }
 }

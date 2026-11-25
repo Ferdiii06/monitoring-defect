@@ -601,27 +601,27 @@ class ReworkFormTest extends TestCase
         $this->assertEquals('OPEN', $defect->status_rework);
     }
 
-    public function test_validasi_kombinasi_conveyor_dan_carline_tidak_valid(): void
+    public function test_validasi_kombinasi_conveyor_dan_carline_tidak_diblokir_di_rework(): void
     {
         $sub = $this->createFinalAssyDefect('WIRING', '1.A - CROSS CIRCUIT', '1A');
         AreaDitemukan::create(['name' => 'RWK', 'tipe' => AreaDitemukan::TIPE_INTERNAL_DEFECT]);
 
         $toyota = CarType::create(['name' => 'TOYOTA']);
-        $nissan = CarType::create(['name' => 'NISSAN']);
+        CarType::create(['name' => 'NISSAN']);
         Carline::create([
             'car_type_id' => $toyota->id,
             'name'        => '664W-C5',
         ]);
 
-        // Kirim kombinasi tidak valid: conveyor 664W-C5 (milik TOYOTA) tapi carline NISSAN
+        // Batch 5a: Rework melepas validasi ketat konveyor vs carline agar konveyor hasil scan / nama panjang lolos
         $response = $this->withSession([
             'logged_in'     => true,
             'user_name'     => 'reworkA',
             'user_role'     => 'Rework',
             'current_shift' => '1A',
         ])->from(route('rework.index'))->post(route('rework.store_in'), [
-            'kanban_assy'    => 'KB-INVALID-01',
-            'nameplate'      => 'NP-INVALID-01',
+            'kanban_assy'    => 'KB-FLEX-01',
+            'nameplate'      => 'NP-FLEX-01',
             'area_ditemukan' => 'RWK',
             'sub_defect_ids' => [$sub->id],
             'carline'        => 'NISSAN',
@@ -629,8 +629,12 @@ class ReworkFormTest extends TestCase
         ]);
 
         $response->assertRedirect(route('rework.index'));
-        $response->assertSessionHasErrors(['conveyor']);
-        $this->assertEquals(0, Defect::where('kanban_assy', 'KB-INVALID-01')->count());
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('defects', [
+            'kanban_assy' => 'KB-FLEX-01',
+            'conveyor'    => '664W-C5',
+            'jenis_mobil' => 'NISSAN',
+        ]);
     }
 
     public function test_simpan_in_dengan_conveyor_saja_mengisi_carline_id_dan_jenis_mobil_secara_otomatis(): void

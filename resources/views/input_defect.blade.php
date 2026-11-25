@@ -54,6 +54,12 @@
             @csrf
             @if(isset($defect))
                 @method('PUT')
+                @php
+                    $effectiveReturnUrl = \App\Support\AdminReturnUrl::sanitize(old('return_url', $returnUrl ?? null));
+                @endphp
+                @if(isset($backRoute) && filled($effectiveReturnUrl))
+                    <input type="hidden" name="return_url" value="{{ $effectiveReturnUrl }}">
+                @endif
             @endif
 
             <input type="hidden" name="type" x-model="form.type">
@@ -855,7 +861,7 @@
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 } else {
-                    window.location.href = '{{ $backRoute ?? route('operator.home') }}';
+                    window.location.href = '{{ \App\Support\AdminReturnUrl::sanitize(old('return_url')) ?? ($backRoute ?? route('operator.home')) }}';
                 }
             },
 

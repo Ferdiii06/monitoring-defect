@@ -186,15 +186,16 @@
                                 $effectiveKanbanStatus = \App\Support\KanbanCodeParser::evaluateKanban($first->kanban_assy)['kanban_status'] ?? null;
                             }
                             $kanbanBadgeMeta = match ($effectiveKanbanStatus) {
+                                'terdaftar'            => ['label' => 'Terdaftar', 'class' => 'bg-emerald-50 text-emerald-800 border-emerald-200'],
                                 'tidak_terdaftar'      => ['label' => 'Tidak terdaftar', 'class' => 'bg-amber-50 text-amber-800 border-amber-200'],
                                 'family_beda'          => ['label' => 'Family beda', 'class' => 'bg-indigo-50 text-indigo-800 border-indigo-200'],
                                 'conveyor_beda'        => ['label' => 'Conveyor beda', 'class' => 'bg-purple-50 text-purple-800 border-purple-200'],
                                 'format_tidak_dikenal' => ['label' => 'Format tidak dikenal', 'class' => 'bg-rose-50 text-rose-800 border-rose-200'],
-                                default                => null,
+                                default                => ['label' => '-', 'class' => 'bg-gray-100 text-gray-500 border-gray-200'],
                             };
 
-                            $carlineDisplay = $first?->jenis_mobil ?: ($first?->carline?->carType?->name ?: $first?->carline?->name);
-                            $conveyorDisplay = $first?->conveyor ?: ($first?->carline?->name);
+                            $carlineDisplay = filled($first?->jenis_mobil) ? $first->jenis_mobil : ($first?->carline?->carType?->name ?: $first?->carline?->name);
+                            $conveyorDisplay = filled($first?->conveyor) ? $first->conveyor : ($first?->carline?->name);
 
                             $areaModel = filled($first?->area_ditemukan)
                                 ? \App\Models\AreaDitemukan::where('name', $first->area_ditemukan)->first()
@@ -266,7 +267,7 @@
                             <td class="py-4 text-xs px-3 align-top">
                                 <div class="space-y-0.5">
                                     <span class="block text-sm font-black text-gray-900 tracking-tight whitespace-nowrap">
-                                        {{ $first?->kanban_assy ?? '-' }}
+                                        {{ filled($first?->kanban_assy) ? $first->kanban_assy : '-' }}
                                     </span>
                                     @if($first?->kanban_serial !== null)
                                         <span class="block text-[10px] font-bold font-mono text-gray-500">
@@ -283,7 +284,7 @@
 
                             <!-- 7. NP Lama -->
                             <td class="py-4 text-xs font-bold font-mono text-gray-700 px-3 align-top whitespace-nowrap">
-                                {{ $first?->nameplate_lama ?? '-' }}
+                                {{ filled($first?->nameplate_lama) ? $first->nameplate_lama : '-' }}
                             </td>
 
                             <!-- 8. NP Baru -->
@@ -399,7 +400,7 @@
                                                 <div>
                                                     <span class="block text-[10px] font-bold uppercase text-gray-400">Kanban Assy</span>
                                                     <div class="mt-1 flex items-center gap-2 flex-wrap">
-                                                        <span class="font-black text-sm text-gray-900">{{ $first?->kanban_assy ?? '-' }}</span>
+                                                        <span class="font-black text-sm text-gray-900">{{ filled($first?->kanban_assy) ? $first->kanban_assy : '-' }}</span>
                                                         @if($first?->kanban_serial !== null)
                                                             <span class="bg-gray-100 text-gray-700 text-[10px] font-bold px-1.5 py-0.5 rounded font-mono">#{{ $first->kanban_serial }}</span>
                                                         @endif
@@ -442,7 +443,7 @@
                                                 <div>
                                                     <span class="block text-[10px] font-bold uppercase text-gray-400">NP Lama / NP Baru</span>
                                                     <div class="mt-1 font-mono font-bold text-gray-800">
-                                                        {{ $first?->nameplate_lama ?? '-' }} / {{ filled($first?->nameplate_baru) ? $first->nameplate_baru : '-' }}
+                                                        {{ filled($first?->nameplate_lama) ? $first->nameplate_lama : '-' }} / {{ filled($first?->nameplate_baru) ? $first->nameplate_baru : '-' }}
                                                     </div>
                                                 </div>
 

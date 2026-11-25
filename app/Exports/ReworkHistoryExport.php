@@ -157,8 +157,12 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             }
         }
 
-        $carline = $row->jenis_mobil ?: ($row->carline?->carType?->name ?: $row->carline?->name) ?: '-';
-        $conveyor = $row->conveyor ?: ($row->carline?->name) ?: '-';
+        $carline = filled($row->jenis_mobil)
+            ? $row->jenis_mobil
+            : ($row->carline?->carType?->name ?: ($row->carline?->name ?: '-'));
+        $conveyor = filled($row->conveyor)
+            ? $row->conveyor
+            : ($row->carline?->name ?: '-');
 
         $areaModel = $row->area_ditemukan ? AreaDitemukan::where('name', $row->area_ditemukan)->first() : null;
         if ($areaModel && $areaModel->kategori === AreaDitemukan::KATEGORI_FINAL_ASSY) {
@@ -191,11 +195,11 @@ class ReworkHistoryExport implements FromQuery, WithHeadings, WithMapping, Shoul
             $durasiReworkMenit,
             $row->shift ?? '-',
             $row->user_name ?? '-',
-            $row->kanban_assy ?? '-',
+            filled($row->kanban_assy) ? $row->kanban_assy : '-',
             $row->kanban_serial !== null ? $row->kanban_serial : '-',
             $statusKanbanLabel,
-            $row->nameplate_lama ?? '-',
-            $row->nameplate_baru ?? '-',
+            filled($row->nameplate_lama) ? $row->nameplate_lama : '-',
+            filled($row->nameplate_baru) ? $row->nameplate_baru : '-',
             $carline,
             $conveyor,
             $code,

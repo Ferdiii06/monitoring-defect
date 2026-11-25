@@ -133,6 +133,20 @@
                                 </svg>
                             </div>
                         </div>
+                        <div id="kanban_lookup_info" class="space-y-1 hidden">
+                            <div id="kanban_info_text" class="text-xs font-semibold text-emerald-700 flex items-center space-x-1.5 hidden pt-0.5">
+                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                <span id="kanban_info_msg"></span>
+                            </div>
+                            <div id="kanban_warning_box" class="p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium flex items-start space-x-1.5 hidden">
+                                <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                <span>Nomor assy belum terdaftar di master data assy number (tetap bisa disimpan).</span>
+                            </div>
+                            <div id="kanban_error_box" class="p-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-[11px] font-medium flex items-start space-x-1.5 hidden">
+                                <svg class="w-4 h-4 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                <span id="kanban_error_msg">Format kode scan tidak valid.</span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Field 2: Nameplate (NP Lama) -->
@@ -212,6 +226,7 @@
                                 class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all touch-manipulation cursor-pointer disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
                             <option value="">Pilih Conveyor (Opsional)...</option>
                         </select>
+                        <p id="conveyor_scan_hint" class="text-[11px] text-gray-500 font-medium hidden"></p>
                     </div>
                 </div>
 
@@ -483,6 +498,111 @@
         const carlineSelect = document.getElementById('carline');
         const conveyorSelect = document.getElementById('conveyor');
         const initialConveyor = @json($initialConveyor ?? '');
+        const kanbanLookupInfo = document.getElementById('kanban_lookup_info');
+        const kanbanInfoText = document.getElementById('kanban_info_text');
+        const kanbanInfoMsg = document.getElementById('kanban_info_msg');
+        const kanbanWarningBox = document.getElementById('kanban_warning_box');
+        const kanbanErrorBox = document.getElementById('kanban_error_box');
+        const kanbanErrorMsg = document.getElementById('kanban_error_msg');
+        const conveyorScanHint = document.getElementById('conveyor_scan_hint');
+        let lastLookupCode = (kanbanInput ? kanbanInput.value : '').trim();
+
+        function extractConveyorGroup(name) {
+            const trimmed = (name || '').trim();
+            if (!trimmed) return '';
+            if (!trimmed.includes('-')) return trimmed;
+            const afterDash = trimmed.split('-', 2)[1] || '';
+            return (afterDash.split('.', 2)[0] || '').trim();
+        }
+
+        function clearLookupFeedback() {
+            if (kanbanLookupInfo) kanbanLookupInfo.classList.add('hidden');
+            if (kanbanInfoText) kanbanInfoText.classList.add('hidden');
+            if (kanbanWarningBox) kanbanWarningBox.classList.add('hidden');
+            if (kanbanErrorBox) kanbanErrorBox.classList.add('hidden');
+            if (conveyorScanHint) {
+                conveyorScanHint.classList.add('hidden');
+                conveyorScanHint.textContent = '';
+            }
+        }
+
+        function performAssyLookup(rawCode) {
+            const code = (rawCode || '').trim();
+            if (!code) {
+                clearLookupFeedback();
+                lastLookupCode = '';
+                return;
+            }
+            if (code === lastLookupCode) return;
+            lastLookupCode = code;
+
+            const url = '{{ route("rework.lookup_assy") }}?code=' + encodeURIComponent(code);
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(res) {
+                if (res.status === 422) {
+                    return res.json().then(function(errData) {
+                        clearLookupFeedback();
+                        if (kanbanLookupInfo) kanbanLookupInfo.classList.remove('hidden');
+                        if (kanbanErrorBox) {
+                            kanbanErrorBox.classList.remove('hidden');
+                            if (kanbanErrorMsg) {
+                                kanbanErrorMsg.textContent = errData.message || 'Format barcode kanban atau nameplate tidak valid.';
+                            }
+                        }
+                    });
+                }
+                if (!res.ok) return;
+                return res.json().then(function(data) {
+                    clearLookupFeedback();
+                    if (!data) return;
+                    if (kanbanLookupInfo) kanbanLookupInfo.classList.remove('hidden');
+
+                    if (data.ditemukan_di_master) {
+                        if (kanbanInfoText) {
+                            kanbanInfoText.classList.remove('hidden');
+                            let infoMsg = 'Assy ' + (data.assy_number || '');
+                            if (data.carline_nama) infoMsg += ' · ' + data.carline_nama;
+                            if (data.jenis_mobil && data.jenis_mobil !== '-') infoMsg += ' (' + data.jenis_mobil + ')';
+                            if (kanbanInfoMsg) kanbanInfoMsg.textContent = infoMsg;
+                        }
+
+                        if (carlineSelect && data.car_type_nama) {
+                            carlineSelect.value = data.car_type_nama;
+                            updateConveyors(data.car_type_nama, data.carline_nama || data.conveyor || '');
+                        } else if (conveyorSelect && (data.carline_nama || data.conveyor)) {
+                            conveyorSelect.value = data.carline_nama || data.conveyor;
+                        }
+
+                        if (data.conveyor && conveyorScanHint) {
+                            const selectedConv = conveyorSelect ? (conveyorSelect.value || '') : '';
+                            const selectedGroup = extractConveyorGroup(selectedConv);
+                            const differsFromDropdown = selectedConv &&
+                                selectedConv.toUpperCase() !== data.conveyor.toUpperCase() &&
+                                selectedGroup.toUpperCase() !== data.conveyor.toUpperCase();
+
+                            if (data.conveyor_beda || differsFromDropdown) {
+                                const refLabel = data.conveyor_master || selectedConv || 'master';
+                                conveyorScanHint.textContent = 'Info: Conveyor scan (' + data.conveyor + ') berbeda dengan ' + refLabel + '. Nilai ' + data.conveyor + ' akan disimpan.';
+                                conveyorScanHint.classList.remove('hidden');
+                            }
+                        }
+                    } else {
+                        if (kanbanWarningBox) kanbanWarningBox.classList.remove('hidden');
+                        if (data.conveyor && conveyorScanHint) {
+                            conveyorScanHint.textContent = 'Hasil scan kanban: ' + data.conveyor + ' · Jenis Mobil: ' + (data.jenis_mobil || '-') + ' (conveyor ' + data.conveyor + ' akan disimpan otomatis)';
+                            conveyorScanHint.classList.remove('hidden');
+                        }
+                    }
+                });
+            })
+            .catch(function() {});
+        }
 
         function updateConveyors(selectedCarline, preselectedConveyor = '') {
             if (!conveyorSelect) return;
@@ -503,15 +623,24 @@
             conveyorSelect.disabled = false;
 
             const conveyors = conveyorMap[selectedCarline] || [];
+            let matchedPreselected = false;
             conveyors.forEach(function(conv) {
                 const opt = document.createElement('option');
                 opt.value = conv;
                 opt.textContent = conv;
                 if (preselectedConveyor && conv === preselectedConveyor) {
                     opt.selected = true;
+                    matchedPreselected = true;
                 }
                 conveyorSelect.appendChild(opt);
             });
+            if (preselectedConveyor && !matchedPreselected) {
+                const customOpt = document.createElement('option');
+                customOpt.value = preselectedConveyor;
+                customOpt.textContent = preselectedConveyor;
+                customOpt.selected = true;
+                conveyorSelect.appendChild(customOpt);
+            }
         }
 
         if (carlineSelect) {
@@ -521,12 +650,16 @@
             updateConveyors(carlineSelect.value, initialConveyor);
         }
 
-        // 1. Enter on Kanban input moves focus to Nameplate
+        // 1. Enter on Kanban input moves focus to Nameplate & triggers lookup
         kanbanInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                performAssyLookup(this.value);
                 npInput.focus();
             }
+        });
+        kanbanInput.addEventListener('blur', function() {
+            performAssyLookup(this.value);
         });
 
         // 2. Enter on Nameplate input moves focus to Defect Search

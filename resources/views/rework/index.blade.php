@@ -524,34 +524,41 @@
                                 <div class="flex justify-between items-start gap-2 pb-2.5 border-b border-gray-100">
                                     <div class="space-y-0.5 min-w-0 flex-1">
                                         <span class="text-base font-black text-gray-900 tracking-tight block truncate">
-                                            {{ $first->kanban_assy ?? '-' }}
+                                            {{ filled($first->kanban_assy) ? $first->kanban_assy : '-' }}
                                         </span>
                                         <span class="text-xs font-bold font-mono text-gray-500 block truncate">
-                                            NP: {{ $first->nameplate_lama ?? '-' }}
+                                            NP: {{ filled($first->nameplate_lama) ? $first->nameplate_lama : '-' }}
                                         </span>
-                                        @if(filled($first->nameplate_baru))
-                                            <span class="text-xs font-bold font-mono text-emerald-700 block truncate">
-                                                NP Baru: {{ $first->nameplate_baru }}
-                                            </span>
-                                        @endif
+                                        <span class="text-xs font-bold font-mono {{ filled($first->nameplate_baru) ? 'text-emerald-700' : 'text-gray-400' }} block truncate">
+                                            NP Baru: {{ filled($first->nameplate_baru) ? $first->nameplate_baru : '-' }}
+                                        </span>
                                         @php
-                                            $carlineDisplay = $first->jenis_mobil ?: ($first->carline?->carType?->name ?: $first->carline?->name);
-                                            $conveyorDisplay = $first->conveyor ?: ($first->carline?->name);
+                                            $carlineDisplay = filled($first->jenis_mobil) ? $first->jenis_mobil : ($first->carline?->carType?->name ?: $first->carline?->name);
+                                            $conveyorDisplay = filled($first->conveyor) ? $first->conveyor : ($first->carline?->name);
+                                            $effectiveKanbanStatus = $first->kanban_status;
+                                            if ($effectiveKanbanStatus === null && filled($first->kanban_assy)) {
+                                                $effectiveKanbanStatus = \App\Support\KanbanCodeParser::evaluateKanban($first->kanban_assy)['kanban_status'] ?? null;
+                                            }
+                                            $statusKanbanLabel = match ($effectiveKanbanStatus) {
+                                                'terdaftar'            => 'Terdaftar',
+                                                'tidak_terdaftar'      => 'Tidak Terdaftar',
+                                                'family_beda'          => 'Family Beda',
+                                                'conveyor_beda'        => 'Conveyor Beda',
+                                                'format_tidak_dikenal' => 'Format Tidak Dikenal',
+                                                default                => '-',
+                                            };
                                         @endphp
-                                        @if(filled($carlineDisplay) || filled($conveyorDisplay))
-                                            <div class="flex items-center gap-1.5 flex-wrap text-[11px] font-semibold text-gray-700 pt-0.5">
-                                                @if(filled($carlineDisplay))
-                                                    <span class="inline-block bg-gray-100 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">
-                                                        Jenis Mobil: {{ $carlineDisplay }}
-                                                    </span>
-                                                @endif
-                                                @if(filled($conveyorDisplay))
-                                                    <span class="inline-block bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">
-                                                        Conv: {{ $conveyorDisplay }}
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        @endif
+                                        <div class="flex items-center gap-1.5 flex-wrap text-[11px] font-semibold text-gray-700 pt-0.5">
+                                            <span class="inline-block bg-gray-100 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">
+                                                Jenis Mobil: {{ filled($carlineDisplay) ? $carlineDisplay : '-' }}
+                                            </span>
+                                            <span class="inline-block bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">
+                                                Conv: {{ filled($conveyorDisplay) ? $conveyorDisplay : '-' }}
+                                            </span>
+                                            <span class="inline-block bg-gray-50 text-gray-600 border border-gray-200 text-[10px] font-bold px-2 py-0.5 rounded tracking-wide">
+                                                Status Kanban: {{ $statusKanbanLabel }}
+                                            </span>
+                                        </div>
                                         @if(filled($first->area_ditemukan))
                                             @php
                                                 $areaModel = \App\Models\AreaDitemukan::where('name', $first->area_ditemukan)->where('kategori', \App\Models\AreaDitemukan::KATEGORI_FINAL_ASSY)->first();
@@ -798,6 +805,14 @@
 
         let lastLookupCode = '';
 
+        function extractConveyorGroup(name) {
+            const trimmed = (name || '').trim();
+            if (!trimmed) return '';
+            if (!trimmed.includes('-')) return trimmed;
+            const afterDash = trimmed.split('-', 2)[1] || '';
+            return (afterDash.split('.', 2)[0] || '').trim();
+        }
+
         function clearLookupFeedback() {
             if (kanbanLookupInfo) kanbanLookupInfo.classList.add('hidden');
             if (kanbanInfoText) kanbanInfoText.classList.add('hidden');
@@ -862,24 +877,43 @@
                             if (data.carline_nama) {
                                 infoMsg += ' · ' + data.carline_nama;
                             }
+                            if (data.jenis_mobil && data.jenis_mobil !== '-') {
+                                infoMsg += ' (' + data.jenis_mobil + ')';
+                            }
                             if (kanbanInfoMsg) kanbanInfoMsg.textContent = infoMsg;
                         }
 
-                        // 2. Auto-pilih Jenis Mobil dan Conveyor HANYA jika dropdown masih kosong
-                        if (carlineSelect && !carlineSelect.value && data.car_type_nama) {
+                        // 2. Auto-pilih Jenis Mobil dan Conveyor jika dropdown masih kosong atau sebelumnya diisi otomatis
+                        if (carlineSelect && (!carlineSelect.value || carlineSelect.dataset.autoFilled === '1') && data.car_type_nama) {
                             carlineSelect.value = data.car_type_nama;
-                            updateConveyors(data.car_type_nama, data.carline_nama || '');
-                        } else if (conveyorSelect && !conveyorSelect.value && data.carline_nama) {
-                            conveyorSelect.value = data.carline_nama;
+                            carlineSelect.dataset.autoFilled = '1';
+                            updateConveyors(data.car_type_nama, data.carline_nama || data.conveyor || '');
+                        } else if (conveyorSelect && (!conveyorSelect.value || conveyorSelect.dataset.autoFilled === '1') && (data.carline_nama || data.conveyor)) {
+                            conveyorSelect.value = data.carline_nama || data.conveyor;
+                            conveyorSelect.dataset.autoFilled = '1';
+                        }
+
+                        // 3. Info kecil non-blocking jika conveyor scan berbeda dengan dropdown/master (conveyor_beda)
+                        if (data.conveyor && conveyorScanHint) {
+                            const selectedConv = conveyorSelect ? (conveyorSelect.value || '') : '';
+                            const selectedGroup = extractConveyorGroup(selectedConv);
+                            const differsFromDropdown = selectedConv &&
+                                selectedConv.toUpperCase() !== data.conveyor.toUpperCase() &&
+                                selectedGroup.toUpperCase() !== data.conveyor.toUpperCase();
+
+                            if (data.conveyor_beda || differsFromDropdown) {
+                                const refLabel = data.conveyor_master || selectedConv || 'master';
+                                conveyorScanHint.textContent = 'Info: Conveyor scan (' + data.conveyor + ') berbeda dengan ' + refLabel + '. Nilai ' + data.conveyor + ' akan disimpan.';
+                                conveyorScanHint.classList.remove('hidden');
+                            }
                         }
                     } else {
                         // Peringatan kuning jika ditemukan_di_master = false
                         if (kanbanWarningBox) kanbanWarningBox.classList.remove('hidden');
 
-                        // Jika ada kode conveyor hasil scan kanban, tampilkan teks bantu di bawah dropdown Conveyor
-                        // JANGAN menebak / auto-pilih
+                        // Tampilkan info non-blocking conveyor scan dan jenis mobil "-"
                         if (data.conveyor && conveyorScanHint) {
-                            conveyorScanHint.textContent = 'Hasil scan kanban: ' + data.conveyor + ' (silakan pilih conveyor yang sesuai)';
+                            conveyorScanHint.textContent = 'Hasil scan kanban: ' + data.conveyor + ' · Jenis Mobil: ' + (data.jenis_mobil || '-') + ' (conveyor ' + data.conveyor + ' akan disimpan otomatis)';
                             conveyorScanHint.classList.remove('hidden');
                         }
                     }
@@ -909,19 +943,29 @@
             conveyorSelect.disabled = false;
 
             const conveyors = conveyorMap[selectedCarline] || [];
+            let matchedPreselected = false;
             conveyors.forEach(function(conv) {
                 const opt = document.createElement('option');
                 opt.value = conv;
                 opt.textContent = conv;
                 if (preselectedConveyor && conv === preselectedConveyor) {
                     opt.selected = true;
+                    matchedPreselected = true;
                 }
                 conveyorSelect.appendChild(opt);
             });
+            if (preselectedConveyor && !matchedPreselected) {
+                const customOpt = document.createElement('option');
+                customOpt.value = preselectedConveyor;
+                customOpt.textContent = preselectedConveyor;
+                customOpt.selected = true;
+                conveyorSelect.appendChild(customOpt);
+            }
         }
 
         if (carlineSelect) {
             carlineSelect.addEventListener('change', function() {
+                delete carlineSelect.dataset.autoFilled;
                 updateConveyors(this.value, '');
             });
             updateConveyors(carlineSelect.value, oldConveyor);

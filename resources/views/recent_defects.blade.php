@@ -235,12 +235,12 @@
                                     <td class="py-4 text-center px-4 pr-2">
                                         <div class="inline-flex items-center space-x-1.5">
                                             @if($record->rework_group_id)
-                                                <a href="{{ route('rework.edit', array_merge(['groupId' => $record->rework_group_id], request()->query() ? ['return_url' => request()->getRequestUri()] : [])) }}" 
+                                                <a href="{{ route('rework.edit', ['groupId' => $record->rework_group_id, 'return_url' => request()->getRequestUri()]) }}" 
                                                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">
                                                     Edit
                                                 </a>
                                             @else
-                                                <a href="{{ route('admin.report.edit', $record->id) }}" 
+                                                <a href="{{ route('admin.report.edit', ['id' => $record->id, 'return_url' => request()->getRequestUri()]) }}" 
                                                    class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-[#8b0000] hover:bg-red-900 text-white text-xs font-semibold transition-colors">
                                                     Edit
                                                 </a>

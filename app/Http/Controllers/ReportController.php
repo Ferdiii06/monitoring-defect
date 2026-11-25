@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Defect;
 use App\Models\ActivityLog;
 use App\Services\ExternalApiService;
+use App\Support\AdminReturnUrl;
 use Carbon\Carbon;
 use App\Exports\FinalAssyExport;
 use App\Exports\PreAssyExport;
@@ -1391,10 +1392,13 @@ class ReportController extends Controller
         $preAreas = Schema::hasTable('area_ditemukans') ? AreaDitemukan::preAssy()->active()->orderBy('name')->get() : collect([]);
         $reworkAreas = $finalAreas;
 
+        $returnUrl = AdminReturnUrl::sanitize($request->old('return_url', $request->input('return_url')), $request->getBasePath());
+
         return view('input_defect', [
             'type'                  => $defect->jenis_assy,
             'defect'                => $defect,
-            'backRoute'             => route('recent_defects.index'),
+            'returnUrl'             => $returnUrl,
+            'backRoute'             => $returnUrl ?? route('recent_defects.index'),
             'carTypes'              => CarType::with('carlines')->orderBy('name')->get(),
             'preAssyCarlines'       => Carline::preAssy()->with(['machines' => fn($q) => $q->where('is_active', true)->orderBy('name')])->orderBy('name')->get(),
             'defectTypesFinal'      => DefectType::with('subDefectTypes')->where('type', 'Final Assy')->orderBy('name')->get(),
@@ -1603,7 +1607,9 @@ class ReportController extends Controller
             'ip_address'   => $request->ip() ?? '127.0.0.1',
         ]);
 
-        return redirect()->route('recent_defects.index')->with('success', 'Laporan defect berhasil diperbarui oleh Admin!');
+        $returnUrl = AdminReturnUrl::sanitize($request->input('return_url'), $request->getBasePath());
+
+        return redirect()->to($returnUrl ?? route('recent_defects.index'))->with('success', 'Laporan defect berhasil diperbarui oleh Admin!');
     }
 
     /**

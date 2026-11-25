@@ -273,7 +273,7 @@
                                     </td>
                                     <td class="py-4 text-center px-4 pr-2">
                                         <div class="inline-flex items-center space-x-1.5">
-                                            <a href="{{ route('admin.report.edit', $record->id) }}" 
+                                            <a href="{{ route('admin.report.edit', ['id' => $record->id, 'return_url' => request()->getRequestUri()]) }}" 
                                                class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-brand hover:bg-brand-active text-white text-xs font-bold transition-all shadow-xs active:scale-95">
                                                 Edit
                                             </a>

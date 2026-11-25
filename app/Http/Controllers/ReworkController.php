@@ -7,6 +7,8 @@ use App\Models\CarType;
 use App\Models\Carline;
 use App\Models\Defect;
 use App\Models\SubDefectType;
+use App\Support\AdminReturnUrl;
+use App\Support\ConveyorGroup;
 use App\Support\KanbanCodeParser;
 use App\Support\RoleRouteHelper;
 use App\Support\SubDefectHelper;
@@ -243,15 +245,14 @@ class ReworkController extends Controller
         // BATCH 5: Area Ditemukan wajib dipilih
         $reworkArea = trim((string) $validated['area_ditemukan']);
 
-        [$resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil] = $this->resolveConveyorAndCarline($request);
+        $kanbanEval = KanbanCodeParser::evaluateKanban($validated['kanban_assy']);
+        [$resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil] = $this->resolveConveyorAndCarline($request, $kanbanEval);
 
         $groupId = (string) Str::uuid();
         $userName = session('user_name');
         $nameplateBaru = ($isSusulan && $request->filled('nameplate_baru'))
             ? strtoupper(trim((string) $request->input('nameplate_baru')))
             : null;
-
-        $kanbanEval = KanbanCodeParser::evaluateKanban($validated['kanban_assy']);
 
         foreach ($validated['sub_defect_ids'] as $subDefectId) {
             $sub = $subDefects->get($subDefectId);
@@ -507,18 +508,21 @@ class ReworkController extends Controller
             ])->withInput();
         }
 
+        $kanbanEval = KanbanCodeParser::evaluateKanban($validated['kanban_assy']);
         $hasConveyorOrCarlineInput = $request->has('conveyor') || $request->has('carline') || $request->has('carline_id') || $request->has('jenis_mobil');
-        if ($hasConveyorOrCarlineInput) {
-            [$resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil] = $this->resolveConveyorAndCarline($request);
+        $kanbanChangedWithScan = $validated['kanban_assy'] !== $first->kanban_assy
+            && !empty($kanbanEval['parsed']['conveyor']);
+
+        if ($hasConveyorOrCarlineInput || $kanbanChangedWithScan) {
+            [$resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil] = $this->resolveConveyorAndCarline($request, $kanbanEval);
         } else {
             $resolvedConveyor = $first->conveyor;
             $resolvedCarlineId = $first->carline_id;
             $resolvedJenisMobil = $first->jenis_mobil;
         }
 
-        DB::transaction(function () use ($existingDefects, $groupId, $validated, $subDefects, $first, $reworkArea, $request, $resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil) {
+        DB::transaction(function () use ($existingDefects, $groupId, $validated, $subDefects, $first, $reworkArea, $request, $resolvedConveyor, $resolvedCarlineId, $resolvedJenisMobil, $kanbanEval) {
             $kanban = $validated['kanban_assy'];
-            $kanbanEval = KanbanCodeParser::evaluateKanban($kanban);
             $nameplate = $validated['nameplate'];
             $newSubIds = array_map('intval', $validated['sub_defect_ids']);
 
@@ -605,63 +609,20 @@ class ReworkController extends Controller
 
     /**
      * Validate and sanitize return_url parameter for administrator.
-     * Only accepts relative path strictly starting with '/admin/rework-history' (no scheme, no //, no host).
      */
-    protected function sanitizeAdminReturnUrl(?string $returnUrl): ?string
+    protected function sanitizeAdminReturnUrl(?string $returnUrl, ?string $basePath = null): ?string
     {
-        if ($returnUrl === null || trim($returnUrl) === '') {
-            return null;
-        }
-
-        $trimmed = trim($returnUrl);
-
-        // Reject absolute URLs with schemes (e.g. http:, https:, javascript:, data:)
-        if (preg_match('#^[a-zA-Z][a-zA-Z0-9+.-]*:#', $trimmed)) {
-            return null;
-        }
-
-        // Reject protocol-relative '//' or Windows '\\'
-        if (str_starts_with($trimmed, '//') || str_starts_with($trimmed, '\\\\') || str_starts_with($trimmed, '/\\') || str_starts_with($trimmed, '\\/')) {
-            return null;
-        }
-
-        // Must be a relative path strictly starting with '/admin/rework-history' or '/recent-defects'
-        $allowedPrefixes = ['/admin/rework-history', '/recent-defects'];
-        $matchedPrefix = null;
-        foreach ($allowedPrefixes as $prefix) {
-            if (str_starts_with($trimmed, $prefix)) {
-                $matchedPrefix = $prefix;
-                break;
-            }
-        }
-
-        if ($matchedPrefix === null) {
-            return null;
-        }
-
-        // Must be exactly the allowed prefix, or followed by '?' or '/'
-        $after = substr($trimmed, strlen($matchedPrefix));
-        if ($after !== '' && !str_starts_with($after, '?') && !str_starts_with($after, '/')) {
-            return null;
-        }
-
-        // Double check with parse_url that no host or scheme is present
-        $parsed = parse_url($trimmed);
-        if ($parsed === false || isset($parsed['scheme']) || isset($parsed['host'])) {
-            return null;
-        }
-
-        return $trimmed;
+        return AdminReturnUrl::sanitize($returnUrl, $basePath);
     }
 
     /**
-     * Resolve and validate conveyor and carline selection.
-     * Returns an array with [conveyor, carline_id, jenis_mobil] or throws ValidationException.
+     * Resolve conveyor, carline_id, and jenis_mobil for rework flow.
+     * Relaxed validation (Batch 5a): accepts any conveyor/carline name (including long carline names
+     * like 909W-AT11.HEV LHD or scanned conveyor codes) without rejecting mismatches against master.
      *
      * @return array{0: ?string, 1: ?int, 2: ?string}
-     * @throws ValidationException
      */
-    protected function resolveConveyorAndCarline(Request $request): array
+    protected function resolveConveyorAndCarline(Request $request, ?array $kanbanEval = null): array
     {
         $rawConveyor = $request->input('conveyor');
         $rawCarline = $request->input('carline') ?: $request->input('jenis_mobil');
@@ -671,67 +632,65 @@ class ReworkController extends Controller
         $carline = filled($rawCarline) ? trim((string) $rawCarline) : null;
         $carlineId = filled($rawCarlineId) ? (int) $rawCarlineId : null;
 
-        // Jika tidak ada satu pun yang diisi
-        if ($conveyor === null && $carline === null && $carlineId === null) {
-            return [null, null, null];
+        $master = $kanbanEval['master'] ?? null;
+        $parsedConveyor = isset($kanbanEval['parsed']['conveyor']) && trim((string) $kanbanEval['parsed']['conveyor']) !== ''
+            ? strtoupper(trim((string) $kanbanEval['parsed']['conveyor']))
+            : null;
+        $kanbanStatus = $kanbanEval['kanban_status'] ?? null;
+
+        // 1. Jika Jenis Mobil belum dipilih dari dropdown, ambil dari master assy (atau "-" jika tidak ditemukan)
+        if ($carline === null) {
+            if ($master !== null) {
+                $carline = $master->carType?->name ?? $master->carline?->carType?->name ?? null;
+            } elseif ($kanbanStatus === 'tidak_terdaftar') {
+                $carline = '-';
+            }
         }
 
-        // Jika carline_id diisi langsung
+        // 2. Best-effort lookup carline_id dari master carline (tanpa menolak nama panjang / tidak terdaftar)
+        $resolvedCarlineRecord = null;
         if ($carlineId !== null) {
-            $carlineRecord = Carline::with('carType')->find($carlineId);
-            if (!$carlineRecord || $carlineRecord->car_type_id === null) {
-                throw ValidationException::withMessages([
-                    'carline_id' => 'Konveyor yang dipilih tidak valid untuk Final Assy.',
-                ]);
-            }
-            if ($conveyor !== null && $carlineRecord->name !== $conveyor) {
-                throw ValidationException::withMessages([
-                    'conveyor' => 'Konveyor tidak sesuai dengan Jenis Mobil yang dipilih.',
-                ]);
-            }
-            if ($carline !== null && $carlineRecord->carType?->name !== $carline) {
-                throw ValidationException::withMessages([
-                    'carline' => 'Jenis Mobil tidak sesuai dengan Konveyor yang dipilih.',
-                ]);
-            }
-            return [$carlineRecord->name, $carlineRecord->id, $carlineRecord->carType?->name];
-        }
-
-        // Jika conveyor diisi
-        if ($conveyor !== null) {
+            $resolvedCarlineRecord = Carline::with('carType')->find($carlineId);
+        } elseif ($conveyor !== null) {
             $carlineQuery = Carline::finalAssy()->where('name', $conveyor)->with('carType');
-            if ($carline !== null) {
+            if ($carline !== null && $carline !== '-') {
                 $carlineQuery->whereHas('carType', function ($q) use ($carline) {
                     $q->where('name', $carline);
                 });
             }
-            $carlineRecord = $carlineQuery->first();
-
-            if (!$carlineRecord) {
-                if ($carline !== null) {
-                    throw ValidationException::withMessages([
-                        'conveyor' => 'Konveyor tidak sesuai dengan Jenis Mobil yang dipilih.',
-                    ]);
-                }
-                throw ValidationException::withMessages([
-                    'conveyor' => 'Konveyor tidak valid untuk Final Assy.',
-                ]);
-            }
-
-            return [$carlineRecord->name, $carlineRecord->id, $carlineRecord->carType?->name];
+            $resolvedCarlineRecord = $carlineQuery->first()
+                ?? Carline::finalAssy()->where('name', $conveyor)->with('carType')->first();
+        } elseif ($master !== null && $master->carline_id !== null) {
+            $resolvedCarlineRecord = $master->carline;
         }
 
-        // Jika hanya carline yang diisi (tanpa conveyor)
-        if ($carline !== null) {
-            $carTypeExists = CarType::where('name', $carline)->exists();
-            if (!$carTypeExists) {
-                throw ValidationException::withMessages([
-                    'carline' => 'Jenis Mobil yang dipilih tidak valid.',
-                ]);
+        if ($resolvedCarlineRecord !== null) {
+            $carlineId = $resolvedCarlineRecord->id;
+            if ($conveyor === null) {
+                $conveyor = $resolvedCarlineRecord->name;
             }
-            return [null, null, $carline];
+            if ($carline === null) {
+                $carline = $resolvedCarlineRecord->carType?->name;
+            }
+        } else {
+            $carlineId = null;
         }
 
-        return [null, null, null];
+        // 3. Prioritas konveyor dari hasil scan kanban:
+        //    - Jika conveyor_beda -> wajib simpan konveyor dari scan (huruf besar)
+        //    - Jika dropdown conveyor kosong -> pakai konveyor dari scan (huruf besar)
+        //    - Jika dropdown conveyor berbeda dengan konveyor dari scan (dan bukan grup yang sama) -> pakai konveyor dari scan
+        if ($parsedConveyor !== null) {
+            $dropdownMatchesScanGroup = $conveyor !== null && (
+                strcasecmp($conveyor, $parsedConveyor) === 0
+                || strcasecmp(ConveyorGroup::of($conveyor), $parsedConveyor) === 0
+            );
+
+            if ($kanbanStatus === 'conveyor_beda' || $conveyor === null || !$dropdownMatchesScanGroup) {
+                $conveyor = $parsedConveyor;
+            }
+        }
+
+        return [$conveyor, $carlineId, $carline];
     }
 }

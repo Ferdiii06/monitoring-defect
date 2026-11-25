@@ -37,16 +37,35 @@ class AssyLookupController extends Controller
         $master = $parsed['_master'] ?? AssyNumber::findByAssyNumber($parsed['assy'] ?? $assyNumber);
         unset($parsed['_master']);
 
+        $scannedConveyor = isset($parsed['conveyor']) && trim((string) $parsed['conveyor']) !== ''
+            ? strtoupper(trim((string) $parsed['conveyor']))
+            : null;
+
+        $carTypeId = $master?->car_type_id ?? $master?->carline?->car_type_id ?? null;
+        $carTypeNama = $master?->carType?->name ?? $master?->carline?->carType?->name ?? null;
+        $jenisMobil = $master !== null ? ($carTypeNama ?? '-') : '-';
+
+        $masterConveyor = $master !== null && filled($master->conveyor)
+            ? strtoupper(trim((string) $master->conveyor))
+            : null;
+        $conveyorBeda = $master !== null
+            && $masterConveyor !== null
+            && $scannedConveyor !== null
+            && strcasecmp($masterConveyor, $scannedConveyor) !== 0;
+
         return response()->json([
             'assy_number'         => $assyNumber,
             'assy'                => $parsed['assy'] ?? $assyNumber,
             'family'              => $parsed['family'] ?? null,
-            'conveyor'            => $parsed['conveyor'] ?? null,
+            'conveyor'            => $scannedConveyor,
+            'conveyor_master'     => $masterConveyor,
+            'conveyor_beda'       => $conveyorBeda,
             'serial'              => $parsed['serial'] ?? null,
             'carline_id'          => $master?->carline_id ?? null,
             'carline_nama'        => $master?->carline?->name ?? null,
-            'car_type_id'         => $master?->carline?->car_type_id ?? null,
-            'car_type_nama'       => $master?->carline?->carType?->name ?? null,
+            'car_type_id'         => $carTypeId,
+            'car_type_nama'       => $carTypeNama,
+            'jenis_mobil'         => $jenisMobil,
             'ditemukan_di_master' => $master !== null,
         ]);
     }
