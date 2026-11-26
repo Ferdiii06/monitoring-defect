@@ -129,11 +129,11 @@
                     </select>
                 </div>
 
-                <!-- AREA DITEMUKAN PRE ASSY (Khusus Pre Assy & Ada Defect) -->
-                <div x-show="form.type === 'Pre Assy' && form.jenis_defect !== 'Zero Defect'" class="space-y-1.5">
-                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA DITEMUKAN PRE ASSY <span class="text-brand">*</span></label>
-                    <select :name="form.type === 'Pre Assy' ? 'area_ditemukan' : ''" x-model="form.area_ditemukan" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer" :required="form.type === 'Pre Assy' && form.jenis_defect !== 'Zero Defect'">
-                        <option value="">Pilih Area Ditemukan Pre Assy...</option>
+                <!-- AREA PRE ASSY (Selalu tampil untuk Pre Assy) -->
+                <div x-show="form.type === 'Pre Assy'" class="space-y-1.5">
+                    <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wider">AREA <span class="text-brand">*</span></label>
+                    <select :name="form.type === 'Pre Assy' ? 'area_ditemukan' : ''" x-model="form.area_ditemukan" class="w-full min-h-[48px] bg-white border border-border rounded-xl px-3.5 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand cursor-pointer" :required="form.type === 'Pre Assy'">
+                        <option value="">Pilih Area...</option>
                         @php
                             $preOptions = isset($areaDitemukanPre) && $areaDitemukanPre->isNotEmpty() ? $areaDitemukanPre : (isset($areaDitemukanList) ? $areaDitemukanList : collect([]));
                             $masterPreNames = $preOptions->pluck('name')->toArray();
@@ -449,7 +449,7 @@
                             <span class="block font-extrabold text-gray-900 mt-0.5" x-text="selectedCarlineName"></span>
                         </div>
                         <div x-show="form.area_ditemukan">
-                            <span class="block text-gray-400 font-medium text-[10px] uppercase">Area Ditemukan Pre Assy</span>
+                            <span class="block text-gray-400 font-medium text-[10px] uppercase">Area</span>
                             <span class="block font-extrabold text-gray-900 mt-0.5" x-text="form.area_ditemukan"></span>
                         </div>
                     </div>
@@ -503,7 +503,7 @@
                             <div x-show="form.end_number"><span class="text-gray-400">END (#):</span> <span class="font-bold text-gray-900 font-mono break-words [overflow-wrap:anywhere]" x-text="form.end_number"></span></div>
                             <div x-show="form.specification"><span class="text-gray-400">Specification:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.specification"></span></div>
                             <div x-show="form.actual"><span class="text-gray-400">Actual:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.actual"></span></div>
-                            <div x-show="form.area_ditemukan"><span class="text-gray-400">Area Ditemukan:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.area_ditemukan"></span></div>
+                            <div x-show="form.area_ditemukan"><span class="text-gray-400" x-text="form.type === 'Pre Assy' ? 'Area:' : 'Area Ditemukan:'"></span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.area_ditemukan"></span></div>
                             <div x-show="form.job_station"><span class="text-gray-400">Job Station:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.job_station"></span></div>
                             <div x-show="form.keterangan"><span class="text-gray-400">Keterangan:</span> <span class="font-bold text-gray-900 break-words [overflow-wrap:anywhere]" x-text="form.keterangan"></span></div>
                         </div>
@@ -719,7 +719,6 @@
                         this.form.inspect_process_type_id = '';
                         this.form.no_mesin = '';
                         this.form.ditemukan_oleh = '';
-                        this.form.area_ditemukan = '';
                         this.form.no_sequence = '';
                         this.form.no_defective_tag = '';
                     }
@@ -759,11 +758,11 @@
                     if (!this.form.carline_id && (!this.isEdit || this.initialCarlineId)) {
                         return false;
                     }
+                    if (!this.form.area_ditemukan) {
+                        return false;
+                    }
                     if (!isZeroDefect) {
                         if (!this.form.ditemukan_oleh) {
-                            return false;
-                        }
-                        if (!this.form.area_ditemukan) {
                             return false;
                         }
                         const hasMachines = this.currentPreAssyMachines && this.currentPreAssyMachines.length > 0;
@@ -876,7 +875,6 @@
                         this.form.inspect_process_type_id = '';
                         this.form.no_mesin = '';
                         this.form.ditemukan_oleh = '';
-                        this.form.area_ditemukan = '';
                         this.form.no_sequence = '';
                         this.form.no_defective_tag = '';
                     }

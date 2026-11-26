@@ -3071,4 +3071,74 @@ class AdminDashboardAnalyticsTest extends TestCase
             Carbon::setTestNow();
         }
     }
+
+    public function test_pareto_defaults_to_sub_defect_and_accepts_pareto_by_sub_defect(): void
+    {
+        $carline = Carline::create(['name' => 'CL-SUB-1', 'car_type_id' => null]);
+
+        Defect::create([
+            'user_name'        => 'Operator QA',
+            'waktu'            => now(),
+            'shift'            => '1A',
+            'jenis_assy'       => 'Pre Assy',
+            'carline_id'       => $carline->id,
+            'conveyor'         => 'CL-SUB-1',
+            'jenis_defect'     => 'DEFECT INDUK',
+            'jenis_sub_defect' => 'SUB DEFECT KHUSUS',
+            'quantity'         => 4,
+            'quantity_inspect' => 100,
+        ]);
+
+        // Tanpa parameter pareto_by -> default sub_defect
+        $resDefault = $this->actingAsAdmin()->getJson(route('admin.dashboard.analytics', [
+            'type'       => 'pre',
+            'start_date' => now()->toDateString(),
+            'end_date'   => now()->toDateString(),
+        ]));
+        $resDefault->assertOk();
+        $jsonDefault = json_encode($resDefault->json('pareto_pre'));
+        $this->assertStringContainsString('SUB DEFECT KHUSUS', $jsonDefault);
+        $this->assertStringNotContainsString('DEFECT INDUK', $jsonDefault);
+
+        // Dengan pareto_by=sub_defect
+        $resExplicit = $this->actingAsAdmin()->getJson(route('admin.dashboard.analytics', [
+            'type'       => 'pre',
+            'pareto_by'  => 'sub_defect',
+            'start_date' => now()->toDateString(),
+            'end_date'   => now()->toDateString(),
+        ]));
+        $resExplicit->assertOk();
+        $jsonExplicit = json_encode($resExplicit->json('pareto_pre'));
+        $this->assertStringContainsString('SUB DEFECT KHUSUS', $jsonExplicit);
+        $this->assertStringNotContainsString('DEFECT INDUK', $jsonExplicit);
+    }
+
+    public function test_pre_assy_zero_defect_with_area_is_excluded_from_pareto_and_defect_quantity(): void
+    {
+        $carline = Carline::create(['name' => 'CL-ZD-AREA', 'car_type_id' => null]);
+
+        Defect::create([
+            'user_name'        => 'Operator QA',
+            'waktu'            => now(),
+            'shift'            => '1A',
+            'jenis_assy'       => 'Pre Assy',
+            'carline_id'       => $carline->id,
+            'conveyor'         => 'CL-ZD-AREA',
+            'area_ditemukan'   => 'Cutting',
+            'jenis_defect'     => 'Zero Defect',
+            'jenis_sub_defect' => '-',
+            'quantity'         => 0,
+            'quantity_inspect' => 250,
+        ]);
+
+        $res = $this->actingAsAdmin()->getJson(route('admin.dashboard.analytics', [
+            'type'       => 'pre',
+            'start_date' => now()->toDateString(),
+            'end_date'   => now()->toDateString(),
+        ]));
+
+        $res->assertOk();
+        $this->assertEmpty($res->json('pareto_pre'));
+        $this->assertSame(0, (int) Defect::operatorInput()->actualDefect()->where('jenis_assy', 'Pre Assy')->sum('quantity'));
+    }
 }

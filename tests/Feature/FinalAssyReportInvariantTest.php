@@ -841,6 +841,7 @@ class FinalAssyReportInvariantTest extends TestCase
             'sub_defect'       => '-',
             'jumlah'           => 0,
             'inspect_quantity' => 100,
+            'area_ditemukan'   => 'Cutting',
             'ditemukan_oleh'   => 'Inspektor', // dikirim tapi harus dinull-kan oleh server
         ]);
         $resZeroValid->assertSessionHasNoErrors();
@@ -848,7 +849,7 @@ class FinalAssyReportInvariantTest extends TestCase
         $savedZero = Defect::where('jenis_assy', 'Pre Assy')->where('jenis_defect', 'Zero Defect')->latest()->first();
         $this->assertNotNull($savedZero);
         $this->assertNull($savedZero->ditemukan_oleh);
-        $this->assertNull($savedZero->area_ditemukan);
+        $this->assertSame('Cutting', $savedZero->area_ditemukan);
     }
 
     /**

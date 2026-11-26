@@ -203,7 +203,7 @@
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Shift</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4 text-center">Ditemukan Oleh</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Carline</th>
-                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Area Ditemukan Pre Assy</th>
+                                <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Area</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Defect</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">Jenis Sub Defect</th>
                                 <th class="text-[11px] font-bold text-gray-400 uppercase tracking-wider py-3 px-4">No Terminal</th>

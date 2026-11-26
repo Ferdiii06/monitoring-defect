@@ -303,9 +303,10 @@ class OperatorInputDefectTest extends TestCase
         ]);
     }
 
-    public function test_pre_assy_zero_defect_does_not_require_area_ditemukan(): void
+    public function test_pre_assy_zero_defect_requires_area_ditemukan(): void
     {
         $carline = Carline::create(['name' => 'LINE-PRE-2']);
+        $area = \App\Models\AreaDitemukan::create(['name' => 'Cutting', 'jenis_assy' => 'Pre Assy', 'is_active' => true]);
 
         $payload = [
             'type'           => 'Pre Assy',
@@ -318,6 +319,13 @@ class OperatorInputDefectTest extends TestCase
             'ditemukan_oleh' => 'Inspektor',
         ];
 
+        // Tanpa area_ditemukan -> ditolak
+        $resFail = $this->actingAsOperator()->post(route('input_defect.store'), $payload);
+        $resFail->assertSessionHasErrors('area_ditemukan');
+        $this->assertDatabaseCount('defects', 0);
+
+        // Dengan area_ditemukan -> tersimpan beserta area_ditemukan
+        $payload['area_ditemukan'] = $area->name;
         $response = $this->actingAsOperator()->post(route('input_defect.store'), $payload);
         $response->assertRedirect(route('operator.home'));
 
@@ -645,7 +653,7 @@ class OperatorInputDefectTest extends TestCase
         // Pre Assy page menampilkan Area Ditemukan Pre Assy
         $resPre = $this->actingAsOperator()->get(route('input_defect.create', ['type' => 'Pre Assy']));
         $resPre->assertStatus(200);
-        $resPre->assertSee('AREA DITEMUKAN PRE ASSY');
+        $resPre->assertSee('Pilih Area...');
         $resPre->assertSee('>Cutting</option>', false);
         $resPre->assertDontSee('Cutting (Internal Defect)', false);
     }

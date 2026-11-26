@@ -161,7 +161,7 @@ class PreAssyZeroDefectAndMachineFlowTest extends TestCase
             'inspect_process_type_id' => $process->id,
             'no_mesin'                => 'MSN-Z1',
             'ditemukan_oleh'          => 'Operator',
-            'area_ditemukan'          => 'Should Be Null',
+            'area_ditemukan'          => 'Cutting',
         ];
 
         $response = $this->actingAsOperator()->post(route('input_defect.store'), $payload);
@@ -174,7 +174,7 @@ class PreAssyZeroDefectAndMachineFlowTest extends TestCase
         $this->assertNull($saved->inspect_process_type_id);
         $this->assertNull($saved->no_mesin);
         $this->assertNull($saved->ditemukan_oleh);
-        $this->assertNull($saved->area_ditemukan);
+        $this->assertSame('Cutting', $saved->area_ditemukan);
         $this->assertEquals($carline->id, $saved->carline_id);
     }
 

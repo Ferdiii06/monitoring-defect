@@ -833,7 +833,7 @@ class ReportController extends Controller
 
         if ($isZeroDefect) {
             return [
-                'area_ditemukan'          => null,
+                'area_ditemukan'          => $areaInput,
                 'inspect_process_type_id' => null,
             ];
         }
@@ -936,7 +936,7 @@ class ReportController extends Controller
         $isZeroDefect = ($request->input('jenis_defect') === 'Zero Defect');
         $hasActiveMachines = $isPreAssy && $this->isCarlineHasActiveMachines($request->input('carline_id'));
 
-        $areaDitemukanRules = $isZeroDefect
+        $areaDitemukanRules = ($isZeroDefect && !$isPreAssy)
             ? ['nullable', 'string']
             : ['required', 'string', Rule::in($allowedAreas)];
 
@@ -1208,7 +1208,7 @@ class ReportController extends Controller
             ? 'required|string|max:255'
             : 'nullable|string|max:255';
 
-        $areaDitemukanRules = $isZeroDefect
+        $areaDitemukanRules = ($isZeroDefect && !$isPreAssy)
             ? ['nullable', 'string']
             : ['required', 'string', Rule::in($allowedAreas)];
 
@@ -1482,7 +1482,7 @@ class ReportController extends Controller
             ? 'required|string|max:255'
             : 'nullable|string|max:255';
 
-        $areaDitemukanRules = $isZeroDefect
+        $areaDitemukanRules = ($isZeroDefect && !$isPreAssy)
             ? ['nullable', 'string']
             : ['required', 'string', Rule::in($allowedAreas)];
 

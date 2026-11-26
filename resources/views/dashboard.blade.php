@@ -181,10 +181,10 @@
                         </p>
                     </div>
 
-                    <!-- Summary Top Defect Final Assy -->
+                    <!-- Summary Top Sub Defect Final Assy -->
                     <div class="bg-white border border-slate-200 border-t-4 border-t-teal-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
                         <div class="flex items-center justify-between">
-                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="summaryTitleParetoFinal">Top Defect Final</span>
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider" id="summaryTitleParetoFinal">Top Sub Defect Final</span>
                             <span class="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200/80" id="summaryPeriodParetoFinal">Memuat...</span>
                         </div>
                         <div class="mt-2 flex items-baseline space-x-2 min-w-0">
@@ -310,7 +310,7 @@
                             <span class="w-2.5 h-2.5 rounded-full bg-teal-600 inline-block shadow-xs"></span>
                             <div>
                                 <div class="flex items-center space-x-2">
-                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleParetoFinal">Pareto Defect Final Assy</h3>
+                                    <h3 class="text-base font-extrabold text-slate-900 tracking-tight" id="cardTitleParetoFinal">Pareto Sub Defect Final Assy</h3>
                                     <span class="text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md" id="cardBadgeParetoFinal">Final Assy</span>
                                 </div>
                                 <p class="text-xs text-slate-500 mt-0.5" id="cardSubParetoFinal">Internal Defect + Assembly Defect & persentase kumulatif</p>
@@ -550,7 +550,7 @@
 
                             <div class="bg-white border border-slate-200 border-t-4 border-t-teal-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Defect Internal</span>
+                                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Sub Defect Internal</span>
                                     <span class="text-[10px] font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200/80" id="summaryPeriodParetoFinalInternal">Memuat...</span>
                                 </div>
                                 <div class="mt-2 flex items-baseline space-x-2 min-w-0">
@@ -674,7 +674,7 @@
 
                             <div class="bg-white border border-slate-200 border-t-4 border-t-indigo-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Defect Assembly</span>
+                                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Sub Defect Assembly</span>
                                     <span class="text-[10px] font-semibold text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200/80" id="summaryPeriodParetoFinalAssembly">Memuat...</span>
                                 </div>
                                 <div class="mt-2 flex items-baseline space-x-2 min-w-0">
@@ -825,10 +825,10 @@
                         <p class="text-[10px] text-slate-400 mt-1 truncate" id="summarySubDpmPre">{{ ($currentMode ?? 'total') === 'pre' ? 'Kalkulasi total defect / inspect' : 'Memuat perbandingan Operator vs Inspektor...' }}</p>
                     </div>
 
-                    <!-- Summary Top Defect Pre Assy -->
+                    <!-- Summary Top Sub Defect Pre Assy -->
                     <div class="bg-white border border-slate-200 border-t-4 border-t-blue-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
                         <div class="flex items-center justify-between">
-                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Defect Pre</span>
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Sub Defect Pre</span>
                             <span class="text-[10px] font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/80" id="summaryPeriodParetoPre">Memuat...</span>
                         </div>
                         <div class="mt-2 flex items-baseline space-x-2 min-w-0">
@@ -1191,7 +1191,7 @@
 
                             <div class="bg-white border border-slate-200 border-t-4 border-t-blue-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Defect - Ditemukan oleh Operator</span>
+                                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Sub Defect - Ditemukan oleh Operator</span>
                                     <span class="text-[10px] font-semibold text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/80" id="summaryPeriodParetoPreOperator">Memuat...</span>
                                 </div>
                                 <div class="mt-2 flex items-baseline space-x-2 min-w-0">
@@ -1315,7 +1315,7 @@
 
                             <div class="bg-white border border-slate-200 border-t-4 border-t-purple-600 rounded-xl p-4 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)]">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Defect - Ditemukan oleh Inspektor</span>
+                                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Top Sub Defect - Ditemukan oleh Inspektor</span>
                                     <span class="text-[10px] font-semibold text-purple-800 bg-purple-50 px-2 py-0.5 rounded border border-purple-200/80" id="summaryPeriodParetoPreInspektor">Memuat...</span>
                                 </div>
                                 <div class="mt-2 flex items-baseline space-x-2 min-w-0">
@@ -1563,7 +1563,7 @@
                     badgeParetoFinal.className = 'text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md';
                 }
                 if (summaryTitleDpm) summaryTitleDpm.textContent = 'Total Defect Final Assy';
-                if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Defect Final';
+                if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Sub Defect Final';
 
                 if (titleDpmPre) titleDpmPre.textContent = 'Tren Defect Pre Assy';
                 if (subDpmPre) subDpmPre.textContent = 'Perbandingan quantity operator vs inspektor per periode';
@@ -1578,7 +1578,7 @@
                     badgeParetoPre.className = 'text-[10px] font-bold text-blue-800 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md';
                 }
                 if (summaryTitleDpmPre) summaryTitleDpmPre.textContent = 'Total Defect Pre Assy';
-                if (summaryTitleParetoPre) summaryTitleParetoPre.textContent = 'Top Defect Pre';
+                if (summaryTitleParetoPre) summaryTitleParetoPre.textContent = 'Top Sub Defect Pre';
 
                 setTimeout(() => {
                     if (chartDpmFinal) chartDpmFinal.resize();
@@ -1627,7 +1627,7 @@
                     badgeParetoFinal.className = 'text-[10px] font-bold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md';
                 }
                 if (summaryTitleDpm) summaryTitleDpm.textContent = 'DPM Final Assy';
-                if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Defect Final';
+                if (summaryTitlePareto) summaryTitlePareto.textContent = 'Top Sub Defect Final';
 
             } else if (mode === 'pre') {
                 if (colFinal) {
@@ -1668,7 +1668,7 @@
                     badgeParetoPre.className = 'text-[10px] font-bold text-blue-800 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md';
                 }
                 if (summaryTitleDpmPre) summaryTitleDpmPre.textContent = 'PPM Pre Assy';
-                if (summaryTitleParetoPre) summaryTitleParetoPre.textContent = 'Top Defect Pre';
+                if (summaryTitleParetoPre) summaryTitleParetoPre.textContent = 'Top Sub Defect Pre';
             }
 
             if (hintParetoFinal) hintParetoFinal.textContent = 'Klik batang sub defect untuk melihat breakdown per Carline / Conveyor';
@@ -3506,7 +3506,7 @@
 
             const params = new URLSearchParams();
             params.append('assy', 'final');
-            params.append('pareto_by', 'defect');
+            params.append('pareto_by', 'sub_defect');
             if (filtersParetoFinal.start_date) params.append('start_date', filtersParetoFinal.start_date);
             if (filtersParetoFinal.end_date) params.append('end_date', filtersParetoFinal.end_date);
             if (currentMode === 'final' && filtersParetoFinal.conveyor && filtersParetoFinal.conveyor !== 'all') params.append('conveyor', filtersParetoFinal.conveyor);
@@ -3661,7 +3661,7 @@
 
             const params = new URLSearchParams();
             params.append('assy', 'pre');
-            params.append('pareto_by', 'defect');
+            params.append('pareto_by', 'sub_defect');
             if (filtersParetoPre.start_date) params.append('start_date', filtersParetoPre.start_date);
             if (filtersParetoPre.end_date) params.append('end_date', filtersParetoPre.end_date);
             if (currentMode === 'pre' && filtersParetoPre.carline_id && filtersParetoPre.carline_id !== 'all') params.append('carline_id', filtersParetoPre.carline_id);

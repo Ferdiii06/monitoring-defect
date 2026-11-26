@@ -91,6 +91,7 @@ class PreAssySequenceTest extends TestCase
             'jumlah'           => 0,
             'no_sequence'      => 'SEQ-SHOULD-BE-NULL',
             'no_defective_tag' => 'TAG-SHOULD-BE-NULL',
+            'area_ditemukan'   => 'Cutting',
             'nameplate_lama'   => 'NP-SHOULD-BE-NULL',
         ];
 
