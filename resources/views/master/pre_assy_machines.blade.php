@@ -3,7 +3,7 @@
 @section('title', 'Master No Mesin Pre Assy')
 
 @section('content')
-<div x-data="{ editModal: false, editId: null, editName: '' }">
+<div x-data="{ editModal: false, editId: null, editName: '', importModal: false }">
     <!-- Header -->
     <header class="flex justify-between items-center mb-6">
         <div>
@@ -26,6 +26,26 @@
         <div class="mb-6 bg-green-50 text-green-700 text-sm font-semibold p-4 rounded-lg border border-green-200 flex items-center space-x-2 shadow-sm">
             <svg class="w-5 h-5 text-green-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span>{{ session('success') }}</span>
+        </div>
+    @endif
+
+    @if (session('warning'))
+        <div class="mb-6 bg-amber-50 text-amber-800 text-sm font-semibold p-4 rounded-lg border border-amber-200 flex items-center space-x-2 shadow-sm">
+            <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path></svg>
+            <span>{{ session('warning') }}</span>
+        </div>
+    @endif
+
+    @if (session('import_summary') && !empty(session('import_summary')['errors']))
+        <div class="mb-6 bg-amber-50 text-amber-900 text-xs p-4 rounded-lg border border-amber-200 shadow-sm">
+            <p class="font-bold mb-2">
+                Ringkasan Import: {{ session('import_summary')['success'] }} berhasil, {{ session('import_summary')['skipped'] }} baris dilewati:
+            </p>
+            <ul class="list-disc pl-5 space-y-1 max-h-40 overflow-y-auto">
+                @foreach (session('import_summary')['errors'] as $err)
+                    <li>{{ $err }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
@@ -115,6 +135,13 @@
                     <h2 class="text-sm font-bold text-gray-900">
                         Daftar No Mesin - {{ $selectedCarline?->name ?? 'Belum Dipilih' }} ({{ count($machines) }})
                     </h2>
+                    @if($selectedCarline)
+                        <button type="button" @click="importModal = true"
+                            class="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition duration-200 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            <span>Import Excel</span>
+                        </button>
+                    @endif
                 </div>
 
                 <div class="overflow-x-auto min-h-[300px]">
@@ -236,5 +263,56 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal Import Excel -->
+    @if($selectedCarline)
+    <div x-show="importModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+        <div @click.away="importModal = false" class="bg-white rounded-xl shadow-xl border border-gray-100 w-full max-w-md overflow-hidden">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-sm font-bold text-gray-900">Import Excel No Mesin</h3>
+                <button type="button" @click="importModal = false" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form action="{{ route('admin.master.pre_assy_machines.import') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+                @csrf
+                <input type="hidden" name="carline_id" value="{{ $selectedCarline->id }}">
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Carline Tujuan</label>
+                    <div class="p-2.5 rounded-lg bg-gray-50 border border-gray-200 text-xs font-bold text-gray-800">
+                        {{ $selectedCarline->name }}
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-lg p-3">
+                    <span class="text-xs text-blue-800 font-medium">Gunakan template resmi (kolom: <strong>No Mesin</strong>).</span>
+                    <a href="{{ route('admin.master.pre_assy_machines.template') }}"
+                       class="text-xs font-bold text-blue-700 hover:text-blue-900 underline shrink-0 ml-2">
+                        Unduh Template
+                    </a>
+                </div>
+
+                <div>
+                    <label for="importFile" class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
+                        Pilih File Excel (.xlsx / .xls) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="file" id="importFile" name="file" accept=".xlsx,.xls" required
+                        class="w-full border border-gray-200 rounded-lg p-2.5 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#8b0000] focus:border-[#8b0000] bg-white">
+                    <p class="text-[11px] text-gray-400 mt-1">Maksimal 2 MB dan 1.000 baris data per file.</p>
+                </div>
+
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" @click="importModal = false" class="w-1/2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2.5 rounded-lg transition duration-200">
+                        Batal
+                    </button>
+                    <button type="submit" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 rounded-lg transition duration-200 shadow-sm">
+                        Upload & Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
 </div>
 @endsection

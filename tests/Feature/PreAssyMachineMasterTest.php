@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Carline;
+use App\Models\CarType;
 use App\Models\PreAssyMachine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Once;
@@ -168,6 +169,36 @@ class PreAssyMachineMasterTest extends TestCase
 
         $this->assertDatabaseMissing('pre_assy_machines', [
             'id' => $machine->id,
+        ]);
+    }
+
+    public function test_store_rejects_final_assy_carline(): void
+    {
+        $carType = CarType::create(['name' => 'TYPE-FA']);
+        $finalAssyCarline = Carline::create(['name' => 'FA-LINE-1', 'car_type_id' => $carType->id]);
+
+        $response = $this->actingAsAdmin()->post(route('admin.master.pre_assy_machines.store'), [
+            'carline_id' => $finalAssyCarline->id,
+            'name'       => 'MC-01',
+        ]);
+
+        $response->assertSessionHasErrors('carline_id');
+        $this->assertDatabaseCount('pre_assy_machines', 0);
+    }
+
+    public function test_store_accepts_pre_assy_carline(): void
+    {
+        $preAssyCarline = Carline::create(['name' => 'PA-LINE-H', 'car_type_id' => null]);
+
+        $response = $this->actingAsAdmin()->post(route('admin.master.pre_assy_machines.store'), [
+            'carline_id' => $preAssyCarline->id,
+            'name'       => 'MC-02',
+        ]);
+
+        $response->assertRedirect(route('admin.master.pre_assy_machines.index', ['carline_id' => $preAssyCarline->id]));
+        $this->assertDatabaseHas('pre_assy_machines', [
+            'carline_id' => $preAssyCarline->id,
+            'name'       => 'MC-02',
         ]);
     }
 }
