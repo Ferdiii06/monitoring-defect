@@ -449,6 +449,9 @@ class DashboardController extends Controller
 
         $jenisAssy = (string) $request->input('jenis_assy', 'Final Assy');
         $category = strtolower(trim((string) $request->input('category', '')));
+        $rawParetoBy = strtolower(trim((string) $request->input('pareto_by', 'defect')));
+        $paretoBy = in_array($rawParetoBy, ['defect', 'sub_defect'], true) ? $rawParetoBy : 'defect';
+        $hasExplicitParetoBy = $request->filled('pareto_by');
 
         $applyCategoryFilter = function ($q) use ($category, &$jenisAssy) {
             if ($category === 'internal') {
@@ -500,11 +503,19 @@ class DashboardController extends Controller
             }
 
             if ($cleanDefect !== '') {
-                $query->where(function ($q) use ($cleanDefect) {
-                    $q->where('defects.jenis_defect', $cleanDefect)
-                      ->orWhereRaw('UPPER(TRIM(defects.jenis_defect)) = ?', [strtoupper($cleanDefect)])
-                      ->orWhere('defects.jenis_sub_defect', $cleanDefect)
-                      ->orWhereRaw('UPPER(TRIM(defects.jenis_sub_defect)) = ?', [strtoupper($cleanDefect)]);
+                $query->where(function ($q) use ($cleanDefect, $paretoBy, $hasExplicitParetoBy) {
+                    if ($hasExplicitParetoBy && $paretoBy === 'sub_defect') {
+                        $q->where('defects.jenis_sub_defect', $cleanDefect)
+                          ->orWhereRaw('UPPER(TRIM(defects.jenis_sub_defect)) = ?', [strtoupper($cleanDefect)]);
+                    } elseif ($hasExplicitParetoBy && $paretoBy === 'defect') {
+                        $q->where('defects.jenis_defect', $cleanDefect)
+                          ->orWhereRaw('UPPER(TRIM(defects.jenis_defect)) = ?', [strtoupper($cleanDefect)]);
+                    } else {
+                        $q->where('defects.jenis_defect', $cleanDefect)
+                          ->orWhereRaw('UPPER(TRIM(defects.jenis_defect)) = ?', [strtoupper($cleanDefect)])
+                          ->orWhere('defects.jenis_sub_defect', $cleanDefect)
+                          ->orWhereRaw('UPPER(TRIM(defects.jenis_sub_defect)) = ?', [strtoupper($cleanDefect)]);
+                    }
                 });
             }
 
@@ -575,9 +586,14 @@ class DashboardController extends Controller
                 }
             }
 
-            $query->where(function ($q) use ($cleanDefect) {
-                $q->where('defects.jenis_defect', $cleanDefect)
-                  ->orWhereRaw('UPPER(TRIM(defects.jenis_defect)) = ?', [strtoupper($cleanDefect)]);
+            $query->where(function ($q) use ($cleanDefect, $paretoBy) {
+                if ($paretoBy === 'sub_defect') {
+                    $q->where('defects.jenis_sub_defect', $cleanDefect)
+                      ->orWhereRaw('UPPER(TRIM(defects.jenis_sub_defect)) = ?', [strtoupper($cleanDefect)]);
+                } else {
+                    $q->where('defects.jenis_defect', $cleanDefect)
+                      ->orWhereRaw('UPPER(TRIM(defects.jenis_defect)) = ?', [strtoupper($cleanDefect)]);
+                }
             });
 
             $records = $query->selectRaw("{$selectExpr}, SUM(defects.quantity) as total")

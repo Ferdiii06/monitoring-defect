@@ -4524,6 +4524,7 @@
             const params = new URLSearchParams({
                 defect: cleanDefect,
                 sub_defect: cleanDefect,
+                pareto_by: 'sub_defect',
                 level: targetLevel,
                 start_date: filters.start_date || '',
                 end_date: filters.end_date || '',

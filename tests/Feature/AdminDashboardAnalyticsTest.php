@@ -3141,4 +3141,86 @@ class AdminDashboardAnalyticsTest extends TestCase
         $this->assertEmpty($res->json('pareto_pre'));
         $this->assertSame(0, (int) Defect::operatorInput()->actualDefect()->where('jenis_assy', 'Pre Assy')->sum('quantity'));
     }
+
+    public function test_pareto_drilldown_level2_respects_pareto_by_and_isolates_defect_vs_sub_defect(): void
+    {
+        $carlinePre = Carline::create(['name' => 'CL-DRILL-PRE', 'car_type_id' => null]);
+
+        // Final Assy: sub defect 'SAMA' pada CONV-FA1
+        Defect::create([
+            'user_name'        => 'Operator QA',
+            'waktu'            => now(),
+            'shift'            => '1A',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => 'CONV-FA1',
+            'jenis_defect'     => 'DEFECT-A',
+            'jenis_sub_defect' => 'SAMA',
+            'quantity'         => 3,
+            'quantity_inspect' => 100,
+        ]);
+
+        // Final Assy: jenis_defect 'SAMA' (bukan sub defect) pada CONV-FA2 -> tidak boleh tercampur saat pareto_by=sub_defect
+        Defect::create([
+            'user_name'        => 'Operator QA',
+            'waktu'            => now(),
+            'shift'            => '1A',
+            'jenis_assy'       => 'Final Assy',
+            'conveyor'         => 'CONV-FA2',
+            'jenis_defect'     => 'SAMA',
+            'jenis_sub_defect' => 'SUB-LAIN',
+            'quantity'         => 7,
+            'quantity_inspect' => 100,
+        ]);
+
+        // Pre Assy: sub defect 'SAMA' pada CL-DRILL-PRE
+        Defect::create([
+            'user_name'        => 'Operator QA',
+            'waktu'            => now(),
+            'shift'            => '1A',
+            'jenis_assy'       => 'Pre Assy',
+            'carline_id'       => $carlinePre->id,
+            'conveyor'         => 'CL-DRILL-PRE',
+            'jenis_defect'     => 'DEFECT-B',
+            'jenis_sub_defect' => 'SAMA',
+            'quantity'         => 5,
+            'quantity_inspect' => 100,
+        ]);
+
+        // 1. Final Assy dengan pareto_by=sub_defect -> hanya CONV-FA1 (3), bukan CONV-FA2 (7)
+        $resFaSub = $this->actingAsAdmin()->getJson(route('admin.dashboard.pareto_drilldown', [
+            'defect'     => 'SAMA',
+            'sub_defect' => 'SAMA',
+            'pareto_by'  => 'sub_defect',
+            'level'      => 2,
+            'jenis_assy' => 'Final Assy',
+            'start_date' => now()->toDateString(),
+            'end_date'   => now()->toDateString(),
+        ]));
+        $resFaSub->assertOk();
+        $this->assertSame([['name' => 'CONV-FA1', 'total' => 3]], $resFaSub->json('items'));
+
+        // 2. Pre Assy dengan pareto_by=sub_defect -> CL-DRILL-PRE (5)
+        $resPreSub = $this->actingAsAdmin()->getJson(route('admin.dashboard.pareto_drilldown', [
+            'defect'     => 'SAMA',
+            'sub_defect' => 'SAMA',
+            'pareto_by'  => 'sub_defect',
+            'level'      => 2,
+            'jenis_assy' => 'Pre Assy',
+            'start_date' => now()->toDateString(),
+            'end_date'   => now()->toDateString(),
+        ]));
+        $resPreSub->assertOk();
+        $this->assertSame([['name' => 'CL-DRILL-PRE', 'total' => 5]], $resPreSub->json('items'));
+
+        // 3. Tanpa pareto_by -> perilaku lama (filter jenis_defect = 'SAMA') -> hanya CONV-FA2 (7)
+        $resDefault = $this->actingAsAdmin()->getJson(route('admin.dashboard.pareto_drilldown', [
+            'defect'     => 'SAMA',
+            'level'      => 2,
+            'jenis_assy' => 'Final Assy',
+            'start_date' => now()->toDateString(),
+            'end_date'   => now()->toDateString(),
+        ]));
+        $resDefault->assertOk();
+        $this->assertSame([['name' => 'CONV-FA2', 'total' => 7]], $resDefault->json('items'));
+    }
 }
